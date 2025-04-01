@@ -1,4 +1,4 @@
-package com.zikpak.facecheck.helperServices;
+package com.zikpak.facecheck.taxesServices.pdfServices;
 
 
 import com.itextpdf.io.image.ImageData;
@@ -17,7 +17,6 @@ import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.layout.property.UnitValue;
 import com.zikpak.facecheck.requestsResponses.finance.CompanyYearlySummaryDTO;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -108,6 +107,10 @@ public class W3PdfGeneratorService {
             totalsTable.addCell(createValueCell("$" + summary.getTotalMedicareWages(), regularFont));
             totalsTable.addCell(createLabelCell("Total Medicare tax withheld:", boldFont));
             totalsTable.addCell(createValueCell("$" + summary.getTotalMedicareTax(), regularFont));
+
+            totalsTable.addCell(createLabelCell("Total employer taxes paid:", boldFont));
+            totalsTable.addCell(createValueCell("$" + summary.getTotalEmployerTaxes(), regularFont));
+
 
             document.add(totalsTable);
 
