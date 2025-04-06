@@ -1,0 +1,25 @@
+spring:
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 50MB
+springdoc:
+  default-produces-media-type: application/json
+server:
+  servlet:
+    context-path: /api/v1/
+  port: 8088
+  #address: 0.0.0.0
+tax:
+  rates:
+    social-security: 0.062
+    medicare: 0.0145
+    futa: 0.06
+    ny-unemployment: 0.041
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

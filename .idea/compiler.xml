@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="ApiModule" />
+        <module name="SecurityDomainModule" />
+        <module name="AppStarterModule" />
+        <module name="ConfigurationsModule" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="DTO" target="21" />
+      <module name="dto" target="21" />
+      <module name="entityE" target="17" />
+      <module name="repositories" target="21" />
+      <module name="service" target="21" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ApiModule" options="-parameters" />
+      <module name="AppStarterModule" options="-parameters" />
+      <module name="ConfigurationsModule" options="-parameters" />
+      <module name="DTO" options="-parameters" />
+      <module name="SecurityDomainModule" options="-parameters" />
+      <module name="dto" options="-parameters" />
+      <module name="entityE" options="-parameters" />
+      <module name="facec-heck" options="" />
+      <module name="repositories" options="-parameters" />
+      <module name="service" options="-parameters" />
+    </option>
+  </component>
+</project>

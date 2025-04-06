@@ -1,0 +1,783 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* Общие стили */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+  color: #333;
+  overflow-x: hidden;
+}
+
+/* Стили навбара (вы уже определили их) */
+.navbar {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.navbar-container {
+  width: 100%;
+  max-width: 1200px;
+  height: 65px;
+  background-color: rgba(255, 255, 255, 0.98);
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(230, 230, 230, 0.7);
+  pointer-events: all;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  text-decoration: none;
+  letter-spacing: -0.3px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 25px;
+}
+
+.nav-link {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #555;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: #2563EB;
+  background-color: rgba(37, 99, 235, 0.08);
+}
+
+.sign-in-button {
+  background-color: #2563EB;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 10px 20px;
+  border-radius: 30px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.2);
+}
+
+.sign-in-button:hover {
+  background-color: #1E50CF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+a {
+  cursor: pointer;
+}
+
+/* Персиковый фон с заголовком */
+.hero-section {
+  height: 65vh;
+  min-height: 600px;
+  background-color: #FFDAB9; /* Бледно-персиковый цвет */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  position: relative;
+  padding-top: 0;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin-top: 10%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 70%;
+}
+
+.hero-section h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 30px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hero-section p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: white;
+  margin-bottom: 50px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+.scroll-btn {
+  background-color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  margin: 0 auto;
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.scroll-btn i {
+  color: #FFDAB9;
+  font-size: 1.5rem;
+}
+
+.scroll-btn:hover {
+  transform: translateY(3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Секция с планами подписки */
+.pricing-section {
+  padding: 80px 20px 150px;
+  background-color: #f9f9f9;
+  margin-top: 50px;
+}
+
+.pricing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Изменено с stretch на flex-start */
+  gap: 60px;
+  flex-wrap: wrap;
+}
+
+.pricing-card {
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 50px 40px;
+  width: 400px;
+  height: 550px; /* Фиксированная высота для обеих карточек */
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  border: 1px solid #eaeaea;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Изменено с space-between на flex-start */
+}
+
+.pricing-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.popular-tag {
+  position: absolute;
+  top: -12px;
+  right: 30px;
+  background-color: #2563EB;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.card-header h2 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 25px;
+}
+
+.card-price {
+  margin-bottom: 30px;
+}
+
+.card-price h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #2563EB;
+  margin-bottom: 5px;
+}
+
+.card-price h3 span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #777;
+}
+
+.card-price p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: #666;
+}
+
+.card-features {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 40px;
+  min-height: 200px; /* Добавлена минимальная высота */
+}
+
+.card-features ul {
+  list-style: none;
+  text-align: left;
+  flex-grow: 1;
+}
+
+.card-features li {
+  margin-bottom: 15px;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.5;
+  font-size: 1.05rem;
+}
+
+.card-features i {
+  color: #2563EB;
+  margin-right: 12px;
+  font-size: 1rem;
+  margin-top: 3px;
+}
+
+.select-plan-btn {
+  background-color: white;
+  color: #2563EB;
+  border: 2px solid #2563EB;
+  padding: 15px 40px;
+  border-radius: 30px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: center;
+  width: 220px;
+  margin-bottom: 10px;
+  position: absolute; /* Добавлено абсолютное позиционирование */
+  bottom: 40px; /* Фиксированное положение от нижнего края */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.select-plan-btn:hover {
+  background-color: #2563EB;
+  color: white;
+  transform: translateX(-50%) translateY(-3px); /* Изменено для сохранения центрирования */
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);
+}
+
+.pro-btn {
+  background-color: #2563EB;
+  color: white;
+}
+
+.pro-btn:hover {
+  background-color: #1E50CF;
+}
+
+/* Секция с преимуществами */
+.benefits-section {
+  padding: 100px 20px;
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.benefits-header {
+  max-width: 800px;
+  margin: 0 auto 60px;
+}
+
+.benefits-header h2 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #333;
+  margin-bottom: 15px;
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+.benefits-header p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #555;
+  animation: fadeInUp 0.8s ease 0.2s forwards;
+  opacity: 0;
+}
+
+.benefits-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.benefit-card {
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  padding: 40px 30px;
+  width: 260px;
+  height: 260px;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeInUp 0.8s ease forwards;
+  opacity: 0;
+}
+
+.benefit-card:nth-child(1) {
+  animation-delay: 0.3s;
+}
+
+.benefit-card:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.benefit-card:nth-child(3) {
+  animation-delay: 0.7s;
+}
+
+.benefit-card:nth-child(4) {
+  animation-delay: 0.9s;
+}
+
+.benefit-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.benefit-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: rgba(37, 99, 235, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.benefit-icon i {
+  font-size: 2rem;
+  color: #2563EB;
+}
+
+.benefit-card h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.benefit-card p {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.cta-section {
+  padding: 60px 20px 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cta-container {
+  background-color: #FFDAB9;
+  border-radius: 30px;
+  padding: 70px 50px;
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+.cta-container h2 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cta-container p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: white;
+  margin-bottom: 40px;
+}
+
+.cta-btn {
+  background-color: #2563EB;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 15px 40px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
+}
+
+.cta-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px rgba(37, 99, 235, 0.4);
+  background-color: #1E50CF;
+}
+
+.footer {
+  background-color: #f8f9fa;
+  padding: 70px 0 30px;
+  width: 100%;
+  margin-top: 80px;
+  border-top: 1px solid #eaeaea;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.footer-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.footer-column {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 30px;
+  padding-right: 20px;
+}
+
+.company-info {
+  flex: 1.5;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.footer-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin-right: 10px;
+}
+
+.footer-brand {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.company-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.social-links {
+  display: flex;
+  gap: 15px;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #f0f2f5;
+  color: #555;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.social-link:hover {
+  background-color: #2563EB;
+  color: white;
+  transform: translateY(-3px);
+}
+
+.footer-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 12px;
+}
+
+.footer-links a {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: #555;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: #2563EB;
+}
+
+.footer-divider {
+  height: 1px;
+  background-color: #e5e5e5;
+  margin-bottom: 30px;
+}
+
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.copyright {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  color: #777;
+  margin: 0;
+}
+
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.legal-links a {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  color: #777;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.legal-links a:hover {
+  color: #2563EB;
+}
+
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .hero-section h1 {
+    font-size: 2.2rem;
+  }
+
+  .hero-section p {
+    font-size: 1rem;
+  }
+
+  .pricing-card {
+    width: 100%;
+    max-width: 350px;
+  }
+
+  .select-plan-btn {
+    bottom: 30px; /* Уменьшаем отступ для мобильных */
+  }
+
+  .benefits-header h2 {
+    font-size: 2rem;
+  }
+
+  .benefits-header p {
+    font-size: 1.1rem;
+  }
+
+  .benefit-card {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  @media (max-width: 768px) {
+    .cta-container {
+      padding: 50px 30px;
+    }
+
+    .cta-container h2 {
+      font-size: 2.2rem;
+    }
+
+    .cta-container p {
+      font-size: 1.2rem;
+    }
+  }
+  @media screen and (max-width: 991px) {
+    .footer-top {
+      gap: 30px;
+    }
+
+    .footer-column {
+      flex: 1 1 40%;
+    }
+
+    .company-info {
+      flex: 1 1 100%;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .footer {
+      padding: 50px 0 25px;
+    }
+
+    .footer-column {
+      flex: 1 1 100%;
+    }
+
+    .footer-bottom {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .legal-links {
+      gap: 15px;
+    }
+  }
+
+  @media screen and (max-width: 576px) {
+    .footer-top {
+      flex-direction: column;
+    }
+
+    .footer-title {
+      margin-bottom: 15px;
+    }
+
+    .social-links {
+      justify-content: flex-start;
+    }
+
+    .legal-links {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+}

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Pricing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<!-- Навигационная панель -->
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="logo-container">
+      <div class="logo">
+        <img src="logo.jpg" alt="Facecheck Logo" class="logo-img">
+      </div>
+      <a (click)="navigateToFaceCheck()" class="brand-name">facecheck</a>
+    </div>
+    <div class="nav-links">
+      <a (click)="navigateToPricing()" class="nav-link active">Pricing</a>
+      <a (click)="navigateToAboutUs()" class="nav-link">About Us</a>
+    </div>
+    <a (click)="navigateToSignIn()" class="sign-in-button">Sign In</a>
+  </div>
+</nav>
+
+<!-- Персиковый фон с заголовком -->
+<section class="hero-section">
+  <div class="hero-content">
+    <div class="text-container">
+      <h1>Select perfect plan for you</h1>
+      <p>No matter which plan you will select, it will works for your business perfectly!</p>
+    </div>
+  </div>
+  <button class="scroll-btn" id="scrollBtn" (click)="scrollToPricingPlans()">
+    <i class="fas fa-arrow-down"></i>
+  </button>
+</section>
+
+<!-- Секция планов подписки -->
+<section class="pricing-section" id="pricingPlans">
+  <div class="pricing-container">
+    <div class="pricing-card basic">
+      <div class="card-header">
+        <h2>Basic Plan</h2>
+      </div>
+      <div class="card-price">
+        <h3>$10<span>/month</span></h3>
+        <p>+ $4 per employee</p>
+      </div>
+      <div class="card-features">
+        <ul>
+          <li><i class="fas fa-check"></i> Basic Face Recognition</li>
+          <li><i class="fas fa-check"></i> 100 Face Checks per month</li>
+          <li><i class="fas fa-check"></i> Email Support</li>
+          <li><i class="fas fa-check"></i> Basic Analytics</li>
+          <li><i class="fas fa-check"></i> 1 Admin Account</li>
+        </ul>
+      </div>
+      <button class="select-plan-btn" (click)="selectPlan('basic')">Select Plan</button>
+    </div>
+
+    <div class="pricing-card pro">
+      <div class="popular-tag">Popular</div>
+      <div class="card-header">
+        <h2>Pro Plan</h2>
+      </div>
+      <div class="card-price">
+        <h3>$17<span>/month</span></h3>
+        <p>+ $5.75 per employee</p>
+      </div>
+      <div class="card-features">
+        <ul>
+          <li><i class="fas fa-check"></i> Advanced Face Recognition</li>
+          <li><i class="fas fa-check"></i> Unlimited Face Checks</li>
+          <li><i class="fas fa-check"></i> Priority Support 24/7</li>
+          <li><i class="fas fa-check"></i> Advanced Analytics Dashboard</li>
+          <li><i class="fas fa-check"></i> Multiple Admin Accounts</li>
+        </ul>
+      </div>
+      <button class="select-plan-btn pro-btn" (click)="selectPlan('pro')">Select Plan</button>
+    </div>
+  </div>
+</section>
+
+<!-- Секция с преимуществами -->
+<section class="benefits-section">
+  <div class="benefits-header">
+    <h2>Save your time with our payrolls</h2>
+    <p>The reasons why you should choose FACECHECK</p>
+  </div>
+
+  <div class="benefits-container">
+    <div class="benefit-card">
+      <div class="benefit-icon">
+        <i class="fas fa-coins"></i>
+      </div>
+      <h3>Save Money</h3>
+      <p>Save over $2,000 per year with FACECHECK</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">
+        <i class="fas fa-clock"></i>
+      </div>
+      <h3>Save Time</h3>
+      <p>Save 15 hours per month with FACECHECK</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h3>Secure & Compliant</h3>
+      <p>94% of businesses trust FACECHECK to meet their security and compliance requirements</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <h3>Easy to Use</h3>
+      <p>9 out of 10 companies find payroll processing easier with FACECHECK</p>
+    </div>
+  </div>
+</section>
+
+<!-- Секция с призывом к действию в конце страницы -->
+<section class="cta-section">
+  <div class="cta-container">
+    <h2>Work Smarter not Harder!</h2>
+    <p>Sign in with FACECHECK today!</p>
+    <button class="cta-btn" (click)="scrollToPricingPlans()">Choose your plan</button>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-top">
+      <div class="footer-column company-info">
+        <div class="footer-logo">
+          <img src="logo.jpg" alt="Facecheck Logo" class="footer-logo-img">
+          <span class="footer-brand">facecheck</span>
+        </div>
+        <p class="company-description">
+          Innovative solution for workforce management, payroll processing, and business optimization.
+        </p>
+        <div class="social-links">
+          <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-column">
+        <h3 class="footer-title">Company</h3>
+        <ul class="footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Our Team</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Partners</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h3 class="footer-title">Products</h3>
+        <ul class="footer-links">
+          <li><a href="#">Time Tracking</a></li>
+          <li><a href="#">Payroll System</a></li>
+          <li><a href="#">Business Analytics</a></li>
+          <li><a href="#">Mobile App</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h3 class="footer-title">Support</h3>
+        <ul class="footer-links">
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Documentation</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <div class="footer-bottom">
+      <p class="copyright">© 2025 Facecheck. All rights reserved.</p>
+      <div class="legal-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Legal Information</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+</body>
+</html>

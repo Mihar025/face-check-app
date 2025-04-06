@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/entity.iml" filepath="$PROJECT_DIR$/entity.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/face-check-app.iml" filepath="$PROJECT_DIR$/.idea/face-check-app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/face_check/face_check.iml" filepath="$PROJECT_DIR$/face_check/face_check.iml" />
+      <module fileurl="file://$PROJECT_DIR$/face_check/android/face_check_android.iml" filepath="$PROJECT_DIR$/face_check/android/face_check_android.iml" />
+    </modules>
+  </component>
+</project>

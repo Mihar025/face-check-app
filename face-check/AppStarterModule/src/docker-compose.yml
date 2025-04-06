@@ -1,0 +1,30 @@
+services:
+  postgresql:
+    container_name: fc_pg_sql
+    image: postgres
+    environment:
+      POSTGRES_USER: misha
+      POSTGRES_PASSWORD: misha
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5433:5432"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+
+  mail-dev:
+    container_name: fc-mail-dev
+    image: maildev/maildev
+    ports:
+      - 1080:1080
+      - 1025:1025
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  postgres:

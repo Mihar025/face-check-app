@@ -1,0 +1,4608 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Face Check API",
+    "description": "API для приложения проверки лиц",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8088/api/v1",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Work Site Controller",
+      "description": "API for working with Work Sites"
+    }
+  ],
+  "paths": {
+    "/user/phone/{phone}": {
+      "put": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "updatePhone",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/user/password/{password}": {
+      "put": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "updatePassword",
+        "parameters": [
+          {
+            "name": "password",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/user/email/{email}": {
+      "put": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "updateEmail",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/user/address/{homeAddress}": {
+      "put": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "updateHomeAddress",
+        "parameters": [
+          {
+            "name": "homeAddress",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/{companyId}": {
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "updateCompany",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyUpdatingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyUpdatingResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "deleteCompany",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/{companyId}/income": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "findCompanyIncomePerMonth",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyIncomePerMonthResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "setCompanyIncomePerMonth",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyIncomePerMonthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyIncomePerMonthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/{companyId}/employees/{employeeId}/rate": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getEmployeeRate",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeSalaryResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "updateEmployeeRate",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeRaiseHourRateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeSalaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/demote/{workerId}/foreman-to-user": {
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "demoteFromForemanToUser",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/demote/{workerId}/admin-to-foreman": {
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "demoteFromAdminToForeman",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/phone": {
+      "put": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "updatePhoneNumber",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsPhoneNumberRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsPhoneNumberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password": {
+      "put": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "updatePassword_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/email": {
+      "put": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "updateEmail_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsEmailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/worker/{workerId}/punch-in": {
+      "put": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "updatePunchInTime",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PunchInUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatePunchInForWorkerResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "changePunchInForWorker",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePunchInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangePunchInForWorkerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite": {
+      "get": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Find all work sites with pagination",
+        "operationId": "findAllWorkSites",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseWorkSiteResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Create new work site",
+        "operationId": "createWorkSite",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSiteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSiteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/within-radius": {
+      "post": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Check is user in correct work site radius",
+        "operationId": "isWithinRadius",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IsWithinRadiusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IsWithinRadiusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/inactive-day": {
+      "post": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Schedule vacation day",
+        "operationId": "scheduleInactiveDay",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleInactiveDayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleInactiveDayResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Remove inactive day",
+        "operationId": "removeInactiveDay",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleInactiveDayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleInactiveDayResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/custom-radius": {
+      "post": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Set special radius ",
+        "operationId": "setCustomRadius",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetNewCustomRadiusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetNewCustomRadiusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/custom-radius/{workerId}": {
+      "post": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Set custom radius for specific worker on work site",
+        "operationId": "setCustomRadiusForWorkerInSpecialWorkSite",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetNewCustomRadiusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetNewCustomRadiusForWorkerInSpecialWorkSiteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/can-punch/{userId}": {
+      "post": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Check is it correct time to punch in/out",
+        "operationId": "canPunchInOut",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanPunchOutRequestWorkSite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/select/{workSiteId}": {
+      "post": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Select work site",
+        "operationId": "selectWorkSite",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectWorkSiteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/worker/{workerId}": {
+      "post": {
+        "tags": [
+          "work-schedule-controller"
+        ],
+        "operationId": "setWorkerSchedule",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkerSetScheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSchedulerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/upload": {
+      "post": {
+        "tags": [
+          "file-controller"
+        ],
+        "operationId": "uploadFile",
+        "parameters": [
+          {
+            "name": "photo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "prefix",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/upload/photo": {
+      "post": {
+        "tags": [
+          "file-controller"
+        ],
+        "operationId": "uploadPhoto",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "prefix",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "photo"
+                ],
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/calculate-taxes": {
+      "post": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "calculateTaxes",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyTaxCalculationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyTaxCalculationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/foreman": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "registerForeman",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/company": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "registerCompany",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/register/admin": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "registerAdmin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationAdminRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/forgot-password/verify": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "verifyCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/forgot-password/email": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "sendResetCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/employees/{employeeId}/payment": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "setPaymentData",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/authenticate": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "authenticate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthenticationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/punch-out": {
+      "post": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "punchOut",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PunchOutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PunchOutResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/punch-in": {
+      "post": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "punchIn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PunchInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PunchInResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/worker/{workerId}/punch-out": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "changePunchOutForWorker",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePunchOutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangePunchOutForWorkerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/working-hours": {
+      "patch": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Update working hours work site",
+        "operationId": "updateWorkingHours",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSiteUpdateWorkingHoursRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSiteUpdateWorkingHoursResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/name": {
+      "patch": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Update name for work site",
+        "operationId": "updateName",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSiteUpdateNameResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/location": {
+      "patch": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Update location of work site",
+        "operationId": "updateLocation",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSiteUpdateLocationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSiteUpdateLocationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/address": {
+      "patch": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Update address for work site",
+        "operationId": "updateAddress",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkSiteAddress"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSiteUpdateAddressResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/active": {
+      "get": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Check is work site active",
+        "operationId": "isActive",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Change status of work site activity",
+        "operationId": "setActive",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusWorkSiteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/employees/{employeeId}/promote/foreman": {
+      "patch": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "promoteToForeman",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/employees/{employeeId}/promote/admin": {
+      "patch": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "promoteToAdmin",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/closed-days": {
+      "get": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Get all closed days in special work site",
+        "operationId": "getWorkSiteClosedDays",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseWorkSiteClosedDaysResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}/active-workers": {
+      "get": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Get list of workers whose working right now in worksite and related to special company",
+        "operationId": "getActiveWorkers",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseWorkerCurrentlyWorkingInWorkSite"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workSite/{id}": {
+      "get": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Find work site by ID",
+        "operationId": "findWorkSiteById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSiteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/total-hours-perWeek": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findTotalWorkedHoursPerWeek",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/taxes/year": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerTotalPayedTaxesAmountForYear",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/taxes/year/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerTotalPayedTaxesAmountForSpecialYear",
+        "parameters": [
+          {
+            "name": "years",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/taxes/week": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerTotalPayedTaxesAmountForWeek",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/taxes/week/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerTotalPayedTaxesAmountForSpecialWeek",
+        "parameters": [
+          {
+            "name": "weekAgo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/taxes/month": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerTotalPayedTaxesAmountForMonth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/taxes/month/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerTotalPayedTaxesAmountForSpecialMonth",
+        "parameters": [
+          {
+            "name": "yearMonth",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/year/net": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryPerYearNet",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/year/net/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryForSpecialYearNet",
+        "parameters": [
+          {
+            "name": "years",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/year/gross": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryPerYearGross",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/year/gross/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryForSpecialYearGross",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/week/net": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryPerWeekNet",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/week/net/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryForSpecialWeekNet",
+        "parameters": [
+          {
+            "name": "weekAgo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/week/gross": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryPerWeekGross",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/week/gross/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryForSpecialWeekGross",
+        "parameters": [
+          {
+            "name": "weeksAgo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/month/net": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryPerMonthNet",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/month/net/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryForSpecialMonthNet",
+        "parameters": [
+          {
+            "name": "yearMonth",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/month/gross": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryPerMonthGross",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/salary/month/gross/special": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerSalaryForSpecialMonthGross",
+        "parameters": [
+          {
+            "name": "yearMonth",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/phone": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerPhoneNumber",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPhoneNumberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/full-name": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerFullName",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserFullNameResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/email": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerEmail",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEmailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/contact-info": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerFullContactInformation",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserFullContactInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/base-rate": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerBaseHourRate",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/address": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerHomeAddress",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserHomeAddressResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/week": {
+      "get": {
+        "tags": [
+          "work-schedule-controller"
+        ],
+        "operationId": "getWeekSchedule",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyScheduleResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/hours/special-week": {
+      "get": {
+        "tags": [
+          "work-schedule-controller"
+        ],
+        "operationId": "getSpecialWeekHours",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerHourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/hours/current-week": {
+      "get": {
+        "tags": [
+          "work-schedule-controller"
+        ],
+        "operationId": "getCurrentWeekHours",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerHourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{fileName}": {
+      "get": {
+        "tags": [
+          "file-controller"
+        ],
+        "operationId": "getFile",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "byte"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "file-controller"
+        ],
+        "operationId": "deleteFile",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/{companyId}/employees": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getAllEmployees",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseRelatedUserInCompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/{companyId}/employees/users": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getUserEmployees",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseRelatedUserInCompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/{companyId}/employees/foreman": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getForemanEmployees",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseRelatedUserInCompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/{companyId}/employees/admins": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getAdminEmployees",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseRelatedUserInCompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/total-salaries": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getTotalSalaries",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/employee-rates": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getAllEmployeeRates",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmployeeSalaryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/activate-account": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "confirm",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/attendance/week": {
+      "get": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "getWeeklyEarnings",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DailyEarningResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/last-punch": {
+      "get": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "getLastPunchTime",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LastPunchTimeDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/finance-info": {
+      "get": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "getFinanceInfoForWeek",
+        "parameters": [
+          {
+            "name": "weekStart",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceInfoForWeekInFinanceScreenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/employee": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "Get all workers in worksite",
+        "description": "Retrieves paginated list of workers for a specific worksite",
+        "operationId": "getWorkersInWorksite",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "worksiteId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseWorksiteWorkerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/employees/{employeeId}/fire": {
+      "delete": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "fireEmployee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/admin/workers/{workerId}/punch-in": {
+      "delete": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "deleteWorkerPunchIn",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CompanyUpdatingRequest": {
+        "required": [
+          "companyAddress",
+          "companyEmail",
+          "companyName",
+          "companyPhone",
+          "workersQuantity"
+        ],
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string"
+          },
+          "companyAddress": {
+            "type": "string"
+          },
+          "companyPhone": {
+            "type": "string"
+          },
+          "companyEmail": {
+            "type": "string"
+          },
+          "workersQuantity": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CompanyUpdatingResponse": {
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "companyAddress": {
+            "type": "string"
+          },
+          "companyPhone": {
+            "type": "string"
+          },
+          "companyEmail": {
+            "type": "string"
+          },
+          "workersQuantity": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CompanyIncomePerMonthRequest": {
+        "type": "object",
+        "properties": {
+          "companyIncomePerMonth": {
+            "type": "number"
+          }
+        }
+      },
+      "CompanyIncomePerMonthResponse": {
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "companyIncomePerMonth": {
+            "type": "number"
+          }
+        }
+      },
+      "EmployeeRaiseHourRateRequest": {
+        "required": [
+          "baseHourlyRate"
+        ],
+        "type": "object",
+        "properties": {
+          "baseHourlyRate": {
+            "minimum": 0.0,
+            "exclusiveMinimum": true,
+            "type": "number"
+          }
+        }
+      },
+      "EmployeeSalaryResponse": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "baseHourlyRate": {
+            "type": "number"
+          }
+        }
+      },
+      "SettingsPhoneNumberRequest": {
+        "type": "object",
+        "properties": {
+          "currentPhoneNumber": {
+            "type": "string"
+          },
+          "newPhoneNumber": {
+            "type": "string"
+          },
+          "confirmNewPhoneNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "SettingsPhoneNumberResponse": {
+        "type": "object",
+        "properties": {
+          "phoneNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "SettingsPasswordRequest": {
+        "required": [
+          "confirmPassword",
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          },
+          "confirmPassword": {
+            "type": "string"
+          }
+        }
+      },
+      "SettingsEmailRequest": {
+        "required": [
+          "confirmNewEmail",
+          "currentEmail",
+          "newEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "currentEmail": {
+            "type": "string"
+          },
+          "newEmail": {
+            "type": "string"
+          },
+          "confirmNewEmail": {
+            "type": "string"
+          }
+        }
+      },
+      "SettingsEmailResponse": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "PunchInUpdateRequest": {
+        "required": [
+          "newCheckInTIme"
+        ],
+        "type": "object",
+        "properties": {
+          "newCheckInTIme": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdatePunchInForWorkerResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "current_work_site": {
+            "type": "string"
+          },
+          "workerFullName": {
+            "type": "string"
+          },
+          "newPunchInTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LocalTime": {
+        "type": "object",
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minute": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "second": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WorkSiteRequest": {
+        "required": [
+          "address",
+          "allowedRadius",
+          "latitude",
+          "longitude",
+          "workDayEnd",
+          "workDayStart",
+          "workSiteName"
+        ],
+        "type": "object",
+        "properties": {
+          "workSiteName": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "allowedRadius": {
+            "type": "number",
+            "format": "double"
+          },
+          "workDayStart": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "workDayEnd": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "WorkSiteResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteName": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "allowedRadius": {
+            "type": "number",
+            "format": "double"
+          },
+          "workDayStart": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "workDayEnd": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "IsWithinRadiusRequest": {
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "IsWithinRadiusResponse": {
+        "type": "object",
+        "properties": {
+          "worksiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "providedLatitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "providedLongitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "actualLatitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "actualLongitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "allowedRadius": {
+            "type": "number",
+            "format": "double"
+          },
+          "withinRadius": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ScheduleInactiveDayRequest": {
+        "required": [
+          "inactiveDate"
+        ],
+        "type": "object",
+        "properties": {
+          "inactiveDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ScheduleInactiveDayResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inactiveDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "SetNewCustomRadiusRequest": {
+        "required": [
+          "customRadius"
+        ],
+        "type": "object",
+        "properties": {
+          "customRadius": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "SetNewCustomRadiusResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "customRadius": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "SetNewCustomRadiusForWorkerInSpecialWorkSiteResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "newRadius": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "CanPunchOutRequestWorkSite": {
+        "required": [
+          "canPunchOut"
+        ],
+        "type": "object",
+        "properties": {
+          "canPunchOut": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "SelectWorkSiteResponse": {
+        "type": "object",
+        "properties": {
+          "selectedWorkSiteName": {
+            "type": "string"
+          },
+          "selectedWorkSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WorkerSetScheduleRequest": {
+        "required": [
+          "endTime",
+          "startTime"
+        ],
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "endTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "WorkSchedulerResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "endTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "CompanyTaxCalculationRequest": {
+        "required": [
+          "month",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "month": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CompanyTaxCalculationResponse": {
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "monthlyIncome": {
+            "type": "number"
+          },
+          "totalTaxes": {
+            "type": "number"
+          },
+          "socialSecurityTax": {
+            "type": "number"
+          },
+          "medicareTax": {
+            "type": "number"
+          },
+          "federalUnemploymentTax": {
+            "type": "number"
+          },
+          "nyUnemploymentTax": {
+            "type": "number"
+          },
+          "nyDisabilityInsurance": {
+            "type": "number"
+          },
+          "workersCompensation": {
+            "type": "number"
+          },
+          "employeeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPayroll": {
+            "type": "number"
+          },
+          "calculationDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "RegistrationRequest": {
+        "required": [
+          "companyAddress",
+          "companyName",
+          "email",
+          "firstName",
+          "gender",
+          "homeAddress",
+          "lastName",
+          "password",
+          "phoneNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "homeAddress": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "companyAddress": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "OTHER"
+            ]
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "email": {
+            "pattern": "^[^;'\"]*$",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 2147483647,
+            "minLength": 6,
+            "type": "string"
+          },
+          "ssn_WORKER": {
+            "type": "number"
+          }
+        }
+      },
+      "CompanyRegistrationRequest": {
+        "required": [
+          "companyAddress",
+          "companyEmail",
+          "companyName",
+          "companyPhone"
+        ],
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string"
+          },
+          "companyAddress": {
+            "type": "string"
+          },
+          "companyPhone": {
+            "type": "string"
+          },
+          "companyEmail": {
+            "type": "string"
+          }
+        }
+      },
+      "RegistrationAdminRequest": {
+        "required": [
+          "email",
+          "firstName",
+          "gender",
+          "homeAddress",
+          "lastName",
+          "password",
+          "phoneNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "homeAddress": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "OTHER"
+            ]
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "email": {
+            "pattern": "^[^;'\"]*$",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 2147483647,
+            "minLength": 6,
+            "type": "string"
+          },
+          "ssn_WORKER": {
+            "type": "number"
+          }
+        }
+      },
+      "ForgotPasswordRequest": {
+        "required": [
+          "confirmNewPassword",
+          "email",
+          "newPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "pattern": "^[^;'\"]*$",
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          },
+          "confirmNewPassword": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "VerifyCodeRequest": {
+        "required": [
+          "code",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "pattern": "^[^;'\"]*$",
+            "type": "string"
+          },
+          "code": {
+            "maxLength": 6,
+            "minLength": 6,
+            "type": "string"
+          }
+        }
+      },
+      "EmailRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "pattern": "^[^;'\"]*$",
+            "type": "string"
+          }
+        }
+      },
+      "PaymentRequest": {
+        "required": [
+          "hourRate",
+          "overtimeRate"
+        ],
+        "type": "object",
+        "properties": {
+          "hourRate": {
+            "minimum": 0.0,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "overtimeRate": {
+            "minimum": 0.0,
+            "exclusiveMinimum": false,
+            "type": "number"
+          }
+        }
+      },
+      "AuthenticationRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "PunchOutRequest": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "photoBase64": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PunchOutResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteName": {
+            "type": "string"
+          },
+          "workerFullName": {
+            "type": "string"
+          },
+          "checkInTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "formattedCheckInTime": {
+            "type": "string"
+          },
+          "checkOutTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "formattedCheckOutTime": {
+            "type": "string"
+          },
+          "checkOutPhotoUrl": {
+            "type": "string"
+          },
+          "checkOutLatitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "checkOutLongitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "hoursWorked": {
+            "type": "number",
+            "format": "double"
+          },
+          "overtimeHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "workSiteAddress": {
+            "type": "string"
+          },
+          "isSuccessful": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PunchInRequest": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "photoBase64": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PunchInResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteName": {
+            "type": "string"
+          },
+          "workerFullName": {
+            "type": "string"
+          },
+          "checkInTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "formattedCheckInTime": {
+            "type": "string"
+          },
+          "checkInPhotoUrl": {
+            "type": "string"
+          },
+          "checkInLatitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "checkInLongitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "workSiteAddress": {
+            "type": "string"
+          },
+          "isSuccessful": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ChangePunchOutRequest": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateWhenWorkerDidntMakePunchOut": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "newPunchOutDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "newPunchOutTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "ChangePunchOutForWorkerResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateWhenWorkerDidntMakePunchOut": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "newPunchOutDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "newPunchOutTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "ChangePunchInRequest": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateWhenWorkerDidntMakePunchIn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "newPunchInDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "newPunchInTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "ChangePunchInForWorkerResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateWhenWorkerDidntMakePunchIn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "newPunchInDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "newPunchInTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "WorkSiteUpdateWorkingHoursRequest": {
+        "required": [
+          "newEnd",
+          "newStart"
+        ],
+        "type": "object",
+        "properties": {
+          "newStart": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "newEnd": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "WorkSiteUpdateWorkingHoursResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "newStart": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "newEnd": {
+            "$ref": "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "UpdateNameRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "WorkSiteUpdateNameResponse": {
+        "type": "object",
+        "properties": {
+          "worksiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteName": {
+            "type": "string"
+          }
+        }
+      },
+      "WorkSiteUpdateLocationRequest": {
+        "required": [
+          "newLatitude",
+          "newLongitude",
+          "newRadius"
+        ],
+        "type": "object",
+        "properties": {
+          "newLatitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "newLongitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "newRadius": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "WorkSiteUpdateLocationResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "newLatitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "newLongitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "newRadius": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "UpdateWorkSiteAddress": {
+        "required": [
+          "address"
+        ],
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          }
+        }
+      },
+      "WorkSiteUpdateAddressResponse": {
+        "type": "object",
+        "properties": {
+          "worksiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteAddress": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateStatusWorkSiteRequest": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PageResponseWorkSiteResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkSiteResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElement": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PageResponseWorkSiteClosedDaysResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkSiteClosedDaysResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElement": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorkSiteClosedDaysResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "siteName": {
+            "type": "string"
+          },
+          "siteAddress": {
+            "type": "string"
+          },
+          "closedDays": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        }
+      },
+      "PageResponseWorkerCurrentlyWorkingInWorkSite": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkerCurrentlyWorkingInWorkSite"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElement": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorkerCurrentlyWorkingInWorkSite": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "punchedIn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "workerFullName": {
+            "type": "string"
+          },
+          "workerPhoneNumber": {
+            "type": "string"
+          },
+          "workSiteName": {
+            "type": "string"
+          },
+          "workSiteAddress": {
+            "type": "string"
+          }
+        }
+      },
+      "UserPhoneNumberResponse": {
+        "type": "object",
+        "properties": {
+          "phoneNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "UserFullNameResponse": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          }
+        }
+      },
+      "UserEmailResponse": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "UserFullContactInformation": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "photoFileName": {
+            "type": "string"
+          },
+          "photoUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "UserHomeAddressResponse": {
+        "type": "object",
+        "properties": {
+          "homeAddress": {
+            "type": "string"
+          }
+        }
+      },
+      "DailyScheduleResponse": {
+        "type": "object",
+        "properties": {
+          "dayOfWeek": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "hoursWorked": {
+            "type": "number",
+            "format": "double"
+          },
+          "startTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "endTime": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "workSiteName": {
+            "type": "string"
+          },
+          "isOnDuty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WeeklyScheduleResponse": {
+        "type": "object",
+        "properties": {
+          "dailySchedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyScheduleResponse"
+            }
+          },
+          "totalWeekHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "regularHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "overtimeHours": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "WorkerHourResponse": {
+        "type": "object",
+        "properties": {
+          "regularHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "overtimeHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalHours": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PageResponseRelatedUserInCompanyResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedUserInCompanyResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElement": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RelatedUserInCompanyResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "baseHourlyRate": {
+            "type": "number"
+          }
+        }
+      },
+      "DailyEarningResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "netPay": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "LastPunchTimeDTO": {
+        "type": "object",
+        "properties": {
+          "formattedDate": {
+            "type": "string"
+          },
+          "formattedTime": {
+            "type": "string"
+          }
+        }
+      },
+      "DailyFinanceInfo": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "hoursWorked": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPay": {
+            "type": "number"
+          }
+        }
+      },
+      "FinanceInfoForWeekInFinanceScreenResponse": {
+        "type": "object",
+        "properties": {
+          "totalHoursWorked": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalGrossPay": {
+            "type": "number"
+          },
+          "totalNetPay": {
+            "type": "number"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date"
+          },
+          "dailyInfo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyFinanceInfo"
+            }
+          }
+        }
+      },
+      "PageResponseWorksiteWorkerResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorksiteWorkerResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElement": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorksiteWorkerResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "workSiteAddress": {
+            "type": "string"
+          },
+          "punchIn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

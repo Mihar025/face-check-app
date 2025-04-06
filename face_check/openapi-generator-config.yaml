@@ -1,0 +1,4 @@
+pubName: api_client
+pubVersion: 1.0.0
+pubDescription: Generated API Client
+sourceFolder: lib/api_client
