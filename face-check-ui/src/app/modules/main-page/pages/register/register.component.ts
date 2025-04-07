@@ -64,6 +64,10 @@ export class RegisterComponent implements OnDestroy {
           console.log('Registration Company successful!');
           this.router.navigate(['/register/admin']); // Используем Angular Router вместо window.location
         },
+
+
+
+
         error: (error) => {
           console.error('Registration error in component:', error);
           this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
