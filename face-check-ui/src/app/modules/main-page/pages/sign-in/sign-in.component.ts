@@ -58,6 +58,8 @@ export class SignInComponent implements OnDestroy {
       });
   }
 
+  // log
+
   signInWithGoogle(): void {
     console.log('Google sign-in clicked');
   }
