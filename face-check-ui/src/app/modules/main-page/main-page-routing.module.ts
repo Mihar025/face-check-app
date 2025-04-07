@@ -8,6 +8,7 @@ import { RegisterComponent } from "./pages/register/register.component";
 import { AdminPageComponent } from "./pages/admin-page/admin-page.component";
 import { AuthGuard } from "./additionalServices/auth-guard";
 import { UserPageComponent } from "./pages/user-page/user-page.component";
+import {RegisterAdminComponent} from "./pages/register-admin/register-admin.component";
 
 const routes: Routes = [
   {
@@ -49,6 +50,10 @@ const routes: Routes = [
   {
     path: 'main-page/pricing',
     component: PricingComponent
+  },
+  {
+    path: 'register/admin',
+    component: RegisterAdminComponent
   },
   {
     path: '',

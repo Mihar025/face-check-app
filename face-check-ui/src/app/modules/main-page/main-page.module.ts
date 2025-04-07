@@ -10,6 +10,7 @@ import { RegisterComponent } from './pages/register/register.component';
 import { AdminPageComponent } from './pages/admin-page/admin-page.component';
 import { UserPageComponent } from './pages/user-page/user-page.component';
 import {ReactiveFormsModule} from "@angular/forms";
+import { RegisterAdminComponent } from './pages/register-admin/register-admin.component';
 
 
 @NgModule({
@@ -20,7 +21,8 @@ import {ReactiveFormsModule} from "@angular/forms";
       PricingComponent,
       RegisterComponent,
       AdminPageComponent,
-      UserPageComponent
+      UserPageComponent,
+      RegisterAdminComponent
   ],
   imports: [
     CommonModule,
