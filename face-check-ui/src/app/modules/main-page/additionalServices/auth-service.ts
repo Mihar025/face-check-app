@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { AuthenticationService } from "../../../services/services/authentication.service";
 import { Authenticate$Params } from "../../../services/fn/authentication/authenticate";
+import {RegisterCompany$Params} from "../../../services/fn/authentication/register-company";
 
 @Injectable({
   providedIn: 'root'
@@ -55,7 +56,6 @@ export class AuthService {
 
               console.log('Redirecting to:', targetUrl);
 
-              // Используем setTimeout для предотвращения проблем с навигацией
               setTimeout(() => {
                 window.location.href = targetUrl;
               }, 100);
@@ -107,4 +107,40 @@ export class AuthService {
   isUserAuthenticated(): boolean {
     return !!localStorage.getItem('auth_token');
   }
-}
+
+  registerCompany(companyName: string,
+                  companyAddress: string,
+                  CompanyPhone: string,
+                  CompanyEmail: string): Observable<any> {
+    const params: RegisterCompany$Params = {
+      body: {
+        companyName: companyName,
+        companyAddress: companyAddress,
+        companyPhone: CompanyPhone,
+        companyEmail: CompanyEmail
+      }
+    };
+
+    console.log('Registered company:', params);
+
+    return this.apiAuthService.registerCompany(params).pipe(
+      tap((response: any) => {
+        console.log('Company Registration response:', response);
+
+        const targetUrl = '/register/admin';
+        console.log('Redirecting to: ', targetUrl);
+
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 100);
+      }),
+
+        catchError(error => {
+         console.error('Auth error:', error);
+        return throwError(() => error);
+       })
+      );
+    }
+  }
+
+
