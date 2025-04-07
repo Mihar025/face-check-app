@@ -56,7 +56,6 @@ public class AuthenticationController {
         return ResponseEntity.ok().build();
     }
 
-    //working
     @PostMapping("/authenticate")
     public ResponseEntity<?> authenticate(@RequestBody @Valid AuthenticationRequest request) {
         try {
