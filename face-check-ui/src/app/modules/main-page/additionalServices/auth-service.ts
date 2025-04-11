@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { AuthenticationService } from "../../../services/services/authentication.service";
 import { Authenticate$Params } from "../../../services/fn/authentication/authenticate";
-import {RegisterCompany$Params} from "../../../services/fn/authentication/register-company";
+import { RegisterCompany$Params } from "../../../services/fn/authentication/register-company";
+import { RegisterAdmin$Params } from "../../../services/fn/authentication/register-admin";
+import { VerifyCode$Params } from "../../../services/fn/authentication/verify-code";
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +17,6 @@ export class AuthService {
 
   login(email: string, password: string): Observable<any> {
     console.log('Login with:', email);
-
 
     const params: Authenticate$Params = {
       body: {
@@ -56,6 +57,7 @@ export class AuthService {
 
               console.log('Redirecting to:', targetUrl);
 
+              // Используем Router вместо window.location
               setTimeout(() => {
                 window.location.href = targetUrl;
               }, 100);
@@ -74,8 +76,8 @@ export class AuthService {
     );
   }
 
-// Более простая и надежная функция декодирования токена
-  private decodeToken(token: string): any {
+  // Функция декодирования токена (публичная для использования в других компонентах)
+  decodeToken(token: string): any {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -91,6 +93,8 @@ export class AuthService {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_role');
+    localStorage.removeItem('verification_email');
+    localStorage.removeItem('temp_token');
 
     // Перенаправляем на страницу входа
     window.location.href = '/sign-in';
@@ -127,20 +131,120 @@ export class AuthService {
       tap((response: any) => {
         console.log('Company Registration response:', response);
 
-        const targetUrl = '/register/admin';
-        console.log('Redirecting to: ', targetUrl);
-
-        setTimeout(() => {
-          window.location.href = targetUrl;
-        }, 100);
+        // Используем Angular Router вместо window.location
       }),
-
-        catchError(error => {
-         console.error('Auth error:', error);
+      catchError(error => {
+        console.error('Auth error:', error);
         return throwError(() => error);
-       })
-      );
-    }
+      })
+    );
   }
 
+  // Метод для регистрации администратора
+  registerAdmin(
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    phoneNumber: string,
+    homeAddress: string,
+    dateOfBirth: string,
+    gender: 'MALE' | 'FEMALE' | 'OTHER',
+    ssn_WORKER: number
+  ): Observable<any> {
+    const params: RegisterAdmin$Params = {
+      body: {
+        firstName,
+        lastName,
+        email,
+        password,
+        phoneNumber,
+        homeAddress,
+        dateOfBirth,
+        gender,
+        ssn_WORKER
+      }
+    };
 
+    console.log('Registering admin:', params);
+
+    return this.apiAuthService.registerAdmin(params).pipe(
+      tap((response: any) => {
+        console.log('Admin Registration response:', response);
+
+        // Сохраняем email в localStorage для использования при верификации
+        localStorage.setItem('verification_email', email);
+
+        // Сохраняем временный токен, если он есть в ответе
+        if (response && response.token) {
+          localStorage.setItem('temp_token', response.token);
+        }
+      }),
+      catchError(error => {
+        console.error('Admin registration error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Метод для верификации кода администратора
+  verifyAdminCode(code: string): Observable<any> {
+    const email = localStorage.getItem('verification_email');
+
+    if (!email) {
+      return throwError(() => new Error('Email not found for verification'));
+    }
+
+    const params: VerifyCode$Params = {
+      body: {
+        email: email,
+        code: code
+      }
+    };
+
+    console.log('Verifying admin code:', params);
+
+    return this.apiAuthService.verifyCode(params).pipe(
+      tap((response: any) => {
+        console.log('Verification response:', response);
+
+        // Если в ответе есть токен, сохраняем его
+        if (response && response.token) {
+          localStorage.setItem('auth_token', response.token);
+
+          // Очищаем временные данные
+          localStorage.removeItem('verification_email');
+          localStorage.removeItem('temp_token');
+        }
+      }),
+      catchError(error => {
+        console.error('Verification error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Метод для повторной отправки кода верификации
+  resendVerificationCode(email: string): Observable<any> {
+    // Используйте соответствующий API-метод из AuthenticationService
+    // Это пример, нужно заменить на реальный метод из вашего API
+    const params = {
+      body: {
+        email: email
+      }
+    };
+
+    console.log('Resending verification code for:', email);
+
+    // Замените sendResetCode на подходящий метод из вашего AuthenticationService
+    return this.apiAuthService.sendResetCode(params).pipe(
+      tap((response: any) => {
+        console.log('Resend verification code response:', response);
+      }),
+      catchError(error => {
+        console.error('Resend verification code error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+}
