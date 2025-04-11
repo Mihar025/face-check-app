@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { HomeComponent } from "./pages/home/home.component";
-import { SignInComponent } from "./pages/sign-in/sign-in.component";
 import { AboutUsComponent } from "./pages/about-us/about-us.component";
 import { PricingComponent } from "./pages/pricing/pricing.component";
 import { AdminPageComponent } from "./pages/admin-page/admin-page.component";
 import { UserPageComponent } from "./pages/user-page/user-page.component";
-import {VerificationCodeComponent} from "./pages/verification-code/verification-code.component";
-import {RegisterComponent} from "./pages/register/register.component";
+import {SignInComponent} from "./authentication/sign-in/sign-in.component";
+import {RegisterComponent} from "./authentication/register/register.component";
+import {VerificationCodeComponent} from "./authentication/verification-code/verification-code.component";
 
 const routes: Routes = [
   {
@@ -54,6 +54,11 @@ const routes: Routes = [
     path: 'verification/admin',
     component: VerificationCodeComponent
   },
+  {
+    path: 'registration/company',
+    component: VerificationCodeComponent
+  },
+
   {
     path: '',
     redirectTo: 'face-check',
