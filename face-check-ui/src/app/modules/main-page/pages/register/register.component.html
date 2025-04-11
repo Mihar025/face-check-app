@@ -1,17 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>sign-up-page</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
 <div class="sign-in-container">
   <div class="sign-in-content">
     <div class="logo-text-container">
@@ -22,42 +8,96 @@
     </div>
 
     <div class="form-container">
-      <h2 class="form-title">Sign Up</h2>
+      <h2 class="form-title">Admin Registration</h2>
 
-      <!-- Добавлены Angular директивы и обработчик формы -->
+      <!-- Angular форма для регистрации администратора -->
       <form class="login-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
         <div class="form-group">
-          <input type="text" id="companyName" formControlName="companyName" placeholder="Company Name">
-          <div *ngIf="registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched" class="error-message">
-            Company name is required
-          </div>
-        </div>
-        <div class="form-group">
-          <input type="text" id="companyAddress" formControlName="companyAddress" placeholder="Company Address">
-          <div *ngIf="registerForm.get('companyAddress')?.invalid && registerForm.get('companyAddress')?.touched" class="error-message">
-            Company address is required
-          </div>
-        </div>
-        <div class="form-group">
-          <input type="tel" id="companyPhone" formControlName="companyPhone" placeholder="Company Phone">
-          <div *ngIf="registerForm.get('companyPhone')?.invalid && registerForm.get('companyPhone')?.touched" class="error-message">
-            Company phone is required
-          </div>
-        </div>
-        <div class="form-group">
-          <input type="email" id="companyEmail" formControlName="companyEmail" placeholder="Company Email">
-          <div *ngIf="registerForm.get('companyEmail')?.invalid && registerForm.get('companyEmail')?.touched" class="error-message">
-            <span *ngIf="registerForm.get('companyEmail')?.hasError('required')">Email is required</span>
-            <span *ngIf="registerForm.get('companyEmail')?.hasError('email')">Please enter a valid email</span>
+          <input type="text" id="firstName" formControlName="firstName" placeholder="First Name">
+          <div *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched" class="error-message">
+            First name is required
           </div>
         </div>
 
+        <div class="form-group">
+          <input type="text" id="lastName" formControlName="lastName" placeholder="Last Name">
+          <div *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched" class="error-message">
+            Last name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="email" id="email" formControlName="email" placeholder="Email">
+          <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-message">
+            <span *ngIf="registerForm.get('email')?.hasError('required')">Email is required</span>
+            <span *ngIf="registerForm.get('email')?.hasError('email')">Please enter a valid email</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="password" id="password" formControlName="password" placeholder="Password">
+          <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-message">
+            <span *ngIf="registerForm.get('password')?.hasError('required')">Password is required</span>
+            <span *ngIf="registerForm.get('password')?.hasError('minlength')">Password must be at least 6 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="phoneNumber" formControlName="phoneNumber" placeholder="Phone Number">
+          <div *ngIf="registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched" class="error-message">
+            Phone number is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="homeAddress" formControlName="homeAddress" placeholder="Home Address">
+          <div *ngIf="registerForm.get('homeAddress')?.invalid && registerForm.get('homeAddress')?.touched" class="error-message">
+            Home address is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="date-label">Date of Birth:</label>
+          <input type="date" id="dateOfBirth" formControlName="dateOfBirth" lang="en-US">
+          <div *ngIf="registerForm.get('dateOfBirth')?.invalid && registerForm.get('dateOfBirth')?.touched" class="error-message">
+            Date of birth is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="gender-label">Gender:</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="male" formControlName="gender" value="MALE">
+              <label for="male" class="radio-label">Male</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="female" formControlName="gender" value="FEMALE">
+              <label for="female" class="radio-label">Female</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="other" formControlName="gender" value="OTHER">
+              <label for="other" class="radio-label">Other</label>
+            </div>
+          </div>
+          <div *ngIf="registerForm.get('gender')?.invalid && registerForm.get('gender')?.touched" class="error-message">
+            Gender is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="ssn_WORKER" formControlName="ssn_WORKER" placeholder="SSN (XXX-XX-XXXX)">
+          <div *ngIf="registerForm.get('ssn_WORKER')?.invalid && registerForm.get('ssn_WORKER')?.touched" class="error-message">
+            <span *ngIf="registerForm.get('ssn_WORKER')?.hasError('required')">SSN is required</span>
+            <span *ngIf="registerForm.get('ssn_WORKER')?.hasError('pattern')">SSN must be in format XXX-XX-XXXX</span>
+          </div>
+        </div>
 
         <div *ngIf="errorMessage" class="error-notification">{{ errorMessage }}</div>
 
         <button type="submit" class="sign-in-btn" [disabled]="isLoading || registerForm.invalid">
-          <span *ngIf="!isLoading">Sign Up</span>
-          <span *ngIf="isLoading"><i class="fas fa-spinner fa-spin"></i> Processing...</span>
+          Register
+          <span *ngIf="isLoading"><i class="fas fa-spinner fa-spin"></i></span>
         </button>
       </form>
 
@@ -75,5 +115,3 @@
     </div>
   </div>
 </div>
-</body>
-</html>

@@ -32,7 +32,7 @@ public class RegistrationRequest {
     @NotNull(message = "Gender is required")
     private Gender gender;
 
-    private BigDecimal SSN_WORKER;
+    private String SSN_WORKER;
 
     @NotBlank(message = "Phonenumber is required!")
     private String phoneNumber;

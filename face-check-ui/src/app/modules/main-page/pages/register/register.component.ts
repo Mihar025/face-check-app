@@ -1,14 +1,14 @@
-import {Component, OnDestroy} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from "@angular/forms";
-import {Subscription} from "rxjs";
-import {AuthService} from "../../additionalServices/auth-service";
-import {finalize} from "rxjs/operators";
-import {Router} from "@angular/router";
+import { Component, OnDestroy } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { Subscription } from "rxjs";
+import { AuthService } from "../../additionalServices/auth-service";
+import { finalize } from "rxjs/operators";
+import { Router } from "@angular/router";
 
 @Component({
-  selector: 'app-register',
+  selector: 'app-register-admin',
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss'
+  styleUrls: ['./register.component.scss']
 })
 export class RegisterComponent implements OnDestroy {
   registerForm: FormGroup;
@@ -22,10 +22,15 @@ export class RegisterComponent implements OnDestroy {
     private router: Router
   ) {
     this.registerForm = this.fb.group({
-      companyName: ['', [Validators.required]],
-      companyAddress: ['', [Validators.required]],
-      companyPhone: ['', [Validators.required]],
-      companyEmail: ['', [Validators.required, Validators.email]],
+      firstName: ['', [Validators.required]],
+      lastName: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      phoneNumber: ['', [Validators.required]],
+      homeAddress: ['', [Validators.required]],
+      dateOfBirth: ['', [Validators.required]],
+      gender: ['MALE', [Validators.required]],
+      ssn_WORKER: ['', [Validators.required, Validators.pattern(/^\d{3}-\d{2}-\d{4}$/)]]
     });
   }
 
@@ -38,22 +43,26 @@ export class RegisterComponent implements OnDestroy {
     this.isLoading = true;
     this.errorMessage = '';
 
-    const {
-      companyName,
-      companyAddress,
-      companyPhone,
-      companyEmail
-    } = this.registerForm.value;
+    const formValues = {...this.registerForm.value};
+
+    if (formValues.ssn_WORKER) {
+      formValues.ssn_WORKER = Number(formValues.ssn_WORKER.replace(/-/g, ''));
+    }
 
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
 
-    this.authSubscription = this.authService.registerCompany(
-      companyName,
-      companyAddress,
-      companyPhone,
-      companyEmail
+    this.authSubscription = this.authService.registerAdmin(
+      formValues.firstName,
+      formValues.lastName,
+      formValues.email,
+      formValues.password,
+      formValues.phoneNumber,
+      formValues.homeAddress,
+      formValues.dateOfBirth,
+      formValues.gender,
+      formValues.ssn_WORKER
     )
       .pipe(
         finalize(() => {
@@ -61,13 +70,9 @@ export class RegisterComponent implements OnDestroy {
         })
       ).subscribe({
         next: () => {
-          console.log('Registration Company successful!');
-          this.router.navigate(['/register/admin']); // Используем Angular Router вместо window.location
+          console.log('Admin registration successful!');
+          this.router.navigate(['/verification/admin']);
         },
-
-
-
-
         error: (error) => {
           console.error('Registration error in component:', error);
           this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
