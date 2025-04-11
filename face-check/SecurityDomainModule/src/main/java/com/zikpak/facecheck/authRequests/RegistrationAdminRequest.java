@@ -28,7 +28,7 @@ public class RegistrationAdminRequest {
     @NotBlank(message = "Phonenumber is required!")
     private String phoneNumber;
 
-    private BigDecimal SSN_WORKER;
+    private String SSN_WORKER;
 
     @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$", message = "Email is not formatted well!")
     @NotBlank(message = "Email is required!")

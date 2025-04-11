@@ -83,7 +83,7 @@ public class User implements UserDetails, Principal {
     private boolean accountLocked = false;
 
     @NotNull
-    private BigDecimal SSN_WORKER;
+    private String SSN_WORKER;
 
     @Enumerated(EnumType.STRING)
     private Gender gender;

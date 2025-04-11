@@ -40,7 +40,7 @@ public class AuthenticationController {
         return ResponseEntity.accepted().build();
     }
 
-    //working
+
     @PostMapping("/register/foreman")
     public ResponseEntity<?> registerForeman(@RequestBody @Valid RegistrationRequest request) throws MessagingException {
         authenticationService.registerForeman(request);
