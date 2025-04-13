@@ -7,9 +7,12 @@ import com.zikpak.facecheck.mapper.UserMapper;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
 import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
+import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -147,5 +150,15 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
                 .orElseThrow(() -> new RuntimeException("User with id " + user.getId() + " not found"));
         Integer foundedCompanyId = foundedUser.getCompany().getId();
         return userMapper.toWorkerCompanyIdByAuthenticationResponse(foundedCompanyId);
+    }
+
+    public WorkerPersonalInformationResponse findWorkerPersonInformation(Authentication authentication, Integer employeeId) {
+        User admin = ((User) authentication.getPrincipal());
+        if(!admin.isAdmin()){
+            throw new AccessDeniedException("You dont have permission for this operation!");
+        }
+        var foundedUser = userRepository.findById(employeeId)
+                .orElseThrow(() -> new EntityNotFoundException("User with id " + employeeId + " not found"));
+        return userMapper.toWorkerPersonalInformationResponse(foundedUser);
     }
 }

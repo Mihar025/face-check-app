@@ -10,6 +10,7 @@ $light-gray: #f8f9fa;
 $border-color: #ddd;
 $success-color: #2ecc71;
 $error-color: #e74c3c;
+$purple-color: #9b59b6;
 
 // Общие стили
 * {
@@ -260,12 +261,12 @@ h1 {
 }
 
 .schedule-button {
-  background-color: #9b59b6;
+  background-color: $purple-color;
   color: white;
 }
 
 .schedule-button:hover {
-  background-color: #8e44ad;
+  background-color: darken($purple-color, 10%);
 }
 
 .fire-button {
@@ -562,6 +563,103 @@ h1 {
   font-size: 14px;
 }
 
+// Новые стили для информации о сотруднике
+.employee-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.employee-info-section, .schedule-section {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.employee-info-section h4, .schedule-section h4 {
+  color: $dark-text;
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item label {
+  font-weight: 500;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.info-item span {
+  font-size: 14px;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.schedule-form {
+  background-color: white;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+.schedule-form h5 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 15px;
+  font-weight: 500;
+  color: $dark-text;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.generated-schedule {
+  background-color: white;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+.generated-schedule h5 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 15px;
+  font-weight: 500;
+  color: $dark-text;
+}
+
+.schedule-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
 // Адаптивные стили
 @media (max-width: 992px) {
   .admin-layout {
@@ -601,6 +699,14 @@ h1 {
     flex-direction: column;
     gap: 5px;
   }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-info {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -635,5 +741,15 @@ h1 {
   .modal-large {
     max-width: 95%;
     width: 95%;
+  }
+
+  .schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .schedule-header button {
+    width: 100%;
   }
 }

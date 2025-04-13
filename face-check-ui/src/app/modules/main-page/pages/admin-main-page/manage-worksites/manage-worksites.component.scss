@@ -10,7 +10,8 @@ $light-gray: #f8f9fa;
 $border-color: #ddd;
 $success-color: #2ecc71;
 $error-color: #e74c3c;
-
+$edit-color: #f39c12;
+$purple-color: #9b59b6;
 
 // Общие стили
 * {
@@ -150,4 +151,608 @@ body {
   flex: 1;
 }
 
+// Хедер с кнопкой добавления
+.header-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
 
+.add-button {
+  background-color: $success-color;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.add-button:hover {
+  background-color: darken($success-color, 10%);
+}
+
+.add-button i {
+  font-size: 16px;
+}
+
+h1 {
+  color: $dark-text;
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+// Стили для управления рабочими объектами
+.worksites-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.worksites-section h2 {
+  color: $dark-text;
+  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 10px;
+}
+
+// Таблица рабочих объектов
+.worksites-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.worksites-table th, .worksites-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid $border-color;
+}
+
+.worksites-table th {
+  background-color: $light-gray;
+  font-weight: 600;
+}
+
+.worksites-table tr:hover {
+  background-color: rgba(74, 144, 226, 0.05);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.action-button i {
+  margin-right: 5px;
+}
+
+.info-button {
+  background-color: #3498db;
+  color: white;
+}
+
+.info-button:hover {
+  background-color: #2980b9;
+}
+
+.edit-button {
+  background-color: $edit-color;
+  color: white;
+}
+
+.edit-button:hover {
+  background-color: darken($edit-color, 10%);
+}
+
+.delete-button {
+  background-color: $error-color;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: darken($error-color, 10%);
+}
+
+.location-button {
+  background-color: #16a085;
+  color: white;
+}
+
+.location-button:hover {
+  background-color: darken(#16a085, 10%);
+}
+
+.radius-button {
+  background-color: #8e44ad;
+  color: white;
+}
+
+.radius-button:hover {
+  background-color: darken(#8e44ad, 10%);
+}
+
+.schedule-button {
+  background-color: $purple-color;
+  color: white;
+}
+
+.schedule-button:hover {
+  background-color: darken($purple-color, 10%);
+}
+
+.update-button {
+  background-color: $primary-color;
+  color: white;
+}
+
+.update-button:hover {
+  background-color: darken($primary-color, 10%);
+}
+
+// Пагинация
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination-button {
+  background-color: $primary-color;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.pagination-button:hover:not([disabled]) {
+  background-color: $primary-dark;
+}
+
+.pagination-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  margin: 0 15px;
+  font-size: 14px;
+}
+
+// Форма нового рабочего объекта
+.new-worksite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  width: 100%;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-group input, .form-group select {
+  padding: 10px 12px;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: $primary-color;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.submit-button {
+  background-color: $success-color;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.submit-button:hover:not([disabled]) {
+  background-color: darken($success-color, 10%);
+}
+
+.submit-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Индикатор загрузки
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+.spinner {
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 3px solid $primary-color;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Сообщения
+.error-message {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: $error-color;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border-left: 3px solid $error-color;
+}
+
+.success-message {
+  background-color: rgba(46, 204, 113, 0.1);
+  color: $success-color;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border-left: 3px solid $success-color;
+}
+
+.warning-text {
+  color: $error-color;
+  font-weight: 500;
+}
+
+.no-worksites {
+  text-align: center;
+  padding: 30px;
+  color: #777;
+}
+
+// Модальные окна
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.modal-large {
+  max-width: 800px;
+}
+
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid $border-color;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #777;
+}
+
+.close-button:hover {
+  color: $dark-text;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid $border-color;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-footer button {
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.cancel-button {
+  background-color: #f1f2f6;
+  color: $dark-text;
+}
+
+.cancel-button:hover {
+  background-color: darken(#f1f2f6, 5%);
+}
+
+.confirm-button {
+  background-color: $primary-color;
+  color: white;
+}
+
+.confirm-button:hover {
+  background-color: $primary-dark;
+}
+
+.confirm-button.delete-button {
+  background-color: $error-color;
+}
+
+.confirm-button.delete-button:hover {
+  background-color: darken($error-color, 10%);
+}
+
+// Информация о рабочем объекте
+.worksite-info {
+  background-color: $light-gray;
+  border-radius: 4px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.worksite-info p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+// Стили для информации о рабочем объекте
+.worksite-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.worksite-info-section, .worksite-actions-section, .update-form {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+}
+
+.worksite-info-section h4, .worksite-actions-section h4, .update-form h4 {
+  color: $dark-text;
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item label {
+  font-weight: 500;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.info-item span {
+  font-size: 14px;
+}
+
+.action-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.update-form {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  margin-top: 15px;
+}
+
+// Вкладки для редактирования
+.edit-tabs {
+  display: flex;
+  border-bottom: 1px solid $border-color;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 15px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.tab-button:hover {
+  color: $primary-color;
+}
+
+.tab-button.active {
+  border-bottom: 2px solid $primary-color;
+  color: $primary-color;
+}
+
+.edit-tab-content {
+  padding: 10px 0;
+}
+
+// Адаптивные стили
+@media (max-width: 992px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    order: 2;
+  }
+
+  .main-content {
+    order: 1;
+  }
+
+  .admin-profile {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+  }
+
+  .avatar-container {
+    margin-bottom: 0;
+    margin-right: 15px;
+  }
+
+  .sidebar-menu {
+    padding: 10px 0;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .actions-cell {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons-row {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 15px;
+  }
+
+  .header-with-action {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .add-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .worksites-table {
+    font-size: 12px;
+  }
+
+  .worksites-table th, .worksites-table td {
+    padding: 8px 10px;
+  }
+
+  .action-button {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+
+  .modal-large {
+    max-width: 95%;
+    width: 95%;
+  }
+}

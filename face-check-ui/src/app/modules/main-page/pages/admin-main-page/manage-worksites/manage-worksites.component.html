@@ -29,6 +29,361 @@
       <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
     </div>
 
+    <!-- Контент управления рабочими объектами -->
+    <div class="admin-container">
+      <div class="header-with-action">
+        <h1>Manage Worksites</h1>
+        <button class="add-button" (click)="openAddWorksiteModal()">
+          <i class="fas fa-plus-circle"></i> Add New Worksite
+        </button>
+      </div>
 
+      <!-- Сообщения об успехе или ошибке -->
+      <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+      <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+      <!-- Секция списка рабочих объектов -->
+      <div class="worksites-section">
+        <h2>Current Worksites</h2>
+
+        <div class="worksite-list">
+          <div *ngIf="loading" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Loading worksites...</p>
+          </div>
+
+          <table *ngIf="!loading && worksites.length > 0" class="worksites-table">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Address</th>
+              <th>Working Hours</th>
+              <th>Radius</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let worksite of worksites">
+              <td>{{ worksite.workSiteId }}</td>
+              <td>{{ worksite.workSiteName }}</td>
+              <td>{{ worksite.address }}</td>
+              <td>{{ worksite.workDayStart?.hour }}:{{ worksite.workDayStart?.minute || '00' }} - {{ worksite.workDayEnd?.hour }}:{{ worksite.workDayEnd?.minute || '00' }}</td>
+              <td>{{ worksite.allowedRadius }} m</td>
+              <td class="actions-cell">
+                <button class="action-button info-button" (click)="(worksite.workSiteId)">
+                  <i class="fas fa-info-circle"></i> Details
+                </button>
+                <button class="action-button edit-button" *ngIf="worksite.workSiteId !== undefined" (click)="openEditWorksiteModal(worksite.workSiteId!)">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="action-button delete-button" *ngIf="worksite.workSiteId !== undefined" (click)="openDeleteWorksiteModal(worksite.workSiteId!)">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="!loading && worksites.length === 0" class="no-worksites">
+            <p>No worksites found. Add your first worksite using the "Add New Worksite" button above.</p>
+          </div>
+
+          <div *ngIf="totalPages > 1" class="pagination">
+            <button [disabled]="page === 0" (click)="changePage(page - 1)" class="pagination-button">
+              Previous
+            </button>
+            <span class="page-info">Page {{ page + 1 }} of {{ totalPages }}</span>
+            <button [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)" class="pagination-button">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно информации о рабочем объекте -->
+<div class="modal-overlay" *ngIf="showWorksiteInfoModal">
+  <div class="modal-container modal-large">
+    <div class="modal-header">
+      <h3>Worksite Information</h3>
+      <button class="close-button" (click)="closeWorksiteInfoModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="loading" class="loading-indicator">
+        <div class="spinner"></div>
+        <p>Loading worksite information...</p>
+      </div>
+
+      <div *ngIf="!loading && selectedWorksite" class="worksite-info-container">
+        <!-- Информация о рабочем объекте -->
+        <div class="worksite-info-section">
+          <h4>General Information</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Worksite ID:</label>
+              <span>{{ selectedWorksite.workSiteId }}</span>
+            </div>
+            <div class="info-item">
+              <label>Name:</label>
+              <span>{{ selectedWorksite.workSiteName }}</span>
+            </div>
+            <div class="info-item">
+              <label>Address:</label>
+              <span>{{ selectedWorksite.address }}</span>
+            </div>
+            <div class="info-item">
+              <label>Working Hours:</label>
+              <span>{{ selectedWorksite.workDayStart?.hour }}:{{ selectedWorksite.workDayStart?.minute || '00' }} - {{ selectedWorksite.workDayEnd?.hour }}:{{ selectedWorksite.workDayEnd?.minute || '00' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Allowed Radius:</label>
+              <span>{{ selectedWorksite.allowedRadius }} meters</span>
+            </div>
+            <div class="info-item">
+              <label>Latitude:</label>
+              <span>{{ selectedWorksite.latitude }}</span>
+            </div>
+            <div class="info-item">
+              <label>Longitude:</label>
+              <span>{{ selectedWorksite.longitude }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Дополнительная информация по всплывающим кнопкам -->
+        <div class="worksite-actions-section">
+          <div class="action-buttons-row">
+            <button class="action-button schedule-button" (click)="toggleWorkingHoursForm()">
+              <i class="fas fa-clock"></i> Update Working Hours
+            </button>
+            <button class="action-button location-button" (click)="toggleLocationForm()">
+              <i class="fas fa-map-marker-alt"></i> Update Location
+            </button>
+            <button class="action-button radius-button" (click)="toggleRadiusForm()">
+              <i class="fas fa-circle-notch"></i> Update Radius
+            </button>
+          </div>
+        </div>
+
+        <!-- Форма обновления рабочего времени -->
+        <div *ngIf="showWorkingHoursForm" class="update-form">
+          <h4>Update Working Hours</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newStartHour">Start Time (Hour)</label>
+              <input type="number" id="newStartHour" [(ngModel)]="newStart.hour" min="0" max="23" placeholder="Hour (0-23)">
+            </div>
+            <div class="form-group">
+              <label for="newStartMinute">Start Time (Minute)</label>
+              <input type="number" id="newStartMinute" [(ngModel)]="newStart.minute" min="0" max="59" placeholder="Minute (0-59)">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newEndHour">End Time (Hour)</label>
+              <input type="number" id="newEndHour" [(ngModel)]="newEnd.hour" min="0" max="23" placeholder="Hour (0-23)">
+            </div>
+            <div class="form-group">
+              <label for="newEndMinute">End Time (Minute)</label>
+              <input type="number" id="newEndMinute" [(ngModel)]="newEnd.minute" min="0" max="59" placeholder="Minute (0-59)">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="action-button update-button" (click)="updateWorkSiteWorkingHours()">
+              <i class="fas fa-save"></i> Update Working Hours
+            </button>
+          </div>
+        </div>
+
+        <!-- Форма обновления местоположения -->
+        <div *ngIf="showLocationForm" class="update-form">
+          <h4>Update Location</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="updatedNewLatitude">Latitude</label>
+              <input type="number" id="updatedNewLatitude" [(ngModel)]="updatedNewLatitude" step="0.000001" placeholder="Latitude">
+            </div>
+            <div class="form-group">
+              <label for="updatedNewLongitude">Longitude</label>
+              <input type="number" id="updatedNewLongitude" [(ngModel)]="updatedNewLongitude" step="0.000001" placeholder="Longitude">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="updatedNewRadius">Radius (meters)</label>
+              <input type="number" id="updatedNewRadius" [(ngModel)]="updatedNewRadius" min="1" placeholder="Radius in meters">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="action-button update-button" (click)="updateWorkSiteLocation()">
+              <i class="fas fa-save"></i> Update Location
+            </button>
+          </div>
+        </div>
+
+        <!-- Форма обновления радиуса -->
+        <div *ngIf="showRadiusForm" class="update-form">
+          <h4>Update Custom Radius</h4>
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="newCustomRadius">Custom Radius (meters)</label>
+              <input type="number" id="newCustomRadius" [(ngModel)]="newCustomRadius" min="1" placeholder="Enter new custom radius in meters">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="action-button update-button" (click)="updateWorkSiteRadius()">
+              <i class="fas fa-save"></i> Update Radius
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeWorksiteInfoModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно редактирования рабочего объекта -->
+<div class="modal-overlay" *ngIf="showEditWorksiteModal">
+  <div class="modal-container modal-large">
+    <div class="modal-header">
+      <h3>Edit Worksite</h3>
+      <button class="close-button" (click)="closeEditWorksiteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-tabs">
+        <button class="tab-button" [class.active]="activeEditTab === 'name'" (click)="setActiveEditTab('name')">Name</button>
+        <button class="tab-button" [class.active]="activeEditTab === 'address'" (click)="setActiveEditTab('address')">Address</button>
+      </div>
+
+      <!-- Вкладка редактирования имени -->
+      <div *ngIf="activeEditTab === 'name'" class="edit-tab-content">
+        <div class="form-group full-width">
+          <label for="updatedWorkSiteName">Worksite Name</label>
+          <input type="text" id="updatedWorkSiteName" [(ngModel)]="updatedWorkSiteName" placeholder="Enter new worksite name">
+        </div>
+        <div class="form-actions">
+          <button class="action-button update-button" (click)="updateWorkSiteName()">
+            <i class="fas fa-save"></i> Update Name
+          </button>
+        </div>
+      </div>
+
+      <!-- Вкладка редактирования адреса -->
+      <div *ngIf="activeEditTab === 'address'" class="edit-tab-content">
+        <div class="form-group full-width">
+          <label for="updatedWorkSiteAddress">Worksite Address</label>
+          <input type="text" id="updatedWorkSiteAddress" [(ngModel)]="updatedWorkSiteAddress" placeholder="Enter new address">
+        </div>
+        <div class="form-actions">
+          <button class="action-button update-button" (click)="updateWorkSiteAddress()">
+            <i class="fas fa-save"></i> Update Address
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeEditWorksiteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно добавления рабочего объекта -->
+<div class="modal-overlay" *ngIf="showAddWorksiteModal">
+  <div class="modal-container modal-large">
+    <div class="modal-header">
+      <h3>Add New Worksite</h3>
+      <button class="close-button" (click)="closeAddWorksiteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form class="new-worksite-form">
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="workSiteName">Worksite Name</label>
+            <input type="text" id="workSiteName" [(ngModel)]="workSiteName" name="workSiteName" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="address">Address</label>
+            <input type="text" id="address" [(ngModel)]="address" name="address" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="latitude">Latitude</label>
+            <input type="number" id="latitude" [(ngModel)]="latitude" name="latitude" step="0.000001" required>
+          </div>
+          <div class="form-group">
+            <label for="longitude">Longitude</label>
+            <input type="number" id="longitude" [(ngModel)]="longitude" name="longitude" step="0.000001" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="allowedRadius">Allowed Radius (meters)</label>
+            <input type="number" id="allowedRadius" [(ngModel)]="allowedRadius" name="allowedRadius" min="1" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="workDayStartHour">Start Time (Hour)</label>
+            <input type="number" id="workDayStartHour" [(ngModel)]="workDayStart.hour" name="workDayStartHour" min="0" max="23" placeholder="Hour (0-23)" required>
+          </div>
+          <div class="form-group">
+            <label for="workDayStartMinute">Start Time (Minute)</label>
+            <input type="number" id="workDayStartMinute" [(ngModel)]="workDayStart.minute" name="workDayStartMinute" min="0" max="59" placeholder="Minute (0-59)" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="workDayEndHour">End Time (Hour)</label>
+            <input type="number" id="workDayEndHour" [(ngModel)]="workDayEnd.hour" name="workDayEndHour" min="0" max="23" placeholder="Hour (0-23)" required>
+          </div>
+          <div class="form-group">
+            <label for="workDayEndMinute">End Time (Minute)</label>
+            <input type="number" id="workDayEndMinute" [(ngModel)]="workDayEnd.minute" name="workDayEndMinute" min="0" max="59" placeholder="Minute (0-59)" required>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeAddWorksiteModal()">Cancel</button>
+      <button class="confirm-button" (click)="createNewWorkSite()" [disabled]="loading">
+        <span *ngIf="!loading">Add Worksite</span>
+        <span *ngIf="loading">Adding...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно удаления рабочего объекта -->
+<div class="modal-overlay" *ngIf="showDeleteWorksiteModal">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3>Delete Worksite</h3>
+      <button class="close-button" (click)="closeDeleteWorksiteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete this worksite? This action cannot be undone.</p>
+      <div *ngIf="selectedWorksite" class="worksite-info">
+        <p><strong>ID:</strong> {{ selectedWorksite.workSiteId }}</p>
+        <p><strong>Name:</strong> {{ selectedWorksite.workSiteName }}</p>
+        <p><strong>Address:</strong> {{ selectedWorksite.address }}</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeDeleteWorksiteModal()">Cancel</button>
+      <button class="confirm-button delete-button" (click)="deleteWorkSite()">Delete Worksite</button>
+    </div>
   </div>
 </div>
