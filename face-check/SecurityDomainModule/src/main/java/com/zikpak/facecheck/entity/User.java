@@ -29,7 +29,6 @@ import java.util.*;
 @Table(name = "_user")
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@ToString
 public class User implements UserDetails, Principal {
 
     @Id
@@ -37,16 +36,16 @@ public class User implements UserDetails, Principal {
     private Integer id;
 
     @Column(nullable = false)
-    @Convert(converter = UserDataDecodingConverter.class)
+  //  @Convert(converter = UserDataDecodingConverter.class)
     private String firstName;
 
     @Column(nullable = false)
-    @Convert(converter = UserDataDecodingConverter.class)
+ //   @Convert(converter = UserDataDecodingConverter.class)
     private String lastName;
 
 
     @Column(unique = true, nullable = false)
-    @Convert(converter = UserDataDecodingConverter.class)
+ //   @Convert(converter = UserDataDecodingConverter.class)
     private String email;
 
     private String phoneNumber;

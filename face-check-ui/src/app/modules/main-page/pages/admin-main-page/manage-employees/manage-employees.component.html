@@ -78,6 +78,9 @@
                 </div>
               </td>
               <td class="actions-cell">
+                <button class="action-button info-button" (click)="employee.workerId !== undefined ? openEmployeeInfoModal(employee.workerId) : null">
+                  <i class="fas fa-info-circle"></i> Details
+                </button>
                 <button class="action-button fire-button" (click)="employee.workerId !== undefined ? openFireModal(employee.workerId) : null">
                   <i class="fas fa-user-times"></i> Fire
                 </button>
@@ -101,6 +104,120 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно информации о сотруднике -->
+<div class="modal-overlay" *ngIf="showEmployeeInfoModal">
+  <div class="modal-container modal-large">
+    <div class="modal-header">
+      <h3>Employee Information</h3>
+      <button class="close-button" (click)="closeEmployeeInfoModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="loading" class="loading-indicator">
+        <div class="spinner"></div>
+        <p>Loading employee information...</p>
+      </div>
+
+      <div *ngIf="!loading && employeePersonalInfo" class="employee-info-container">
+        <!-- Личная информация сотрудника -->
+        <div class="employee-info-section">
+          <h4>Personal Information</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Employee ID:</label>
+              <span>{{ employeePersonalInfo.workerId }}</span>
+            </div>
+            <div class="info-item">
+              <label>Full Name:</label>
+              <span>{{ employeePersonalInfo.firstName }} {{ employeePersonalInfo.lastName }}</span>
+            </div>
+            <div class="info-item">
+              <label>Email:</label>
+              <span>{{ employeePersonalInfo.email }}</span>
+            </div>
+            <div class="info-item">
+              <label>Phone:</label>
+              <span>{{ employeePersonalInfo.phoneNumber }}</span>
+            </div>
+            <div class="info-item">
+              <label>Address:</label>
+              <span>{{ employeePersonalInfo.address }}</span>
+            </div>
+            <div class="info-item">
+              <label>Base Hourly Rate:</label>
+              <span>${{ employeePersonalInfo.baseHourlyRate }}</span>
+            </div>
+            <div class="info-item">
+              <label>Company:</label>
+              <span>{{ employeePersonalInfo.companyName }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Форма генерации расписания -->
+        <div class="schedule-section">
+          <div class="schedule-header">
+            <h4>Work Schedule</h4>
+            <button class="action-button schedule-button" (click)="toggleScheduleForm()">
+              <i class="fas fa-calendar-alt"></i> {{ showScheduleForm ? 'Hide Form' : 'Generate Schedule' }}
+            </button>
+          </div>
+
+          <div *ngIf="showScheduleForm" class="schedule-form">
+            <h5>Create New Schedule</h5>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startHour">Start Time (Hour)</label>
+                <input type="number" id="startHour" [(ngModel)]="startTime.hour" min="0" max="23" placeholder="Hour (0-23)">
+              </div>
+              <div class="form-group">
+                <label for="startMinute">Start Time (Minute)</label>
+                <input type="number" id="startMinute" [(ngModel)]="startTime.minute" min="0" max="59" placeholder="Minute (0-59)">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="endHour">End Time (Hour)</label>
+                <input type="number" id="endHour" [(ngModel)]="endTime.hour" min="0" max="23" placeholder="Hour (0-23)">
+              </div>
+              <div class="form-group">
+                <label for="endMinute">End Time (Minute)</label>
+                <input type="number" id="endMinute" [(ngModel)]="endTime.minute" min="0" max="59" placeholder="Minute (0-59)">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="action-button schedule-button" (click)="generateScheduleForWorker()">
+                <i class="fas fa-calendar-check"></i> Generate Schedule
+              </button>
+            </div>
+          </div>
+
+          <!-- Сгенерированное расписание -->
+          <div *ngIf="employeeGeneratedSchedule" class="generated-schedule">
+            <h5>Current Schedule</h5>
+            <div class="schedule-info">
+              <div class="info-item">
+                <label>Worker ID:</label>
+                <span>{{ employeeGeneratedSchedule.workerId }}</span>
+              </div>
+              <div class="info-item">
+                <label>Start Time:</label>
+                <span>{{ employeeGeneratedSchedule.startTime?.hour }}:{{ employeeGeneratedSchedule.startTime?.minute || '00' }}</span>
+              </div>
+              <div class="info-item">
+                <label>End Time:</label>
+                <span>{{ employeeGeneratedSchedule.endTime?.hour }}:{{ employeeGeneratedSchedule.endTime?.minute || '00' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeEmployeeInfoModal()">Close</button>
     </div>
   </div>
 </div>

@@ -1859,6 +1859,38 @@
         }
       }
     },
+    "/workSite/{workSiteId}/all-information": {
+      "get": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Get all information about work site by ID",
+        "operationId": "findWorkSiteAllInformation",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSiteAllInformationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workSite/{workSiteId}/active-workers": {
       "get": {
         "tags": [
@@ -2433,6 +2465,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserPhoneNumberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/personal-information/{employeeId}": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "getWorkerPersonalInformation",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerPersonalInformationResponse"
                 }
               }
             }
@@ -3236,6 +3299,31 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/workSite/{workSiteId}": {
+      "delete": {
+        "tags": [
+          "Work Site Controller"
+        ],
+        "summary": "Delete work site by ID",
+        "operationId": "deleteWorkSiteById",
+        "parameters": [
+          {
+            "name": "workSiteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -4491,6 +4579,42 @@
           }
         }
       },
+      "WorkSiteAllInformationResponse": {
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "siteName": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "allowedRadius": {
+            "type": "number",
+            "format": "double"
+          },
+          "workDayStart": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "workDayEnd": {
+            "$ref": "#/components/schemas/LocalTime"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
       "PageResponseWorkerCurrentlyWorkingInWorkSite": {
         "type": "object",
         "properties": {
@@ -4558,6 +4682,40 @@
         "properties": {
           "phoneNumber": {
             "type": "string"
+          }
+        }
+      },
+      "WorkerPersonalInformationResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "baseHourlyRate": {
+            "type": "number"
           }
         }
       },
