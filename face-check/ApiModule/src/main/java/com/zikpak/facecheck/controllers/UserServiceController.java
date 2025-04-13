@@ -1,5 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
+import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
+import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import com.zikpak.facecheck.services.userService.UserService;
 import lombok.RequiredArgsConstructor;
@@ -194,4 +196,19 @@ public class UserServiceController {
             @RequestParam int years) {
         return ResponseEntity.ok(userService.findWorkerTotalPayedTaxesAmountForSpecialYear(authentication, years));
     }
+
+    @GetMapping("/company")
+    public ResponseEntity<UserCompanyNameInformation> findWorkerCompanyName(Authentication authentication) {
+        return ResponseEntity.ok(userService.findWorkersCompanyNameInformation(authentication));
+    }
+
+    @GetMapping("/company/id")
+    public ResponseEntity<WorkerCompanyIdByAuthenticationResponse> findWorkerCompanyIdByAuthentication(Authentication authentication) {
+        return ResponseEntity.ok(userService.findWorkersCompanyByAuthentication(authentication));
+    }
+
+
+
+
+
 }

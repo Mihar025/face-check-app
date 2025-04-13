@@ -33,6 +33,14 @@ import { getAllEmployeeRates } from '../fn/company-controller/get-all-employee-r
 import { GetAllEmployeeRates$Params } from '../fn/company-controller/get-all-employee-rates';
 import { getAllEmployees } from '../fn/company-controller/get-all-employees';
 import { GetAllEmployees$Params } from '../fn/company-controller/get-all-employees';
+import { getCompanyAddress } from '../fn/company-controller/get-company-address';
+import { GetCompanyAddress$Params } from '../fn/company-controller/get-company-address';
+import { getCompanyEmail } from '../fn/company-controller/get-company-email';
+import { GetCompanyEmail$Params } from '../fn/company-controller/get-company-email';
+import { getCompanyName } from '../fn/company-controller/get-company-name';
+import { GetCompanyName$Params } from '../fn/company-controller/get-company-name';
+import { getCompanyPhone } from '../fn/company-controller/get-company-phone';
+import { GetCompanyPhone$Params } from '../fn/company-controller/get-company-phone';
 import { getEmployeeRate } from '../fn/company-controller/get-employee-rate';
 import { GetEmployeeRate$Params } from '../fn/company-controller/get-employee-rate';
 import { getForemanEmployees } from '../fn/company-controller/get-foreman-employees';
@@ -50,6 +58,14 @@ import { setCompanyIncomePerMonth } from '../fn/company-controller/set-company-i
 import { SetCompanyIncomePerMonth$Params } from '../fn/company-controller/set-company-income-per-month';
 import { updateCompany } from '../fn/company-controller/update-company';
 import { UpdateCompany$Params } from '../fn/company-controller/update-company';
+import { updateCompanyAddress } from '../fn/company-controller/update-company-address';
+import { UpdateCompanyAddress$Params } from '../fn/company-controller/update-company-address';
+import { updateCompanyEmail } from '../fn/company-controller/update-company-email';
+import { UpdateCompanyEmail$Params } from '../fn/company-controller/update-company-email';
+import { updateCompanyName } from '../fn/company-controller/update-company-name';
+import { UpdateCompanyName$Params } from '../fn/company-controller/update-company-name';
+import { updateCompanyPhone } from '../fn/company-controller/update-company-phone';
+import { UpdateCompanyPhone$Params } from '../fn/company-controller/update-company-phone';
 import { updateEmployeeRate } from '../fn/company-controller/update-employee-rate';
 import { UpdateEmployeeRate$Params } from '../fn/company-controller/update-employee-rate';
 
@@ -206,6 +222,106 @@ export class CompanyControllerService extends BaseService {
   updateEmployeeRate(params: UpdateEmployeeRate$Params, context?: HttpContext): Observable<EmployeeSalaryResponse> {
     return this.updateEmployeeRate$Response(params, context).pipe(
       map((r: StrictHttpResponse<EmployeeSalaryResponse>): EmployeeSalaryResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `updateCompanyPhone()` */
+  static readonly UpdateCompanyPhonePath = '/company/update-phone';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `updateCompanyPhone()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyPhone$Response(params: UpdateCompanyPhone$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return updateCompanyPhone(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `updateCompanyPhone$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyPhone(params: UpdateCompanyPhone$Params, context?: HttpContext): Observable<void> {
+    return this.updateCompanyPhone$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `updateCompanyName()` */
+  static readonly UpdateCompanyNamePath = '/company/update-name';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `updateCompanyName()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyName$Response(params: UpdateCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return updateCompanyName(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `updateCompanyName$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyName(params: UpdateCompanyName$Params, context?: HttpContext): Observable<void> {
+    return this.updateCompanyName$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `updateCompanyEmail()` */
+  static readonly UpdateCompanyEmailPath = '/company/update-email';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `updateCompanyEmail()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyEmail$Response(params: UpdateCompanyEmail$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return updateCompanyEmail(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `updateCompanyEmail$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyEmail(params: UpdateCompanyEmail$Params, context?: HttpContext): Observable<void> {
+    return this.updateCompanyEmail$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `updateCompanyAddress()` */
+  static readonly UpdateCompanyAddressPath = '/company/update-address';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `updateCompanyAddress()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyAddress$Response(params: UpdateCompanyAddress$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return updateCompanyAddress(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `updateCompanyAddress$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  updateCompanyAddress(params: UpdateCompanyAddress$Params, context?: HttpContext): Observable<void> {
+    return this.updateCompanyAddress$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 
@@ -459,6 +575,56 @@ export class CompanyControllerService extends BaseService {
     );
   }
 
+  /** Path part for operation `getCompanyPhone()` */
+  static readonly GetCompanyPhonePath = '/company/phone';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getCompanyPhone()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyPhone$Response(params?: GetCompanyPhone$Params, context?: HttpContext): Observable<StrictHttpResponse<string>> {
+    return getCompanyPhone(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getCompanyPhone$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyPhone(params?: GetCompanyPhone$Params, context?: HttpContext): Observable<string> {
+    return this.getCompanyPhone$Response(params, context).pipe(
+      map((r: StrictHttpResponse<string>): string => r.body)
+    );
+  }
+
+  /** Path part for operation `getCompanyName()` */
+  static readonly GetCompanyNamePath = '/company/name';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getCompanyName()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyName$Response(params?: GetCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<string>> {
+    return getCompanyName(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getCompanyName$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyName(params?: GetCompanyName$Params, context?: HttpContext): Observable<string> {
+    return this.getCompanyName$Response(params, context).pipe(
+      map((r: StrictHttpResponse<string>): string => r.body)
+    );
+  }
+
   /** Path part for operation `getAllEmployeeRates()` */
   static readonly GetAllEmployeeRatesPath = '/company/employee-rates';
 
@@ -481,6 +647,56 @@ export class CompanyControllerService extends BaseService {
   getAllEmployeeRates(params?: GetAllEmployeeRates$Params, context?: HttpContext): Observable<Array<EmployeeSalaryResponse>> {
     return this.getAllEmployeeRates$Response(params, context).pipe(
       map((r: StrictHttpResponse<Array<EmployeeSalaryResponse>>): Array<EmployeeSalaryResponse> => r.body)
+    );
+  }
+
+  /** Path part for operation `getCompanyEmail()` */
+  static readonly GetCompanyEmailPath = '/company/email';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getCompanyEmail()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyEmail$Response(params?: GetCompanyEmail$Params, context?: HttpContext): Observable<StrictHttpResponse<string>> {
+    return getCompanyEmail(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getCompanyEmail$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyEmail(params?: GetCompanyEmail$Params, context?: HttpContext): Observable<string> {
+    return this.getCompanyEmail$Response(params, context).pipe(
+      map((r: StrictHttpResponse<string>): string => r.body)
+    );
+  }
+
+  /** Path part for operation `getCompanyAddress()` */
+  static readonly GetCompanyAddressPath = '/company/address';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getCompanyAddress()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyAddress$Response(params?: GetCompanyAddress$Params, context?: HttpContext): Observable<StrictHttpResponse<string>> {
+    return getCompanyAddress(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getCompanyAddress$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyAddress(params?: GetCompanyAddress$Params, context?: HttpContext): Observable<string> {
+    return this.getCompanyAddress$Response(params, context).pipe(
+      map((r: StrictHttpResponse<string>): string => r.body)
     );
   }
 

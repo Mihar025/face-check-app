@@ -90,5 +90,23 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/company/employees/count")
+    @Operation(summary = "Get total number of employees in company",
+            description = "Returns the total count of employees in the admin's company")
+    public ResponseEntity<Integer> getTotalEmployeesCount(Authentication authentication) {
+        return ResponseEntity.ok(
+                adminService.findAllEmployeesInCompany(authentication)
+        );
+    }
+
+    @GetMapping("/company/worksites/count")
+    @Operation(summary = "Get total number of worksites in company",
+            description = "Returns the total count of worksites in the admin's company")
+    public ResponseEntity<Integer> getTotalWorksitesCount(Authentication authentication) {
+        return ResponseEntity.ok(
+                adminService.findAllWorksitesInCompany(authentication)
+        );
+    }
+
 
 }

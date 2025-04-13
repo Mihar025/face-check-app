@@ -5,6 +5,8 @@ import com.zikpak.facecheck.domain.abstractClasses.BaseUserService;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.mapper.UserMapper;
 import com.zikpak.facecheck.repository.UserRepository;
+import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
+import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -126,5 +128,24 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
         var foundedUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new RuntimeException("User with id " + user.getId() + " not found"));
         return userMapper.toFullUserInfoResponse( foundedUser);
+    }
+
+    @Override
+    public UserCompanyNameInformation findUserCompanyName(Authentication authentication) {
+        User user = ((User) authentication.getPrincipal());
+        var foundedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("User with id " + user.getId() + " not found"));
+        log.info("Found user with id:" + foundedUser.getId());
+        String savedCompanyName = foundedUser.getCompany().getCompanyName();
+        log.info("Company name was founded: !" + savedCompanyName);
+        return userMapper.toUserCompanyNameResponse(savedCompanyName);
+    }
+
+    public WorkerCompanyIdByAuthenticationResponse findCompanyByWorkerAuthentication(Authentication authentication) {
+        User user = ((User) authentication.getPrincipal());
+        var foundedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("User with id " + user.getId() + " not found"));
+        Integer foundedCompanyId = foundedUser.getCompany().getId();
+        return userMapper.toWorkerCompanyIdByAuthenticationResponse(foundedCompanyId);
     }
 }

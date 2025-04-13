@@ -17,6 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Table(name = "_company")
 @Entity
+@ToString
 public class Company {
 
     @Id

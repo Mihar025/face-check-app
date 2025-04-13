@@ -1,0 +1,160 @@
+<div class="admin-layout">
+  <!-- Боковое меню -->
+  <div class="sidebar">
+    <div class="admin-profile">
+      <div class="avatar-container">
+        <img src=".jpg" alt="Admin Avatar" class="admin-avatar">
+      </div>
+      <div class="admin-info">
+        <h3 class="admin-name">{{ userName }}</h3>
+        <p class="admin-company">{{ companyName }}</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <ul>
+        <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
+        <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
+        <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
+        <li><a routerLink="/main-page/admin/finance" routerLinkActive="active">Manage Finance</a></li>
+        <li><a routerLink="/main-page/admin/settings" routerLinkActive="active">Settings</a></li>
+        <li><a (click)="logout()" class="logout-link">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Основной контент -->
+  <div class="main-content">
+    <!-- Верхний логотип -->
+    <div class="top-logo-container">
+      <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+    </div>
+
+    <!-- Контент настроек -->
+    <div class="admin-container">
+      <h1>Settings</h1>
+
+      <!-- Настройки компании -->
+      <div class="settings-section">
+        <h2>Company Settings</h2>
+        <div class="settings-form">
+          <div class="form-group">
+            <label for="companyName">Company Name</label>
+            <div class="input-with-button">
+              <input type="text" id="companyName" [(ngModel)]="companyNameInput" placeholder="Company Name">
+              <button class="save-button" (click)="updateCompanyName()">Save</button>
+            </div>
+            <div *ngIf="companyNameSuccess" class="success-message">Company name updated successfully!</div>
+            <div *ngIf="companyNameError" class="error-message">{{ companyNameError }}</div>
+          </div>
+
+          <div class="form-group">
+            <label for="companyEmail">Company Email</label>
+            <div class="input-with-button">
+              <input type="email" id="companyEmail" [(ngModel)]="companyEmailInput" placeholder="Company Email">
+              <button class="save-button" (click)="updateCompanyEmail()">Save</button>
+            </div>
+            <div *ngIf="companyEmailSuccess" class="success-message">Company email updated successfully!</div>
+            <div *ngIf="companyEmailError" class="error-message">{{ companyEmailError }}</div>
+          </div>
+
+          <div class="form-group">
+            <label for="companyPhone">Company Phone</label>
+            <div class="input-with-button">
+              <input type="tel" id="companyPhone" [(ngModel)]="companyPhoneInput" placeholder="Company Phone">
+              <button class="save-button" (click)="updateCompanyPhone()">Save</button>
+            </div>
+            <div *ngIf="companyPhoneSuccess" class="success-message">Company phone updated successfully!</div>
+            <div *ngIf="companyPhoneError" class="error-message">{{ companyPhoneError }}</div>
+          </div>
+
+          <div class="form-group">
+            <label for="companyAddress">Company Address</label>
+            <div class="input-with-button">
+              <input type="text" id="companyAddress" [(ngModel)]="companyAddressInput" placeholder="Company Address">
+              <button class="save-button" (click)="updateCompanyAddress()">Save</button>
+            </div>
+            <div *ngIf="companyAddressSuccess" class="success-message">Company address updated successfully!</div>
+            <div *ngIf="companyAddressError" class="error-message">{{ companyAddressError }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Настройки админа -->
+      <div class="settings-section">
+        <h2>Admin Settings</h2>
+        <div class="settings-form">
+          <div class="form-group">
+            <label for="adminEmail">Email</label>
+            <div class="input-with-button">
+              <input type="email" id="adminEmail" [(ngModel)]="adminEmailInput" placeholder="Admin Email">
+              <button class="save-button" (click)="updateAdminEmail()">Save</button>
+            </div>
+            <div *ngIf="adminEmailSuccess" class="success-message">Email updated successfully!</div>
+            <div *ngIf="adminEmailError" class="error-message">{{ adminEmailError }}</div>
+          </div>
+
+          <div class="form-group">
+            <label for="adminPhone">Phone Number</label>
+            <div class="input-with-button">
+              <input type="tel" id="adminPhone" [(ngModel)]="adminPhoneInput" placeholder="Admin Phone">
+              <button class="save-button" (click)="updateAdminPhone()">Save</button>
+            </div>
+            <div *ngIf="adminPhoneSuccess" class="success-message">Phone updated successfully!</div>
+            <div *ngIf="adminPhoneError" class="error-message">{{ adminPhoneError }}</div>
+          </div>
+
+          <div class="form-group">
+            <label for="adminAddress">Home Address</label>
+            <div class="input-with-button">
+              <input type="text" id="adminAddress" [(ngModel)]="adminAddressInput" placeholder="Admin Address">
+              <button class="save-button" (click)="updateAdminAddress()">Save</button>
+            </div>
+            <div *ngIf="adminAddressSuccess" class="success-message">Address updated successfully!</div>
+            <div *ngIf="adminAddressError" class="error-message">{{ adminAddressError }}</div>
+          </div>
+
+          <div class="form-group">
+            <label for="adminPassword">Password</label>
+            <div class="input-with-button">
+              <input type="password" id="adminPassword" [(ngModel)]="adminPasswordInput" placeholder="New Password">
+              <button class="save-button" (click)="updateAdminPassword()">Save</button>
+            </div>
+            <div *ngIf="adminPasswordSuccess" class="success-message">Password updated successfully!</div>
+            <div *ngIf="adminPasswordError" class="error-message">{{ adminPasswordError }}</div>
+          </div>
+
+          <!-- Опасная зона (Danger zone) -->
+          <div class="settings-section danger-zone">
+            <h2>Danger Zone</h2>
+            <div class="danger-box">
+              <div class="danger-action">
+                <div class="danger-info">
+                  <h3>Delete Company</h3>
+                  <p>This action cannot be undone. This will permanently delete your company account, all worksites, employees, and data.</p>
+                </div>
+                <button class="delete-button" (click)="showDeleteConfirmation()">Delete Company</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Модальное окно подтверждения удаления -->
+          <div class="delete-modal" *ngIf="showDeleteModal">
+            <div class="delete-modal-content">
+              <h3>Are you sure?</h3>
+              <p>Please type <strong>{{ companyName }}</strong> to confirm deletion.</p>
+              <div class="form-group">
+                <input type="text" [(ngModel)]="deleteConfirmInput" placeholder="Type company name">
+              </div>
+              <div class="modal-actions">
+                <button class="cancel-button" (click)="cancelDelete()">Cancel</button>
+                <button class="confirm-delete-button" [disabled]="deleteConfirmInput !== companyName" (click)="deleteCompany()">Delete Forever</button>
+              </div>
+              <div *ngIf="errorMsg" class="error-message">{{ errorMsg }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
