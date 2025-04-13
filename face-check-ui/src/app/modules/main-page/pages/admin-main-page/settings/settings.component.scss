@@ -1,0 +1,414 @@
+// Основные переменные
+$primary-color: #4a90e2;
+$primary-dark: #357bd8;
+$sidebar-bg: #2c3e50;
+$sidebar-width: 250px;
+$header-height: 80px;
+$light-text: #ecf0f1;
+$dark-text: #333;
+$light-gray: #f8f9fa;
+$border-color: #ddd;
+$success-color: #2ecc71;
+$error-color: #e74c3c;
+
+// Общие стили
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+}
+
+// Макет админ-панели
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+// Стили бокового меню
+.sidebar {
+  width: $sidebar-width;
+  background-color: $sidebar-bg;
+  color: $light-text;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.admin-profile {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.avatar-container {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-info {
+  margin-top: 10px;
+}
+
+.admin-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.admin-company {
+  margin: 5px 0 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.sidebar-menu {
+  padding: 20px 0;
+}
+
+.sidebar-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  margin-bottom: 5px;
+}
+
+.sidebar-menu a {
+  display: block;
+  padding: 12px 20px;
+  color: $light-text;
+  text-decoration: none;
+  transition: all 0.3s;
+  font-size: 14px;
+  position: relative;
+  cursor: pointer;
+}
+
+.sidebar-menu a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding-left: 25px;
+}
+
+.sidebar-menu a.active {
+  background-color: $primary-color;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logout-link {
+  cursor: pointer;
+  margin-top: 20px;
+  color: #e74c3c !important;
+}
+
+// Стили основного контента
+.main-content {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-logo-container {
+  height: $header-height;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  border-bottom: 1px solid $border-color;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.top-logo {
+  height: 50px;
+  object-fit: contain;
+}
+
+.admin-container {
+  padding: 30px;
+  flex: 1;
+}
+
+h1 {
+  color: $dark-text;
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+// Стили для блоков настроек
+.settings-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.settings-section h2 {
+  color: $dark-text;
+  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 10px;
+}
+
+// Стили для форм
+.settings-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: $dark-text;
+  font-size: 14px;
+}
+
+.input-with-button {
+  display: flex;
+  align-items: center;
+}
+
+.form-group input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 1px solid $border-color;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: border 0.3s;
+  margin-right: 10px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: $primary-color;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.save-button {
+  background-color: $primary-color;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 80px;
+}
+
+.save-button:hover {
+  background-color: $primary-dark;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+// Сообщения об успехе и ошибках
+.success-message, .error-message {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.success-message {
+  background-color: rgba(46, 204, 113, 0.1);
+  color: $success-color;
+  border-left: 3px solid $success-color;
+}
+
+.error-message {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: $error-color;
+  border-left: 3px solid $error-color;
+}
+
+// Стили для блока "Danger Zone"
+.danger-zone {
+  border-left: 4px solid $error-color;
+}
+
+.danger-box {
+  background-color: rgba(231, 76, 60, 0.05);
+  border-radius: 5px;
+  padding: 0;
+}
+
+.danger-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid rgba(231, 76, 60, 0.1);
+}
+
+.danger-info {
+  flex: 1;
+}
+
+.danger-info h3 {
+  margin: 0 0 8px 0;
+  color: $error-color;
+  font-size: 16px;
+}
+
+.danger-info p {
+  margin: 0;
+  font-size: 14px;
+  color: $dark-text;
+  max-width: 600px;
+}
+
+.delete-button {
+  background-color: $error-color;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 140px;
+}
+
+.delete-button:hover {
+  background-color: darken($error-color, 10%);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+// Стили для модального окна подтверждения
+.delete-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.delete-modal-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 30px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.delete-modal-content h3 {
+  margin-top: 0;
+  color: $error-color;
+  font-size: 22px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 25px;
+  gap: 15px;
+}
+
+.cancel-button {
+  background-color: #f1f2f6;
+  color: $dark-text;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancel-button:hover {
+  background-color: darken(#f1f2f6, 5%);
+}
+
+.confirm-delete-button {
+  background-color: $error-color;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.confirm-delete-button:hover:not([disabled]) {
+  background-color: darken($error-color, 10%);
+}
+
+.confirm-delete-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Адаптивные стили
+@media (max-width: 992px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    order: 2;
+  }
+
+  .main-content {
+    order: 1;
+  }
+
+  .admin-profile {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+  }
+
+  .avatar-container {
+    margin-bottom: 0;
+    margin-right: 15px;
+  }
+
+  .sidebar-menu {
+    padding: 10px 0;
+  }
+
+  .settings-form {
+    grid-template-columns: 1fr;
+  }
+}

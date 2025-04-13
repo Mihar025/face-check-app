@@ -1,0 +1,232 @@
+<div class="admin-layout">
+  <div class="sidebar">
+    <div class="admin-profile">
+      <div class="avatar-container">
+        <img src=".jpg" alt="Admin Avatar" class="admin-avatar">
+      </div>
+      <div class="admin-info">
+        <h3 class="admin-name">{{ userName }}</h3>
+        <p class="admin-company">{{ companyName }}</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <ul>
+        <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
+        <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
+        <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
+        <li><a routerLink="/main-page/admin/finance" routerLinkActive="active">Manage Finance</a></li>
+        <li><a routerLink="/main-page/admin/settings" routerLinkActive="active">Settings</a></li>
+        <li><a (click)="logout()" class="logout-link">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Основной контент -->
+  <div class="main-content">
+    <!-- Верхний логотип -->
+    <div class="top-logo-container">
+      <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+    </div>
+
+    <!-- Контент управления сотрудниками -->
+    <div class="admin-container">
+      <div class="header-with-action">
+        <h1>Manage Employees</h1>
+        <button class="add-button" (click)="openAddEmployeeModal()">
+          <i class="fas fa-user-plus"></i> Add New Employee
+        </button>
+      </div>
+
+      <!-- Сообщения об успехе или ошибке -->
+      <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+      <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+      <!-- Секция списка сотрудников -->
+      <div class="employees-section">
+        <h2>Current Employees</h2>
+
+        <div class="employee-list">
+          <div *ngIf="loading" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Loading employees...</p>
+          </div>
+
+          <table *ngIf="!loading && employees.length > 0" class="employees-table">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th>Email</th>
+              <th>Hourly Rate</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let employee of employees">
+              <td>{{ employee.workerId }}</td>
+              <td>{{ employee.firstName }}</td>
+              <td>{{ employee.lastName }}</td>
+              <td>{{ employee.email }}</td>
+              <td>
+                <div class="rate-with-edit">
+                  ${{ employee.baseHourlyRate }}
+                  <button class="edit-rate-button" (click)="employee.workerId !== undefined ? openChangeRateModal(employee.workerId, employee.baseHourlyRate ?? 0) : null">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-button fire-button" (click)="employee.workerId !== undefined ? openFireModal(employee.workerId) : null">
+                  <i class="fas fa-user-times"></i> Fire
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="!loading && employees.length === 0" class="no-employees">
+            <p>No employees found. Add your first employee using the "Add New Employee" button above.</p>
+          </div>
+
+          <div *ngIf="totalPages > 1" class="pagination">
+            <button [disabled]="page === 0" (click)="changePage(page - 1)" class="pagination-button">
+              Previous
+            </button>
+            <span class="page-info">Page {{ page + 1 }} of {{ totalPages }}</span>
+            <button [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)" class="pagination-button">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно добавления сотрудника -->
+<div class="modal-overlay" *ngIf="showAddEmployeeModal">
+  <div class="modal-container modal-large">
+    <div class="modal-header">
+      <h3>Add New Employee</h3>
+      <button class="close-button" (click)="closeAddEmployeeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form class="new-employee-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" [(ngModel)]="firstName" name="firstName" required>
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" [(ngModel)]="lastName" name="lastName" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" [(ngModel)]="email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" [(ngModel)]="password" name="password" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number</label>
+            <input type="tel" id="phoneNumber" [(ngModel)]="phoneNumber" name="phoneNumber" required>
+          </div>
+          <div class="form-group">
+            <label for="dateOfBirth">Date of Birth</label>
+            <input type="date" id="dateOfBirth" [(ngModel)]="dateOfBirth" name="dateOfBirth">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" [(ngModel)]="gender" name="gender" required>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ssn">SSN</label>
+            <input type="text" id="ssn" [(ngModel)]="ssn_WORKER" name="ssn_WORKER">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="homeAddress">Home Address</label>
+            <input type="text" id="homeAddress" [(ngModel)]="homeAddress" name="homeAddress">
+          </div>
+          <div class="form-group">
+            <label for="companyAddress">Work Address</label>
+            <input type="text" id="companyAddress" [(ngModel)]="companyAddress" name="companyAddress">
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="companyName2">Company Name</label>
+          <input type="text" id="companyName2" [(ngModel)]="companyName2" name="companyName2" [value]="companyName" required>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeAddEmployeeModal()">Cancel</button>
+      <button class="confirm-button" (click)="createNewEmployee()" [disabled]="loading">
+        <span *ngIf="!loading">Add Employee</span>
+        <span *ngIf="loading">Adding...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно увольнения сотрудника -->
+<div class="modal-overlay" *ngIf="showFireModal">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3>Fire Employee</h3>
+      <button class="close-button" (click)="cancelFireModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to fire this employee? This action cannot be undone.</p>
+      <div *ngIf="selectedEmployee" class="employee-info">
+        <p><strong>ID:</strong> {{ selectedEmployee.workerId }}</p>
+        <p><strong>Name:</strong> {{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}</p>
+        <p><strong>Email:</strong> {{ selectedEmployee.email }}</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="cancelFireModal()">Cancel</button>
+      <button class="confirm-button delete-button" (click)="fireEmployee(selectedEmployeeId)">Fire Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно изменения почасовой ставки -->
+<div class="modal-overlay" *ngIf="showRateModal">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3>Change Hourly Rate</h3>
+      <button class="close-button" (click)="cancelRateModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="newHourlyRate">New Hourly Rate ($)</label>
+        <input type="number" id="newHourlyRate" [(ngModel)]="newHourlyRate" min="0" step="0.01">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="cancelRateModal()">Cancel</button>
+      <button class="confirm-button" (click)="changeHourlyRate()">Save</button>
+    </div>
+  </div>
+</div>

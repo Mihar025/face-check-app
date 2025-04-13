@@ -331,6 +331,98 @@
         }
       }
     },
+    "/company/update-phone": {
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "updateCompanyPhone",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/update-name": {
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "updateCompanyName",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/update-email": {
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "updateCompanyEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/company/update-address": {
+      "put": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "updateCompanyAddress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/company/demote/{workerId}/foreman-to-user": {
       "put": {
         "tags": [
@@ -2408,6 +2500,46 @@
         }
       }
     },
+    "/user/company": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerCompanyName",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCompanyNameInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/company/id": {
+      "get": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "findWorkerCompanyIdByAuthentication",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerCompanyIdByAuthenticationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/user/base-rate": {
       "get": {
         "tags": [
@@ -2809,6 +2941,46 @@
         }
       }
     },
+    "/company/phone": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getCompanyPhone",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/name": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getCompanyName",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/company/employee-rates": {
       "get": {
         "tags": [
@@ -2825,6 +2997,46 @@
                   "items": {
                     "$ref": "#/components/schemas/EmployeeSalaryResponse"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/email": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getCompanyEmail",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/address": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getCompanyAddress",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2975,6 +3187,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PageResponseWorksiteWorkerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/company/worksites/count": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "Get total number of worksites in company",
+        "description": "Returns the total count of worksites in the admin's company",
+        "operationId": "getTotalWorksitesCount",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/company/employees/count": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "Get total number of employees in company",
+        "description": "Returns the total count of employees in the admin's company",
+        "operationId": "getTotalEmployeesCount",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
                 }
               }
             }
@@ -3631,7 +3889,7 @@
             "type": "string"
           },
           "ssn_WORKER": {
-            "type": "number"
+            "type": "string"
           }
         }
       },
@@ -3704,7 +3962,7 @@
             "type": "string"
           },
           "ssn_WORKER": {
-            "type": "number"
+            "type": "string"
           }
         }
       },
@@ -4339,6 +4597,23 @@
           },
           "photoUrl": {
             "type": "string"
+          }
+        }
+      },
+      "UserCompanyNameInformation": {
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string"
+          }
+        }
+      },
+      "WorkerCompanyIdByAuthenticationResponse": {
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

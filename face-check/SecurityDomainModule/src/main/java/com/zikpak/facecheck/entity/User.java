@@ -29,6 +29,7 @@ import java.util.*;
 @Table(name = "_user")
 @EntityListeners(AuditingEntityListener.class)
 @Entity
+@ToString
 public class User implements UserDetails, Principal {
 
     @Id

@@ -5,6 +5,7 @@ import { Authenticate$Params } from "../../../services/fn/authentication/authent
 import { RegisterCompany$Params } from "../../../services/fn/authentication/register-company";
 import { RegisterAdmin$Params } from "../../../services/fn/authentication/register-admin";
 import { VerifyCode$Params } from "../../../services/fn/authentication/verify-code";
+import {HttpHeaders} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
@@ -112,6 +113,8 @@ export class AuthService {
     return !!localStorage.getItem('auth_token');
   }
 
+  // Предлагаемые изменения для метода registerCompany в auth-service.ts
+
   registerCompany(companyName: string,
                   companyAddress: string,
                   CompanyPhone: string,
@@ -125,16 +128,32 @@ export class AuthService {
       }
     };
 
-    console.log('Registered company:', params);
+    console.log('Registering company:', params);
+
+    // Проверка наличия токена перед выполнением запроса
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('Authentication token not found'));
+    }
+
+    // Используем токен из хранилища
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      })
+    };
 
     return this.apiAuthService.registerCompany(params).pipe(
       tap((response: any) => {
         console.log('Company Registration response:', response);
-
-        // Используем Angular Router вместо window.location
       }),
       catchError(error => {
         console.error('Auth error:', error);
+        // Если получаем 401 или 403, значит токен истек или недействителен
+        if (error.status === 401 || error.status === 403) {
+          // Можно попытаться обновить токен или выполнить logout
+          console.warn('Authentication error. Token may be expired.');
+        }
         return throwError(() => error);
       })
     );
@@ -150,7 +169,7 @@ export class AuthService {
     homeAddress: string,
     dateOfBirth: string,
     gender: 'MALE' | 'FEMALE' | 'OTHER',
-    ssn_WORKER: number
+    ssn_WORKER: string
   ): Observable<any> {
     const params: RegisterAdmin$Params = {
       body: {

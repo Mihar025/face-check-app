@@ -1,1 +1,60 @@
-<p>register-company works!</p>
+<div class="sign-in-container">
+  <div class="sign-in-content">
+    <div class="logo-text-container">
+      <div class="logo-container">
+        <img src="logo.jpg" alt="Facecheck Logo" class="logo-img">
+      </div>
+      <div class="brand-name">Facecheck</div>
+    </div>
+
+    <div class="form-container">
+      <h2 class="form-title">Company Registration</h2>
+
+      <div *ngIf="errorMessage" class="error-notification">{{ errorMessage }}</div>
+
+      <form *ngIf="isAuthenticated" class="login-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <input type="text" id="companyName" formControlName="companyName" placeholder="Company Name">
+          <div *ngIf="registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched" class="error-message">
+            Company name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="companyAddress" formControlName="companyAddress" placeholder="Company Address">
+          <div *ngIf="registerForm.get('companyAddress')?.invalid && registerForm.get('companyAddress')?.touched" class="error-message">
+            Company address is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="tel" id="companyPhone" formControlName="companyPhone" placeholder="Company Phone">
+          <div *ngIf="registerForm.get('companyPhone')?.invalid && registerForm.get('companyPhone')?.touched" class="error-message">
+            Company phone is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="email" id="companyEmail" formControlName="companyEmail" placeholder="Company Email">
+          <div *ngIf="registerForm.get('companyEmail')?.invalid && registerForm.get('companyEmail')?.touched" class="error-message">
+            <span *ngIf="registerForm.get('companyEmail')?.hasError('required')">Company email is required</span>
+            <span *ngIf="registerForm.get('companyEmail')?.hasError('email')">Please enter a valid email</span>
+          </div>
+        </div>
+
+        <button type="submit" class="sign-in-btn" [disabled]="isLoading || registerForm.invalid">
+          <span *ngIf="!isLoading">Register Company</span>
+          <span *ngIf="isLoading"><i class="fas fa-spinner fa-spin"></i> Processing...</span>
+        </button>
+      </form>
+
+      <div *ngIf="!isAuthenticated" class="auth-required">
+        <p>Authentication is required to register a company.</p>
+        <button class="sign-in-btn" (click)="navigateToLogin()">
+          Go to Login
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

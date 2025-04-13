@@ -4,6 +4,7 @@ package com.zikpak.facecheck.services.adminService;
 import com.zikpak.facecheck.domain.AdminAndForemanFunctionality;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
+import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.requestsResponses.admin.*;
 import com.zikpak.facecheck.repository.UserRepository;
@@ -24,38 +25,17 @@ import java.time.LocalDateTime;
 @Slf4j
 public class AdminService implements AdminAndForemanFunctionality {
 
-    /*
-
-        1) Find all admins, formans, users!
-            a) When we find some worker etc, should see all his contact info :
-                a) Name + Lastname, Phone number, email
-
-
-     6)
-        7) Change employee salary!
-         10) Forman could change schedule for worker, by reposting to the admin!
-
-     */
-
-
-
 
     private final UserRepository userRepository;
     private final WorkerAttendanceRepository workerAttendanceRepository;
     private final ForemanAndAdminService foremanAndAdminService;
-
+    private final CompanyRepository companyRepository;
 
 
     @Override
     public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(int page, int size, Integer workSiteId, Authentication authentication){
        return foremanAndAdminService.findAllWorkersInWorkSite(page, size, workSiteId, authentication);
     }
-
-
-
-
-
-
 
     @Transactional
     public ChangePunchInForWorkerResponse ChangingPunchInForWorkerIfDoesntExist(Integer workerId, ChangePunchInRequest changePunchInRequest, Authentication authentication) {
@@ -109,6 +89,47 @@ public class AdminService implements AdminAndForemanFunctionality {
                 .newPunchOutTime(changePunchInRequest.getNewPunchOutTime())
                 .build();
     }
+
+    @Transactional
+    public Integer findAllEmployeesInCompany(Authentication authentication) {
+        log.info("FindAllEmployeesInCompany begins");
+        User admin = ((User) authentication.getPrincipal());
+        log.info("Checking roles");
+        doesHaveAdminRole(admin);
+        log.info("Successful checked role");
+        var foundedAdmin = userRepository.findById(admin.getId())
+                .orElseThrow( () -> new  EntityNotFoundException("Admin not found"));
+        log.info("Founded admin {}" , foundedAdmin);
+        var foundedCompany = companyRepository.findById(foundedAdmin.getCompany().getId())
+                .orElseThrow( () -> new  EntityNotFoundException("Company not found"));
+        log.info("Founded company {}" , foundedCompany);
+            if(!foundedAdmin.getCompany().getId().equals(foundedCompany.getId())) {
+                log.info("Checking is Admin in the same company!");
+                throw new AccessDeniedException("You dont have permission to access this company");
+            }
+        return foundedCompany.getEmployees().size();
+    }
+
+    public Integer findAllWorksitesInCompany(Authentication authentication) {
+        log.info("findAllWorksitesInCompany begins");
+        User admin = ((User) authentication.getPrincipal());
+        log.info("Checking roles ");
+        doesHaveAdminRole(admin);
+        log.info("Successful checked  role");
+        var foundedAdmin = userRepository.findById(admin.getId())
+                .orElseThrow( () -> new  EntityNotFoundException("Admin not found"));
+        log.info("Founded admin  {}" ,  foundedAdmin);
+        var foundedCompany = companyRepository.findById(foundedAdmin.getCompany().getId())
+                .orElseThrow( () -> new  EntityNotFoundException("Company not found"));
+        log.info("Founded  company {}" , foundedCompany);
+        if(!foundedAdmin.getCompany().getId().equals(foundedCompany.getId())) {
+            log.info("Checking i s Admin in the same company!");
+            throw new AccessDeniedException("You dont have permission to access this company");
+        }
+        return foundedCompany.getWorkSites().size();
+    }
+
+
 
 
 

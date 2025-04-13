@@ -1,6 +1,7 @@
 package com.zikpak.facecheck.services.company;
 
 
+import com.zikpak.facecheck.domain.CompanyServiceImpl;
 import com.zikpak.facecheck.entity.Company;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkerPayroll;
@@ -16,6 +17,7 @@ import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
 import com.zikpak.facecheck.requestsResponses.worker.UpdateEmployeeDataRequest;
 import com.zikpak.facecheck.requestsResponses.worker.UpdatedEmployeeDataResponse;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +38,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CompanyService {
+public class CompanyService implements CompanyServiceImpl {
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
@@ -46,7 +48,100 @@ public class CompanyService {
     private final RoleRepository roleRepository;
 
 
-        public CompanyUpdatingResponse updateCompany(CompanyUpdatingRequest companyUpdatingRequest, Integer companyId, Authentication authentication) throws AccessDeniedException {
+    @Transactional
+    @Override
+    public String companyName(Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        return company.getCompanyName();
+    }
+    @Transactional
+    @Override
+    public String companyAddress(Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        return company.getCompanyAddress();
+    }
+    @Transactional
+    @Override
+    public String companyPhone(Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        return company.getCompanyPhone();
+    }
+    @Transactional
+    @Override
+    public String companyEmail(Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        return company.getCompanyEmail();
+    }
+    @Transactional
+    @Override
+    public void updateCompanyName(String name, Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        if(company.getCompanyName().equals(name)) {
+            throw new AccessDeniedException("Company name already exists");
+        }
+        else if(name.isEmpty()){
+            throw new AccessDeniedException("Company name cannot be empty");
+        }
+        company.setCompanyName(name);
+    }
+    @Transactional
+    @Override
+    public void updateCompanyAddress(String address, Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        if(company.getCompanyAddress().equals(address)) {
+            throw new AccessDeniedException("Company address already exists");
+        }
+        else if(address.isEmpty()){
+            throw new AccessDeniedException("Company address cannot be empty");
+        }
+        company.setCompanyAddress(address);
+
+    }
+    @Transactional
+    @Override
+    public void updateCompanyPhoneNumber(String phoneNumber, Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        if(company.getCompanyPhone().equals(phoneNumber)) {
+            throw new AccessDeniedException("Company phoneNumber already exists");
+        }
+        else if(phoneNumber.isEmpty()){
+            throw new AccessDeniedException("Company phoneNumber cannot be empty");
+        }
+        company.setCompanyPhone(phoneNumber);
+
+    }
+    @Transactional
+    @Override
+    public void updateCompanyEmail(String email, Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        var company = companyRepository.findById(admin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+        if(company.getCompanyEmail().equals(email)) {
+            throw new AccessDeniedException("Company email already exists");
+        }
+        else if(email.isEmpty()){
+            throw new AccessDeniedException("Company email cannot be empty");
+        }
+        company.setCompanyEmail(email);
+
+    }
+
+
+    public CompanyUpdatingResponse updateCompany(CompanyUpdatingRequest companyUpdatingRequest, Integer companyId, Authentication authentication) throws AccessDeniedException {
             User user = ((User) authentication.getPrincipal());
 
             if(!user.isAdmin() && !user.isBusinessOwner()){
@@ -619,8 +714,5 @@ public class CompanyService {
             company.setWorkersQuantity(request.getWorkersQuantity());
             return companyRepository.save(company);
         }
-
-
-
 
 }

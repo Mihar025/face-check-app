@@ -69,8 +69,6 @@ public class CompanyController {
     }
 
 
-
-
     //working
     @GetMapping("/employee-rates")
     public ResponseEntity<List<EmployeeSalaryResponse>> getAllEmployeeRates(
@@ -186,6 +184,60 @@ public class CompanyController {
             @PathVariable Integer workerId,
             Authentication authentication) {
         companyService.demoteFromForemanToUser(workerId, authentication);
+        return ResponseEntity.ok().build();
+    }
+
+
+
+    @GetMapping("/name")
+    public ResponseEntity<String> getCompanyName(Authentication authentication) {
+        return ResponseEntity.ok(companyService.companyName(authentication));
+    }
+
+    @GetMapping("/address")
+    public ResponseEntity<String> getCompanyAddress(Authentication authentication) {
+        return ResponseEntity.ok(companyService.companyAddress(authentication));
+    }
+
+    @GetMapping("/phone")
+    public ResponseEntity<String> getCompanyPhone(Authentication authentication) {
+        return ResponseEntity.ok(companyService.companyPhone(authentication));
+    }
+
+    @GetMapping("/email")
+    public ResponseEntity<String> getCompanyEmail(Authentication authentication) {
+        return ResponseEntity.ok(companyService.companyEmail(authentication));
+    }
+
+    @PutMapping("/update-name")
+    public ResponseEntity<Void> updateCompanyName(
+            @RequestBody String name,
+            Authentication authentication) {
+        companyService.updateCompanyName(name, authentication);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/update-address")
+    public ResponseEntity<Void> updateCompanyAddress(
+            @RequestBody String address,
+            Authentication authentication) {
+        companyService.updateCompanyAddress(address, authentication);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/update-phone")
+    public ResponseEntity<Void> updateCompanyPhone(
+            @RequestBody String phoneNumber,
+            Authentication authentication) {
+        companyService.updateCompanyPhoneNumber(phoneNumber, authentication);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/update-email")
+    public ResponseEntity<Void> updateCompanyEmail(
+            @RequestBody String email,
+            Authentication authentication) {
+        companyService.updateCompanyEmail(email, authentication);
         return ResponseEntity.ok().build();
     }
 

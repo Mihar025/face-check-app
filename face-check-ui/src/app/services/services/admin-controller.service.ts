@@ -19,6 +19,10 @@ import { ChangePunchOutForWorker$Params } from '../fn/admin-controller/change-pu
 import { ChangePunchOutForWorkerResponse } from '../models/change-punch-out-for-worker-response';
 import { deleteWorkerPunchIn } from '../fn/admin-controller/delete-worker-punch-in';
 import { DeleteWorkerPunchIn$Params } from '../fn/admin-controller/delete-worker-punch-in';
+import { getTotalEmployeesCount } from '../fn/admin-controller/get-total-employees-count';
+import { GetTotalEmployeesCount$Params } from '../fn/admin-controller/get-total-employees-count';
+import { getTotalWorksitesCount } from '../fn/admin-controller/get-total-worksites-count';
+import { GetTotalWorksitesCount$Params } from '../fn/admin-controller/get-total-worksites-count';
 import { getWorkersInWorksite } from '../fn/admin-controller/get-workers-in-worksite';
 import { GetWorkersInWorksite$Params } from '../fn/admin-controller/get-workers-in-worksite';
 import { PageResponseWorksiteWorkerResponse } from '../models/page-response-worksite-worker-response';
@@ -137,6 +141,72 @@ export class AdminControllerService extends BaseService {
   getWorkersInWorksite(params: GetWorkersInWorksite$Params, context?: HttpContext): Observable<PageResponseWorksiteWorkerResponse> {
     return this.getWorkersInWorksite$Response(params, context).pipe(
       map((r: StrictHttpResponse<PageResponseWorksiteWorkerResponse>): PageResponseWorksiteWorkerResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getTotalWorksitesCount()` */
+  static readonly GetTotalWorksitesCountPath = '/admin/company/worksites/count';
+
+  /**
+   * Get total number of worksites in company.
+   *
+   * Returns the total count of worksites in the admin's company
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getTotalWorksitesCount()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getTotalWorksitesCount$Response(params?: GetTotalWorksitesCount$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getTotalWorksitesCount(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get total number of worksites in company.
+   *
+   * Returns the total count of worksites in the admin's company
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getTotalWorksitesCount$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getTotalWorksitesCount(params?: GetTotalWorksitesCount$Params, context?: HttpContext): Observable<number> {
+    return this.getTotalWorksitesCount$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /** Path part for operation `getTotalEmployeesCount()` */
+  static readonly GetTotalEmployeesCountPath = '/admin/company/employees/count';
+
+  /**
+   * Get total number of employees in company.
+   *
+   * Returns the total count of employees in the admin's company
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getTotalEmployeesCount()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getTotalEmployeesCount$Response(params?: GetTotalEmployeesCount$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getTotalEmployeesCount(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get total number of employees in company.
+   *
+   * Returns the total count of employees in the admin's company
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getTotalEmployeesCount$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getTotalEmployeesCount(params?: GetTotalEmployeesCount$Params, context?: HttpContext): Observable<number> {
+    return this.getTotalEmployeesCount$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 

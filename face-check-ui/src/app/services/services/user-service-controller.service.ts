@@ -15,6 +15,10 @@ import { findTotalWorkedHoursPerWeek } from '../fn/user-service-controller/find-
 import { FindTotalWorkedHoursPerWeek$Params } from '../fn/user-service-controller/find-total-worked-hours-per-week';
 import { findWorkerBaseHourRate } from '../fn/user-service-controller/find-worker-base-hour-rate';
 import { FindWorkerBaseHourRate$Params } from '../fn/user-service-controller/find-worker-base-hour-rate';
+import { findWorkerCompanyIdByAuthentication } from '../fn/user-service-controller/find-worker-company-id-by-authentication';
+import { FindWorkerCompanyIdByAuthentication$Params } from '../fn/user-service-controller/find-worker-company-id-by-authentication';
+import { findWorkerCompanyName } from '../fn/user-service-controller/find-worker-company-name';
+import { FindWorkerCompanyName$Params } from '../fn/user-service-controller/find-worker-company-name';
 import { findWorkerEmail } from '../fn/user-service-controller/find-worker-email';
 import { FindWorkerEmail$Params } from '../fn/user-service-controller/find-worker-email';
 import { findWorkerFullContactInformation } from '../fn/user-service-controller/find-worker-full-contact-information';
@@ -69,11 +73,13 @@ import { updatePassword } from '../fn/user-service-controller/update-password';
 import { UpdatePassword$Params } from '../fn/user-service-controller/update-password';
 import { updatePhone } from '../fn/user-service-controller/update-phone';
 import { UpdatePhone$Params } from '../fn/user-service-controller/update-phone';
+import { UserCompanyNameInformation } from '../models/user-company-name-information';
 import { UserEmailResponse } from '../models/user-email-response';
 import { UserFullContactInformation } from '../models/user-full-contact-information';
 import { UserFullNameResponse } from '../models/user-full-name-response';
 import { UserHomeAddressResponse } from '../models/user-home-address-response';
 import { UserPhoneNumberResponse } from '../models/user-phone-number-response';
+import { WorkerCompanyIdByAuthenticationResponse } from '../models/worker-company-id-by-authentication-response';
 
 @Injectable({ providedIn: 'root' })
 export class UserServiceControllerService extends BaseService {
@@ -753,6 +759,56 @@ export class UserServiceControllerService extends BaseService {
   findWorkerFullContactInformation(params?: FindWorkerFullContactInformation$Params, context?: HttpContext): Observable<UserFullContactInformation> {
     return this.findWorkerFullContactInformation$Response(params, context).pipe(
       map((r: StrictHttpResponse<UserFullContactInformation>): UserFullContactInformation => r.body)
+    );
+  }
+
+  /** Path part for operation `findWorkerCompanyName()` */
+  static readonly FindWorkerCompanyNamePath = '/user/company';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findWorkerCompanyName()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findWorkerCompanyName$Response(params?: FindWorkerCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<UserCompanyNameInformation>> {
+    return findWorkerCompanyName(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findWorkerCompanyName$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findWorkerCompanyName(params?: FindWorkerCompanyName$Params, context?: HttpContext): Observable<UserCompanyNameInformation> {
+    return this.findWorkerCompanyName$Response(params, context).pipe(
+      map((r: StrictHttpResponse<UserCompanyNameInformation>): UserCompanyNameInformation => r.body)
+    );
+  }
+
+  /** Path part for operation `findWorkerCompanyIdByAuthentication()` */
+  static readonly FindWorkerCompanyIdByAuthenticationPath = '/user/company/id';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findWorkerCompanyIdByAuthentication()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findWorkerCompanyIdByAuthentication$Response(params?: FindWorkerCompanyIdByAuthentication$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkerCompanyIdByAuthenticationResponse>> {
+    return findWorkerCompanyIdByAuthentication(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findWorkerCompanyIdByAuthentication$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findWorkerCompanyIdByAuthentication(params?: FindWorkerCompanyIdByAuthentication$Params, context?: HttpContext): Observable<WorkerCompanyIdByAuthenticationResponse> {
+    return this.findWorkerCompanyIdByAuthentication$Response(params, context).pipe(
+      map((r: StrictHttpResponse<WorkerCompanyIdByAuthenticationResponse>): WorkerCompanyIdByAuthenticationResponse => r.body)
     );
   }
 
