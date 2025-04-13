@@ -9,6 +9,7 @@ import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
 import com.zikpak.facecheck.repository.WorkerSiteRepository;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
+import com.zikpak.facecheck.requestsResponses.WorkSiteAllInformationResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteClosedDaysResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteRequest;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteResponse;
@@ -53,8 +54,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
 
-    // todo in future this method should return all work sites which located very closed to user location
-    // todo basicly method should analizing user location and finding for for him work sites, which is more close to him!
+
     @Override
     public PageResponse<WorkSiteResponse> findAllWorkSites(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("siteName").descending());
@@ -62,7 +62,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         List<WorkSiteResponse> workSiteResponses = workSites.getContent().stream()
                 .map(workSiteMapper::toWorkSiteResponse)
                 .toList();
-
         return new PageResponse<>(
                 workSiteResponses,
                 workSites.getNumber(),
@@ -73,6 +72,24 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                 workSites.isLast()
         );
     }
+
+    @Override
+    public WorkSiteResponse createWorkSite(Authentication  authentication,WorkSiteRequest request) {
+        checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+        var newWorkSite =  WorkSite.builder()
+                .siteName(request.getWorkSiteName())
+                .address(request.getAddress())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .allowedRadius(request.getAllowedRadius())
+                .workDayStart(request.getWorkDayStart())
+                .workDayEnd(request.getWorkDayEnd())
+                .build();
+
+        var savedWorkSite = workSiteRepository.save(newWorkSite);
+        return  workSiteMapper.toWorkSiteResponse(savedWorkSite);
+    }
+
 
     @Override
     @Transactional
@@ -159,21 +176,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                 .build();
     }
 
-    @Override
-    public WorkSiteResponse createWorkSite(Authentication  authentication,WorkSiteRequest request) {
-            checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-            var newWorkSite =  WorkSite.builder()
-                    .siteName(request.getWorkSiteName())
-                    .address(request.getAddress())
-                    .latitude(request.getLatitude())
-                    .longitude(request.getLongitude())
-                    .allowedRadius(request.getAllowedRadius())
-                    .workDayStart(request.getWorkDayStart())
-                    .workDayEnd(request.getWorkDayEnd())
-                    .build();
-        var savedWorkSite = workSiteRepository.save(newWorkSite);
-        return  workSiteMapper.toWorkSiteResponse(savedWorkSite);
-    }
 
 
 
@@ -598,6 +600,21 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     }
 
+    @Transactional(rollbackOn = Exception.class)
+    public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
+         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+         var workSite = findWorkSiteBySpecialId(workSiteId);
 
+         for(User user: new HashSet<>(workSite.getUsers())){
+             workSite.removeUser(user);
+         }
 
+         workSiteRepository.deleteById(workSite.getId());
+    }
+
+    public WorkSiteAllInformationResponse findWorkSiteAllInformationById(Authentication authentication, Integer workSiteId) {
+        checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+        var workSite = findWorkSiteBySpecialId(workSiteId);
+        return workSiteMapper.toWorkSiteAllInformationResponse(workSite);
+    }
 }

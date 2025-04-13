@@ -22,6 +22,11 @@ import {LocalTime} from "../../../../../services/models/local-time";
 import {WorkerSetScheduleRequest} from "../../../../../services/models/worker-set-schedule-request";
 import {SetWorkerSchedule$Params} from "../../../../../services/fn/work-schedule-controller/set-worker-schedule";
 import {WorkSchedulerResponse} from "../../../../../services/models/work-scheduler-response";
+import {GetUserEmployees$Params} from "../../../../../services/fn/company-controller/get-user-employees";
+import {
+  GetWorkerPersonalInformation$Params
+} from "../../../../../services/fn/user-service-controller/get-worker-personal-information";
+import {WorkerPersonalInformationResponse} from "../../../../../services/models/worker-personal-information-response";
 
 @Component({
   selector: 'app-manage-employees',
@@ -49,13 +54,14 @@ export class ManageEmployeesComponent implements OnInit {
   showFireModal: boolean = false;
   showRateModal: boolean = false;
   showAddEmployeeModal: boolean = false;
+  showEmployeeInfoModal: boolean = false;
   selectedEmployeeId: number = 0;
 
   newHourlyRate: number = 0;
 
   selectedEmployee: RelatedUserInCompanyResponse | null = null;
   employeeRateInfo: EmployeeSalaryResponse | null = null;
-  employeePersonalInfo: UserFullContactInformation | null = null;
+  employeePersonalInfo: WorkerPersonalInformationResponse | null = null;
   employeeGeneratedSchedule: WorkSchedulerResponse | null = null;
 
   companyAddress: string = '';
@@ -71,7 +77,9 @@ export class ManageEmployeesComponent implements OnInit {
   ssn_WORKER?: string = '';
 
   endTime: LocalTime = {};
-  startTime: LocalTime ={};
+  startTime: LocalTime = {};
+
+  showScheduleForm: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -164,6 +172,35 @@ export class ManageEmployeesComponent implements OnInit {
   changePage(newPage: number): void {
     this.page = newPage;
     this.loadAllEmployeesRelatedToCertainCompany();
+  }
+
+  // Модальное окно информации о сотруднике
+  openEmployeeInfoModal(workerId: number | undefined) {
+    if (workerId === undefined) {
+      this.errorMessage = "Cannot show employee info: Employee ID is not defined";
+      return;
+    }
+
+    this.selectedEmployeeId = workerId;
+    this.selectedEmployee = this.employees.find(emp => emp.workerId === workerId) || null;
+    this.showEmployeeInfoModal = true;
+    this.showScheduleForm = false;
+
+    // Загружаем информацию о сотруднике
+    this.findWorkerPersonalInformation(workerId);
+  }
+
+  closeEmployeeInfoModal() {
+    this.showEmployeeInfoModal = false;
+    this.employeePersonalInfo = null;
+    this.employeeGeneratedSchedule = null;
+  }
+
+  toggleScheduleForm() {
+    this.showScheduleForm = !this.showScheduleForm;
+    // Reset schedule form
+    this.startTime = {};
+    this.endTime = {};
   }
 
   // Модальное окно добавления сотрудника
@@ -294,7 +331,6 @@ export class ManageEmployeesComponent implements OnInit {
     });
   }
 
-  // Информация о ставке сотрудника
   loadEmployeeRateInfo(workerId: number | undefined) {
     if (workerId === undefined) {
       this.errorMessage = "Cannot load employee rate: Employee ID is not defined";
@@ -324,12 +360,21 @@ export class ManageEmployeesComponent implements OnInit {
     });
   }
 
-  findWorkerFullContactInformation(){
+  findWorkerPersonalInformation(workerId: number | undefined) {
+    if (workerId === undefined) {
+      this.errorMessage = "Cannot load employee information: Employee ID is not defined";
+      return;
+    }
+
     this.loading = true;
     this.errorMessage = '';
 
-    this.userService.findWorkerFullContactInformation().subscribe(
-      (response: UserFullContactInformation)=> {
+    const params: GetWorkerPersonalInformation$Params = {
+      employeeId: workerId
+    }
+
+    this.userService.getWorkerPersonalInformation(params).subscribe(
+      (response: WorkerPersonalInformationResponse) => {
         this.employeePersonalInfo = response;
         this.loading = false;
       },
@@ -340,39 +385,47 @@ export class ManageEmployeesComponent implements OnInit {
     );
   }
 
+  generateScheduleForWorker() {
+    if (!this.selectedEmployeeId) {
+      this.errorMessage = "Cannot generate schedule: No employee selected";
+      return;
+    }
 
-  generateScheduleForWorker(){
+    if (this.startTime.hour === undefined || this.endTime.hour === undefined) {
+      this.errorMessage = "Please enter valid start and end times";
+      return;
+    }
+
     this.loading = true;
     this.errorMessage = '';
 
-    const data: WorkerSetScheduleRequest = {
-      endTime: this.endTime,
-      startTime: this.startTime
-    }
+    // Преобразуем время в строковый формат ISO-8601, который ожидает Jackson для LocalTime
+    const startTimeStr = `${this.startTime.hour.toString().padStart(2, '0')}:${(this.startTime.minute || 0).toString().padStart(2, '0')}:00`;
+    const endTimeStr = `${this.endTime.hour.toString().padStart(2, '0')}:${(this.endTime.minute || 0).toString().padStart(2, '0')}:00`;
 
-    const params: SetWorkerSchedule$Params  = {
+    const data = {
+      startTime: startTimeStr,
+      endTime: endTimeStr
+    };
+
+    const params: SetWorkerSchedule$Params = {
       workerId: this.selectedEmployeeId,
-      body: data
-    }
+      body: data as any
+    };
+
     this.workScheduleController.setWorkerSchedule(params).subscribe(
-      (response: WorkSchedulerResponse)=> {
+      (response: WorkSchedulerResponse) => {
         this.employeeGeneratedSchedule = response;
         this.loading = false;
+        this.successMessage = "Schedule generated successfully";
+        this.showScheduleForm = false;
       },
       error => {
         this.errorMessage = 'Cannot generate Schedule for Employee: ' + (error.message || 'Unknown problem');
         this.loading = false;
       }
-    )
-
-
-
-
+    );
   }
-
-
-
-
 
   private async loadAdminsCompanyId(): Promise<number> {
     try {

@@ -2,6 +2,7 @@ package com.zikpak.facecheck.mapper;
 
 
 import com.zikpak.facecheck.entity.employee.WorkSite;
+import com.zikpak.facecheck.requestsResponses.WorkSiteAllInformationResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.data.*;
 import com.zikpak.facecheck.requestsResponses.workSite.updates.WorkSiteUpdateAddressResponse;
@@ -73,5 +74,19 @@ public class WorkSiteMapper {
     }
 
 
+    public WorkSiteAllInformationResponse toWorkSiteAllInformationResponse(WorkSite workSite) {
+        return WorkSiteAllInformationResponse.builder()
+                .workSiteId(workSite.getId())
+                .siteName(workSite.getSiteName())
+                .address(workSite.getAddress())
+                .latitude(workSite.getLatitude())
+                .longitude(workSite.getLongitude())
+                .allowedRadius(workSite.getAllowedRadius())
+                .workDayStart(workSite.getWorkDayStart())
+                .workDayEnd(workSite.getWorkDayEnd())
+                .isActive(workSite.getIsActive())
+                .build();
 
+
+    }
 }

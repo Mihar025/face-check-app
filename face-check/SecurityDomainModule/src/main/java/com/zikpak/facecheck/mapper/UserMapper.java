@@ -7,6 +7,7 @@ import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
 import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
+import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
 import com.zikpak.facecheck.requestsResponses.admin.WorksiteWorkerResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -152,5 +153,21 @@ public class UserMapper {
         return  WorkerCompanyIdByAuthenticationResponse.builder()
                 .companyId(foundedCompanyId)
                 .build();
+    }
+
+    public WorkerPersonalInformationResponse toWorkerPersonalInformationResponse(User foundedUser) {
+        return WorkerPersonalInformationResponse.builder()
+                .workerId(foundedUser.getId())
+                .companyId(foundedUser.getCompany().getId())
+                .firstName(foundedUser.getFirstName())
+                .lastName(foundedUser.getLastName())
+                .email(foundedUser.getEmail())
+                .companyName(foundedUser.getCompany().getCompanyName())
+                .phoneNumber(foundedUser.getPhoneNumber())
+                .address(foundedUser.getHomeAddress())
+                .baseHourlyRate(foundedUser.getBaseHourlyRate())
+                .build();
+
+
     }
 }

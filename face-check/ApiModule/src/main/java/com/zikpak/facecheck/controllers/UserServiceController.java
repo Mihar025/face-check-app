@@ -2,6 +2,7 @@ package com.zikpak.facecheck.controllers;
 
 import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
 import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
+import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import com.zikpak.facecheck.services.userService.UserService;
 import lombok.RequiredArgsConstructor;
@@ -206,6 +207,16 @@ public class UserServiceController {
     public ResponseEntity<WorkerCompanyIdByAuthenticationResponse> findWorkerCompanyIdByAuthentication(Authentication authentication) {
         return ResponseEntity.ok(userService.findWorkersCompanyByAuthentication(authentication));
     }
+
+    @GetMapping("/personal-information/{employeeId}")
+    public ResponseEntity<WorkerPersonalInformationResponse> getWorkerPersonalInformation(
+            Authentication authentication,
+            @PathVariable Integer employeeId) {
+        WorkerPersonalInformationResponse response = userService.findWorkerPersonalInformation(authentication, employeeId);
+        return ResponseEntity.ok(response);
+    }
+
+
 
 
 

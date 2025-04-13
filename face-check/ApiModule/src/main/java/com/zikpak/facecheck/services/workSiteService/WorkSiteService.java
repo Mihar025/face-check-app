@@ -3,6 +3,7 @@ package com.zikpak.facecheck.services.workSiteService;
 
 import com.zikpak.facecheck.helperServices.WorkSiteServiceImpl;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
+import com.zikpak.facecheck.requestsResponses.WorkSiteAllInformationResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteClosedDaysResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteRequest;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteResponse;
@@ -129,6 +130,14 @@ public class WorkSiteService {
                                                                                          int size,
                                                                                          Authentication authentication) {
     return workSiteService.findAllWorkerInWorkSiteRelated(workSiteId, page, size, authentication);
+    }
+
+    public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
+         workSiteService.deleteWorkSiteById(authentication, workSiteId);
+    }
+
+    public WorkSiteAllInformationResponse findWorkSiteAllInformation(Authentication authentication, Integer workSiteId) {
+       return workSiteService.findWorkSiteAllInformationById(authentication, workSiteId);
     }
 
     }

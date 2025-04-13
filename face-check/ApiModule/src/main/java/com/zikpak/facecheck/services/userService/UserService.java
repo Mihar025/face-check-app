@@ -6,6 +6,7 @@ import com.zikpak.facecheck.helperServices.UserServiceImpl;
 import com.zikpak.facecheck.helperServices.WorkerPayRollService;
 import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
 import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
+import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,6 +75,10 @@ public class UserService implements UserFinance {
 
     public WorkerCompanyIdByAuthenticationResponse findWorkersCompanyByAuthentication(Authentication authentication){
         return userService.findCompanyByWorkerAuthentication(authentication);
+    }
+
+    public WorkerPersonalInformationResponse findWorkerPersonalInformation(Authentication authentication, Integer emplpoyeId){
+        return userService.findWorkerPersonInformation(authentication, emplpoyeId);
     }
 
 

@@ -65,6 +65,8 @@ import { findWorkerTotalPayedTaxesAmountForWeek } from '../fn/user-service-contr
 import { FindWorkerTotalPayedTaxesAmountForWeek$Params } from '../fn/user-service-controller/find-worker-total-payed-taxes-amount-for-week';
 import { findWorkerTotalPayedTaxesAmountForYear } from '../fn/user-service-controller/find-worker-total-payed-taxes-amount-for-year';
 import { FindWorkerTotalPayedTaxesAmountForYear$Params } from '../fn/user-service-controller/find-worker-total-payed-taxes-amount-for-year';
+import { getWorkerPersonalInformation } from '../fn/user-service-controller/get-worker-personal-information';
+import { GetWorkerPersonalInformation$Params } from '../fn/user-service-controller/get-worker-personal-information';
 import { updateEmail } from '../fn/user-service-controller/update-email';
 import { UpdateEmail$Params } from '../fn/user-service-controller/update-email';
 import { updateHomeAddress } from '../fn/user-service-controller/update-home-address';
@@ -80,6 +82,7 @@ import { UserFullNameResponse } from '../models/user-full-name-response';
 import { UserHomeAddressResponse } from '../models/user-home-address-response';
 import { UserPhoneNumberResponse } from '../models/user-phone-number-response';
 import { WorkerCompanyIdByAuthenticationResponse } from '../models/worker-company-id-by-authentication-response';
+import { WorkerPersonalInformationResponse } from '../models/worker-personal-information-response';
 
 @Injectable({ providedIn: 'root' })
 export class UserServiceControllerService extends BaseService {
@@ -684,6 +687,31 @@ export class UserServiceControllerService extends BaseService {
   findWorkerPhoneNumber(params?: FindWorkerPhoneNumber$Params, context?: HttpContext): Observable<UserPhoneNumberResponse> {
     return this.findWorkerPhoneNumber$Response(params, context).pipe(
       map((r: StrictHttpResponse<UserPhoneNumberResponse>): UserPhoneNumberResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getWorkerPersonalInformation()` */
+  static readonly GetWorkerPersonalInformationPath = '/user/personal-information/{employeeId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getWorkerPersonalInformation()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkerPersonalInformation$Response(params: GetWorkerPersonalInformation$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkerPersonalInformationResponse>> {
+    return getWorkerPersonalInformation(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getWorkerPersonalInformation$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkerPersonalInformation(params: GetWorkerPersonalInformation$Params, context?: HttpContext): Observable<WorkerPersonalInformationResponse> {
+    return this.getWorkerPersonalInformation$Response(params, context).pipe(
+      map((r: StrictHttpResponse<WorkerPersonalInformationResponse>): WorkerPersonalInformationResponse => r.body)
     );
   }
 

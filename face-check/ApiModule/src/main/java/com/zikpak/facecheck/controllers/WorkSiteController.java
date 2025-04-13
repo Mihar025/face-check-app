@@ -1,6 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
 import com.zikpak.facecheck.requestsResponses.PageResponse;
+import com.zikpak.facecheck.requestsResponses.WorkSiteAllInformationResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteClosedDaysResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteRequest;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteResponse;
@@ -212,6 +213,24 @@ public class WorkSiteController {
         return ResponseEntity.ok(
                 workSiteService.findAllWorkerInWorkSiteRelated(workSiteId, page, size, authentication)
         );
+    }
+
+
+    @DeleteMapping("/{workSiteId}")
+    @Operation(summary = "Delete work site by ID")
+    public ResponseEntity<Void> deleteWorkSiteById(
+            Authentication authentication,
+            @PathVariable Integer workSiteId) {
+        workSiteService.deleteWorkSiteById(authentication, workSiteId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{workSiteId}/all-information")
+    @Operation(summary = "Get all information about work site by ID")
+    public ResponseEntity<WorkSiteAllInformationResponse> findWorkSiteAllInformation(
+            @PathVariable Integer workSiteId,
+            Authentication authentication) {
+        return ResponseEntity.ok(workSiteService.findWorkSiteAllInformation(authentication, workSiteId));
     }
 
 }

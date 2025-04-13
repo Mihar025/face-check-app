@@ -15,8 +15,12 @@ import { canPunchInOut } from '../fn/work-site-controller/can-punch-in-out';
 import { CanPunchInOut$Params } from '../fn/work-site-controller/can-punch-in-out';
 import { createWorkSite } from '../fn/work-site-controller/create-work-site';
 import { CreateWorkSite$Params } from '../fn/work-site-controller/create-work-site';
+import { deleteWorkSiteById } from '../fn/work-site-controller/delete-work-site-by-id';
+import { DeleteWorkSiteById$Params } from '../fn/work-site-controller/delete-work-site-by-id';
 import { findAllWorkSites } from '../fn/work-site-controller/find-all-work-sites';
 import { FindAllWorkSites$Params } from '../fn/work-site-controller/find-all-work-sites';
+import { findWorkSiteAllInformation } from '../fn/work-site-controller/find-work-site-all-information';
+import { FindWorkSiteAllInformation$Params } from '../fn/work-site-controller/find-work-site-all-information';
 import { findWorkSiteById } from '../fn/work-site-controller/find-work-site-by-id';
 import { FindWorkSiteById$Params } from '../fn/work-site-controller/find-work-site-by-id';
 import { getActiveWorkers } from '../fn/work-site-controller/get-active-workers';
@@ -55,6 +59,7 @@ import { updateName } from '../fn/work-site-controller/update-name';
 import { UpdateName$Params } from '../fn/work-site-controller/update-name';
 import { updateWorkingHours } from '../fn/work-site-controller/update-working-hours';
 import { UpdateWorkingHours$Params } from '../fn/work-site-controller/update-working-hours';
+import { WorkSiteAllInformationResponse } from '../models/work-site-all-information-response';
 import { WorkSiteResponse } from '../models/work-site-response';
 import { WorkSiteUpdateAddressResponse } from '../models/work-site-update-address-response';
 import { WorkSiteUpdateLocationResponse } from '../models/work-site-update-location-response';
@@ -599,6 +604,39 @@ export class WorkSiteControllerService extends BaseService {
     );
   }
 
+  /** Path part for operation `findWorkSiteAllInformation()` */
+  static readonly FindWorkSiteAllInformationPath = '/workSite/{workSiteId}/all-information';
+
+  /**
+   * Get all information about work site by ID.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findWorkSiteAllInformation()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findWorkSiteAllInformation$Response(params: FindWorkSiteAllInformation$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkSiteAllInformationResponse>> {
+    return findWorkSiteAllInformation(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get all information about work site by ID.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findWorkSiteAllInformation$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findWorkSiteAllInformation(params: FindWorkSiteAllInformation$Params, context?: HttpContext): Observable<WorkSiteAllInformationResponse> {
+    return this.findWorkSiteAllInformation$Response(params, context).pipe(
+      map((r: StrictHttpResponse<WorkSiteAllInformationResponse>): WorkSiteAllInformationResponse => r.body)
+    );
+  }
+
   /** Path part for operation `getActiveWorkers()` */
   static readonly GetActiveWorkersPath = '/workSite/{workSiteId}/active-workers';
 
@@ -662,6 +700,39 @@ export class WorkSiteControllerService extends BaseService {
   findWorkSiteById(params: FindWorkSiteById$Params, context?: HttpContext): Observable<WorkSiteResponse> {
     return this.findWorkSiteById$Response(params, context).pipe(
       map((r: StrictHttpResponse<WorkSiteResponse>): WorkSiteResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `deleteWorkSiteById()` */
+  static readonly DeleteWorkSiteByIdPath = '/workSite/{workSiteId}';
+
+  /**
+   * Delete work site by ID.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deleteWorkSiteById()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deleteWorkSiteById$Response(params: DeleteWorkSiteById$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return deleteWorkSiteById(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Delete work site by ID.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deleteWorkSiteById$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deleteWorkSiteById(params: DeleteWorkSiteById$Params, context?: HttpContext): Observable<void> {
+    return this.deleteWorkSiteById$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 
