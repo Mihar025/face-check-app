@@ -1,5 +1,7 @@
 package com.zikpak.facecheck.domain.abstractClasses;
 
+import org.springframework.security.core.Authentication;
+
 public abstract class BaseUserService {
 
     protected void validateEmail(String email) {
@@ -27,9 +29,6 @@ public abstract class BaseUserService {
             throw new IllegalArgumentException(" PhoneNumber cannot be empty");
         }
     }
-
-
-
 
 
 

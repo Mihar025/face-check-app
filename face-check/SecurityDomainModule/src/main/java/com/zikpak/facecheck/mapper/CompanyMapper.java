@@ -12,6 +12,8 @@ import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyRespons
 import com.zikpak.facecheck.requestsResponses.worker.WorkerPayrollResponse;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 public class CompanyMapper {
 
@@ -65,16 +67,20 @@ public class CompanyMapper {
     }
 
     public RelatedUserInCompanyResponse toCompanyWorkerResponse(User foundedEmployee) {
+        BigDecimal baseHourlyRate = null;
+        if (foundedEmployee.getPayrolls() != null && !foundedEmployee.getPayrolls().isEmpty()) {
+            baseHourlyRate = foundedEmployee.getPayrolls().getLast().getBaseHourlyRate();
+        }
+
         return RelatedUserInCompanyResponse.builder()
                 .workerId(foundedEmployee.getId())
                 .companyId(foundedEmployee.getCompany().getId())
                 .firstName(foundedEmployee.getFirstName())
                 .lastName(foundedEmployee.getLastName())
                 .email(foundedEmployee.getEmail())
-                .baseHourlyRate(foundedEmployee.getPayrolls().getLast().getBaseHourlyRate())
+                .baseHourlyRate(baseHourlyRate)
                 .build();
     }
-
     public Company createNewCompany(CompanyRegistrationRequest companyRegistrationRequest) {
         return Company.builder()
                 .companyName(companyRegistrationRequest.getCompanyName())

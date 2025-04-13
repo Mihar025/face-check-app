@@ -8,12 +8,14 @@ import { UserPageComponent } from "./pages/user-page/user-page.component";
 import {SignInComponent} from "./authentication/sign-in/sign-in.component";
 import {RegisterComponent} from "./authentication/register/register.component";
 import {VerificationCodeComponent} from "./authentication/verification-code/verification-code.component";
+import {RegisterCompanyComponent} from "./authentication/register-company/register-company.component";
+import {CompanyInformationComponent} from "./pages/admin-main-page/company-information/company-information.component";
+import {ManageWorksitesComponent} from "./pages/admin-main-page/manage-worksites/manage-worksites.component";
+import {SettingsComponent} from "./pages/admin-main-page/settings/settings.component";
+import {ManageEmployeesComponent} from "./pages/admin-main-page/manage-employees/manage-employees.component";
 
 const routes: Routes = [
-  {
-    path: 'face-check',
-    component: HomeComponent
-  },
+  //Registration all important endpoints
   {
     path: 'sign-in',
     component: SignInComponent
@@ -21,6 +23,24 @@ const routes: Routes = [
   {
     path: 'sign-up',
     component: RegisterComponent
+  },
+  {
+    path: 'verification/admin',
+    component: VerificationCodeComponent
+  },
+  {
+    path: 'registration/company',
+    component: RegisterCompanyComponent
+  },
+
+
+
+
+
+  // Home Page
+  {
+    path: 'face-check',
+    component: HomeComponent
   },
   {
     path: 'about-us',
@@ -39,10 +59,6 @@ const routes: Routes = [
     component: UserPageComponent
   },
   {
-    path: 'main-page/home',
-    component: HomeComponent
-  },
-  {
     path: 'main-page/about',
     component: AboutUsComponent
   },
@@ -50,14 +66,25 @@ const routes: Routes = [
     path: 'main-page/pricing',
     component: PricingComponent
   },
+
+  //Admin Home
   {
-    path: 'verification/admin',
-    component: VerificationCodeComponent
+    path: 'main-page/admin/company-information',
+    component: CompanyInformationComponent
   },
   {
-    path: 'registration/company',
-    component: VerificationCodeComponent
+    path: 'main-page/admin/manage-worksites',
+    component: ManageWorksitesComponent
   },
+  {
+    path: 'main-page/admin/manage-employees',
+    component: ManageEmployeesComponent
+  },
+  {
+    path: 'main-page/admin/settings',
+    component: SettingsComponent
+  },
+
 
   {
     path: '',

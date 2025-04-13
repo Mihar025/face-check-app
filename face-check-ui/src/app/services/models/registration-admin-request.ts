@@ -11,5 +11,5 @@ export interface RegistrationAdminRequest {
   lastName: string;
   password: string;
   phoneNumber: string;
-  ssn_WORKER?: number;
+  ssn_WORKER?: string;
 }

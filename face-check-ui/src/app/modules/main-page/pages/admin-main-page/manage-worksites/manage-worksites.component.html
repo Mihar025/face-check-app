@@ -1,0 +1,34 @@
+<div class="admin-layout">
+  <div class="sidebar">
+    <div class="admin-profile">
+      <div class="avatar-container">
+        <img src=".jpg" alt="Admin Avatar" class="admin-avatar">
+      </div>
+      <div class="admin-info">
+        <h3 class="admin-name">{{ userName }}</h3>
+        <p class="admin-company">{{ companyName }}</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <ul>
+        <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
+        <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
+        <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
+        <li><a routerLink="/main-page/admin/finance" routerLinkActive="active">Manage Finance</a></li>
+        <li><a routerLink="/main-page/admin/settings" routerLinkActive="active">Settings</a></li>
+        <li><a (click)="logout()" class="logout-link">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Основной контент -->
+  <div class="main-content">
+    <!-- Верхний логотип -->
+    <div class="top-logo-container">
+      <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+    </div>
+
+
+  </div>
+</div>
