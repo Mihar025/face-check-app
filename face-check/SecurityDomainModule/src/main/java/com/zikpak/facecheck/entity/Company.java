@@ -58,20 +58,25 @@ public class Company {
 
 
 
-    //todo make logic which will count all related workers for company!
     private Integer workersQuantity;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private List<User> employees = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "company_worksite",
-            joinColumns = @JoinColumn(name = "company_id"),
-            inverseJoinColumns = @JoinColumn(name = "worksite_id")
-    )
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private Set<WorkSite> workSites = new HashSet<>();
 
+
+    public void addWorkSite(WorkSite workSite) {
+        workSites.add(workSite);
+        workSite.setCompany(this);
+    }
+
+
+    public void removeWorkSite(WorkSite workSite) {
+        workSites.remove(workSite);
+        workSite.setCompany(null);
+    }
 
 }
 

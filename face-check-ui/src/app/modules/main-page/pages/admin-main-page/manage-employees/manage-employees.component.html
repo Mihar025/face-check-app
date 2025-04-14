@@ -12,6 +12,7 @@
 
     <nav class="sidebar-menu">
       <ul>
+        <li><a routerLink="/main-page/admin" routerLinkActive="active">Main Page</a></li>
         <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
         <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
         <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
@@ -146,10 +147,7 @@
               <label>Address:</label>
               <span>{{ employeePersonalInfo.address }}</span>
             </div>
-            <div class="info-item">
-              <label>Base Hourly Rate:</label>
-              <span>${{ employeePersonalInfo.baseHourlyRate }}</span>
-            </div>
+
             <div class="info-item">
               <label>Company:</label>
               <span>{{ employeePersonalInfo.companyName }}</span>
@@ -222,7 +220,6 @@
   </div>
 </div>
 
-<!-- Модальное окно добавления сотрудника -->
 <div class="modal-overlay" *ngIf="showAddEmployeeModal">
   <div class="modal-container modal-large">
     <div class="modal-header">

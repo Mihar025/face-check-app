@@ -35,9 +35,10 @@ public class WorkSiteController {
     @GetMapping
     @Operation(summary = "Find all work sites with pagination")
     public ResponseEntity<PageResponse<WorkSiteResponse>> findAllWorkSites(
+            Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(workSiteService.findAllWorkSites(page, size));
+        return ResponseEntity.ok(workSiteService.findAllWorkSites(authentication, page, size));
     }
     //working
     @PostMapping("/select/{workSiteId}")
@@ -231,6 +232,13 @@ public class WorkSiteController {
             @PathVariable Integer workSiteId,
             Authentication authentication) {
         return ResponseEntity.ok(workSiteService.findWorkSiteAllInformation(authentication, workSiteId));
+    }
+
+    @GetMapping("/work-site/sum")
+    @Operation(summary = "Get sum of all Worksites")
+    public ResponseEntity<Integer> countAllWorksitesRelatedToTheCompany(
+            Authentication authentication) {
+        return ResponseEntity.ok(workSiteService.findSumOfWorkSitesRelatedToCompany(authentication));
     }
 
 }

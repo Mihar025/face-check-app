@@ -12,6 +12,7 @@
 
     <nav class="sidebar-menu">
       <ul>
+        <li><a routerLink="/main-page/admin" routerLinkActive="active">Main Page</a></li>
         <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
         <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
         <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
@@ -68,10 +69,10 @@
               <td>{{ worksite.workSiteId }}</td>
               <td>{{ worksite.workSiteName }}</td>
               <td>{{ worksite.address }}</td>
-              <td>{{ worksite.workDayStart?.hour }}:{{ worksite.workDayStart?.minute || '00' }} - {{ worksite.workDayEnd?.hour }}:{{ worksite.workDayEnd?.minute || '00' }}</td>
+              <td>{{ formatWorkingHours(worksite.workDayStart, worksite.workDayEnd) }}</td>
               <td>{{ worksite.allowedRadius }} m</td>
               <td class="actions-cell">
-                <button class="action-button info-button" (click)="(worksite.workSiteId)">
+                <button class="action-button info-button" (click)="openWorksiteInfoModal(worksite.workSiteId!)">
                   <i class="fas fa-info-circle"></i> Details
                 </button>
                 <button class="action-button edit-button" *ngIf="worksite.workSiteId !== undefined" (click)="openEditWorksiteModal(worksite.workSiteId!)">
@@ -136,7 +137,7 @@
             </div>
             <div class="info-item">
               <label>Working Hours:</label>
-              <span>{{ selectedWorksite.workDayStart?.hour }}:{{ selectedWorksite.workDayStart?.minute || '00' }} - {{ selectedWorksite.workDayEnd?.hour }}:{{ selectedWorksite.workDayEnd?.minute || '00' }}</span>
+              <span>{{ formatWorkingHours(selectedWorksite?.workDayStart, selectedWorksite?.workDayEnd) }}</span>
             </div>
             <div class="info-item">
               <label>Allowed Radius:</label>

@@ -3,16 +3,19 @@
   <div class="sidebar">
     <div class="admin-profile">
       <div class="avatar-container">
-        <img src=".jpg" alt="Admin Avatar" class="admin-avatar">
+        <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'" alt="Admin Avatar" class="admin-avatar">
+        <div class="avatar-overlay" (click)="pickAndUploadImage()">
+          <span class="change-photo-icon">+</span>
+        </div>
       </div>
       <div class="admin-info">
         <h3 class="admin-name">{{ userName }}</h3>
         <p class="admin-company">{{ companyName }}</p>
       </div>
     </div>
-
     <nav class="sidebar-menu">
       <ul>
+        <li><a routerLink="/main-page/admin" routerLinkActive="active">Main Page</a></li>
         <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
         <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
         <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
@@ -34,8 +37,24 @@
     <div class="admin-container">
       <h1>Settings</h1>
 
-      <!-- Настройки компании -->
       <div class="settings-section">
+        <h2>Фотография профиля</h2>
+        <div class="profile-photo-section">
+          <div class="current-photo">
+            <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'" alt="Profile Photo" class="profile-photo-preview">
+          </div>
+
+          <div class="photo-actions">
+            <button class="save-button" (click)="pickAndUploadImage()" [disabled]="isUploadingPhoto">
+              {{ isUploadingPhoto ? 'Загрузка...' : 'Изменить фото' }}
+            </button>
+            <div *ngIf="photoUploadSuccess" class="success-message">Фотография успешно обновлена!</div>
+            <div *ngIf="photoUploadError" class="error-message">{{ photoUploadError }}</div>
+          </div>
+        </div>
+
+
+
         <h2>Company Settings</h2>
         <div class="settings-form">
           <div class="form-group">

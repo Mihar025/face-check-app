@@ -13,7 +13,7 @@ import org.springframework.security.core.Authentication;
 public interface WorkSiteService {
     // For default users
     WorkSiteResponse findWorkSiteById(Integer id);  // find special work site
-    PageResponse<WorkSiteResponse> findAllWorkSites(int page, int size);      // find all work sites
+    PageResponse<WorkSiteResponse> findAllWorkSites(Authentication authentication, int page, int size);      // find all work sites
     SelectWorkSiteResponse selectWorkSite(Integer workSiteId, Authentication authentication);  // select special work site
 
     SetNewCustomRadiusForWorkerInSpecialWorkSiteResponse setNewCustomRadiusForWorker(Integer workSiteId,
