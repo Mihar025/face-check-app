@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import {AuthService} from "../../../additionalServices/auth-service";
 import {UserServiceControllerService} from "../../../../../services/services/user-service-controller.service";
 import {CompanyControllerService} from "../../../../../services/services/company-controller.service";
+import { map, catchError, of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 
 
 @Component({
@@ -10,11 +12,13 @@ import {CompanyControllerService} from "../../../../../services/services/company
   styleUrls: ['./company-information.component.scss']
 })
 export class CompanyInformationComponent implements OnInit {
-  userName: string = 'John Doe'; // Значение по умолчанию
-  companyName: string = 'FaceCheck Inc.'; // Значение по умолчанию
-  companyEmail: string = 'info@facecheck.com'; // Значение по умолчанию
-  companyPhone: string = '+1 (555) 123-4567'; // Значение по умолчанию
-  companyAddress: string = '123 Tech Street, San Francisco, CA 94107'; // Значение по умолчанию
+  userName: string = '';
+  companyName: string = '';
+  companyEmail: string = '';
+  companyPhone: string = '';
+  companyAddress: string = '';
+  userPhotoUrl: string = '';
+
 
   constructor(
     private authService: AuthService,
@@ -38,14 +42,14 @@ export class CompanyInformationComponent implements OnInit {
       return;
     }
 
-    // Загружаем имя пользователя
+
     this.loadUserFullName();
 
-    // Загружаем информацию о компании
     this.loadCompanyName();
     this.loadCompanyEmail();
     this.loadCompanyPhone();
     this.loadCompanyAddress();
+    this.getUserPhoto();
   }
 
   logout(): void {
@@ -66,22 +70,29 @@ export class CompanyInformationComponent implements OnInit {
     );
   }
 
-  // Методы для загрузки информации о компании
+
   loadCompanyName(): void {
-    this.companyService.getCompanyName().subscribe(
-      name => {
-        if (name) {
-          this.companyName = name;
+    this.companyService.getCompanyName().pipe(
+      map((response: any) => {
+        if (typeof response === 'string') {
+          return response;
         }
-      },
-      error => {
+        return '';
+      }),
+      catchError((error: any) => {
+        if (error instanceof HttpErrorResponse && error.status === 200) {
+          return of(error.error.text || '');
+        }
         console.error('Error loading company name:', error);
-      }
-    );
+        return of('');
+      })
+    ).subscribe(name => {
+      this.companyName = name;
+    });
   }
 
   loadCompanyEmail(): void {
-    this.companyService.getCompanyEmail().subscribe(
+    this.companyService.getCompanyEmail().pipe(
       email => {
         if (email) {
           this.companyEmail = email;
@@ -118,6 +129,20 @@ export class CompanyInformationComponent implements OnInit {
       }
     );
   }
+
+  getUserPhoto(): void {
+    this.userService.findWorkerFullContactInformation().subscribe(
+      response => {
+        if (response && response.photoUrl) {
+          this.userPhotoUrl = response.photoUrl;
+        }
+      },
+      error => {
+        console.error('Error loading user photo:', error);
+      }
+    );
+  }
+
 
 
 }
