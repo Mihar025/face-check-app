@@ -75,6 +75,8 @@ export class ManageEmployeesComponent implements OnInit {
   password: string = '';
   phoneNumber: string = '';
   ssn_WORKER?: string = '';
+  userPhotoUrl: string = '';
+
 
   endTime: LocalTime = {};
   startTime: LocalTime = {};
@@ -110,6 +112,8 @@ export class ManageEmployeesComponent implements OnInit {
     this.loadAdminName();
     this.loadAdminCompany();
     this.loadAllEmployeesRelatedToCertainCompany();
+    this.getUserPhoto();
+
   }
 
   logout() {
@@ -453,5 +457,18 @@ export class ManageEmployeesComponent implements OnInit {
     this.password = '';
     this.phoneNumber = '';
     this.ssn_WORKER = '';
+  }
+
+  getUserPhoto(): void {
+    this.userService.findWorkerFullContactInformation().subscribe(
+      response => {
+        if (response && response.photoUrl) {
+          this.userPhotoUrl = response.photoUrl;
+        }
+      },
+      error => {
+        console.error('Error loading user photo:', error);
+      }
+    );
   }
 }

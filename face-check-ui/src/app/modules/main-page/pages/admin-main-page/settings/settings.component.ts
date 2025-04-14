@@ -6,6 +6,7 @@ import {DeleteCompany$Params} from "../../../../../services/fn/company-controlle
 import {Router} from "@angular/router";
 import {FileControllerService} from "../../../../../services/services/file-controller.service";
 import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
+import {PhotoService} from "../../../additionalServices/photo.service";
 
 
 @Component({
@@ -64,9 +65,9 @@ export class SettingsComponent implements OnInit {
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private companyService: CompanyControllerService,
+    private photoService: PhotoService,
     private fileService: FileControllerService,
     http: HttpClient,
-
     private router: Router
   ) {
     this.http = http;
@@ -492,6 +493,12 @@ export class SettingsComponent implements OnInit {
     this.showDeleteModal = false;
   }
 
+/*
+  getUserPhoto(): void {
+    this.photoService.getUserPhoto(this.userPhotoUrl);
+  }
+
+ */
   getUserPhoto(): void {
     this.userService.findWorkerFullContactInformation().subscribe(
       response => {
@@ -504,13 +511,13 @@ export class SettingsComponent implements OnInit {
       }
     );
   }
+
+
   pickAndUploadImage(): void {
-    // Создаем элемент input для выбора файла
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/jpeg, image/png, image/gif, image/webp';
 
-    // Обрабатываем выбор файла
     fileInput.onchange = (event) => {
       const target = event.target as HTMLInputElement;
       const files = target.files;
@@ -518,53 +525,43 @@ export class SettingsComponent implements OnInit {
       if (files && files.length > 0) {
         const selectedFile = files[0];
 
-        // Проверяем, что это изображение
         if (!selectedFile.type.startsWith('image/')) {
           this.photoUploadError = 'Пожалуйста, выберите файл изображения';
           return;
         }
 
-        // Устанавливаем флаг загрузки
         this.isUploadingPhoto = true;
         this.photoUploadError = null;
         this.photoUploadSuccess = false;
 
-        // Создаем FormData для отправки файла
         const formData = new FormData();
         formData.append('photo', selectedFile);
         formData.append('email', this.adminEmailInput);
         formData.append('prefix', 'profile');
 
-        // Получаем API URL из конфигурации
         const apiUrl = this.fileService['rootUrl'] + '/files/upload/photo';
 
-        // Настраиваем заголовки для multipart/form-data
         const headers = new HttpHeaders({
           'Authorization': 'Bearer ' + this.authService.getToken()
         });
 
-        // Отправляем запрос напрямую через HttpClient
         this.http.post(apiUrl, formData, {
           headers: headers,
           responseType: 'text'
         }).subscribe(
           (result: string) => {
-            // Обработка успешного ответа
             this.userPhotoUrl = result;
             this.isUploadingPhoto = false;
             this.photoUploadSuccess = true;
             this.photoUploadError = null;
 
-            // Перезагружаем данные пользователя для получения обновленного URL фото
             this.getUserPhoto();
 
-            // Сбрасываем сообщение об успехе через 3 секунды
             setTimeout(() => {
               this.photoUploadSuccess = false;
             }, 3000);
           },
-          (error: HttpErrorResponse) => { // Типизируем параметр error
-            // Обработка ошибки
+          (error: HttpErrorResponse) => {
             console.error('Error uploading photo:', error);
             this.isUploadingPhoto = false;
             this.photoUploadError = 'Ошибка загрузки фото: ' + (error.message || 'Неизвестная ошибка');
@@ -573,7 +570,13 @@ export class SettingsComponent implements OnInit {
       }
     };
 
-    // Имитируем клик для открытия диалога выбора файла
+
     fileInput.click();
   }
+
+
+
+
+
+
 }
