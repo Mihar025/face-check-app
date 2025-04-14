@@ -93,15 +93,21 @@ export class CompanyInformationComponent implements OnInit {
 
   loadCompanyEmail(): void {
     this.companyService.getCompanyEmail().pipe(
-      email => {
-        if (email) {
-          this.companyEmail = email;
+      map((response: any)=>{
+        if(typeof response === 'string'){
+          return response;
         }
-      },
-      error => {
-        console.error('Error loading company email:', error);
-      }
-    );
+        return '';
+      }),
+      catchError((error: any) => {
+        if(error instanceof HttpErrorResponse && error.status === 200){
+          return of(error.error.text || '');
+        }
+        return of('');
+      })
+    ).subscribe(email => {
+      this.companyEmail = email;
+    })
   }
 
   loadCompanyPhone(): void {
@@ -118,16 +124,22 @@ export class CompanyInformationComponent implements OnInit {
   }
 
   loadCompanyAddress(): void {
-    this.companyService.getCompanyAddress().subscribe(
-      address => {
-        if (address) {
-          this.companyAddress = address;
+    this.companyService.getCompanyAddress().pipe(
+      map((response: any)=>{
+        if(typeof response === 'string'){
+          return response;
         }
-      },
-      error => {
-        console.error('Error loading company address:', error);
-      }
-    );
+        return '';
+      }),
+      catchError((error: any) => {
+        if(error instanceof HttpErrorResponse && error.status === 200){
+          return of(error.error.text || '');
+        }
+        return of('');
+      })
+    ).subscribe(email => {
+      this.companyAddress = email;
+    })
   }
 
   getUserPhoto(): void {
