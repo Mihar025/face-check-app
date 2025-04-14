@@ -27,8 +27,8 @@ public class WorkSiteService {
         return workSiteService.findWorkSiteById(id);
     }
 
-    public PageResponse<WorkSiteResponse> findAllWorkSites(int page, int size) {
-        return workSiteService.findAllWorkSites(page, size);
+    public PageResponse<WorkSiteResponse> findAllWorkSites(Authentication authentication, int page, int size) {
+        return workSiteService.findAllWorkSites(authentication, page, size);
     }
 
     public SelectWorkSiteResponse selectWorkSite(Integer workSiteId, Authentication authentication) {
@@ -138,6 +138,10 @@ public class WorkSiteService {
 
     public WorkSiteAllInformationResponse findWorkSiteAllInformation(Authentication authentication, Integer workSiteId) {
        return workSiteService.findWorkSiteAllInformationById(authentication, workSiteId);
+    }
+
+    public Integer findSumOfWorkSitesRelatedToCompany (Authentication authentication){
+        return workSiteService.countAllWorksitesRelatedToTheCompany(authentication);
     }
 
     }

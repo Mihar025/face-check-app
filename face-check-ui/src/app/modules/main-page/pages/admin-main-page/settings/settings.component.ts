@@ -4,6 +4,8 @@ import { UserServiceControllerService } from "../../../../../services/services/u
 import { CompanyControllerService } from "../../../../../services/services/company-controller.service";
 import {DeleteCompany$Params} from "../../../../../services/fn/company-controller/delete-company";
 import {Router} from "@angular/router";
+import {FileControllerService} from "../../../../../services/services/file-controller.service";
+import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
 
 
 @Component({
@@ -50,12 +52,25 @@ export class SettingsComponent implements OnInit {
   adminPasswordSuccess: boolean = false;
   adminPasswordError: string | null = null;
 
+  private http: HttpClient;
+
+  userPhotoUrl: string = '';
+  isUploadingPhoto: boolean = false;
+  photoUploadError: string | null = null;
+  photoUploadSuccess: boolean = false;
+
+
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private companyService: CompanyControllerService,
+    private fileService: FileControllerService,
+    http: HttpClient,
+
     private router: Router
-  ) { }
+  ) {
+    this.http = http;
+  }
 
   ngOnInit(): void {
     if (!this.authService.isUserAuthenticated()) {
@@ -78,6 +93,7 @@ export class SettingsComponent implements OnInit {
 
     this.loadCompanyData();
     this.loadAdminData();
+    this.getUserPhoto();
   }
 
   logout(): void {
@@ -476,6 +492,88 @@ export class SettingsComponent implements OnInit {
     this.showDeleteModal = false;
   }
 
+  getUserPhoto(): void {
+    this.userService.findWorkerFullContactInformation().subscribe(
+      response => {
+        if (response && response.photoUrl) {
+          this.userPhotoUrl = response.photoUrl;
+        }
+      },
+      error => {
+        console.error('Error loading user photo:', error);
+      }
+    );
+  }
+  pickAndUploadImage(): void {
+    // Создаем элемент input для выбора файла
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/jpeg, image/png, image/gif, image/webp';
 
+    // Обрабатываем выбор файла
+    fileInput.onchange = (event) => {
+      const target = event.target as HTMLInputElement;
+      const files = target.files;
 
+      if (files && files.length > 0) {
+        const selectedFile = files[0];
+
+        // Проверяем, что это изображение
+        if (!selectedFile.type.startsWith('image/')) {
+          this.photoUploadError = 'Пожалуйста, выберите файл изображения';
+          return;
+        }
+
+        // Устанавливаем флаг загрузки
+        this.isUploadingPhoto = true;
+        this.photoUploadError = null;
+        this.photoUploadSuccess = false;
+
+        // Создаем FormData для отправки файла
+        const formData = new FormData();
+        formData.append('photo', selectedFile);
+        formData.append('email', this.adminEmailInput);
+        formData.append('prefix', 'profile');
+
+        // Получаем API URL из конфигурации
+        const apiUrl = this.fileService['rootUrl'] + '/files/upload/photo';
+
+        // Настраиваем заголовки для multipart/form-data
+        const headers = new HttpHeaders({
+          'Authorization': 'Bearer ' + this.authService.getToken()
+        });
+
+        // Отправляем запрос напрямую через HttpClient
+        this.http.post(apiUrl, formData, {
+          headers: headers,
+          responseType: 'text'
+        }).subscribe(
+          (result: string) => {
+            // Обработка успешного ответа
+            this.userPhotoUrl = result;
+            this.isUploadingPhoto = false;
+            this.photoUploadSuccess = true;
+            this.photoUploadError = null;
+
+            // Перезагружаем данные пользователя для получения обновленного URL фото
+            this.getUserPhoto();
+
+            // Сбрасываем сообщение об успехе через 3 секунды
+            setTimeout(() => {
+              this.photoUploadSuccess = false;
+            }, 3000);
+          },
+          (error: HttpErrorResponse) => { // Типизируем параметр error
+            // Обработка ошибки
+            console.error('Error uploading photo:', error);
+            this.isUploadingPhoto = false;
+            this.photoUploadError = 'Ошибка загрузки фото: ' + (error.message || 'Неизвестная ошибка');
+          }
+        );
+      }
+    };
+
+    // Имитируем клик для открытия диалога выбора файла
+    fileInput.click();
+  }
 }

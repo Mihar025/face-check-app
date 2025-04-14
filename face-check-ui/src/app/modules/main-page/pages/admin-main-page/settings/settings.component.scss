@@ -378,6 +378,74 @@ h1 {
   cursor: not-allowed;
 }
 
+// Стили для аватара с возможностью изменения
+.avatar-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+
+  &:hover .avatar-overlay {
+    opacity: 1;
+  }
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  cursor: pointer;
+}
+
+.change-photo-icon {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+// Стили для раздела с фото профиля
+.profile-photo-section {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.current-photo {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid $border-color;
+}
+
+.profile-photo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 // Адаптивные стили
 @media (max-width: 992px) {
   .admin-layout {

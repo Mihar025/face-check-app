@@ -152,6 +152,7 @@ export class ManageWorksitesComponent implements OnInit {
     this.workSiteService.findAllWorkSites(params).subscribe(
       (response: PageResponseWorkSiteResponse) => {
         this.worksites = response.content || [];
+        console.log("Worksites data:", this.worksites);
         this.totalElements = response.totalElement || 0;
         this.totalPages = response.totalPages || 0;
         this.loading = false;
@@ -571,5 +572,28 @@ export class ManageWorksitesComponent implements OnInit {
     this.workDayEnd = {};
     this.workDayStart = {};
     this.workSiteName = '';
+  }
+
+
+  formatWorkingHours(start: any, end: any): string {
+    const formatTime = (time: any) => {
+      if (!time) return '--:--';
+
+      // Если время приходит как строка
+      if (typeof time === 'string') {
+        const parts = time.split(':');
+        if (parts.length >= 2) {
+          return `${parts[0]}:${parts[1]}`;
+        }
+        return time;
+      }
+
+      // Если время - объект
+      const hour = time.hour !== undefined ? this.padNumber(time.hour) : '00';
+      const minute = time.minute !== undefined ? this.padNumber(time.minute) : '00';
+      return `${hour}:${minute}`;
+    };
+
+    return `${formatTime(start)} - ${formatTime(end)}`;
   }
 }

@@ -43,8 +43,9 @@ public class WorkSite {
     private Set<LocalDate> inactiveDays;
 
 
-    @ManyToMany(mappedBy = "workSites")
-    private Set<Company> companies = new HashSet<>();
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    private Company company;
 
 
     @ManyToMany
@@ -72,7 +73,6 @@ public class WorkSite {
         users.remove(user);
         user.getWorkSites().remove(this);
     }
-
 
 
 }

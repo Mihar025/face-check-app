@@ -1,10 +1,12 @@
 package com.zikpak.facecheck.helperServices;
 
 import com.zikpak.facecheck.domain.WorkSiteService;
+import com.zikpak.facecheck.entity.Company;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.mapper.WorkSiteMapper;
+import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
 import com.zikpak.facecheck.repository.WorkerSiteRepository;
@@ -43,6 +45,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     private final WorkSiteMapper workSiteMapper;
     private final UserRepository userRepository;
     private final WorkerAttendanceRepository workerAttendanceRepository;
+    private final CompanyRepository companyRepository;
 
 
     @Override
@@ -56,9 +59,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     @Override
-    public PageResponse<WorkSiteResponse> findAllWorkSites(int page, int size) {
+    public PageResponse<WorkSiteResponse> findAllWorkSites(Authentication authentication , int page, int size) {
+        User user = (User) authentication.getPrincipal();
         Pageable pageable = PageRequest.of(page, size, Sort.by("siteName").descending());
-        Page<WorkSite> workSites = workSiteRepository.findAll(pageable);
+        Page<WorkSite> workSites = workSiteRepository.findAllByCompanyId(user.getCompany().getId(), pageable);
         List<WorkSiteResponse> workSiteResponses = workSites.getContent().stream()
                 .map(workSiteMapper::toWorkSiteResponse)
                 .toList();
@@ -73,9 +77,12 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         );
     }
 
+    @Transactional
     @Override
     public WorkSiteResponse createWorkSite(Authentication  authentication,WorkSiteRequest request) {
-        checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+        var user = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+        var company = companyRepository.findById(user.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
         var newWorkSite =  WorkSite.builder()
                 .siteName(request.getWorkSiteName())
                 .address(request.getAddress())
@@ -83,9 +90,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                 .longitude(request.getLongitude())
                 .allowedRadius(request.getAllowedRadius())
                 .workDayStart(request.getWorkDayStart())
+                .isActive(true)
+                .isWorkerDidPunchIn(false)
                 .workDayEnd(request.getWorkDayEnd())
                 .build();
-
+        company.addWorkSite(newWorkSite);
         var savedWorkSite = workSiteRepository.save(newWorkSite);
         return  workSiteMapper.toWorkSiteResponse(savedWorkSite);
     }
@@ -602,13 +611,14 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     @Transactional(rollbackOn = Exception.class)
     public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
-         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+         var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+         var company = admin.getCompany();
          var workSite = findWorkSiteBySpecialId(workSiteId);
 
          for(User user: new HashSet<>(workSite.getUsers())){
              workSite.removeUser(user);
          }
-
+         company.removeWorkSite(workSite);
          workSiteRepository.deleteById(workSite.getId());
     }
 
@@ -616,5 +626,12 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var workSite = findWorkSiteBySpecialId(workSiteId);
         return workSiteMapper.toWorkSiteAllInformationResponse(workSite);
+    }
+
+    public Integer countAllWorksitesRelatedToTheCompany(Authentication authentication) {
+        var admin = (User) authentication.getPrincipal();
+        var companyId  = admin.getCompany().getId();
+        var foundedWorksites = workSiteRepository.findAllByCompanyId(companyId);
+        return foundedWorksites.size();
     }
 }
