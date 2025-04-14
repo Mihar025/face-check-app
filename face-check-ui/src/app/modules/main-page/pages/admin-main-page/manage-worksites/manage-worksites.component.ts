@@ -80,6 +80,9 @@ export class ManageWorksitesComponent implements OnInit {
   newStart: LocalTime = {};
   newCustomRadius: number = 0;
 
+  userPhotoUrl: string = '';
+
+
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
@@ -106,6 +109,8 @@ export class ManageWorksitesComponent implements OnInit {
     this.loadUserFullName();
     this.loadCompanyName();
     this.loadAllWorksites();
+    this.getUserPhoto();
+
   }
 
   logout() {
@@ -596,4 +601,18 @@ export class ManageWorksitesComponent implements OnInit {
 
     return `${formatTime(start)} - ${formatTime(end)}`;
   }
+
+  getUserPhoto(): void {
+    this.userService.findWorkerFullContactInformation().subscribe(
+      response => {
+        if (response && response.photoUrl) {
+          this.userPhotoUrl = response.photoUrl;
+        }
+      },
+      error => {
+        console.error('Error loading user photo:', error);
+      }
+    );
+  }
+
 }
