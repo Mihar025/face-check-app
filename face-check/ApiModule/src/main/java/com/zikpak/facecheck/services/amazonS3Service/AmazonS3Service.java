@@ -40,18 +40,14 @@ public class AmazonS3Service {
         try {
 
 
-            // Декодируем Base64 в байты
             byte[] photoBytes = Base64.getDecoder().decode(base64Photo);
 
-            // Генерируем имя файла для фотографии посещения
             String fileName = generateAttendancePhotoName(email, prefix);
 
-            // Создаем метаданные
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentType("image/jpeg");
             metadata.setContentLength(photoBytes.length);
 
-            // Загружаем файл в S3
             s3Client.putObject(
                     bucketName,
                     fileName,
@@ -59,7 +55,6 @@ public class AmazonS3Service {
                     metadata
             );
 
-            // Возвращаем URL файла
             return s3Client.getUrl(bucketName, fileName).toString();
 
         } catch (Exception e) {
@@ -81,16 +76,12 @@ public class AmazonS3Service {
         try {
             byte[] photoBytes = base64Photo.getBytes();
 
-            // Генерируем имя файла для фотографии посещения
             String fileName = generatePhoto(email, prefix);
 
-            // Создаем метаданные
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentType(base64Photo.getContentType());
             metadata.setContentLength(base64Photo.getSize());
 
-
-            // Загружаем файл в S3
             s3Client.putObject(
                     bucketName,
                     fileName,
@@ -105,7 +96,6 @@ public class AmazonS3Service {
             foundedUser.setPhotoFileName(fileName);
             foundedUser.setPhotoUrl(savedUrl);
             var savedUser = userRepository.save(foundedUser);
-            // Возвращаем URL файла
             return savedUser.getPhotoUrl();
 
         } catch (Exception e) {
