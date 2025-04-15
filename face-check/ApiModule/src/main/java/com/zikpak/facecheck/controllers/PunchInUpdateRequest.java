@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 public class PunchInUpdateRequest {
     @NotNull
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = JsonFormat.Shape.STRING)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm[:ss]", shape = JsonFormat.Shape.STRING)
     private LocalDateTime newCheckInTIme;
 
 }
