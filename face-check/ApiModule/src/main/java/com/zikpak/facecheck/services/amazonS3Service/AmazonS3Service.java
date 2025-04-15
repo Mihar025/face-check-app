@@ -38,6 +38,8 @@ public class AmazonS3Service {
         }
 
         try {
+
+
             // Декодируем Base64 в байты
             byte[] photoBytes = Base64.getDecoder().decode(base64Photo);
 
