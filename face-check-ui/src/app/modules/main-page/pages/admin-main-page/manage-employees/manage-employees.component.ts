@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {AuthService} from "../../../additionalServices/auth-service";
 import {
+  AdminControllerService,
   AuthenticationService,
   CompanyControllerService,
   UserServiceControllerService, WorkScheduleControllerService
@@ -24,6 +25,12 @@ import {
   GetWorkerPersonalInformation$Params
 } from "../../../../../services/fn/user-service-controller/get-worker-personal-information";
 import {WorkerPersonalInformationResponse} from "../../../../../services/models/worker-personal-information-response";
+import {PunchInUpdateRequest} from "../../../../../services/models/punch-in-update-request";
+import {UpdatePunchInTime$Params} from "../../../../../services/fn/admin-controller/update-punch-in-time";
+import {ChangePunchInRequest} from "../../../../../services/models/change-punch-in-request";
+import {ChangePunchInForWorker$Params} from "../../../../../services/fn/admin-controller/change-punch-in-for-worker";
+import {ChangePunchOutRequest} from "../../../../../services/models/change-punch-out-request";
+import {ChangePunchOutForWorker$Params} from "../../../../../services/fn/admin-controller/change-punch-out-for-worker";
 
 @Component({
   selector: 'app-manage-employees',
@@ -46,6 +53,16 @@ export class ManageEmployeesComponent implements OnInit {
   employees: Array<RelatedUserInCompanyResponse> = [];
   totalElements: number = 0;
   totalPages: number = 0;
+  // for update in
+  newCheckInTime: string = '';
+  // for change out
+  dateWhenWorkerDidntMakePunchOut: string = '';
+  newPunchOutDate: string = '';
+  newPunchOutTime: LocalTime = {};
+  // for change in
+  dateWhenWorkerDidntMakePunchIn: string = '';
+  newPunchInDate: string = '';
+  newPunchInTime: LocalTime = {};
 
 
 
@@ -74,6 +91,7 @@ export class ManageEmployeesComponent implements OnInit {
   phoneNumber: string = '';
   ssn_WORKER?: string = '';
   userPhotoUrl: string = '';
+  activeTimeTab: 'updatePunchIn' | 'changeNewPunchIn' | 'changeNewPunchOut' = 'updatePunchIn';
 
 
   endTime: LocalTime = {};
@@ -87,6 +105,7 @@ export class ManageEmployeesComponent implements OnInit {
     private userService: UserServiceControllerService,
     private companyService: CompanyControllerService,
     private workScheduleController: WorkScheduleControllerService,
+    private adminControllerService:AdminControllerService,
     private router: Router,
   ) {}
 
@@ -111,8 +130,113 @@ export class ManageEmployeesComponent implements OnInit {
     this.loadAdminCompany();
     this.loadAllEmployeesRelatedToCertainCompany();
     this.getUserPhoto();
-
   }
+
+  updatePunchIn(){
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    const punchInUpdateRequest: PunchInUpdateRequest = {
+      newCheckInTIme: this.newCheckInTime
+    }
+
+    const params: UpdatePunchInTime$Params = {
+      workerId: this.selectedEmployeeId,
+      body: punchInUpdateRequest
+    }
+
+    this.adminControllerService.updatePunchInTime(params).subscribe(
+      () => {
+        this.loading = false;
+        this.successMessage = "Punch time was updated successfully!";
+      },
+      error => {
+        this.loading = false;
+        this.errorMessage = "Failed to update punch time: " + (error.message || 'Unknown error');
+        console.log('Error in method')
+      }
+    )
+  }
+
+
+  changeNewPunchIn() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.dateWhenWorkerDidntMakePunchIn || !this.newPunchInDate) {
+      this.errorMessage = "Please fill in all required date fields";
+      this.loading = false;
+      return;
+    }
+
+    const formattedDateWhenMissed = `${this.dateWhenWorkerDidntMakePunchIn}T00:00:00`;
+
+    const requestData = {
+      dateWhenWorkerDidntMakePunchIn: formattedDateWhenMissed,
+      newPunchInDate: this.newPunchInDate,
+      newPunchInTime: `${(this.newPunchInTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchInTime.minute || 0).toString().padStart(2, '0')}:00`,
+      workerId: this.selectedEmployeeId
+    };
+
+    const params: ChangePunchInForWorker$Params = {
+      workerId: this.selectedEmployeeId,
+      body: requestData as any
+    };
+
+    this.adminControllerService.changePunchInForWorker(params).subscribe(
+      () => {
+        this.loading = false;
+        this.successMessage = "Punch time was changed successfully!";
+      },
+      error => {
+        this.loading = false;
+        this.errorMessage = "Failed to change punch time: " + (error.message || 'Unknown error');
+        console.error('Error details:', error);
+      }
+    );
+  }
+  changeNewPunchOut() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.dateWhenWorkerDidntMakePunchOut || !this.newPunchOutDate) {
+      this.errorMessage = "Please fill in all required date fields";
+      this.loading = false;
+      return;
+    }
+
+    const formattedDateWhenMissed = `${this.dateWhenWorkerDidntMakePunchOut}T00:00:00`;
+
+    const requestData = {
+      dateWhenWorkerDidntMakePunchOut: formattedDateWhenMissed,
+      newPunchOutDate: this.newPunchOutDate,
+      newPunchOutTime: `${(this.newPunchOutTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`,
+      workerId: this.selectedEmployeeId
+    };
+
+    const params: ChangePunchOutForWorker$Params = {
+      workerId: this.selectedEmployeeId,
+      body: requestData as any
+    };
+
+    this.adminControllerService.changePunchOutForWorker(params).subscribe(
+      () => {
+        this.loading = false;
+        this.successMessage = "Punch out time was changed successfully!";
+      },
+      error => {
+        this.loading = false;
+        this.errorMessage = "Failed to change punch out time: " + (error.message || 'Unknown error');
+        console.error('Error details:', error);
+      }
+    );
+  }
+
+
+
+
 
   logout() {
     this.authService.logout();
