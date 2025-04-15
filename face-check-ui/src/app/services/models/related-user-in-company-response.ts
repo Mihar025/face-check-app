@@ -6,6 +6,7 @@ export interface RelatedUserInCompanyResponse {
   baseHourlyRate?: number;
   companyId?: number;
   email?: string;
+  enabled?: boolean;
   firstName?: string;
   lastName?: string;
   workerId?: number;

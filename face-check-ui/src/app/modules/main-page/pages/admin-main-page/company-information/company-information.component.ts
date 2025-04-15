@@ -87,7 +87,7 @@ export class CompanyInformationComponent implements OnInit {
         return of('');
       })
     ).subscribe(name => {
-      this.companyName = name;
+      this.companyName = String(name);
     });
   }
 
@@ -106,7 +106,7 @@ export class CompanyInformationComponent implements OnInit {
         return of('');
       })
     ).subscribe(email => {
-      this.companyEmail = email;
+      this.companyEmail = String(email);
     })
   }
 
@@ -114,7 +114,7 @@ export class CompanyInformationComponent implements OnInit {
     this.companyService.getCompanyPhone().subscribe(
       phone => {
         if (phone) {
-          this.companyPhone = phone;
+          this.companyPhone =String(phone);
         }
       },
       error => {
@@ -137,8 +137,8 @@ export class CompanyInformationComponent implements OnInit {
         }
         return of('');
       })
-    ).subscribe(email => {
-      this.companyAddress = email;
+    ).subscribe(address => {
+      this.companyAddress = String(address);
     })
   }
 

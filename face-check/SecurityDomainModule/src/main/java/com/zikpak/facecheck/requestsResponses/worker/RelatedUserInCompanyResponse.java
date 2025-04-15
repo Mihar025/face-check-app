@@ -25,5 +25,7 @@ public class RelatedUserInCompanyResponse {
 
     private BigDecimal baseHourlyRate;
 
+    private boolean enabled;
+
 
 }

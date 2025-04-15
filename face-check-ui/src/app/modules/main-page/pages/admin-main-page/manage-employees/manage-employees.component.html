@@ -23,14 +23,12 @@
     </nav>
   </div>
 
-  <!-- Основной контент -->
+
   <div class="main-content">
-    <!-- Верхний логотип -->
     <div class="top-logo-container">
       <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
     </div>
 
-    <!-- Контент управления сотрудниками -->
     <div class="admin-container">
       <div class="header-with-action">
         <h1>Manage Employees</h1>
@@ -82,6 +80,15 @@
                 <button class="action-button info-button" (click)="employee.workerId !== undefined ? openEmployeeInfoModal(employee.workerId) : null">
                   <i class="fas fa-info-circle"></i> Details
                 </button>
+                <button
+                  *ngIf="employee.enabled === false"
+                  class="action-button info-button"
+                  (click)="moveToVerificationPage(employee.workerId)"
+                >
+                  <i class="fas fa-check-circle"></i> Verificate
+                </button>
+
+
                 <button class="action-button fire-button" (click)="employee.workerId !== undefined ? openFireModal(employee.workerId) : null">
                   <i class="fas fa-user-times"></i> Fire
                 </button>

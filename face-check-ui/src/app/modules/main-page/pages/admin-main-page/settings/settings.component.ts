@@ -217,7 +217,7 @@ export class SettingsComponent implements OnInit {
     this.companyService.updateCompanyName(params).subscribe(
       () => {
         this.companyNameSuccess = true;
-        this.companyName = this.companyNameInput; // Обновляем отображаемое имя компании
+        this.companyName = String(this.companyNameInput);
 
         // Сбрасываем сообщение об успехе через 3 секунды
         setTimeout(() => {
@@ -310,7 +310,7 @@ export class SettingsComponent implements OnInit {
       () => {
         this.companyAddressSuccess = true;
 
-        // Сбрасываем сообщение об успехе через 3 секунды
+
         setTimeout(() => {
           this.companyAddressSuccess = false;
         }, 3000);
@@ -394,7 +394,7 @@ export class SettingsComponent implements OnInit {
     }
 
     const params = {
-      homeAddress: this.adminAddressInput
+      homeAddress: String(this.adminAddressInput)
     };
 
     this.userService.updateHomeAddress(params).subscribe(
@@ -493,12 +493,12 @@ export class SettingsComponent implements OnInit {
     this.showDeleteModal = false;
   }
 
-/*
-  getUserPhoto(): void {
-    this.photoService.getUserPhoto(this.userPhotoUrl);
-  }
+  /*
+    getUserPhoto(): void {
+      this.photoService.getUserPhoto(this.userPhotoUrl);
+    }
 
- */
+   */
   getUserPhoto(): void {
     this.userService.findWorkerFullContactInformation().subscribe(
       response => {

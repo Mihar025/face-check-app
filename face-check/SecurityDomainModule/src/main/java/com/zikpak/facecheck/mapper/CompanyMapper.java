@@ -79,6 +79,7 @@ public class CompanyMapper {
                 .lastName(foundedEmployee.getLastName())
                 .email(foundedEmployee.getEmail())
                 .baseHourlyRate(baseHourlyRate)
+                .enabled(foundedEmployee.isEnabled())
                 .build();
     }
     public Company createNewCompany(CompanyRegistrationRequest companyRegistrationRequest) {
