@@ -13,16 +13,20 @@ export class AdminPageComponent implements OnInit {
   companyName: string = 'FaceCheck Inc.'; // Значение по умолчанию
   totalEmployees: number = 0;
   totalWorksites: number = 0;
+  userPhotoUrl: string = '';
+
 
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private adminService: AdminControllerService
+
   ) { }
 
   ngOnInit(): void {
     if (!this.authService.isUserAuthenticated()) {
       this.authService.logout();
+
       return;
     }
 
@@ -36,24 +40,18 @@ export class AdminPageComponent implements OnInit {
       return;
     }
 
-    // Загружаем имя пользователя
     this.loadUserFullName();
-
-    // Загружаем название компании
     this.loadCompanyName();
-
-    // Загружаем количество сотрудников
     this.loadTotalEmployees();
-
-    // Загружаем количество рабочих площадок
     this.loadTotalWorksites();
+    this.getUserPhoto();
+
   }
 
   logout(): void {
     this.authService.logout();
   }
 
-  // Метод для загрузки полного имени пользователя
   loadUserFullName(): void {
     this.userService.findWorkerFullName().subscribe(
       response => {
@@ -101,6 +99,19 @@ export class AdminPageComponent implements OnInit {
       },
       error => {
         console.error('Error loading total worksites count:', error);
+      }
+    );
+  }
+
+  getUserPhoto(): void {
+    this.userService.findWorkerFullContactInformation().subscribe(
+      response => {
+        if (response && response.photoUrl) {
+          this.userPhotoUrl = response.photoUrl;
+        }
+      },
+      error => {
+        console.error('Error loading user photo:', error);
       }
     );
   }

@@ -51,6 +51,8 @@ export class ManageEmployeesComponent implements OnInit {
   totalElements: number = 0;
   totalPages: number = 0;
 
+
+
   showFireModal: boolean = false;
   showRateModal: boolean = false;
   showAddEmployeeModal: boolean = false;
@@ -120,6 +122,7 @@ export class ManageEmployeesComponent implements OnInit {
     this.authService.logout();
   }
 
+
   loadAdminName(): void {
     this.userService.findWorkerFullName().subscribe(
       response => {
@@ -165,7 +168,7 @@ export class ManageEmployeesComponent implements OnInit {
         this.totalElements = response.totalElement || 0;
         this.totalPages = response.totalPages || 0;
         this.loading = false;
-      },
+        },
       error => {
         this.errorMessage = 'Error loading employees: ' + (error.message || 'Unknown Error');
         this.loading = false;
@@ -471,4 +474,12 @@ export class ManageEmployeesComponent implements OnInit {
       }
     );
   }
+
+  moveToVerificationPage(workerId: number | undefined){
+    if (!workerId) return;
+    this.router.navigate(['verification/admin'], {
+      queryParams: { id: workerId }
+    });
+  }
+
 }

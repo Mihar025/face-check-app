@@ -10,7 +10,6 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface GetCompanyName$Params {
-
 }
 
 export function getCompanyName(http: HttpClient, rootUrl: string, params?: GetCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<string>> {

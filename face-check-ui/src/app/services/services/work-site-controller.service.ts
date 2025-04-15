@@ -13,6 +13,8 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { canPunchInOut } from '../fn/work-site-controller/can-punch-in-out';
 import { CanPunchInOut$Params } from '../fn/work-site-controller/can-punch-in-out';
+import { countAllWorksitesRelatedToTheCompany } from '../fn/work-site-controller/count-all-worksites-related-to-the-company';
+import { CountAllWorksitesRelatedToTheCompany$Params } from '../fn/work-site-controller/count-all-worksites-related-to-the-company';
 import { createWorkSite } from '../fn/work-site-controller/create-work-site';
 import { CreateWorkSite$Params } from '../fn/work-site-controller/create-work-site';
 import { deleteWorkSiteById } from '../fn/work-site-controller/delete-work-site-by-id';
@@ -700,6 +702,39 @@ export class WorkSiteControllerService extends BaseService {
   findWorkSiteById(params: FindWorkSiteById$Params, context?: HttpContext): Observable<WorkSiteResponse> {
     return this.findWorkSiteById$Response(params, context).pipe(
       map((r: StrictHttpResponse<WorkSiteResponse>): WorkSiteResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `countAllWorksitesRelatedToTheCompany()` */
+  static readonly CountAllWorksitesRelatedToTheCompanyPath = '/workSite/work-site/sum';
+
+  /**
+   * Get sum of all Worksites.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `countAllWorksitesRelatedToTheCompany()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  countAllWorksitesRelatedToTheCompany$Response(params?: CountAllWorksitesRelatedToTheCompany$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return countAllWorksitesRelatedToTheCompany(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get sum of all Worksites.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `countAllWorksitesRelatedToTheCompany$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  countAllWorksitesRelatedToTheCompany(params?: CountAllWorksitesRelatedToTheCompany$Params, context?: HttpContext): Observable<number> {
+    return this.countAllWorksitesRelatedToTheCompany$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 

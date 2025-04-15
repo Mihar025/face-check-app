@@ -17,6 +17,7 @@ import { CompanyInformationComponent } from './pages/admin-main-page/company-inf
 import { ManageWorksitesComponent } from './pages/admin-main-page/manage-worksites/manage-worksites.component';
 import { SettingsComponent } from './pages/admin-main-page/settings/settings.component';
 import { ManageEmployeesComponent } from './pages/admin-main-page/manage-employees/manage-employees.component';
+import { PhotoS3Component } from './pages/admin-main-page/photo-s3/photo-s3.component';
 
 
 @NgModule({
@@ -33,7 +34,8 @@ import { ManageEmployeesComponent } from './pages/admin-main-page/manage-employe
       CompanyInformationComponent,
       ManageWorksitesComponent,
       SettingsComponent,
-      ManageEmployeesComponent
+      ManageEmployeesComponent,
+      PhotoS3Component
   ],
   imports: [
     CommonModule,

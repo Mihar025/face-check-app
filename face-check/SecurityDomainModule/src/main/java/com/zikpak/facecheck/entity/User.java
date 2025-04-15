@@ -74,11 +74,11 @@ public class User implements UserDetails, Principal {
     @Column(nullable = false)
     private String password;
 
-    @Builder.Default  // Важно для работы с @Builder
+    @Builder.Default
     @Column(nullable = false)
-    private boolean enabled = false;  // По умолчанию false, пока не подтвердит email
+    private boolean enabled = false;
 
-    @Builder.Default  // Важно для работы с @Builder
+    @Builder.Default
     @Column(nullable = false)
     private boolean accountLocked = false;
 
