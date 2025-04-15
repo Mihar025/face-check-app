@@ -17,12 +17,9 @@ import {Router} from "@angular/router";
 import {UpdateEmployeeRate$Params} from "../../../../../services/fn/company-controller/update-employee-rate";
 import {GetEmployeeRate$Params} from "../../../../../services/fn/company-controller/get-employee-rate";
 import {EmployeeSalaryResponse} from "../../../../../services/models/employee-salary-response";
-import {UserFullContactInformation} from "../../../../../services/models/user-full-contact-information";
 import {LocalTime} from "../../../../../services/models/local-time";
-import {WorkerSetScheduleRequest} from "../../../../../services/models/worker-set-schedule-request";
 import {SetWorkerSchedule$Params} from "../../../../../services/fn/work-schedule-controller/set-worker-schedule";
 import {WorkSchedulerResponse} from "../../../../../services/models/work-scheduler-response";
-import {GetUserEmployees$Params} from "../../../../../services/fn/company-controller/get-user-employees";
 import {
   GetWorkerPersonalInformation$Params
 } from "../../../../../services/fn/user-service-controller/get-worker-personal-information";
@@ -34,7 +31,6 @@ import {WorkerPersonalInformationResponse} from "../../../../../services/models/
   styleUrl: './manage-employees.component.scss'
 })
 export class ManageEmployeesComponent implements OnInit {
-  // Основные данные
   userName = '';
   companyName = '';
   employeeId: number = 0;
