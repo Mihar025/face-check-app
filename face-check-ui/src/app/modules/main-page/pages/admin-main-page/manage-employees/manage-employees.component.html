@@ -160,6 +160,85 @@
               <span>{{ employeePersonalInfo.companyName }}</span>
             </div>
           </div>
+
+          <div class="time-tabs">
+            <button class="tab-button" [class.active]="activeTimeTab === 'updatePunchIn'" (click)="activeTimeTab = 'updatePunchIn'">Update Punch In</button>
+            <button class="tab-button" [class.active]="activeTimeTab === 'changeNewPunchIn'" (click)="activeTimeTab = 'changeNewPunchIn'">Set New Punch In</button>
+            <button class="tab-button" [class.active]="activeTimeTab === 'changeNewPunchOut'" (click)="activeTimeTab = 'changeNewPunchOut'">Set New Punch Out</button>
+          </div>
+
+          <div *ngIf="activeTimeTab === 'updatePunchIn'" class="time-form">
+            <h5>Update Latest Punch In Time</h5>
+            <div class="form-group">
+              <label for="newCheckInTime">New Check-In Time (ISO Format)</label>
+              <input type="datetime-local" id="newCheckInTime" [(ngModel)]="newCheckInTime"
+                     placeholder="YYYY-MM-DDThh:mm:ss">
+              <small class="form-hint">Format: YYYY-MM-DDThh:mm:ss</small>
+            </div>
+            <div class="form-actions">
+              <button class="action-button time-button" (click)="updatePunchIn()">
+                <i class="fas fa-clock"></i> Update Time
+              </button>
+            </div>
+          </div>
+
+          <!-- Форма для создания нового входа -->
+          <div *ngIf="activeTimeTab === 'changeNewPunchIn'" class="time-form">
+            <h5>Set New Punch In</h5>
+            <div class="form-group">
+              <label for="dateWhenWorkerDidntMakePunchIn">Date When Punch In Was Missed</label>
+              <input type="date" id="dateWhenWorkerDidntMakePunchIn" [(ngModel)]="dateWhenWorkerDidntMakePunchIn">
+            </div>
+            <div class="form-group">
+              <label for="newPunchInDate">New Punch In Date</label>
+              <input type="date" id="newPunchInDate" [(ngModel)]="newPunchInDate">
+            </div>
+            <div class="form-row time-input-row">
+              <div class="form-group">
+                <label for="newPunchInHour">Hour</label>
+                <input type="number" id="newPunchInHour" [(ngModel)]="newPunchInTime.hour" min="0" max="23">
+              </div>
+              <div class="form-group">
+                <label for="newPunchInMinute">Minute</label>
+                <input type="number" id="newPunchInMinute" [(ngModel)]="newPunchInTime.minute" min="0" max="59">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="action-button time-button" (click)="changeNewPunchIn()">
+                <i class="fas fa-sign-in-alt"></i> Set New Punch In
+              </button>
+            </div>
+          </div>
+
+          <!-- Форма для создания нового выхода -->
+          <div *ngIf="activeTimeTab === 'changeNewPunchOut'" class="time-form">
+            <h5>Set New Punch Out</h5>
+            <div class="form-group">
+              <label for="dateWhenWorkerDidntMakePunchOut">Date When Punch Out Was Missed</label>
+              <input type="date" id="dateWhenWorkerDidntMakePunchOut" [(ngModel)]="dateWhenWorkerDidntMakePunchOut">
+            </div>
+            <div class="form-group">
+              <label for="newPunchOutDate">New Punch Out Date</label>
+              <input type="date" id="newPunchOutDate" [(ngModel)]="newPunchOutDate">
+            </div>
+            <div class="form-row time-input-row">
+              <div class="form-group">
+                <label for="newPunchOutHour">Hour</label>
+                <input type="number" id="newPunchOutHour" [(ngModel)]="newPunchOutTime.hour" min="0" max="23">
+              </div>
+              <div class="form-group">
+                <label for="newPunchOutMinute">Minute</label>
+                <input type="number" id="newPunchOutMinute" [(ngModel)]="newPunchOutTime.minute" min="0" max="59">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="action-button time-button" (click)="changeNewPunchOut()">
+                <i class="fas fa-sign-out-alt"></i> Set New Punch Out
+              </button>
+            </div>
+          </div>
+        </div>
+
         </div>
 
         <!-- Форма генерации расписания -->
@@ -225,7 +304,6 @@
       <button class="cancel-button" (click)="closeEmployeeInfoModal()">Close</button>
     </div>
   </div>
-</div>
 
 <div class="modal-overlay" *ngIf="showAddEmployeeModal">
   <div class="modal-container modal-large">

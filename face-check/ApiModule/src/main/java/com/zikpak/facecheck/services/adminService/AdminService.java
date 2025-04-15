@@ -34,7 +34,7 @@ public class AdminService implements AdminAndForemanFunctionality {
 
     @Override
     public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(int page, int size, Integer workSiteId, Authentication authentication){
-       return foremanAndAdminService.findAllWorkersInWorkSite(page, size, workSiteId, authentication);
+        return foremanAndAdminService.findAllWorkersInWorkSite(page, size, workSiteId, authentication);
     }
 
     @Transactional
@@ -75,11 +75,8 @@ public class AdminService implements AdminAndForemanFunctionality {
         // find worker by id
         var foundedWorker = findWorkerById(workerId);
 
-        // check is worker really does not do the punch in!
-
         findAndValidateWorkerAttendanceForPunchOut(foundedWorker, changePunchInRequest);
 
-        // If worker did not make the punch in, we are changing his punch in time to special time, which admin will set!
         setNewAttendanceForNewPunchOut(foundedWorker, changePunchInRequest);
 
         return ChangePunchOutForWorkerResponse.builder()
@@ -103,10 +100,10 @@ public class AdminService implements AdminAndForemanFunctionality {
         var foundedCompany = companyRepository.findById(foundedAdmin.getCompany().getId())
                 .orElseThrow( () -> new  EntityNotFoundException("Company not found"));
         log.info("Founded company {}" , foundedCompany);
-            if(!foundedAdmin.getCompany().getId().equals(foundedCompany.getId())) {
-                log.info("Checking is Admin in the same company!");
-                throw new AccessDeniedException("You dont have permission to access this company");
-            }
+        if(!foundedAdmin.getCompany().getId().equals(foundedCompany.getId())) {
+            log.info("Checking is Admin in the same company!");
+            throw new AccessDeniedException("You dont have permission to access this company");
+        }
         return foundedCompany.getEmployees().size();
     }
 
@@ -172,7 +169,7 @@ public class AdminService implements AdminAndForemanFunctionality {
         boolean hasAttendance = worker.getAttendances()
                 .stream()
                 .anyMatch(attendance -> attendance.getCheckOutTime() != null &&
-                                        attendance.getCheckOutTime().toLocalDate()
+                        attendance.getCheckOutTime().toLocalDate()
                                 .equals(changePunchInRequest.getDateWhenWorkerDidntMakePunchOut().toLocalDate()));
         if(hasAttendance){
             throw new IllegalStateException("There is already punch Out for this date");

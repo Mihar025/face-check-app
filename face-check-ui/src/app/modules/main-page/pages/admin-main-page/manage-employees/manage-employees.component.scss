@@ -659,6 +659,86 @@ h1 {
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
+.time-management-section {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.time-management-section h4 {
+  color: $dark-text;
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.time-tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 15px;
+  overflow-x: auto;
+}
+
+.tab-button {
+  padding: 8px 15px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  background-color: rgba(74, 144, 226, 0.05);
+}
+
+.tab-button.active {
+  border-bottom: 2px solid $primary-color;
+  color: $primary-color;
+  font-weight: 500;
+}
+
+.time-form {
+  background-color: white;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+.time-form h5 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 15px;
+  font-weight: 500;
+  color: $dark-text;
+}
+
+.time-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.form-hint {
+  display: block;
+  color: #666;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.time-button {
+  background-color: #3498db;
+  color: white;
+}
+
+.time-button:hover {
+  background-color: #2980b9;
+}
 
 // Адаптивные стили
 @media (max-width: 992px) {

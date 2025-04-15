@@ -99,7 +99,7 @@ public class WorkAttendanceService {
                         WorkerSchedule schedule = getWorkerScheduleForDate(user, today);
 
                         // Проверяем время для punch-out
-                        validatePunchOutTime(schedule);
+                    //    validatePunchOutTime(schedule);
                         validateLocationForPunchOut(punchOutRequest, workSite);
 
                         String photoUrl = amazonS3Service.uploadAttendancePhoto(
@@ -400,18 +400,11 @@ public class WorkAttendanceService {
 
         private void validatePunchInTime(WorkerSchedule schedule) {
                 LocalTime currentTime = LocalTime.now();
-                LocalTime earliestAllowed = schedule.getExpectedStartTime().minusMinutes(30); // За 30 минут до начала
-                LocalTime latestAllowed = schedule.getExpectedStartTime().plusHours(1); // До часа после начала
+                LocalTime earliestAllowed = schedule.getExpectedStartTime().minusMinutes(30);
 
                 if (currentTime.isBefore(earliestAllowed)) {
                         throw new IllegalStateException(
                                 "Too early for punch-in. Allowed from: " + earliestAllowed
-                        );
-                }
-
-                if (currentTime.isAfter(latestAllowed)) {
-                        throw new IllegalStateException(
-                                "Too late for punch-in. Last allowed time was: " + latestAllowed
                         );
                 }
         }
