@@ -24,6 +24,11 @@ import { WorkSiteAllInformationResponse } from "../../../../../services/models/w
 import { SetNewCustomRadiusRequest } from "../../../../../services/models/set-new-custom-radius-request";
 import { SetCustomRadius$Params } from "../../../../../services/fn/work-site-controller/set-custom-radius";
 import { FindWorkSiteById$Params } from "../../../../../services/fn/work-site-controller/find-work-site-by-id";
+import {GetActiveWorkers$Params} from "../../../../../services/fn/work-site-controller/get-active-workers";
+import {WorkerCurrentlyWorkingInWorkSite} from "../../../../../services/models/worker-currently-working-in-work-site";
+import {
+  PageResponseWorkerCurrentlyWorkingInWorkSite
+} from "../../../../../services/models/page-response-worker-currently-working-in-work-site";
 
 @Component({
   selector: 'app-manage-worksites',
@@ -31,37 +36,40 @@ import { FindWorkSiteById$Params } from "../../../../../services/fn/work-site-co
   styleUrl: './manage-worksites.component.scss'
 })
 export class ManageWorksitesComponent implements OnInit {
-  // Основные данные
   userName: string = '';
   companyName: string = '';
   loading: boolean = false;
   errorMessage: string = '';
   successMessage: string = '';
 
-  // Пагинация
   page: number = 0;
   size: number = 10;
   totalElements: number = 0;
   totalPages: number = 0;
 
-  // Рабочие объекты
+  activeWorkersPage: number = 0;
+  totalActiveWorkersElements: number = 0;
+  totalActiveWorkersPages: number = 0;
+  showActiveWorkersModal: boolean = false;
+
+
   worksites: Array<WorkSiteResponse> = [];
+  activeWorkers: Array<WorkerCurrentlyWorkingInWorkSite> = [];
+
+
   selectedWorksite: WorkSiteResponse | null = null;
   selectedWorksiteId: number = 0;
 
-  // Модальные окна
   showWorksiteInfoModal: boolean = false;
   showEditWorksiteModal: boolean = false;
   showAddWorksiteModal: boolean = false;
   showDeleteWorksiteModal: boolean = false;
 
-  // Формы в модальных окнах
   showWorkingHoursForm: boolean = false;
   showLocationForm: boolean = false;
   showRadiusForm: boolean = false;
-  activeEditTab: string = 'name'; // Для вкладок в редактировании
+  activeEditTab: string = 'name';
 
-  // Поля для создания нового рабочего объекта
   address: string = '';
   allowedRadius: number = 0;
   latitude: number = 0;
@@ -70,7 +78,6 @@ export class ManageWorksitesComponent implements OnInit {
   workDayEnd: LocalTime = { hour: 0, minute: 0 };
   workSiteName: string = '';
 
-  // Поля для обновления рабочего объекта
   updatedWorkSiteName: string = '';
   updatedWorkSiteAddress: string = '';
   updatedNewLatitude: number = 0;
@@ -79,6 +86,7 @@ export class ManageWorksitesComponent implements OnInit {
   newEnd: LocalTime = {};
   newStart: LocalTime = {};
   newCustomRadius: number = 0;
+
 
   userPhotoUrl: string = '';
 
@@ -117,7 +125,15 @@ export class ManageWorksitesComponent implements OnInit {
     this.authService.logout();
   }
 
-  // Загрузка данных профиля
+  closeActiveWorkersModal() {
+    this.showActiveWorkersModal = false;
+  }
+
+  changeActiveWorkersPage(newPage: number): void {
+    this.activeWorkersPage = newPage;
+    this.checkActiveWorkersInSpecialWorksite();
+  }
+
   loadUserFullName(): void {
     this.userService.findWorkerFullName().subscribe(
       response => {
@@ -144,7 +160,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Загрузка списка рабочих объектов
   loadAllWorksites(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -170,14 +185,12 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Пагинация
   changePage(newPage: number): void {
     this.page = newPage;
     this.loadAllWorksites();
   }
 
   createNewWorkSite() {
-    // Преобразуем часы и минуты в строку "HH:mm:ss"
     const formattedWorkDayStart = `${this.padNumber(this.workDayStart?.hour ?? 0)}:${this.padNumber(this.workDayStart?.minute ?? 0)}:00`;
     const formattedWorkDayEnd = `${this.padNumber(this.workDayEnd?.hour ?? 0)}:${this.padNumber(this.workDayEnd?.minute ?? 0)}:00`;
 
@@ -209,13 +222,11 @@ export class ManageWorksitesComponent implements OnInit {
     });
   }
 
-// Утилита для добавления нуля перед числом
   private padNumber(num: number): string {
     return num.toString().padStart(2, '0');
   }
 
 
-  // Обновление имени рабочего объекта
   updateWorkSiteName() {
     this.loading = true;
     this.errorMessage = '';
@@ -246,7 +257,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Обновление адреса рабочего объекта
   updateWorkSiteAddress() {
     this.loading = true;
     this.errorMessage = '';
@@ -277,7 +287,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Обновление расположения рабочего объекта
   updateWorkSiteLocation() {
     this.loading = true;
     this.errorMessage = '';
@@ -309,7 +318,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Обновление радиуса рабочего объекта
   updateWorkSiteRadius() {
     this.loading = true;
     this.errorMessage = '';
@@ -339,7 +347,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Обновление рабочих часов рабочего объекта
   updateWorkSiteWorkingHours() {
     if (this.newStart.hour === undefined || this.newEnd.hour === undefined) {
       this.errorMessage = "Please enter valid start and end times";
@@ -384,7 +391,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Удаление рабочего объекта
   deleteWorkSite() {
     this.loading = true;
     this.errorMessage = '';
@@ -409,7 +415,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Загрузка информации о рабочем объекте
   loadWorkSiteAllInformation() {
     this.loading = true;
     this.errorMessage = '';
@@ -431,7 +436,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Загрузка информации о рабочем объекте по ID
   loadWorkSiteById(workSiteId: number) {
     this.loading = true;
     this.errorMessage = '';
@@ -453,7 +457,38 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  // Управление модальными окнами
+  checkActiveWorkersInSpecialWorksite() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const params: GetActiveWorkers$Params = {
+      workSiteId: this.selectedWorksiteId,
+      page: this.activeWorkersPage,
+      size: this.size
+    }
+
+    this.workSiteService.getActiveWorkers(params).subscribe(
+      (response: PageResponseWorkerCurrentlyWorkingInWorkSite) => {
+        this.activeWorkers = response.content || [];
+        this.totalActiveWorkersElements = response.totalElement || 0;
+        this.totalActiveWorkersPages = response.totalPages || 0;
+
+        this.loading = false;
+        this.successMessage = 'Successfully loaded all active workers!';
+        this.showActiveWorkersModal = true;
+        console.log('Loaded active workers:', this.activeWorkers);
+      },
+      error => {
+        this.errorMessage = 'Error loading active workers: ' + (error.message || 'Unknown error');
+        this.loading = false;
+        console.error('Error loading active workers:', error);
+      }
+    );
+  }
+
+
+
   openWorksiteInfoModal(workSiteId: number) {
     this.selectedWorksiteId = workSiteId;
     this.loadWorkSiteById(workSiteId);
@@ -511,7 +546,6 @@ export class ManageWorksitesComponent implements OnInit {
     this.selectedWorksite = null;
   }
 
-  // Управление вкладками и формами
   setActiveEditTab(tab: string) {
     this.activeEditTab = tab;
   }
@@ -521,7 +555,6 @@ export class ManageWorksitesComponent implements OnInit {
     if (this.showWorkingHoursForm) {
       this.showLocationForm = false;
       this.showRadiusForm = false;
-      // Предзаполняем текущими значениями
       if (this.selectedWorksite) {
         this.newStart = {...this.selectedWorksite.workDayStart};
         this.newEnd = {...this.selectedWorksite.workDayEnd};
@@ -534,7 +567,6 @@ export class ManageWorksitesComponent implements OnInit {
     if (this.showLocationForm) {
       this.showWorkingHoursForm = false;
       this.showRadiusForm = false;
-      // Предзаполняем текущими значениями
       if (this.selectedWorksite) {
         this.updatedNewLatitude = this.selectedWorksite.latitude || 0;
         this.updatedNewLongitude = this.selectedWorksite.longitude || 0;
@@ -548,7 +580,6 @@ export class ManageWorksitesComponent implements OnInit {
     if (this.showRadiusForm) {
       this.showWorkingHoursForm = false;
       this.showLocationForm = false;
-      // Предзаполняем текущим значением
       if (this.selectedWorksite) {
         this.newCustomRadius = this.selectedWorksite.allowedRadius || 0;
       }
@@ -584,7 +615,6 @@ export class ManageWorksitesComponent implements OnInit {
     const formatTime = (time: any) => {
       if (!time) return '--:--';
 
-      // Если время приходит как строка
       if (typeof time === 'string') {
         const parts = time.split(':');
         if (parts.length >= 2) {
@@ -593,7 +623,6 @@ export class ManageWorksitesComponent implements OnInit {
         return time;
       }
 
-      // Если время - объект
       const hour = time.hour !== undefined ? this.padNumber(time.hour) : '00';
       const minute = time.minute !== undefined ? this.padNumber(time.minute) : '00';
       return `${hour}:${minute}`;

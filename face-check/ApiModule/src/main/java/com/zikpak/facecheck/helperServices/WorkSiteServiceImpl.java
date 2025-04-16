@@ -50,16 +50,15 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     @Override
     public WorkSiteResponse findWorkSiteById(Integer id) {
-       // var foundedWorkSite = findWorkSiteBySpecialId(id);
+        // var foundedWorkSite = findWorkSiteBySpecialId(id);
         var foundedWorkSite = workSiteRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Work site not found"));
         return workSiteMapper.toWorkSiteResponse(foundedWorkSite);
     }
 
 
-
     @Override
-    public PageResponse<WorkSiteResponse> findAllWorkSites(Authentication authentication , int page, int size) {
+    public PageResponse<WorkSiteResponse> findAllWorkSites(Authentication authentication, int page, int size) {
         User user = (User) authentication.getPrincipal();
         Pageable pageable = PageRequest.of(page, size, Sort.by("siteName").descending());
         Page<WorkSite> workSites = workSiteRepository.findAllByCompanyId(user.getCompany().getId(), pageable);
@@ -79,11 +78,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     @Transactional
     @Override
-    public WorkSiteResponse createWorkSite(Authentication  authentication,WorkSiteRequest request) {
+    public WorkSiteResponse createWorkSite(Authentication authentication, WorkSiteRequest request) {
         var user = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var company = companyRepository.findById(user.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company not found"));
-        var newWorkSite =  WorkSite.builder()
+        var newWorkSite = WorkSite.builder()
                 .siteName(request.getWorkSiteName())
                 .address(request.getAddress())
                 .latitude(request.getLatitude())
@@ -96,7 +95,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                 .build();
         company.addWorkSite(newWorkSite);
         var savedWorkSite = workSiteRepository.save(newWorkSite);
-        return  workSiteMapper.toWorkSiteResponse(savedWorkSite);
+        return workSiteMapper.toWorkSiteResponse(savedWorkSite);
     }
 
 
@@ -186,10 +185,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
 
-
-
-
-
     @Override
     public SetNewCustomRadiusResponse setCustomRadiusForWorkSite(Authentication authentication, Integer workSiteId, SetNewCustomRadiusRequest customRadius) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
@@ -198,28 +193,28 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                 .orElseThrow(() -> new EntityNotFoundException("Work site with id " + workSiteId + " not found"));
         log.info("Finding worksite: " + foundedWorkSite.getSiteName());
 
-        if(!foundedWorkSite.getIsActive()) {
+        if (!foundedWorkSite.getIsActive()) {
             throw new IllegalStateException("Work site is not active");
         }
-            if(foundedWorkSite.getAllowedRadius().equals(customRadius.getCustomRadius())){
-                throw new IllegalStateException("Custom radius can't be the same");
-            }
+        if (foundedWorkSite.getAllowedRadius().equals(customRadius.getCustomRadius())) {
+            throw new IllegalStateException("Custom radius can't be the same");
+        }
 
-            foundedWorkSite.setAllowedRadius(customRadius.getCustomRadius());
-            log.info("Setting new allowed radius! " + customRadius.getCustomRadius());
-            var savedWorkSiteRadius =  workSiteRepository.save(foundedWorkSite);
-            log.info("Saving radius!");
+        foundedWorkSite.setAllowedRadius(customRadius.getCustomRadius());
+        log.info("Setting new allowed radius! " + customRadius.getCustomRadius());
+        var savedWorkSiteRadius = workSiteRepository.save(foundedWorkSite);
+        log.info("Saving radius!");
         return SetNewCustomRadiusResponse.builder()
-                                        .workSiteId(savedWorkSiteRadius.getId())
-                                        .customRadius(savedWorkSiteRadius.getAllowedRadius())
-                                        .build();
+                .workSiteId(savedWorkSiteRadius.getId())
+                .customRadius(savedWorkSiteRadius.getAllowedRadius())
+                .build();
     }
 
     @Override
     public WorkSiteUpdateNameResponse updateWorkSiteName(Authentication authentication, Integer workSiteId, UpdateNameRequest request) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
-        if(foundedWorkSite.getSiteName().equals(request.getName())) {
+        if (foundedWorkSite.getSiteName().equals(request.getName())) {
             throw new IllegalArgumentException("Work site name already exists");
         }
         foundedWorkSite.setSiteName(request.getName());
@@ -228,10 +223,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
-    public WorkSiteUpdateAddressResponse updateWorkSiteAddress(Authentication authentication,Integer workSiteId, UpdateWorkSiteAddress updateWorkSiteAddress) {
+    public WorkSiteUpdateAddressResponse updateWorkSiteAddress(Authentication authentication, Integer workSiteId, UpdateWorkSiteAddress updateWorkSiteAddress) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
-        if(foundedWorkSite.getAddress().equals(updateWorkSiteAddress.getAddress())) {
+        if (foundedWorkSite.getAddress().equals(updateWorkSiteAddress.getAddress())) {
             throw new IllegalArgumentException("Work site address already exists");
         }
         foundedWorkSite.setAddress(updateWorkSiteAddress.getAddress());
@@ -240,10 +235,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
-    public WorkSiteUpdateWorkingHoursResponse updateWorkingHours(Authentication authentication,Integer workSiteId, WorkSiteUpdateWorkingHoursRequest request) {
+    public WorkSiteUpdateWorkingHoursResponse updateWorkingHours(Authentication authentication, Integer workSiteId, WorkSiteUpdateWorkingHoursRequest request) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
-        if(!foundedWorkSite.getIsActive()) {
+        if (!foundedWorkSite.getIsActive()) {
             throw new IllegalStateException("Work site is not active");
         }
         foundedWorkSite.setWorkDayStart(request.getNewStart());
@@ -253,10 +248,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
-    public WorkSiteUpdateLocationResponse updateWorkSiteLocation(Authentication authentication,Integer workSiteId, WorkSiteUpdateLocationRequest request) {
+    public WorkSiteUpdateLocationResponse updateWorkSiteLocation(Authentication authentication, Integer workSiteId, WorkSiteUpdateLocationRequest request) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
-        if(!foundedWorkSite.getIsActive()) {
+        if (!foundedWorkSite.getIsActive()) {
             throw new IllegalStateException("Work site is not active");
         }
         foundedWorkSite.setLatitude(request.getNewLatitude());
@@ -298,30 +293,29 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
 
-
-        // future add push notification, that the in scheduled day work site will be closed
+    // future add push notification, that the in scheduled day work site will be closed
     @Override
     public ScheduleInactiveDayResponse scheduleInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest inactiveDate) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
 
-        if(inactiveDate.getInactiveDate().isBefore(LocalDate.now())) {
+        if (inactiveDate.getInactiveDate().isBefore(LocalDate.now())) {
             throw new IllegalStateException("Cannot schedule inactive day in past!");
         }
-        if(foundedWorkSite.getInactiveDays().contains(inactiveDate.getInactiveDate())) {
+        if (foundedWorkSite.getInactiveDays().contains(inactiveDate.getInactiveDate())) {
             throw new IllegalStateException("Inactive day is already exist with this date!");
         }
 
-            if(inactiveDate.getInactiveDate().getDayOfWeek() == DayOfWeek.SATURDAY){
-                throw new IllegalStateException("Cannot schedule inactive day, in Saturday!");
-            }
+        if (inactiveDate.getInactiveDate().getDayOfWeek() == DayOfWeek.SATURDAY) {
+            throw new IllegalStateException("Cannot schedule inactive day, in Saturday!");
+        }
 
         Set<LocalDate> inactiveDays = foundedWorkSite.getInactiveDays();
-        if(inactiveDays == null) {
+        if (inactiveDays == null) {
             inactiveDays = new HashSet<>();
         }
 
-        if(inactiveDays.contains(inactiveDate)) {
+        if (inactiveDays.contains(inactiveDate)) {
             throw new IllegalStateException("Cannot schedule inactive day in past!");
         }
 
@@ -332,19 +326,19 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
-    public ScheduleInactiveDayResponse removeInactiveDay(Authentication authentication, Integer workSiteId,ScheduleInactiveDayRequest inactiveDate) {
+    public ScheduleInactiveDayResponse removeInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest inactiveDate) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-        var foundedWorkSite =findWorkSiteBySpecialId(workSiteId);
-        if(inactiveDate.getInactiveDate().isBefore(LocalDate.now())) {
+        var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
+        if (inactiveDate.getInactiveDate().isBefore(LocalDate.now())) {
             throw new IllegalStateException("Cannot remove inactive day in past!");
         }
 
 
-        if(inactiveDate.getInactiveDate().getDayOfWeek() == DayOfWeek.SATURDAY){
+        if (inactiveDate.getInactiveDate().getDayOfWeek() == DayOfWeek.SATURDAY) {
             throw new IllegalStateException("Cannot remove inactive day, in Saturday!");
         }
         Set<LocalDate> inactiveDays = foundedWorkSite.getInactiveDays();
-        if(inactiveDays == null || !inactiveDays.contains(inactiveDate.getInactiveDate())) {
+        if (inactiveDays == null || !inactiveDays.contains(inactiveDate.getInactiveDate())) {
             throw new IllegalStateException("This date is not scheduled as inactive day!");
         }
 
@@ -358,39 +352,39 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     public boolean isWorkSiteActive(Integer workSiteId) {
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
 
-        if(!foundedWorkSite.getIsActive()) {
+        if (!foundedWorkSite.getIsActive()) {
             return false;
         }
 
         LocalDate today = LocalDate.now();
         Set<LocalDate> inactiveDays = foundedWorkSite.getInactiveDays();
-        if(inactiveDays != null && inactiveDays.contains(today)) {
+        if (inactiveDays != null && inactiveDays.contains(today)) {
             return false;
         }
 
-        if(today.getDayOfWeek() == DayOfWeek.SATURDAY){
+        if (today.getDayOfWeek() == DayOfWeek.SATURDAY) {
             return false;
         }
 
-       return true;
+        return true;
     }
 
     @Override
     public IsWithinRadiusResponse isWithinRadius(Integer workSiteId, IsWithinRadiusRequest isWithinRadiusRequest) {
 
-       var foundedWorkSite =  findWorkSiteById(workSiteId);
+        var foundedWorkSite = findWorkSiteById(workSiteId);
 
-       if(foundedWorkSite.getLatitude() == null || foundedWorkSite.getLongitude() == null ||
-            foundedWorkSite.getAllowedRadius() == null) {
-           throw new IllegalStateException("Work site doesnt have any coordinates!");
-       }
+        if (foundedWorkSite.getLatitude() == null || foundedWorkSite.getLongitude() == null ||
+                foundedWorkSite.getAllowedRadius() == null) {
+            throw new IllegalStateException("Work site doesnt have any coordinates!");
+        }
 
-       double distance = calculateDistance(
-               foundedWorkSite.getLatitude(),
-               foundedWorkSite.getLongitude(),
-               isWithinRadiusRequest.getLatitude(),
-               isWithinRadiusRequest.getLongitude()
-       );
+        double distance = calculateDistance(
+                foundedWorkSite.getLatitude(),
+                foundedWorkSite.getLongitude(),
+                isWithinRadiusRequest.getLatitude(),
+                isWithinRadiusRequest.getLongitude()
+        );
 
         boolean isWithinRadius = distance <= foundedWorkSite.getAllowedRadius();
 
@@ -409,9 +403,9 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     public boolean isWithinRadiusForPunchInOut(Integer workSiteId, Double userLatitude, Double userLongitude) {
 
-        var foundedWorkSite =  findWorkSiteById(workSiteId);
+        var foundedWorkSite = findWorkSiteById(workSiteId);
 
-        if(foundedWorkSite.getLatitude() == null || foundedWorkSite.getLongitude() == null ||
+        if (foundedWorkSite.getLatitude() == null || foundedWorkSite.getLongitude() == null ||
                 foundedWorkSite.getAllowedRadius() == null) {
             throw new IllegalStateException("Work site is not active");
         }
@@ -427,39 +421,36 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
 
-
-
-
     @Override
-    public boolean canPunchInOut(Authentication authentication, Integer workSiteId, Integer userId,CanPunchOutRequestWorkSite canPunchOutRequestWorkSite) {
+    public boolean canPunchInOut(Authentication authentication, Integer workSiteId, Integer userId, CanPunchOutRequestWorkSite canPunchOutRequestWorkSite) {
         checkIsUserAuthenticatedAndFindHim(authentication);
         var workSite = findWorkSiteBySpecialId(workSiteId);
 
-            if(!workSite.getIsActive()){
-                throw new IllegalStateException("Work site is not active");
-            }
+        if (!workSite.getIsActive()) {
+            throw new IllegalStateException("Work site is not active");
+        }
 
-            var earlierPunchInTime = workSite.getWorkDayStart().minusMinutes(10);
-            var latestPunchOutTime  = workSite.getWorkDayEnd().plusMinutes(10);
+        var earlierPunchInTime = workSite.getWorkDayStart().minusMinutes(10);
+        var latestPunchOutTime = workSite.getWorkDayEnd().plusMinutes(10);
 
-            if(canPunchOutRequestWorkSite.getCanPunchOut().isBefore(earlierPunchInTime)) {
-                return false;
-            }
-            if(canPunchOutRequestWorkSite.getCanPunchOut().isAfter(latestPunchOutTime)) {
-                return false;
-            }
+        if (canPunchOutRequestWorkSite.getCanPunchOut().isBefore(earlierPunchInTime)) {
+            return false;
+        }
+        if (canPunchOutRequestWorkSite.getCanPunchOut().isAfter(latestPunchOutTime)) {
+            return false;
+        }
 
-            return true;
+        return true;
     }
 
     public boolean canPunchInOutForWorkAttendance(Authentication authentication, Integer workSiteId, Integer userId, LocalTime currentTime) {
         checkIsUserAuthenticatedAndFindHim(authentication);
         var workSite = findWorkSiteBySpecialId(workSiteId);
 
-        if(workSite.getWorkDayStart() == null || workSite.getWorkDayEnd() == null) {
+        if (workSite.getWorkDayStart() == null || workSite.getWorkDayEnd() == null) {
             throw new IllegalStateException("Work site schedule is not set");
         }
-        if(!workSite.getIsActive()){
+        if (!workSite.getIsActive()) {
             throw new IllegalStateException("Work site is inactive");
         }
 
@@ -468,11 +459,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
         boolean isOvernightShift = workSite.getWorkDayEnd().isBefore(workSite.getWorkDayStart());
 
-        if(currentTime.isBefore(earlierPunchInTime)) {
+        if (currentTime.isBefore(earlierPunchInTime)) {
             throw new IllegalStateException("You cannot punch in - it's too early!");
         }
 
-        if(isOvernightShift) {
+        if (isOvernightShift) {
             return currentTime.isAfter(earlierPunchInTime) ||
                     currentTime.isBefore(latestPunchOutTime);
         } else {
@@ -487,7 +478,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         var workSite = findWorkSiteBySpecialId(workSiteId);
 
         Set<LocalDate> innactiveDays = workSite.getInactiveDays();
-        if(innactiveDays == null) {
+        if (innactiveDays == null) {
             innactiveDays = new HashSet<>();
         }
         var response = WorkSiteClosedDaysResponse.builder()
@@ -510,23 +501,25 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
-    public PageResponse<WorkerCurrentlyWorkingInWorkSite> findAllWorkerInWorkSiteRelated(Integer workSiteId, int page, int size, Authentication authentication) {
+    public PageResponse<WorkerCurrentlyWorkingInWorkSite> findAllWorkerInWorkSiteRelated(Integer workSiteId,
+                                                                                         int page,
+                                                                                         int size,
+                                                                                         Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
 
-        if(!user.getRoles().stream()
-                .anyMatch(role -> role.getName().equals("ADMIN"))){
+        if (!user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ADMIN"))) {
             throw new AccessDeniedException("Only admins have an access to this function");
         }
         var adminsCompany = user.getCompany().getId();
         var foundedWorksite = findWorkSiteById(workSiteId);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("wa.checkInTime").descending());
-        Page<User> findAllUsersLocatedInWorkSite = userRepository.findAllUsersLocatedInWorkSite(pageable, adminsCompany, foundedWorksite.getWorkSiteId());
-        List<WorkerCurrentlyWorkingInWorkSite> workerCurrentlyWorkingInWorkSitesResponse = findAllUsersLocatedInWorkSite.getContent().stream()
-                .map(users -> {
-                    WorkerAttendance latestAttendance = workerAttendanceRepository
-                            .findFirstByWorkerAndCheckOutTimeIsNullOrderByCheckInTimeDesc(users)
-                            .orElseThrow(() -> new RuntimeException("No attendance record found!"));
+        Page<Object[]> results = userRepository.findAllActiveWorkersWithAttendance(pageable, adminsCompany, foundedWorksite.getWorkSiteId());
+        List<WorkerCurrentlyWorkingInWorkSite> workerCurrentlyWorkingInWorkSitesResponse = results.getContent().stream()
+                .map(arr -> {
+                    User users = (User) arr[0];
+                    WorkerAttendance latestAttendance = (WorkerAttendance) arr[1];
 
                     return WorkerCurrentlyWorkingInWorkSite.builder()
                             .workerId(users.getId())
@@ -537,22 +530,17 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                             .workSiteName(foundedWorksite.getWorkSiteName())
                             .workSiteAddress(foundedWorksite.getAddress())
                             .build();
-
                 }).toList();
 
         return new PageResponse<>(
                 workerCurrentlyWorkingInWorkSitesResponse,
-                findAllUsersLocatedInWorkSite.getNumber(),
-                findAllUsersLocatedInWorkSite.getSize(),
-                findAllUsersLocatedInWorkSite.getTotalElements(),
-                findAllUsersLocatedInWorkSite.getTotalPages(),
-                findAllUsersLocatedInWorkSite.isFirst(),
-                findAllUsersLocatedInWorkSite.isLast()
+                results.getNumber(),
+                results.getSize(),
+                results.getTotalElements(),
+                results.getTotalPages(),
+                results.isFirst(),
+                results.isLast()
         );
-
-
-
-
     }
 
     private User checkIsUserAuthenticatedAndFindHim(Authentication authentication) {

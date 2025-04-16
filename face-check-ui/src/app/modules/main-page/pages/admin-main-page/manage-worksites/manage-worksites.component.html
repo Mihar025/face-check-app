@@ -166,6 +166,9 @@
             <button class="action-button radius-button" (click)="toggleRadiusForm()">
               <i class="fas fa-circle-notch"></i> Update Radius
             </button>
+            <button class="action-button info-button" (click)="checkActiveWorkersInSpecialWorksite()">
+              <i class="fas fa-users"></i> View Active Workers
+            </button>
           </div>
         </div>
 
@@ -385,6 +388,63 @@
     <div class="modal-footer">
       <button class="cancel-button" (click)="closeDeleteWorksiteModal()">Cancel</button>
       <button class="confirm-button delete-button" (click)="deleteWorkSite()">Delete Worksite</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно активных работников -->
+<div class="modal-overlay" *ngIf="showActiveWorkersModal">
+  <div class="modal-container modal-large">
+    <div class="modal-header">
+      <h3>Active Workers at {{ selectedWorksite?.workSiteName }}</h3>
+      <button class="close-button" (click)="closeActiveWorkersModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="loading" class="loading-indicator">
+        <div class="spinner"></div>
+        <p>Loading active workers...</p>
+      </div>
+
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="!loading && activeWorkers.length === 0" class="no-worksites">
+        <p>No active workers found at this worksite.</p>
+      </div>
+
+      <table *ngIf="!loading && activeWorkers.length > 0" class="worksites-table">
+        <thead>
+        <tr>
+          <th>Worker ID</th>
+          <th>Full Name</th>
+          <th>Phone Number</th>
+          <th>Punched In</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let worker of activeWorkers">
+          <td>{{ worker.workerId }}</td>
+          <td>{{ worker.workerFullName }}</td>
+          <td>{{ worker.workerPhoneNumber }}</td>
+          <td>{{ worker.punchedIn | date:'medium' }}</td>
+        </tr>
+        </tbody>
+      </table>
+
+      <!-- Пагинация для активных работников -->
+      <div *ngIf="totalActiveWorkersPages > 1" class="pagination">
+        <button [disabled]="activeWorkersPage === 0" (click)="changeActiveWorkersPage(activeWorkersPage - 1)" class="pagination-button">
+          Previous
+        </button>
+        <span class="page-info">Page {{ activeWorkersPage + 1 }} of {{ totalActiveWorkersPages }}</span>
+        <button [disabled]="activeWorkersPage >= totalActiveWorkersPages - 1" (click)="changeActiveWorkersPage(activeWorkersPage + 1)" class="pagination-button">
+          Next
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeActiveWorkersModal()">Close</button>
     </div>
   </div>
 </div>

@@ -117,5 +117,24 @@ AND EXISTS (
                                        @Param("companyId") Integer companyId);
 
 
+    @Query("""
+SELECT DISTINCT u, wa
+FROM User u
+JOIN WorkerAttendance wa ON wa.worker = u
+WHERE u.company.id = :companyId
+AND wa.checkOutTime IS NULL
+AND wa.checkInTime IS NOT NULL
+AND u.id IN (
+    SELECT us.id FROM User us
+    JOIN us.workSites ws
+    WHERE ws.id = :workSiteId
+)
+""")
+    Page<Object[]> findAllActiveWorkersWithAttendance(
+            Pageable pageable,
+            @Param("companyId") Integer companyId,
+            @Param("workSiteId") Integer workSiteId
+    );
+
     Optional<User> findUserByFirstName(String firstName);
 }
