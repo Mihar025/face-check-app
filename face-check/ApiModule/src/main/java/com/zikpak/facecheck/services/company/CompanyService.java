@@ -528,7 +528,6 @@ public class CompanyService implements CompanyServiceImpl {
     @Transactional(rollbackOn = Exception.class)
     public void raiseToForemanRoleInCompany(Integer workerId, Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
-
         if (!user.isAdmin() && !user.isBusinessOwner()) {
             log.warn("Unauthorized access  attempt by user: {}", user.getEmail());
             throw new AccessDeniedException("Access denied");

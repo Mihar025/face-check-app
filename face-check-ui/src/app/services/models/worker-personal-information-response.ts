@@ -11,5 +11,6 @@ export interface WorkerPersonalInformationResponse {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
+  role?: string;
   workerId?: number;
 }

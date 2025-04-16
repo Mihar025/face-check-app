@@ -4738,6 +4738,9 @@
           },
           "baseHourlyRate": {
             "type": "number"
+          },
+          "role": {
+            "type": "string"
           }
         }
       },

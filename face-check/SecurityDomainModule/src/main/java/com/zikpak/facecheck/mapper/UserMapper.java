@@ -2,6 +2,7 @@ package com.zikpak.facecheck.mapper;
 
 import com.zikpak.facecheck.authRequests.RegistrationAdminRequest;
 import com.zikpak.facecheck.authRequests.RegistrationRequest;
+import com.zikpak.facecheck.entity.Role;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
@@ -155,6 +156,7 @@ public class UserMapper {
                 .build();
     }
 
+
     public WorkerPersonalInformationResponse toWorkerPersonalInformationResponse(User foundedUser) {
         return WorkerPersonalInformationResponse.builder()
                 .workerId(foundedUser.getId())
@@ -166,8 +168,10 @@ public class UserMapper {
                 .phoneNumber(foundedUser.getPhoneNumber())
                 .address(foundedUser.getHomeAddress())
                 .baseHourlyRate(foundedUser.getBaseHourlyRate())
+                .role(foundedUser.getRoles().stream()
+                                .map(Role::getName)
+                                .findFirst()
+                                .orElse("USER"))
                 .build();
-
-
     }
 }

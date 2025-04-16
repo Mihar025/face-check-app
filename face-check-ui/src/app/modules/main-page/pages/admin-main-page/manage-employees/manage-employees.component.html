@@ -159,7 +159,48 @@
               <label>Company:</label>
               <span>{{ employeePersonalInfo.companyName }}</span>
             </div>
+
+          <div class="info-item">
+            <label>Role in Company:</label>
+            <span [ngClass]="{
+      'role-admin': employeePersonalInfo?.role === 'ADMIN',
+      'role-foreman': employeePersonalInfo?.role === 'FOREMAN',
+      'role-user': employeePersonalInfo?.role === 'USER'
+    }">{{ employeePersonalInfo?.role }}</span>
           </div>
+        </div>
+
+        <div class="role-management-section">
+          <h5>Управление ролями</h5>
+          <div class="role-buttons">
+            <!-- Кнопки для роли USER -->
+            <ng-container *ngIf="employeePersonalInfo?.role === 'USER'">
+              <button class="action-button promote-button" (click)="promoteToForeman()">
+                <i class="fas fa-arrow-up"></i> Повысить до Foreman
+              </button>
+              <button class="action-button promote-admin-button" (click)="promoteToAdmin()">
+                <i class="fas fa-arrow-up"></i> Повысить до Admin
+              </button>
+            </ng-container>
+
+            <!-- Кнопки для роли FOREMAN -->
+            <ng-container *ngIf="employeePersonalInfo?.role === 'FOREMAN'">
+              <button class="action-button demote-button" (click)="demoteToUser()">
+                <i class="fas fa-arrow-down"></i> Понизить до User
+              </button>
+              <button class="action-button promote-admin-button" (click)="promoteToAdmin()">
+                <i class="fas fa-arrow-up"></i> Повысить до Admin
+              </button>
+            </ng-container>
+
+            <!-- Кнопки для роли ADMIN -->
+            <ng-container *ngIf="employeePersonalInfo?.role === 'ADMIN'">
+              <button class="action-button demote-foreman-button" (click)="demoteToForeman()">
+                <i class="fas fa-arrow-down"></i> Понизить до Foreman
+              </button>
+            </ng-container>
+          </div>
+
 
           <div class="time-tabs">
             <button class="tab-button" [class.active]="activeTimeTab === 'updatePunchIn'" (click)="activeTimeTab = 'updatePunchIn'">Update Punch In</button>
@@ -428,4 +469,5 @@
       <button class="confirm-button" (click)="changeHourlyRate()">Save</button>
     </div>
   </div>
+</div>
 </div>
