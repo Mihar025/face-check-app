@@ -21,15 +21,6 @@ public class AdminController {
     private final AdminService adminService;
     private final ForemanAndAdminService foremanAndAdminService;
 
-
-    /*
-            IF YOU READING THIS! ITS MEAN THAT I FORGET FOR WHAT I HAVE 2 METHODS WITH POST-MAPPING
-            AND 1 METHOD WITH PUT MAPPING!
-            I DIDNT WRITE DOCUMENTATION! ITS NOT BECAUSE IM STUPID! BUT BECAUSE IM TIRED!
-
-            2 METHODS WITH POST MAPPING: WHEN PERSON FORGET TO MAKE PUNCH-IN/OUT WE CALLING THIS METHODS WITH POST MAPPING,
-            FOR MAKE PUNCH IN / OUT FOR WORKER AND BEGIN OR FINISH PAYROLL PROGRESS FOR CURRENT DAY OR PREVIOUS AND FINISH COUNTING HIS PER DAY WORKER HOURS + MONEY!
-     */
     @PostMapping("/worker/{workerId}/punch-in")
     public ResponseEntity<ChangePunchInForWorkerResponse> changePunchInForWorker(
             @PathVariable Integer workerId,

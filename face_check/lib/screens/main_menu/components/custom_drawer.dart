@@ -25,24 +25,17 @@ class _CustomDrawerState extends State<CustomDrawer> {
   }
 
   Future<void> _loadUserRole() async {
-    print('=== CustomDrawer: Loading user role ===');
     final role = await JwtService.getUserRole();
-    print('CustomDrawer received role: $role');
-
     setState(() {
       _userRole = role;
       print('CustomDrawer state updated with role: $_userRole');
     });
-    print('=== CustomDrawer: Role loading completed ===');
+
   }
 
-  // Добавляем функцию для обновления состояния приложения
   Future<void> _refreshApplication() async {
     try {
-      // Закрываем drawer
       Navigator.pop(context);
-
-      // Показываем индикатор загрузки
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -53,25 +46,18 @@ class _CustomDrawerState extends State<CustomDrawer> {
         },
       );
 
-      // Обновляем необходимые данные
       await _controller.loadUserInfo();
       await _loadUserRole();
 
-      // Можно добавить другие необходимые обновления
-      // Например, обновление данных из API
-      // await ApiService.instance.refreshData();
-
-      // Закрываем индикатор загрузки
       if (context.mounted) {
         Navigator.pop(context);
 
-        // Перезагружаем главный экран
         Navigator.pushReplacementNamed(context, '/main');
       }
     } catch (e) {
       print('Error refreshing application: $e');
       if (context.mounted) {
-        Navigator.pop(context); // Закрываем индикатор загрузки
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка при обновлении: $e')),
         );

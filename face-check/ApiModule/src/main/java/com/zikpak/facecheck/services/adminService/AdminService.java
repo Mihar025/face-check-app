@@ -41,16 +41,12 @@ public class AdminService implements AdminAndForemanFunctionality {
     public ChangePunchInForWorkerResponse ChangingPunchInForWorkerIfDoesntExist(Integer workerId, ChangePunchInRequest changePunchInRequest, Authentication authentication) {
         User admin = ((User) authentication.getPrincipal());
 
-        // Checking is that operation doing admin!
         doesHaveAdminRole(admin);
 
-        // find worker by id
         var foundedWorker = findWorkerById(workerId);
 
-        // check is worker really does not do the punch in!
         findAndValidateWorkerAttendanceForPunchIn(foundedWorker, changePunchInRequest);
 
-        // If worker did not make the punch in, we are changing his punch in time to special time, which admin will set!
         setNewAttendanceForNewPunchIn(foundedWorker, changePunchInRequest);
 
 
@@ -70,9 +66,7 @@ public class AdminService implements AdminAndForemanFunctionality {
     public ChangePunchOutForWorkerResponse ChangingPunchOutForWorkerIfDoesntExist(Integer workerId, ChangePunchOutRequest changePunchInRequest, Authentication authentication) {
         User admin = ((User) authentication.getPrincipal());
 
-        // Checking is that operation doing admin!
         doesHaveAdminRole(admin);
-        // find worker by id
         var foundedWorker = findWorkerById(workerId);
 
         findAndValidateWorkerAttendanceForPunchOut(foundedWorker, changePunchInRequest);

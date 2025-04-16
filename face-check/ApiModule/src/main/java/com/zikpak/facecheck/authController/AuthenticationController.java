@@ -62,11 +62,9 @@ public class AuthenticationController {
             AuthenticationResponse response = authenticationService.authenticate(request);
             return ResponseEntity.ok(response);
         } catch (BadCredentialsException e) {
-            // Неверные учетные данные
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid email or password");
         } catch (Exception e) {
-            // Логируем неожиданную ошибку
             log.error("Authentication error: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Authentication failed: " + e.getMessage());

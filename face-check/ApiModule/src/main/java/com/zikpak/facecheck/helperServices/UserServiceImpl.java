@@ -24,8 +24,6 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
-    private final WorkerPayRollService workerPayRollService;
-
     @Override
     public void updateEmail( String email, Authentication authentication) {
         log.info("Begin process");

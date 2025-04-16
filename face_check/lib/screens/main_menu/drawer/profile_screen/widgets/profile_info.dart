@@ -15,7 +15,6 @@ class ProfileInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 

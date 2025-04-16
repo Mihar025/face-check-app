@@ -15,18 +15,16 @@ class TimeSeparator extends StatelessWidget {
   Widget build(BuildContext context) {
     final finalColor = color ?? Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white;
 
-    // Адаптируем размер шрифта в зависимости от размера экрана
     final screenSize = MediaQuery.of(context).size;
-    final reallySmallScreen = screenSize.width < 320; // Для очень маленьких экранов
+    final reallySmallScreen = screenSize.width < 320;
 
-    // Выбираем размер в зависимости от размера экрана
     double fontSize;
     if (reallySmallScreen) {
-      fontSize = 24; // Очень маленький экран
+      fontSize = 24;
     } else if (isSmallScreen) {
-      fontSize = 28; // Маленький экран
+      fontSize = 28;
     } else {
-      fontSize = 32; // Нормальный экран
+      fontSize = 32;
     }
 
     return Padding(

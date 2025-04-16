@@ -17,7 +17,6 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   late final AnimationController _animationController;
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
-  // Кэшируем AnimationController для переиспользования
   late final _slideInTween = Tween<Offset>(
     begin: const Offset(0.05, 0),
     end: Offset.zero,
@@ -27,11 +26,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500), // Увеличиваем длительность для плавности
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    // Используем addPostFrameCallback для предотвращения setState во время build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadNotifications();
     });
@@ -60,7 +58,6 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           _isLoading = false;
         });
 
-        // Используем forward с curve для плавности
         _animationController.reset();
         _animationController.forward();
       }
@@ -78,7 +75,6 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
       await _notificationsPlugin.cancelAll();
       await _loadNotifications();
     } catch (_) {
-      // Обрабатываем возможные исключения
     }
   }
 
@@ -87,20 +83,17 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
       await _notificationsPlugin.cancel(id);
       await _loadNotifications();
     } catch (_) {
-      // Обрабатываем возможные исключения
     }
   }
 
-  // Выносим создание анимации в отдельный метод для оптимизации перестроений
   Animation<Offset> _getSlideAnimation(int index) {
     return _slideInTween.animate(
       CurvedAnimation(
         parent: _animationController,
-        // Используем интервалы с перекрытием для более плавного эффекта каскада
         curve: Interval(
-          index * 0.05, // Уменьшаем задержку между элементами
+          index * 0.05,
           0.6 + index * 0.05,
-          curve: Curves.easeOutCubic, // Используем более плавную кривую
+          curve: Curves.easeOutCubic,
         ),
       ),
     );
@@ -111,11 +104,9 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     final theme = Theme.of(context);
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    // Мемоизация размеров экрана
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
-    // Предварительно вычисляем размеры для предотвращения повторных вычислений
     final iconSizeLarge = isSmallScreen ? 48.0 : 64.0;
     final iconSizeMedium = isSmallScreen ? 18.0 : 22.0;
     final iconSizeSmall = isSmallScreen ? 16.0 : 18.0;
@@ -212,13 +203,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           key: const ValueKey('list'),
           itemCount: _notifications.length,
           padding: EdgeInsets.all(padding),
-          // Используем cacheExtent для предварительной загрузки элементов
           cacheExtent: 800,
-          // Оптимизируем itemBuilder для предотвращения ненужных перестроений
           itemBuilder: (context, index) {
             final notification = _notifications[index];
 
-            // Оптимизируем путем использования const widgets и мемоизации
             return SlideTransition(
               position: _getSlideAnimation(index),
               child: FadeTransition(

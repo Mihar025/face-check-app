@@ -44,7 +44,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     private final WorkerSiteRepository workSiteRepository;
     private final WorkSiteMapper workSiteMapper;
     private final UserRepository userRepository;
-    private final WorkerAttendanceRepository workerAttendanceRepository;
     private final CompanyRepository companyRepository;
 
 
@@ -261,13 +260,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         return workSiteMapper.toWorkSiteUpdateLocationResponse(foundedWorkSite);
     }
 
-/*
-                OPTIONAL METHODS FOR UNEXPECTED SITUATIONS!
-                    A) setWorkSiteActiveOrNotActive
-                    B) scheduleInactiveDay
-
- */
-
     @Override
     public void setWorkSiteActiveOrNotActive(Authentication authentication, Integer workSiteId, UpdateStatusWorkSiteRequest updateStatusWorkSiteRequest) {
 
@@ -287,13 +279,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
         foundedWorkSite.setIsActive(updateStatusWorkSiteRequest.isActive());
         workSiteRepository.save(foundedWorkSite);
-
-        // Можно добавить логирование
         log.info("Work site {} status changed to {}", workSiteId, active ? "active" : "inactive");
     }
 
 
-    // future add push notification, that the in scheduled day work site will be closed
     @Override
     public ScheduleInactiveDayResponse scheduleInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest inactiveDate) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
@@ -569,7 +558,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        // Проверка валидности координат
         if (lat1 < -90 || lat1 > 90 || lat2 < -90 || lat2 > 90) {
             throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees");
         }
@@ -577,7 +565,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
             throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees");
         }
 
-        final double R = 6371000; // Радиус Земли в метрах
+        final double R = 6371000;
 
         double lat1Rad = Math.toRadians(lat1);
         double lat2Rad = Math.toRadians(lat2);

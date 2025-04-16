@@ -46,7 +46,7 @@ class ApiService {
         request: true,
         error: true,
         logPrint: (object) {
-          print('DIO LOG: $object'); // Префикс для легкого поиска в логах
+          print('DIO LOG: $object');
         }
     ));
 
@@ -54,7 +54,6 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Не добавляем токен для запросов аутентификации
           if (options.path.contains('/auth/authenticate')) {
             return handler.next(options);
           }
@@ -66,10 +65,8 @@ class ApiService {
           return handler.next(options);
         },
         onError: (error, handler) async {
-          // Добавляем специальную обработку для 500 ошибки при аутентификации
           if (error.response?.statusCode == 500 &&
               error.requestOptions.path.contains('/auth/authenticate')) {
-            // Очищаем токены при ошибке аутентификации
             await logout();
           }
 
@@ -190,7 +187,6 @@ class ApiService {
         '/attendance/finance-info',
         queryParameters: {
           'weekStart': weekStart.toIso8601String().split('T')[0],
-          // Форматируем как YYYY-MM-DD
         },
       );
 
@@ -215,19 +211,16 @@ class ApiService {
     }
   }
 
-// В ApiService исправляем методы:
 
   Future<void> sendEmail(String email) async {
     try {
       print(
-          'Attempting to send email reset request for: $email'); // Отладочный лог
-
-      // Создаем объект в точном формате, ожидаемом бэкендом
+          'Attempting to send email reset request for: $email');
       final Map<String, dynamic> emailRequest = {
         'email': email,
       };
 
-      print('Request payload: ${jsonEncode(emailRequest)}'); // Отладочный лог
+      print('Request payload: ${jsonEncode(emailRequest)}');
 
       final response = await _dio.post(
         '/auth/forgot-password/email',
@@ -240,22 +233,22 @@ class ApiService {
         ),
       );
 
-      print('Response status: ${response.statusCode}'); // Отладочный лог
-      print('Response data: ${response.data}'); // Отладочный лог
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
 
     } on DioError catch (e) {
-      print('DioError occurred:'); // Отладочный лог
-      print('  Status code: ${e.response?.statusCode}'); // Отладочный лог
-      print('  Response data: ${e.response?.data}'); // Отладочный лог
-      print('  Error message: ${e.message}'); // Отладочный лог
+      print('DioError occurred:');
+      print('  Status code: ${e.response?.statusCode}');
+      print('  Response data: ${e.response?.data}');
+      print('  Error message: ${e.message}');
 
       if (e.response?.statusCode == 404) {
-        throw 'Пользователь с таким email не найден';
+        throw 'User wasnt found';
       }
-      throw 'Произошла ошибка при отправке email: ${e.message}';
+      throw 'User wasnt found: ${e.message}';
     } catch (e) {
-      print('Unexpected error: $e'); // Отладочный лог
-      throw 'Непредвиденная ошибка при отправке email';
+      print('Unexpected error: $e');
+      throw 'User wasnt found';
     }
   }
 
@@ -269,9 +262,9 @@ class ApiService {
       );
     } on DioError catch (e) {
       if (e.response?.statusCode == 400) {
-        throw 'Неверный код подтверждения';
+        throw 'Not correct code';
       }
-      throw 'Произошла ошибка при проверке кода';
+      throw 'Error';
     }
   }
 
@@ -288,11 +281,11 @@ class ApiService {
       );
     } on DioError catch (e) {
       if (e.response?.statusCode == 400) {
-        throw 'Пароли не совпадают';
+        throw 'Passwords not match';
       } else if (e.response?.statusCode == 404) {
-        throw 'Пользователь не найден';
+        throw 'User wasnt found';
       }
-      throw 'Произошла ошибка при смене пароля';
+      throw 'Error during uupdating password';
     }
   }
 
@@ -352,8 +345,7 @@ class ApiService {
       {int? punchInId}
       ) async {
     try {
-      // Format datetime exactly as Java LocalDateTime expects: yyyy-MM-dd'T'HH:mm:ss
-      // Remove milliseconds and timezone information
+
       final String formattedDateTime =
           "${newPunchInTime.year.toString().padLeft(4, '0')}-"
           "${newPunchInTime.month.toString().padLeft(2, '0')}-"
@@ -365,13 +357,9 @@ class ApiService {
       final Map<String, dynamic> requestData = {
         'newCheckInTIme': formattedDateTime
       };
-
-      // Add punchInId to request if provided
       if (punchInId != null) {
         requestData['punchInId'] = punchInId;
       }
-
-      // Log the request data to help with debugging
       print('Sending punch-in update request: $requestData');
 
       final response = await _dio.put(
@@ -384,8 +372,6 @@ class ApiService {
         return UpdatePunchInForWorkerResponse.fromJson(response.data);
       } else {
         print('Punch-in update response empty or invalid');
-        // Return null instead of exception if the server accepted the update
-        // but didn't return the expected response format
         return null;
       }
     } on DioError catch (e) {
@@ -393,11 +379,9 @@ class ApiService {
       print('Response data: ${e.response?.data}');
       print('Response status: ${e.response?.statusCode}');
 
-      // Don't throw exception for specific error cases where
-      // the request actually succeeded on the backend
+
       if (e.response?.statusCode == 400 &&
           e.response!.data.toString().contains('LocalDateTime')) {
-        // Server error during parsing, but operation might have succeeded
         print('Date parsing error occurred, but operation may have succeeded');
         return null;
       }

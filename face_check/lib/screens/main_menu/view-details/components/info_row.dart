@@ -18,17 +18,14 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Получаем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
-    // Адаптивные размеры шрифта
     final fontSize = isSmallScreen ? 12.0 : 14.0;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Адаптивный размер цветного квадрата
         ColoredSquare(
           color: color,
           size: isSmallScreen ? 12.0 : 15.0,

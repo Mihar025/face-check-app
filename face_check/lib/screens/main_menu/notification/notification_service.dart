@@ -15,7 +15,7 @@ class NotificationService {
 
   static Future<NotificationService> initialize(BuildContext context) async {
     final languageCode = Localizations.localeOf(context).languageCode;
-    print('Initializing notifications for language: $languageCode'); // Для отладки
+    print('Initializing notifications for language: $languageCode');
 
     final l10n = AppLocalizations(languageCode);
     final instance = NotificationService._(l10n);
@@ -40,19 +40,17 @@ class NotificationService {
     );
   }
 
-  // Метод для обновления языка уведомлений
   Future<void> updateLanguage(String languageCode) async {
-    print('Updating notifications language to: $languageCode'); // Для отладки
+    print('Updating notifications language to: $languageCode');
     l10n = AppLocalizations(languageCode);
-    await _notifications.cancelAll(); // Отменяем старые уведомления
-    await scheduleWeeklyNotifications(); // Создаем новые с новым языком
+    await _notifications.cancelAll();
+    await scheduleWeeklyNotifications();
   }
 
   Future<void> scheduleWeeklyNotifications() async {
-    print('Scheduling notifications in language: ${l10n.languageCode}'); // Для отладки
-    print('PunchIn title will be: ${l10n.get('dailyPunchIn.title')}'); // Для отладки
+    print('Scheduling notifications in language: ${l10n.languageCode}');
+    print('PunchIn title will be: ${l10n.get('dailyPunchIn.title')}');
 
-    // Уведомление о начале рабочего дня
     await _notifications.zonedSchedule(
       1,
       l10n.get('dailyPunchIn.title'),
@@ -77,7 +75,6 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time,
     );
 
-    // Уведомление об окончании рабочего дня
     await _notifications.zonedSchedule(
       2,
       l10n.get('dailyPunchOut.title'),
@@ -102,7 +99,6 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time,
     );
 
-    // Еженедельное уведомление о проверке часов
     await _notifications.zonedSchedule(
       3,
       l10n.get('weeklyHoursCheck.title'),
@@ -128,7 +124,6 @@ class NotificationService {
     );
   }
 
-  // Эти методы не требуют адаптации, так как не связаны с UI
   tz.TZDateTime _nextInstanceOfWeekday(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
     var scheduledDate = tz.TZDateTime(

@@ -23,14 +23,10 @@
     </nav>
   </div>
 
-  <!-- Основной контент -->
   <div class="main-content">
-    <!-- Верхний логотип -->
     <div class="top-logo-container">
       <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
     </div>
-
-    <!-- Контент управления рабочими объектами -->
     <div class="admin-container">
       <div class="header-with-action">
         <h1>Manage Worksites</h1>
@@ -39,11 +35,9 @@
         </button>
       </div>
 
-      <!-- Сообщения об успехе или ошибке -->
       <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
       <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-      <!-- Секция списка рабочих объектов -->
       <div class="worksites-section">
         <h2>Current Worksites</h2>
 
@@ -105,7 +99,6 @@
   </div>
 </div>
 
-<!-- Модальное окно информации о рабочем объекте -->
 <div class="modal-overlay" *ngIf="showWorksiteInfoModal">
   <div class="modal-container modal-large">
     <div class="modal-header">
@@ -119,7 +112,6 @@
       </div>
 
       <div *ngIf="!loading && selectedWorksite" class="worksite-info-container">
-        <!-- Информация о рабочем объекте -->
         <div class="worksite-info-section">
           <h4>General Information</h4>
           <div class="info-grid">
@@ -154,7 +146,6 @@
           </div>
         </div>
 
-        <!-- Дополнительная информация по всплывающим кнопкам -->
         <div class="worksite-actions-section">
           <div class="action-buttons-row">
             <button class="action-button schedule-button" (click)="toggleWorkingHoursForm()">
@@ -172,7 +163,6 @@
           </div>
         </div>
 
-        <!-- Форма обновления рабочего времени -->
         <div *ngIf="showWorkingHoursForm" class="update-form">
           <h4>Update Working Hours</h4>
           <div class="form-row">
@@ -202,7 +192,6 @@
           </div>
         </div>
 
-        <!-- Форма обновления местоположения -->
         <div *ngIf="showLocationForm" class="update-form">
           <h4>Update Location</h4>
           <div class="form-row">
@@ -228,7 +217,6 @@
           </div>
         </div>
 
-        <!-- Форма обновления радиуса -->
         <div *ngIf="showRadiusForm" class="update-form">
           <h4>Update Custom Radius</h4>
           <div class="form-row">
@@ -251,7 +239,6 @@
   </div>
 </div>
 
-<!-- Модальное окно редактирования рабочего объекта -->
 <div class="modal-overlay" *ngIf="showEditWorksiteModal">
   <div class="modal-container modal-large">
     <div class="modal-header">
@@ -264,7 +251,6 @@
         <button class="tab-button" [class.active]="activeEditTab === 'address'" (click)="setActiveEditTab('address')">Address</button>
       </div>
 
-      <!-- Вкладка редактирования имени -->
       <div *ngIf="activeEditTab === 'name'" class="edit-tab-content">
         <div class="form-group full-width">
           <label for="updatedWorkSiteName">Worksite Name</label>
@@ -277,7 +263,6 @@
         </div>
       </div>
 
-      <!-- Вкладка редактирования адреса -->
       <div *ngIf="activeEditTab === 'address'" class="edit-tab-content">
         <div class="form-group full-width">
           <label for="updatedWorkSiteAddress">Worksite Address</label>
@@ -296,7 +281,6 @@
   </div>
 </div>
 
-<!-- Модальное окно добавления рабочего объекта -->
 <div class="modal-overlay" *ngIf="showAddWorksiteModal">
   <div class="modal-container modal-large">
     <div class="modal-header">
@@ -370,7 +354,6 @@
   </div>
 </div>
 
-<!-- Модальное окно удаления рабочего объекта -->
 <div class="modal-overlay" *ngIf="showDeleteWorksiteModal">
   <div class="modal-container">
     <div class="modal-header">
@@ -392,7 +375,6 @@
   </div>
 </div>
 
-<!-- Модальное окно активных работников -->
 <div class="modal-overlay" *ngIf="showActiveWorkersModal">
   <div class="modal-container modal-large">
     <div class="modal-header">
@@ -432,7 +414,6 @@
         </tbody>
       </table>
 
-      <!-- Пагинация для активных работников -->
       <div *ngIf="totalActiveWorkersPages > 1" class="pagination">
         <button [disabled]="activeWorkersPage === 0" (click)="changeActiveWorkersPage(activeWorkersPage - 1)" class="pagination-button">
           Previous

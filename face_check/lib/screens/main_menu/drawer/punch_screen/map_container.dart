@@ -91,9 +91,9 @@ class _MapContainerState extends State<MapContainer> with AutomaticKeepAliveClie
             myLocationButtonEnabled: true,
             zoomControlsEnabled: false,
             markers: _markers!,
-            compassEnabled: false, // Отключаем компас для повышения производительности
-            buildingsEnabled: false, // Отключаем 3D здания для повышения производительности
-            mapToolbarEnabled: false, // Отключаем тулбар для повышения производительности
+            compassEnabled: false,
+            buildingsEnabled: false,
+            mapToolbarEnabled: false,
           ),
         ),
       ),

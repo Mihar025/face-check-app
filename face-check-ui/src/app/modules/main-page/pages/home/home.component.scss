@@ -173,7 +173,6 @@ h1 {
   margin-top: 5%;
 }
 
-/* Стили для блока upper-text */
 .upper-text {
   text-align: center;
   padding: 50px 20px;
@@ -195,7 +194,6 @@ h1 {
   font-weight: 800;
 }
 
-/* Новые стили для блока с карточками */
 .features-container {
   width: 100%;
   padding: 0 20px 60px;
@@ -273,7 +271,7 @@ h1 {
 }
 
 a {
-  cursor: pointer; // Это изменит курсор на указатель при наведении
+  cursor: pointer;
 }
 
 .feature-card:hover {
@@ -367,7 +365,6 @@ a {
   transform: rotate(0deg);
 }
 
-/* Стили для нового блока "FACECHECK IS THE MOST POWERFUL SOLUTION" */
 .powerful-solution-section {
   width: 100%;
   display: flex;
@@ -431,7 +428,6 @@ a {
   letter-spacing: 0.5px;
 }
 
-/* Стили для блока с преимуществами */
 .benefits-container {
   width: 100%;
   max-width: 1200px;
@@ -500,7 +496,6 @@ a {
   line-height: 1.4;
 }
 
-/* Стили для блока "Join FACECHECK today" */
 .join-section {
   width: 100%;
   max-width: 900px;
@@ -569,7 +564,6 @@ a {
 }
 
 
-// Nav bar code
 .navbar {
   position: fixed;
   top: 20px;
@@ -675,9 +669,6 @@ a {
   background-color: rgba(255, 255, 255, 0.95);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
-
-
-//Footer
 
 .footer {
   background-color: #f8f9fa;
@@ -833,7 +824,6 @@ a {
 }
 
 
-/* Responsive styles */
 @media screen and (max-width: 1200px) {
   .features-wrapper {
     max-width: 800px;
@@ -1048,9 +1038,7 @@ a {
     font-size: 1.2rem;
   }
 
-  /*
-  Nav Bar
-   */
+
   @media screen and (max-width: 768px) {
     .navbar {
       padding: 0 15px;

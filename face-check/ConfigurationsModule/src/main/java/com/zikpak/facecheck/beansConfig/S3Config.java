@@ -32,7 +32,7 @@ public class S3Config {
                 .withClientConfiguration(clientConfiguration)
                 .withRegion(region)
                 .withForceGlobalBucketAccessEnabled(true)
-                .withPathStyleAccessEnabled(true)  // Добавляем для поддержки path-style URLs
+                .withPathStyleAccessEnabled(true)
                 .build();
     }
 }

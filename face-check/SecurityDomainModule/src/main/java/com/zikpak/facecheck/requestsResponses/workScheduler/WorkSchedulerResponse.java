@@ -12,7 +12,6 @@ public class WorkSchedulerResponse {
 
     private Integer workerId;
 
-
     private LocalTime startTime;
 
     private LocalTime endTime;

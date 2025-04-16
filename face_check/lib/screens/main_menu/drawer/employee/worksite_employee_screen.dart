@@ -46,10 +46,9 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
         error = null;
       });
 
-      // Загружаем всех работников за один запрос
       final response = await _apiService.getWorkersInWorksite(
         worksiteId: widget.worksiteId,
-        page: 0, // Первая страница
+        page: 0,
       );
 
       setState(() {
@@ -65,7 +64,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   }
 
   Widget _buildWorkerItem(WorksiteWorkerResponse worker) {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -190,13 +188,11 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   }
 
   Widget _buildInfoSection(WorksiteWorkerResponse worker) {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
     return Column(
       children: [
-        // Phone
         if (worker.phoneNumber != null)
           _buildInfoRow(
             icon: Icons.phone_rounded,
@@ -205,7 +201,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
             isSmallScreen: isSmallScreen,
           ),
 
-        // Address
         if (worker.workSiteAddress != null)
           Padding(
             padding: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
@@ -217,7 +212,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
             ),
           ),
 
-        // Punch in time with highlighted background
         if (worker.punchIn != null)
           Container(
             margin: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
@@ -281,7 +275,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     required Color color,
     required VoidCallback onPressed,
   }) {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -307,7 +300,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     );
   }
 
-  // Обновленная версия метода showTimeInputDialog с белыми цифрами и менее ярким селектором
   Future<DateTime?> showTimeInputDialog(
       BuildContext context, {
         DateTime? initialTime,
@@ -315,51 +307,41 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
 
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
-    // Determine initial time
     final initialHour = initialTime != null ? initialTime.hour : now.hour;
     final initialMinute = initialTime != null ? initialTime.minute : now.minute;
 
-    // Convert to 12-hour format for initial display
     final displayHour = initialHour > 12 ? initialHour - 12 : (initialHour == 0 ? 12 : initialHour);
 
-    // Controllers for text fields
     final TextEditingController hourController = TextEditingController(text: displayHour.toString().padLeft(2, '0'));
     final TextEditingController minuteController = TextEditingController(text: initialMinute.toString().padLeft(2, '0'));
 
-    // For AM/PM selection if using 12-hour format
     bool isAM = initialHour < 12;
 
-    // Focus nodes for moving between fields
     final FocusNode hourFocus = FocusNode();
     final FocusNode minuteFocus = FocusNode();
 
     DateTime? result;
 
-    // Show custom dialog with text inputs
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            // Определяем основной цвет для селекторов, но с пониженной яркостью
             Color primaryColorMuted = HSLColor.fromColor(Theme.of(context).primaryColor)
-                .withSaturation(0.6)  // Снижаем насыщенность
-                .withLightness(0.5)   // Средняя яркость
+                .withSaturation(0.6)
+                .withLightness(0.5)
                 .toColor();
 
             return Theme(
-              // Используем темную тему для диалога, чтобы цифры были белыми
               data: ThemeData.dark().copyWith(
                 primaryColor: primaryColorMuted,
                 colorScheme: ColorScheme.dark(
                   primary: primaryColorMuted,
                   secondary: primaryColorMuted,
                 ),
-                // Настраиваем темы ввода для лучшей видимости
                 inputDecorationTheme: InputDecorationTheme(
                   border: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey[700]!),
@@ -373,12 +355,12 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                 ),
               ),
               child: AlertDialog(
-                backgroundColor: Colors.grey[850], // Темный фон для диалога
+                backgroundColor: Colors.grey[850],
                 title: Text(
                   'Enter time',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
-                    color: Colors.white, // Белый текст для заголовка
+                    color: Colors.white,
                     fontSize: isSmallScreen ? 18 : 20,
                   ),
                 ),
@@ -398,7 +380,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: isSmallScreen ? 20 : 24,
-                              color: Colors.white, // Белый цвет для цифр
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
                             decoration: InputDecoration(
@@ -410,7 +392,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                               ),
                             ),
                             onChanged: (value) {
-                              // Auto move to minute field if 2 digits entered
                               if (value.length == 2) {
                                 minuteFocus.requestFocus();
                               }
@@ -431,7 +412,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                             style: TextStyle(
                               fontSize: isSmallScreen ? 20 : 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white, // Белый цвет для двоеточия
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -446,7 +427,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: isSmallScreen ? 20 : 24,
-                              color: Colors.white, // Белый цвет для цифр
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
                             decoration: InputDecoration(
@@ -464,12 +445,10 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                           ),
                         ),
 
-                        // AM/PM selector с менее ярким дизайном
                         SizedBox(width: isSmallScreen ? 10 : 15),
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // AM button
                             ElevatedButton(
                               onPressed: () {
                                 setState(() {
@@ -478,15 +457,15 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: isAM
-                                    ? primaryColorMuted // Менее яркий цвет темы
+                                    ? primaryColorMuted
                                     : Colors.grey[700],
-                                foregroundColor: Colors.white70, // Слегка приглушенный белый
+                                foregroundColor: Colors.white70,
                                 minimumSize: Size(isSmallScreen ? 40 : 50, isSmallScreen ? 32 : 36),
                                 padding: EdgeInsets.symmetric(
                                     horizontal: isSmallScreen ? 4 : 8,
                                     vertical: 0
                                 ),
-                                elevation: isAM ? 1 : 0, // Небольшая тень для активной кнопки
+                                elevation: isAM ? 1 : 0,
                               ),
                               child: Text(
                                 'AM',
@@ -496,7 +475,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                               ),
                             ),
                             SizedBox(height: isSmallScreen ? 6 : 8),
-                            // PM button
+
                             ElevatedButton(
                               onPressed: () {
                                 setState(() {
@@ -505,15 +484,15 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: !isAM
-                                    ? primaryColorMuted // Менее яркий цвет темы
+                                    ? primaryColorMuted
                                     : Colors.grey[700],
-                                foregroundColor: Colors.white70, // Слегка приглушенный белый
+                                foregroundColor: Colors.white70,
                                 minimumSize: Size(isSmallScreen ? 40 : 50, isSmallScreen ? 32 : 36),
                                 padding: EdgeInsets.symmetric(
                                     horizontal: isSmallScreen ? 4 : 8,
                                     vertical: 0
                                 ),
-                                elevation: !isAM ? 1 : 0, // Небольшая тень для активной кнопки
+                                elevation: !isAM ? 1 : 0,
                               ),
                               child: Text(
                                 'PM',
@@ -531,7 +510,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                       'Todays date will be used!',
                       style: GoogleFonts.poppins(
                         fontSize: isSmallScreen ? 10 : 12,
-                        color: Colors.grey[400], // Светло-серый для подсказки
+                        color: Colors.grey[400],
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -545,14 +524,14 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                     child: Text(
                       'Cancel',
                       style: GoogleFonts.poppins(
-                        color: Colors.grey[400], // Светло-серый для кнопки отмены
+                        color: Colors.grey[400],
                         fontSize: isSmallScreen ? 12 : 14,
                       ),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // Parse and validate the input
+
                       int hour;
                       int minute;
 
@@ -560,24 +539,21 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                         hour = int.parse(hourController.text);
                         minute = int.parse(minuteController.text);
 
-                        // Validate hour range
+
                         if (hour < 1 || hour > 12) {
                           throw FormatException('Wrong hour format');
                         }
 
-                        // Validate minute range
                         if (minute < 0 || minute > 59) {
                           throw FormatException('Wrong minute format');
                         }
 
-                        // Convert to 24-hour format if needed
                         if (hour == 12) {
                           hour = isAM ? 0 : 12;
                         } else if (!isAM) {
                           hour += 12;
                         }
 
-                        // Create the DateTime
                         result = DateTime(
                           today.year,
                           today.month,
@@ -588,7 +564,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
 
                         Navigator.of(context).pop();
                       } catch (e) {
-                        // Show error snackbar for invalid input
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -640,8 +615,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
 
   Future<void> _confirmDeletePunchIn(WorksiteWorkerResponse worker) async {
     if (worker.workerId == null) return;
-
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -714,7 +687,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     if (worker.workerId == null) return;
 
     try {
-      // Use the new custom time input dialog instead of the picker
       final pickedDateTime = await showTimeInputDialog(
         context,
         initialTime: worker.punchIn,
@@ -739,7 +711,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   }
 
   void _showSuccessSnackBar(String message) {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -771,7 +742,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -803,7 +773,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   }
 
   Widget _buildEmptyState() {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -816,7 +785,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/images/empty_state.png', // добавьте изображение в ваши ресурсы
+                'assets/images/empty_state.png',
                 height: isSmallScreen ? 150 : 180,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => Icon(
@@ -844,13 +813,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                   height: 1.5,
                 ),
                 textAlign: TextAlign
-
-
-
-
-
-
-
                     .center,
               ),
               SizedBox(height: isSmallScreen ? 24 : 30),
@@ -885,7 +847,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   }
 
   Widget _buildErrorState() {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -997,7 +958,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
     final l10n = context.read<LocalizationProvider>().localizations;
@@ -1029,7 +989,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
           ],
         ),
         actions: [
-          // Индикатор загрузки в AppBar
           if (isLoading)
             Padding(
               padding: EdgeInsets.only(right: isSmallScreen ? 12 : 16),
@@ -1097,7 +1056,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   }
 
   void _refreshWorkersList() {
-    // Предотвращаем повторные обновления
     if (isLoading) return;
 
     setState(() {

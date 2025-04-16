@@ -5,19 +5,14 @@ import { WorkSiteControllerService } from "../../../../../services/services/work
 import { FindAllWorkSites$Params } from "../../../../../services/fn/work-site-controller/find-all-work-sites";
 import { PageResponseWorkSiteResponse } from "../../../../../services/models/page-response-work-site-response";
 import { WorkSiteResponse } from "../../../../../services/models/work-site-response";
-import { CreateWorkSite$Params } from "../../../../../services/fn/work-site-controller/create-work-site";
-import { WorkSiteRequest } from "../../../../../services/models/work-site-request";
 import { LocalTime } from "../../../../../services/models/local-time";
 import { UpdateNameRequest } from "../../../../../services/models/update-name-request";
 import { UpdateName$Params } from "../../../../../services/fn/work-site-controller/update-name";
 import { UpdateWorkSiteAddress } from "../../../../../services/models/update-work-site-address";
 import { UpdateAddress$Params } from "../../../../../services/fn/work-site-controller/update-address";
 import { WorkSiteUpdateLocationRequest } from "../../../../../services/models/work-site-update-location-request";
-import { WorkSiteUpdateWorkingHoursResponse } from "../../../../../services/models/work-site-update-working-hours-response";
 import { UpdateLocation$Params } from "../../../../../services/fn/work-site-controller/update-location";
-import { WorkSiteUpdateLocationResponse } from "../../../../../services/models/work-site-update-location-response";
 import { UpdateWorkingHours$Params } from "../../../../../services/fn/work-site-controller/update-working-hours";
-import { WorkSiteUpdateWorkingHoursRequest } from "../../../../../services/models/work-site-update-working-hours-request";
 import { DeleteWorkSiteById$Params } from "../../../../../services/fn/work-site-controller/delete-work-site-by-id";
 import { FindWorkSiteAllInformation$Params } from "../../../../../services/fn/work-site-controller/find-work-site-all-information";
 import { WorkSiteAllInformationResponse } from "../../../../../services/models/work-site-all-information-response";
@@ -415,26 +410,6 @@ export class ManageWorksitesComponent implements OnInit {
     );
   }
 
-  loadWorkSiteAllInformation() {
-    this.loading = true;
-    this.errorMessage = '';
-
-    const params: FindWorkSiteAllInformation$Params = {
-      workSiteId: this.selectedWorksiteId
-    };
-
-    this.workSiteService.findWorkSiteAllInformation(params).subscribe(
-      (response: WorkSiteAllInformationResponse) => {
-        console.log('Found Worksite Information!', response);
-        this.loading = false;
-      },
-      error => {
-        this.errorMessage = 'Error loading worksite information: ' + (error.message || 'Unknown error');
-        this.loading = false;
-        console.error('Error loading worksite information', error);
-      }
-    );
-  }
 
   loadWorkSiteById(workSiteId: number) {
     this.loading = true;

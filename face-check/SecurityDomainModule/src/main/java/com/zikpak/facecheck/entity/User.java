@@ -4,7 +4,6 @@ import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.entity.employee.WorkerPayroll;
 import com.zikpak.facecheck.entity.employee.WorkerSchedule;
-import com.zikpak.facecheck.security.userDataDecoding.UserDataDecodingConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -36,16 +35,13 @@ public class User implements UserDetails, Principal {
     private Integer id;
 
     @Column(nullable = false)
-  //  @Convert(converter = UserDataDecodingConverter.class)
     private String firstName;
 
     @Column(nullable = false)
- //   @Convert(converter = UserDataDecodingConverter.class)
     private String lastName;
 
 
     @Column(unique = true, nullable = false)
- //   @Convert(converter = UserDataDecodingConverter.class)
     private String email;
 
     private String phoneNumber;
@@ -90,15 +86,12 @@ public class User implements UserDetails, Principal {
 
 
 
-    // Связь с посещаемостью (WorkerAttendance)
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
     private List<WorkerAttendance> attendances;
 
-    // Связь с зарплатой (WorkerPayroll)
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
     private List<WorkerPayroll> payrolls;
 
-    // Связь с расписанием (WorkerSchedule)
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
     private List<WorkerSchedule> schedules;
 
@@ -126,7 +119,7 @@ public class User implements UserDetails, Principal {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private List<Role> roles = new ArrayList<>();  // Инициализируем пустым списком
+    private List<Role> roles = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Token> tokens;

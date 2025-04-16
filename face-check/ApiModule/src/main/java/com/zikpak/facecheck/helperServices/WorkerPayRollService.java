@@ -56,7 +56,6 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
         return latestPayroll.getTotalDeductions() != null ? latestPayroll.getTotalDeductions() : BigDecimal.ZERO;
     }
 
-    // Обновленные основные методы
     @Override
     public BigDecimal findWorkerBaseHourRate(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
@@ -85,7 +84,6 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
         return getTaxesDirectFromPayroll(foundedUser);
     }
 
-    // Существующая функциональность без изменений
     @Override
     public double findWorkerWorkedHoursTotalPerWeek(Authentication authentication) {
         var foundedUser = findUserAndPayroll(authentication);
@@ -228,7 +226,6 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
         return calculateTotalTaxes(hours[0], hours[1], latestPayroll);
     }
 
-    // Вспомогательные методы
     private BigDecimal calculateNetPay(double regularHours, double overtimeHours, WorkerPayroll payroll) {
         var grossPay = calculateGrossPay(regularHours, overtimeHours, payroll);
         var totalTaxes = calculateTotalTaxes(regularHours, overtimeHours, payroll);

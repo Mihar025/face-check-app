@@ -26,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final theme = Theme.of(context);
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -97,7 +96,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             }
 
-            // Определяем, нужно ли использовать колонку вместо строки на очень маленьких экранах
             final bool useColumn = screenSize.width < 480;
 
             return SingleChildScrollView(
@@ -114,7 +112,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: isSmallScreen ? 16 : 20),
                   if (useColumn)
-                  // Вертикальное расположение для маленьких экранов
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -128,7 +125,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     )
                   else
-                  // Горизонтальное расположение для больших экранов
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

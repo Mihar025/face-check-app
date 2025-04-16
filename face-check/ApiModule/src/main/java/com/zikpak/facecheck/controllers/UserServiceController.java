@@ -19,7 +19,6 @@ public class UserServiceController {
 
     private final UserService userService;
 
-    // User Information Update Operations
     @PutMapping("/email/{email}")
     public ResponseEntity<Void> updateEmail(@PathVariable String email, Authentication authentication){
         userService.updateEmail(email, authentication);
@@ -49,7 +48,6 @@ public class UserServiceController {
 
 
 
-    // User Information Retrieval
     //working
     @GetMapping("/full-name")
     public ResponseEntity<UserFullNameResponse> findWorkerFullName(Authentication authentication) {
@@ -161,7 +159,6 @@ public class UserServiceController {
         return ResponseEntity.ok(userService.findWorkerSalaryForSpecialYearNet(authentication, years));
     }
 
-    // Tax Information Endpoints
     @GetMapping("/taxes/month")
     public ResponseEntity<BigDecimal> findWorkerTotalPayedTaxesAmountForMonth(Authentication authentication) {
         return ResponseEntity.ok(userService.findWorkerTotalPayedTaxesAmountForMonth(authentication));

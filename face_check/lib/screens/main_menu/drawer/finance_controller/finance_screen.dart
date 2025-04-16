@@ -107,7 +107,7 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
 
       try {
         await FinancePdfService.generateFinanceReport(financeInfo!);
-        Navigator.of(context).pop(); // Закрываем диалог
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.get('finance.reportDownloadedSuccessfully')),
@@ -116,7 +116,7 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
           ),
         );
       } catch (e) {
-        Navigator.of(context).pop(); // Закрываем диалог
+        Navigator.of(context).pop();
         print('Error saving PDF: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -134,7 +134,6 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
     final theme = Theme.of(context);
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -261,7 +260,6 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
             ),
           ),
 
-          // Summary Cards in a simpler form
           if (!isLoading && financeInfo != null)
             Padding(
               padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -334,7 +332,7 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                     child: Row(
                       children: [
                         SizedBox(
-                          width: isSmallScreen ? 80 : 100, // Фиксированная ширина для Day
+                          width: isSmallScreen ? 80 : 100,
                           child: Text(
                             l10n.get('finance.day'),
                             style: TextStyle(
@@ -490,7 +488,7 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                             child: Row(
                               children: [
                                 SizedBox(
-                                  width: isSmallScreen ? 80 : 100, // Фиксированная ширина для Day
+                                  width: isSmallScreen ? 80 : 100,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -540,7 +538,7 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                                 ),
                                 Expanded(
                                   child: Text(
-                                    formatMoney(financeInfo?.totalNetPay ?? 0.0), // Используем grossPay вместо netPay
+                                    formatMoney(financeInfo?.totalNetPay ?? 0.0),
                                     style: TextStyle(
                                       color: daily.grossPay > 0
                                           ? Colors.black87

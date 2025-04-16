@@ -30,7 +30,6 @@ public class WorkSite {
     private Double allowedRadius;
 
 
-    // Рабочие часы площадки
     private LocalTime workDayStart;
     private LocalTime workDayEnd;
     private Boolean isActive;
@@ -63,11 +62,6 @@ public class WorkSite {
     @Column(name = "radius")
     private Map<Integer, Double> customRadius = new HashMap<>();
 
-
-    public void addUser(User user) {
-        users.add(user);
-        user.getWorkSites().add(this);
-    }
 
     public void removeUser(User user) {
         users.remove(user);

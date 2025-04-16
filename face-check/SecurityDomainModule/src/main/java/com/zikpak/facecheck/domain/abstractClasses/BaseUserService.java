@@ -1,6 +1,5 @@
 package com.zikpak.facecheck.domain.abstractClasses;
 
-import org.springframework.security.core.Authentication;
 
 public abstract class BaseUserService {
 

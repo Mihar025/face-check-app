@@ -19,18 +19,15 @@ public class PunchOutResponse {
     private String workSiteName;
     private String workerFullName;
 
-    // Check-in информация
     private LocalDateTime checkInTime;
     private String formattedCheckInTime;
 
-    // Check-out информация
     private LocalDateTime checkOutTime;
     private String formattedCheckOutTime;
     private String checkOutPhotoUrl;
     private Double checkOutLatitude;
     private Double checkOutLongitude;
 
-    // Информация о часах
     private Double hoursWorked;
     private Double overtimeHours;
 

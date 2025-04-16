@@ -40,7 +40,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
   Position? currentPosition;
   WorkSiteResponse? selectedWorkSite;
   bool isLoading = false;
-  bool hasPunchIn = false; // Статус, был ли совершен Punch In сегодня
+  bool hasPunchIn = false;
   List<WorkSiteResponse> workSites = [];
 
   @override
@@ -49,20 +49,17 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     _initializeDependencies();
   }
 
-  // Оптимизация: объединение инициализации зависимостей
   void _initializeDependencies() {
     _initializeDio();
     locationService = LocationService();
     workSiteService = WorkSiteService(dio);
     attendanceApi = WorkerAttendanceControllerApi(dio, serializers);
 
-    // Параллельная загрузка данных при старте
     Future.wait([
       _getCurrentLocation(),
       _loadWorkSites(),
-      _checkTodayPunchStatus(), // Используем новый метод вместо _checkPunchInStatus
+      _checkTodayPunchStatus(),
     ]).then((_) {
-      // Все данные загружены
       if (mounted) setState(() {});
     });
   }
@@ -89,10 +86,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     ));
   }
 
-// Обновленный метод проверки статуса
   Future<void> _checkTodayPunchStatus() async {
     try {
-      // Получаем текущую дату в формате YYYY-MM-DD
       final DateTime now = DateTime.now();
       final String today = DateFormat('yyyy-MM-dd').format(now);
 
@@ -104,35 +99,28 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
       print('Last Punch In: $lastPunchInDate');
       print('Last Punch Out: $lastPunchOutDate');
 
-      // Получаем даты (без времени) для сравнения
       String lastPunchInDateOnly = lastPunchInDate.isNotEmpty ? lastPunchInDate.split(' ')[0] : '';
       String lastPunchOutDateOnly = lastPunchOutDate.isNotEmpty ? lastPunchOutDate.split(' ')[0] : '';
 
       bool lastPunchInWasToday = lastPunchInDateOnly == today;
       bool lastPunchOutWasToday = lastPunchOutDateOnly == today;
 
-      // Получаем полные datetime объекты для сравнения времени
       DateTime? lastPunchInDateTime = lastPunchInDate.isNotEmpty ? DateTime.tryParse(lastPunchInDate) : null;
       DateTime? lastPunchOutDateTime = lastPunchOutDate.isNotEmpty ? DateTime.tryParse(lastPunchOutDate) : null;
 
-      // Определяем статус кнопки на основе последовательности действий
       if (lastPunchInWasToday && lastPunchOutWasToday) {
-        // Если оба события сегодня, смотрим что было последним
         if (lastPunchOutDateTime != null &&
             lastPunchInDateTime != null &&
             lastPunchOutDateTime.isAfter(lastPunchInDateTime)) {
-          // Последним был punch out, значит показываем punch in
           setState(() {
             hasPunchIn = false;
           });
         } else {
-          // Последним был punch in, показываем punch out
           setState(() {
             hasPunchIn = true;
           });
         }
       } else if (lastPunchInWasToday) {
-        // Был только punch in сегодня
         setState(() {
           hasPunchIn = true;
         });
@@ -152,14 +140,12 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     }
   }
 
-  // Оставляем старый метод как запасной вариант
   Future<void> _checkPunchInStatus() async {
     try {
-      // Проверяем последний punch-in статус
       final lastPunch = await ApiService.instance.getLastPunchTime();
       if (mounted) {
         setState(() {
-          hasPunchIn = lastPunch.time != '--:--'; // Если есть время, значит Punch In был сделан
+          hasPunchIn = lastPunch.time != '--:--';
         });
       }
     } catch (e) {
@@ -177,7 +163,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
 
       setState(() {
         workSites = sites;
-        // Выбираем первую площадку по умолчанию, если список не пустой
         if (sites.isNotEmpty && selectedWorkSite == null) {
           selectedWorkSite = sites.first;
         }
@@ -191,7 +176,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     }
   }
 
-  // Вспомогательный метод для отображения ошибок
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
 
@@ -246,16 +230,14 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     );
   }
 
-  // Функция для открытия камеры и получения фото
   Future<String?> _captureImage() async {
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80, // Уменьшаем качество для экономии трафика
+        imageQuality: 80,
       );
 
       if (image != null) {
-        // Конвертируем изображение в base64
         final File imageFile = File(image.path);
         final bytes = await imageFile.readAsBytes();
         return base64Encode(bytes);
@@ -267,12 +249,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     }
   }
 
-  // Получение текущего времени в формате HH:MM:SS
   String _getCurrentFormattedTime() {
     return DateFormat('HH:mm:ss').format(DateTime.now());
   }
 
-  // Показать диалог успешного Punch In/Out
   void _showSuccessDialog(bool isPunchIn, String time) {
     if (!mounted) return;
 
@@ -287,7 +267,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     );
   }
 
-  // Главная функция для обработки нажатия на кнопку Punch In/Out
   Future<void> _handlePunchInOut() async {
     if (!hasPunchIn) {
       await _handlePunchInWithCamera();
@@ -296,24 +275,20 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     }
   }
 
-  // Обработка Punch In с открытием камеры
   Future<void> _handlePunchInWithCamera() async {
     if (selectedWorkSite == null || currentPosition == null) {
       _showErrorSnackBar('Please select work site and enable location');
       return;
     }
 
-    // Открываем камеру для фото
     final String? photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-      // Пользователь отменил фото или произошла ошибка
       return;
     }
 
     try {
       setState(() => isLoading = true);
 
-      // Создаем запрос в формате, который ожидает сервер
       final Map<String, dynamic> requestData = {
         'workSiteId': selectedWorkSite?.workSiteId,
         'photoBase64': photoBase64,
@@ -321,7 +296,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
         'longitude': currentPosition?.longitude
       };
 
-      // Прямой вызов API через dio
       final response = await dio.post(
         '/attendance/punch-in',
         data: requestData,
@@ -329,7 +303,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
 
       if (!mounted) return;
 
-      // Сохраняем дату и время punch-in в локальное хранилище
       final prefs = await SharedPreferences.getInstance();
       final now = DateTime.now().toString();
       prefs.setString('lastPunchInDate', now);
@@ -340,13 +313,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
         if (response.statusCode == 200) {
           hasPunchIn = true;
 
-          // Получаем текущее время для отображения
           final currentTime = _getCurrentFormattedTime();
 
-          // Показываем диалог успешного Punch In
           _showSuccessDialog(true, currentTime);
 
-          // Также показываем снекбар для дополнительного уведомления
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Successfully punched in!'),
@@ -364,24 +334,20 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     }
   }
 
-  // Обработка Punch Out с открытием камеры
   Future<void> _handlePunchOutWithCamera() async {
     if (selectedWorkSite == null || currentPosition == null) {
       _showErrorSnackBar('Please select work site and enable location');
       return;
     }
 
-    // Открываем камеру для фото
     final String? photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-      // Пользователь отменил фото или произошла ошибка
       return;
     }
 
     try {
       setState(() => isLoading = true);
 
-      // Создаем запрос в формате, который ожидает сервер
       final Map<String, dynamic> requestData = {
         'workSiteId': selectedWorkSite?.workSiteId,
         'photoBase64': photoBase64,
@@ -389,7 +355,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
         'longitude': currentPosition?.longitude
       };
 
-      // Прямой вызов API через dio
       final response = await dio.post(
         '/attendance/punch-out',
         data: requestData,
@@ -397,7 +362,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
 
       if (!mounted) return;
 
-      // Сохраняем дату и время punch-out в локальное хранилище
       final prefs = await SharedPreferences.getInstance();
       final now = DateTime.now().toString();
       prefs.setString('lastPunchOutDate', now);
@@ -406,15 +370,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
       setState(() {
         isLoading = false;
         if (response.statusCode == 200) {
-          hasPunchIn = false; // Сбрасываем статус
-
-          // Получаем текущее время для отображения
+          hasPunchIn = false;
           final currentTime = _getCurrentFormattedTime();
-
-          // Показываем диалог успешного Punch Out
           _showSuccessDialog(false, currentTime);
 
-          // Также показываем снекбар для дополнительного уведомления
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Successfully punched out!'),
@@ -437,7 +396,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
     final theme = Theme.of(context);
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    // Получаем размеры экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -497,7 +455,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen> {
               ],
             ),
           ),
-          // Добавляем индикатор загрузки поверх экрана
           if (isLoading)
             Container(
               color: Colors.black54,

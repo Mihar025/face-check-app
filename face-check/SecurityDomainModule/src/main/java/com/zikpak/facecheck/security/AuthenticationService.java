@@ -36,7 +36,6 @@ import java.util.List;
 public class AuthenticationService {
 
     private final UserMapper userMapper;
-    private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${application.security.mailing.frontend.activation-url}")
@@ -70,7 +69,6 @@ public class AuthenticationService {
         }
      }
 
-     //make 2 setters for roles and company!
     public void registerForeman(@Valid RegistrationRequest request) throws MessagingException {
         authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
         var role = authenticationServiceImpl.findRoleForeman();
@@ -106,12 +104,10 @@ public class AuthenticationService {
     }
 
 
-    // This method only when user are register, we are providing his hourRate!
     @Transactional(rollbackOn = Exception.class)
     public void setPaymentDataForWorkerHoursRateAndOvertime(Integer employeeId,
                                                             PaymentRequest paymentRequest,
                                                             Authentication authentication){
-      //  authenticationServiceImpl.checkIsTheOwnerAndAdmin(authentication);
         var employee = authenticationServiceImpl.findUserById(employeeId);
         employee.setBaseHourlyRate(paymentRequest.getHourRate());
         employee.setOvertimeRate(paymentRequest.getOvertimeRate());
@@ -274,12 +270,10 @@ public class AuthenticationService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + email));
         log.info("User found: {}", user.fullName());
 
-        // Generate and save new token
         var token = generateAndSaveActivationToken(user);
         log.info("Generated token: {}", token);
 
         try {
-            // Send email with reset code
             emailService.sendEmail(
                     user.getEmail(),
                     user.fullName(),
@@ -310,7 +304,6 @@ public class AuthenticationService {
             throw new RuntimeException("Code has expired");
         }
 
-        // Mark token as validated
         token.setValidatedAt(LocalDateTime.now());
         tokenRepository.save(token);
     }
@@ -324,7 +317,6 @@ public class AuthenticationService {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        // Verify that code was validated
         var latestToken = user.getTokens().stream()
                 .filter(t -> t.getValidatedAt() != null)
                 .max(Comparator.comparing(Token::getValidatedAt))
@@ -334,11 +326,9 @@ public class AuthenticationService {
             throw new RuntimeException("Reset code has expired. Please request a new one");
         }
 
-        // Update password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        // Invalidate token
         latestToken.setExpiresAt(LocalDateTime.now());
         tokenRepository.save(latestToken);
     }
@@ -361,7 +351,6 @@ public class AuthenticationService {
     }
 
     private String generateAndSaveActivationToken(User user) {
-        // generate a token
         String generatedToken = generateActivationCode(6);
         var token = Token.builder()
                 .token(generatedToken)

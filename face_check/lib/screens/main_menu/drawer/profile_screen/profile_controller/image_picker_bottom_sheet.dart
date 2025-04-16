@@ -14,7 +14,6 @@ class ImagePickerBottomSheet extends StatelessWidget {
       ) {
     final theme = Theme.of(context);
 
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -79,7 +78,6 @@ class ImagePickerBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 

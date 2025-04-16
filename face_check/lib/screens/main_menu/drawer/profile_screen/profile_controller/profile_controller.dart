@@ -61,7 +61,6 @@ class ProfileController {
   }
 
   Future<void> pickAndUploadImage(BuildContext context) async {
-    // Определяем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 

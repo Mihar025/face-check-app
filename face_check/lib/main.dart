@@ -68,7 +68,6 @@ class _MyAppState extends State<MyApp> {
             builder: (context) {
               if (!_notificationsInitialized) {
                 _notificationsInitialized = true;
-                // Инициализируем уведомления после того как локализация стала доступна
                 WidgetsBinding.instance.addPostFrameCallback((_) async {
                   try {
                     await NotificationService.initialize(context);

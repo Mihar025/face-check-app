@@ -17,10 +17,8 @@ class ProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2;
 
-    // Адаптивная ширина линии для разных размеров экрана
     final strokeWidth = isSmallScreen ? 18.0 : 22.0;
 
-    // Background circle
     final backgroundPaint = Paint()
       ..color = Colors.grey[300]!
       ..style = PaintingStyle.stroke
@@ -30,7 +28,6 @@ class ProgressPainter extends CustomPainter {
 
     final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
 
-    // Draw segments
     double startAngle = -math.pi / 2;
     double totalSweepAngle = 0.0;
 

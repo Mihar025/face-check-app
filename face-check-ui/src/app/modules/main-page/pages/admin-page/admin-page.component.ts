@@ -9,8 +9,8 @@ import { AdminControllerService } from "../../../../services/services/admin-cont
   styleUrls: ['./admin-page.component.scss']
 })
 export class AdminPageComponent implements OnInit {
-  userName: string = 'John Doe'; // Значение по умолчанию
-  companyName: string = 'FaceCheck Inc.'; // Значение по умолчанию
+  userName: string = 'John Doe';
+  companyName: string = 'FaceCheck Inc.';
   totalEmployees: number = 0;
   totalWorksites: number = 0;
   userPhotoUrl: string = '';
@@ -65,7 +65,6 @@ export class AdminPageComponent implements OnInit {
     );
   }
 
-  // Метод для загрузки названия компании
   loadCompanyName(): void {
     this.userService.findWorkerCompanyName().subscribe(
       response => {
@@ -79,7 +78,6 @@ export class AdminPageComponent implements OnInit {
     );
   }
 
-  // Метод для загрузки общего количества сотрудников
   loadTotalEmployees(): void {
     this.adminService.getTotalEmployeesCount().subscribe(
       count => {
@@ -91,7 +89,6 @@ export class AdminPageComponent implements OnInit {
     );
   }
 
-  // Метод для загрузки общего количества рабочих площадок
   loadTotalWorksites(): void {
     this.adminService.getTotalWorksitesCount().subscribe(
       count => {

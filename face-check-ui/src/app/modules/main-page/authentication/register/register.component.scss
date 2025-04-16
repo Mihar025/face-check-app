@@ -93,7 +93,6 @@ input:focus {
   font-size: 14px;
 }
 
-// Исправленные стили для кнопки
 .sign-in-btn {
   width: 100%;
   padding: 12px;
@@ -108,7 +107,7 @@ input:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px; // Добавляем отступ между текстом и спиннером
+  gap: 10px;
 }
 
 .sign-in-btn:hover {

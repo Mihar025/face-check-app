@@ -1,5 +1,4 @@
 <div class="admin-layout">
-  <!-- Боковое меню -->
   <div class="sidebar">
     <div class="admin-profile">
       <div class="avatar-container">
@@ -26,19 +25,16 @@
     </nav>
   </div>
 
-  <!-- Основной контент -->
   <div class="main-content">
-    <!-- Верхний логотип -->
     <div class="top-logo-container">
       <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
     </div>
 
-    <!-- Контент настроек -->
     <div class="admin-container">
       <h1>Settings</h1>
 
       <div class="settings-section">
-        <h2>Фотография профиля</h2>
+        <h2>Profile photo</h2>
         <div class="profile-photo-section">
           <div class="current-photo">
             <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'" alt="Profile Photo" class="profile-photo-preview">
@@ -46,9 +42,9 @@
 
           <div class="photo-actions">
             <button class="save-button" (click)="pickAndUploadImage()" [disabled]="isUploadingPhoto">
-              {{ isUploadingPhoto ? 'Загрузка...' : 'Изменить фото' }}
+              {{ isUploadingPhoto ? 'Loading...' : 'Change photo' }}
             </button>
-            <div *ngIf="photoUploadSuccess" class="success-message">Фотография успешно обновлена!</div>
+            <div *ngIf="photoUploadSuccess" class="success-message">Photo successfully updated!</div>
             <div *ngIf="photoUploadError" class="error-message">{{ photoUploadError }}</div>
           </div>
         </div>
@@ -99,7 +95,6 @@
         </div>
       </div>
 
-      <!-- Настройки админа -->
       <div class="settings-section">
         <h2>Admin Settings</h2>
         <div class="settings-form">
@@ -143,7 +138,6 @@
             <div *ngIf="adminPasswordError" class="error-message">{{ adminPasswordError }}</div>
           </div>
 
-          <!-- Опасная зона (Danger zone) -->
           <div class="settings-section danger-zone">
             <h2>Danger Zone</h2>
             <div class="danger-box">
@@ -157,7 +151,6 @@
             </div>
           </div>
 
-          <!-- Модальное окно подтверждения удаления -->
           <div class="delete-modal" *ngIf="showDeleteModal">
             <div class="delete-modal-content">
               <h3>Are you sure?</h3>

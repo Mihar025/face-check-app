@@ -13,7 +13,6 @@
 </head>
 <body>
 
-<!-- Navigation bar -->
 <nav class="navbar">
   <div class="navbar-container">
     <div class="logo-container">
@@ -30,7 +29,6 @@
   </div>
 </nav>
 
-<!-- Hero Section -->
 <section class="about-hero-section">
   <div class="about-hero-content">
     <div class="about-text-container">
@@ -40,7 +38,6 @@
   </div>
 </section>
 
-<!-- Our Mission Section -->
 <section class="mission-section">
   <div class="container">
     <div class="mission-content">
@@ -59,7 +56,6 @@
   </div>
 </section>
 
-<!-- Company Values Section -->
 <section class="values-section">
   <div class="container">
     <h2 class="section-title centered">Our Core Values</h2>
@@ -99,7 +95,6 @@
   </div>
 </section>
 
-<!-- Our Story Section -->
 <section class="story-section">
   <div class="container">
     <div class="story-content">
@@ -123,7 +118,6 @@
 </section>
 
 
-<!-- Contact Section -->
 <section class="contact-section">
   <div class="container">
     <div class="contact-wrapper">
@@ -173,7 +167,6 @@
   </div>
 </section>
 
-<!-- Call to Action Section -->
 <section class="cta-section">
   <div class="cta-container">
     <h2>Ready to transform your business?</h2>
@@ -185,7 +178,6 @@
   </div>
 </section>
 
-<!-- Footer -->
 <footer class="footer">
   <div class="footer-container">
     <div class="footer-top">
@@ -250,7 +242,6 @@
 </footer>
 
 <script>
-  // Function to handle navbar appearance on scroll
   function handleScroll() {
     const navbar = document.querySelector('.navbar');
     if (window.scrollY > 50) {
@@ -259,11 +250,7 @@
       navbar.classList.remove('scrolled');
     }
   }
-
-  // Add scroll event listener
   window.addEventListener('scroll', handleScroll);
-
-  // Initialize navbar state on page load
   document.addEventListener('DOMContentLoaded', function() {
     handleScroll();
   });

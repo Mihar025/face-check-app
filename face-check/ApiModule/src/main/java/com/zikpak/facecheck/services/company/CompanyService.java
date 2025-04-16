@@ -153,8 +153,6 @@ public class CompanyService implements CompanyServiceImpl {
                     return companyMapper.toCompanyUpdateResponse(updatedCompany);
         }
 
-
-
             public CompanyIncomePerMonthResponse setCompanyIncomePerMonth(
                     CompanyIncomePerMonthRequest request,
                     Integer companyId,
@@ -194,7 +192,7 @@ public class CompanyService implements CompanyServiceImpl {
             public CompanyTaxCalculationResponse countAllTaxesByCompanyIncome(
                                                                               CompanyTaxCalculationRequest request,
                                                                               Authentication authentication)
-                                                                                                             throws AccessDeniedException {
+                                                                              throws AccessDeniedException {
                     var user = ((User) authentication.getPrincipal());
                     if(!user.isAdmin() && !user.isBusinessOwner()){
                         throw new AccessDeniedException("You do not have permission to update this company");
@@ -211,7 +209,7 @@ public class CompanyService implements CompanyServiceImpl {
 
                     public CompanyIncomePerMonthResponse findCompanyIncomePerMonth(Integer companyId,
                                                                                     Authentication authentication)
-                                                                                                    throws AccessDeniedException {
+                                                                                    throws AccessDeniedException {
 
                                 var user = ((User) authentication.getPrincipal());
                                     if(!user.isAdmin() && !user.isBusinessOwner()){
@@ -271,7 +269,6 @@ public class CompanyService implements CompanyServiceImpl {
                                 return employeeSalaryResponses;
                 }
 
-                // Set of 3 methods
                 public EmployeeSalaryResponse findTheLatestEmployeeBaseHourRate(Integer companyId,
                                                                                 Integer userId,
                                                                                 Authentication authentication) throws AccessDeniedException {
@@ -687,22 +684,6 @@ public class CompanyService implements CompanyServiceImpl {
             }
             companyRepository.deleteById(companyId);
             }
-
-
-    private int compareByRoles(User u1, User u2) {
-        int priority1 = getRolePriority(u1);
-        int priority2 = getRolePriority(u2);
-        return Integer.compare(priority1, priority2);
-    }
-
-    private int getRolePriority(User user) {
-        if (user.isAdmin()) return 1;
-        if (user.isBusinessOwner()) return 2;
-        if (user.isForeman()) return 3;
-        return 4;
-    }
-
-
 
 
         private Company updateCompanyCredentials(CompanyUpdatingRequest request, Company company){
