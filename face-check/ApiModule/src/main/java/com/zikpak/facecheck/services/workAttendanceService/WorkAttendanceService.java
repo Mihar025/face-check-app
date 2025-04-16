@@ -73,6 +73,7 @@ public class WorkAttendanceService {
                         WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
                         //  workSite.setWorkerDidPunchIn(true);
                         workSite.setIsWorkerDidPunchIn(Boolean.TRUE);
+                        user.setCurrentWorkSite(workSite);
                         return createSuccessResponseForPunchIn(user, workSite, savedAttendance);
 
                 }catch (Exception e){
@@ -94,12 +95,9 @@ public class WorkAttendanceService {
                                 .orElseThrow(() -> new IllegalStateException("No active punch in found for today!"));
 
                         WorkSite workSite = validateAndGetWorkSite(punchOutRequest.getWorkSiteId());
-                        // Получаем расписание на сегодня
                         LocalDate today = LocalDate.now();
                         WorkerSchedule schedule = getWorkerScheduleForDate(user, today);
 
-                        // Проверяем время для punch-out
-                    //    validatePunchOutTime(schedule);
                         validateLocationForPunchOut(punchOutRequest, workSite);
 
                         String photoUrl = amazonS3Service.uploadAttendancePhoto(
@@ -150,7 +148,6 @@ public class WorkAttendanceService {
 
                 log.info("Found {} total attendance records", weekAttendances.size());
 
-                // Проверяем каждую запись подробно
                 weekAttendances.forEach(attendance -> {
                         log.info("Attendance record - ID: {}, Date: {}, CheckOut: {}, NetPayPerDay: {}",
                                 attendance.getId(),
@@ -191,7 +188,6 @@ public class WorkAttendanceService {
                         return createEmptyResponse(weekStart, weekEnd);
                 }
 
-                // Считаем тотальные значения
                 double totalHoursWorked = weeklyAttendances.stream()
                         .mapToDouble(a -> a.getHoursWorked() != null ? a.getHoursWorked() : 0.0)
                         .sum();
@@ -204,11 +200,9 @@ public class WorkAttendanceService {
                         .map(a -> a.getNetPay() != null ? a.getNetPay() : BigDecimal.ZERO)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                // Группируем по дням
                 Map<LocalDate, List<WorkerAttendance>> attendanceByDay = weeklyAttendances.stream()
                         .collect(Collectors.groupingBy(a -> a.getCheckInTime().toLocalDate()));
 
-                // Создаем список с информацией по каждому дню
                 List<DailyFinanceInfo> dailyInfo = new ArrayList<>();
                 LocalDate currentDate = weekStart;
                 while (!currentDate.isAfter(weekEnd)) {
@@ -272,7 +266,6 @@ public class WorkAttendanceService {
                 User worker = attendance.getWorker();
                 LocalDate attendanceDate = attendance.getCheckInTime().toLocalDate();
 
-                // Получаем расписание работника на этот день
                 WorkerSchedule schedule = getWorkerScheduleForDate(worker, attendanceDate);
 
                 LocalDateTime checkInTime = attendance.getCheckInTime();
@@ -285,11 +278,9 @@ public class WorkAttendanceService {
                         checkInTime.toLocalTime(),
                         checkOutTime.toLocalTime());
 
-                // Получаем время начала и конца смены для этого дня
                 LocalDateTime scheduleStart = checkInTime.with(schedule.getExpectedStartTime());
                 LocalDateTime scheduleEnd = checkInTime.with(schedule.getExpectedEndTime());
 
-                // Если пришел раньше начала смены, считаем с начала смены
                 LocalDateTime effectiveStartTime;
                 if (checkInTime.isBefore(scheduleStart)) {
                         effectiveStartTime = scheduleStart;
@@ -297,7 +288,6 @@ public class WorkAttendanceService {
                         effectiveStartTime = checkInTime;
                 }
 
-                // Если ушел позже конца смены, считаем по конец смены
                 LocalDateTime effectiveEndTime;
                 if (checkOutTime.isAfter(scheduleEnd)) {
                         effectiveEndTime = scheduleEnd;
