@@ -31,6 +31,14 @@ import {ChangePunchInRequest} from "../../../../../services/models/change-punch-
 import {ChangePunchInForWorker$Params} from "../../../../../services/fn/admin-controller/change-punch-in-for-worker";
 import {ChangePunchOutRequest} from "../../../../../services/models/change-punch-out-request";
 import {ChangePunchOutForWorker$Params} from "../../../../../services/fn/admin-controller/change-punch-out-for-worker";
+import {PromoteToForeman$Params} from "../../../../../services/fn/company-controller/promote-to-foreman";
+import {
+  DemoteFromForemanToUser$Params
+} from "../../../../../services/fn/company-controller/demote-from-foreman-to-user";
+import {PromoteToAdmin$Params} from "../../../../../services/fn/company-controller/promote-to-admin";
+import {
+  DemoteFromAdminToForeman$Params
+} from "../../../../../services/fn/company-controller/demote-from-admin-to-foreman";
 
 @Component({
   selector: 'app-manage-employees',
@@ -313,7 +321,6 @@ export class ManageEmployeesComponent implements OnInit {
     this.showEmployeeInfoModal = true;
     this.showScheduleForm = false;
 
-    // Загружаем информацию о сотруднике
     this.findWorkerPersonalInformation(workerId);
   }
 
@@ -597,9 +604,90 @@ export class ManageEmployeesComponent implements OnInit {
 
   moveToVerificationPage(workerId: number | undefined){
     if (!workerId) return;
-    this.router.navigate(['verification/admin'], {
+    this.router.navigate(['verification/employee'], {
       queryParams: { id: workerId }
     });
   }
+
+  promoteToForeman(){
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    const params: PromoteToForeman$Params = {
+      employeeId: this.selectedEmployeeId
+    }
+    this.companyService.promoteToForeman(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully promoted to FOREMAN role'
+        this.openEmployeeInfoModal(this.selectedEmployeeId);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot promote to Foreman role' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    );
+  }
+
+  promoteToAdmin(){
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    const params: PromoteToAdmin$Params = {
+      employeeId: this.selectedEmployeeId
+    }
+    this.companyService.promoteToAdmin$Response(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully promoted to ADMIN role'
+        this.openEmployeeInfoModal(this.selectedEmployeeId);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot promote to ADMIN role' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    );
+  }
+
+  demoteToUser(){
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    const params: DemoteFromForemanToUser$Params = {
+      workerId: this.selectedEmployeeId
+    }
+    this.companyService.demoteFromForemanToUser(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully demoted to USER role'
+        this.openEmployeeInfoModal(this.selectedEmployeeId);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot demote to User role' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    );
+  }
+
+  demoteToForeman(){
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    const params: DemoteFromAdminToForeman$Params = {
+      workerId: this.selectedEmployeeId
+    }
+    this.companyService.demoteFromAdminToForeman(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully demoted to FOREMAN role'
+        this.openEmployeeInfoModal(this.selectedEmployeeId);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot demote to Foreman role' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    );
+  }
+
 
 }

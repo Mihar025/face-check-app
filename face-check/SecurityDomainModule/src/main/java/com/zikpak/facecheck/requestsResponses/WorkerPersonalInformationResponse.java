@@ -17,4 +17,5 @@ public class WorkerPersonalInformationResponse {
     private String phoneNumber;
     private String address;
     private BigDecimal baseHourlyRate;
+    private String role;
 }
