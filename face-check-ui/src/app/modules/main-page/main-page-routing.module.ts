@@ -13,6 +13,9 @@ import {CompanyInformationComponent} from "./pages/admin-main-page/company-infor
 import {ManageWorksitesComponent} from "./pages/admin-main-page/manage-worksites/manage-worksites.component";
 import {SettingsComponent} from "./pages/admin-main-page/settings/settings.component";
 import {ManageEmployeesComponent} from "./pages/admin-main-page/manage-employees/manage-employees.component";
+import {
+  VerificationForEmployeeComponent
+} from "./pages/admin-main-page/verification-for-employee/verification-for-employee.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -31,6 +34,10 @@ const routes: Routes = [
   {
     path: 'registration/company',
     component: RegisterCompanyComponent
+  },
+  {
+    path: 'verification/employee',
+    component: VerificationForEmployeeComponent
   },
 
 

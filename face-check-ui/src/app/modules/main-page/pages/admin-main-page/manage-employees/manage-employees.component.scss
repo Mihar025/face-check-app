@@ -11,6 +11,9 @@ $border-color: #ddd;
 $success-color: #2ecc71;
 $error-color: #e74c3c;
 $purple-color: #9b59b6;
+$breakpoint-lg: 992px;
+$breakpoint-md: 768px;
+$breakpoint-sm: 576px;
 
 // Общие стили
 * {
@@ -22,12 +25,18 @@ body {
   margin: 0;
   padding: 0;
   background-color: #f8f9fa;
+  overflow-x: hidden; // Prevent horizontal scrolling
 }
 
 // Макет админ-панели
 .admin-layout {
   display: flex;
   min-height: 100vh;
+  position: relative; // For better positioning
+
+  @media (max-width: $breakpoint-lg) {
+    flex-direction: column;
+  }
 }
 
 // Стили бокового меню
@@ -39,6 +48,20 @@ body {
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: width 0.3s ease;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto; // Allow scrolling in sidebar
+
+  @media (max-width: $breakpoint-lg) {
+    width: 100%;
+    order: 2;
+    min-height: auto;
+    position: relative;
+    height: auto;
+  }
 }
 
 .admin-profile {
@@ -48,6 +71,12 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
+
+  @media (max-width: $breakpoint-lg) {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+  }
 }
 
 .avatar-container {
@@ -57,6 +86,12 @@ body {
   overflow: hidden;
   margin-bottom: 10px;
   border: 3px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+
+  @media (max-width: $breakpoint-lg) {
+    margin-bottom: 0;
+    margin-right: 15px;
+  }
 }
 
 .admin-avatar {
@@ -67,6 +102,10 @@ body {
 
 .admin-info {
   margin-top: 10px;
+
+  @media (max-width: $breakpoint-lg) {
+    margin-top: 0;
+  }
 }
 
 .admin-name {
@@ -83,6 +122,10 @@ body {
 
 .sidebar-menu {
   padding: 20px 0;
+
+  @media (max-width: $breakpoint-lg) {
+    padding: 10px 0;
+  }
 }
 
 .sidebar-menu ul {
@@ -104,6 +147,7 @@ body {
   font-size: 14px;
   position: relative;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .sidebar-menu a:hover {
@@ -128,6 +172,10 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: $breakpoint-lg) {
+    order: 1;
+  }
 }
 
 .top-logo-container {
@@ -148,6 +196,10 @@ body {
 .admin-container {
   padding: 30px;
   flex: 1;
+
+  @media (max-width: $breakpoint-md) {
+    padding: 15px;
+  }
 }
 
 // Хедер с кнопкой добавления
@@ -156,6 +208,12 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 25px;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
 }
 
 .add-button {
@@ -171,6 +229,11 @@ body {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.3s;
+
+  @media (max-width: $breakpoint-md) {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .add-button:hover {
@@ -187,6 +250,10 @@ h1 {
   margin-bottom: 0;
   font-size: 28px;
   font-weight: 700;
+
+  @media (max-width: $breakpoint-md) {
+    font-size: 24px;
+  }
 }
 
 // Стили для управления сотрудниками
@@ -196,6 +263,7 @@ h1 {
   padding: 25px;
   margin-bottom: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow-x: auto; // Add horizontal scroll for mobile
 }
 
 .employees-section h2 {
@@ -214,17 +282,29 @@ h1 {
   border-collapse: collapse;
   margin-bottom: 20px;
   font-size: 14px;
+  min-width: 800px; // Ensure table doesn't squish too much
+
+  @media (max-width: $breakpoint-md) {
+    font-size: 12px;
+  }
 }
 
 .employees-table th, .employees-table td {
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid $border-color;
+
+  @media (max-width: $breakpoint-md) {
+    padding: 8px 10px;
+  }
 }
 
 .employees-table th {
   background-color: $light-gray;
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .employees-table tr:hover {
@@ -234,6 +314,12 @@ h1 {
 .actions-cell {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap; // Allow buttons to wrap
+
+  @media (max-width: $breakpoint-lg) {
+    flex-direction: column;
+    gap: 5px;
+  }
 }
 
 .action-button {
@@ -245,6 +331,12 @@ h1 {
   display: flex;
   align-items: center;
   transition: all 0.3s;
+  white-space: nowrap;
+
+  @media (max-width: $breakpoint-md) {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
 }
 
 .action-button i {
@@ -303,6 +395,7 @@ h1 {
   justify-content: center;
   align-items: center;
   margin-top: 20px;
+  flex-wrap: wrap;
 }
 
 .pagination-button {
@@ -313,6 +406,7 @@ h1 {
   padding: 8px 15px;
   cursor: pointer;
   transition: all 0.3s;
+  margin: 5px;
 }
 
 .pagination-button:hover:not([disabled]) {
@@ -339,12 +433,18 @@ h1 {
 .form-row {
   display: flex;
   gap: 20px;
+
+  @media (max-width: $breakpoint-lg) {
+    flex-direction: column;
+    gap: 15px;
+  }
 }
 
 .form-group {
   flex: 1;
   display: flex;
   flex-direction: column;
+  margin-bottom: 10px;
 }
 
 .form-group.full-width {
@@ -362,6 +462,7 @@ h1 {
   border: 1px solid $border-color;
   border-radius: 4px;
   font-size: 14px;
+  width: 100%;
 }
 
 .form-group input:focus, .form-group select:focus {
@@ -374,6 +475,17 @@ h1 {
   display: flex;
   justify-content: flex-end;
   margin-top: 10px;
+  gap: 10px;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+  }
+
+  button {
+    @media (max-width: $breakpoint-md) {
+      width: 100%;
+    }
+  }
 }
 
 .submit-button {
@@ -462,6 +574,7 @@ h1 {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 10px;
 }
 
 .modal-container {
@@ -471,6 +584,9 @@ h1 {
   max-width: 500px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-large {
@@ -483,6 +599,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -505,6 +622,8 @@ h1 {
 
 .modal-body {
   padding: 20px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .modal-footer {
@@ -513,6 +632,15 @@ h1 {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  flex-shrink: 0;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
 }
 
 .modal-footer button {
@@ -591,6 +719,10 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
+
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .info-item {
@@ -614,6 +746,16 @@ h1 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+    button {
+      width: 100%;
+    }
+  }
 }
 
 .schedule-form {
@@ -658,7 +800,12 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+
+  @media (max-width: $breakpoint-lg) {
+    grid-template-columns: 1fr;
+  }
 }
+
 .time-management-section {
   background-color: #f8f9fa;
   border-radius: 6px;
@@ -681,6 +828,12 @@ h1 {
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 15px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; // Firefox
+
+  &::-webkit-scrollbar {
+    display: none; // Chrome, Safari, Edge
+  }
 }
 
 .tab-button {
@@ -691,6 +844,7 @@ h1 {
   cursor: pointer;
   font-size: 14px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab-button:hover {
@@ -722,6 +876,10 @@ h1 {
 .time-input-row {
   display: flex;
   gap: 10px;
+
+  @media (max-width: $breakpoint-sm) {
+    flex-direction: column;
+  }
 }
 
 .form-hint {
@@ -740,96 +898,104 @@ h1 {
   background-color: #2980b9;
 }
 
-// Адаптивные стили
-@media (max-width: 992px) {
-  .admin-layout {
-    flex-direction: column;
-  }
+// Role management
+.role-management-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
 
-  .sidebar {
-    width: 100%;
-    order: 2;
-  }
-
-  .main-content {
-    order: 1;
-  }
-
-  .admin-profile {
-    flex-direction: row;
-    text-align: left;
-    align-items: center;
-  }
-
-  .avatar-container {
-    margin-bottom: 0;
-    margin-right: 15px;
-  }
-
-  .sidebar-menu {
-    padding: 10px 0;
-  }
-
-  .form-row {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .actions-cell {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .schedule-info {
-    grid-template-columns: 1fr;
+  h5 {
+    font-size: 16px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #495057;
+    font-weight: 600;
   }
 }
 
-@media (max-width: 768px) {
-  .admin-container {
-    padding: 15px;
-  }
+.role-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 
-  .header-with-action {
+  @media (max-width: 576px) {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
   }
+}
 
-  .add-button {
-    width: 100%;
+// Role styles
+.role-admin {
+  color: #2196F3 !important;
+}
+
+.role-foreman {
+  color: #FF9800 !important;
+}
+
+.role-user {
+  color: #4CAF50 !important;
+}
+
+// Specific button styles
+.promote-button {
+  background-color: #FF9800;
+  color: white;
+
+  &:hover {
+    background-color: darken(#FF9800, 10%);
+  }
+}
+
+.promote-admin-button {
+  background-color: #2196F3;
+  color: white;
+
+  &:hover {
+    background-color: darken(#2196F3, 10%);
+  }
+}
+
+.demote-button, .demote-foreman-button {
+  background-color: #607D8B;
+  color: white;
+
+  &:hover {
+    background-color: darken(#607D8B, 10%);
+  }
+}
+
+// Touch-friendly improvements
+@media (hover: none) {
+  .action-button, .submit-button, .pagination-button,
+  .add-button, .sidebar-menu a, .tab-button {
+    // Increase touch targets for mobile
+    min-height: 44px;
+    display: flex;
+    align-items: center;
     justify-content: center;
   }
 
-  .employees-table {
-    font-size: 12px;
+  .sidebar-menu a {
+    padding: 14px 20px;
+  }
+}
+
+// Print styles
+@media print {
+  .sidebar, .top-logo-container, .header-with-action,
+  .modal-footer, .actions-cell, .pagination {
+    display: none !important;
   }
 
-  .employees-table th, .employees-table td {
-    padding: 8px 10px;
+  .admin-layout {
+    display: block;
   }
 
-  .action-button {
-    font-size: 11px;
-    padding: 5px 8px;
-  }
-
-  .modal-large {
-    max-width: 95%;
-    width: 95%;
-  }
-
-  .schedule-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .schedule-header button {
-    width: 100%;
+  .main-content, .employees-section, .modal-body {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
   }
 }
