@@ -18,6 +18,7 @@ import { ManageWorksitesComponent } from './pages/admin-main-page/manage-worksit
 import { SettingsComponent } from './pages/admin-main-page/settings/settings.component';
 import { ManageEmployeesComponent } from './pages/admin-main-page/manage-employees/manage-employees.component';
 import { PhotoS3Component } from './pages/admin-main-page/photo-s3/photo-s3.component';
+import { VerificationForEmployeeComponent } from './pages/admin-main-page/verification-for-employee/verification-for-employee.component';
 
 
 @NgModule({
@@ -35,7 +36,8 @@ import { PhotoS3Component } from './pages/admin-main-page/photo-s3/photo-s3.comp
       ManageWorksitesComponent,
       SettingsComponent,
       ManageEmployeesComponent,
-      PhotoS3Component
+      PhotoS3Component,
+      VerificationForEmployeeComponent
   ],
   imports: [
     CommonModule,
