@@ -41,7 +41,6 @@ public class WorkAttendanceService {
         private final WorkerSiteRepository workSiteRepository;
         private final WorkerPayrollRepository workerPayrollRepository;
         private final WorkerScheduleRepository workerScheduleRepository;
-        private final AuthenticationServiceImpl authenticationService;
 
         @Transactional
         public PunchInResponse makePunchIn(Authentication authentication, PunchInRequest punchInRequest) {
@@ -71,7 +70,6 @@ public class WorkAttendanceService {
 
                         WorkerAttendance attendance = createAttendance(user, punchInRequest, photoUrl);
                         WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
-                        //  workSite.setWorkerDidPunchIn(true);
                         workSite.setIsWorkerDidPunchIn(Boolean.TRUE);
                         user.setCurrentWorkSite(workSite);
                         return createSuccessResponseForPunchIn(user, workSite, savedAttendance);
@@ -310,7 +308,6 @@ public class WorkAttendanceService {
                 log.info("Regular hours calculated: {}", totalHours);
                 attendance.setHoursWorked(totalHours);
 
-                // Считаем сверхурочные, если человек реально работал после окончания смены
                 if (checkOutTime.isAfter(scheduleEnd)) {
                         double overtimeHours = java.time.Duration.between(scheduleEnd, checkOutTime)
                                 .toMinutes() / 60.0;
@@ -401,9 +398,8 @@ public class WorkAttendanceService {
 
         private void validatePunchOutTime(WorkerSchedule schedule) {
                 LocalTime currentTime = LocalTime.now();
-                LocalTime earliestAllowed = schedule.getExpectedEndTime().minusHours(1); // За час до конца
-                LocalTime latestAllowed = schedule.getExpectedEndTime().plusHours(1); // До часа после конца
-
+                LocalTime earliestAllowed = schedule.getExpectedEndTime().minusHours(1);
+                LocalTime latestAllowed = schedule.getExpectedEndTime().plusHours(1);
                 if (currentTime.isBefore(earliestAllowed)) {
                         throw new IllegalStateException(
                                 "Too early for punch-out. Allowed from: " + earliestAllowed
@@ -542,8 +538,8 @@ public class WorkAttendanceService {
                 LocalDate periodEnd = periodStart.plusDays(6);
 
 
-                BigDecimal defaultHourlyRate = BigDecimal.valueOf(0.0);  // или другое значение по умолчанию
-                BigDecimal defaultOvertimeRate = BigDecimal.valueOf(0.0); // или другое значение по умолчанию
+                BigDecimal defaultHourlyRate = BigDecimal.valueOf(0.0);
+                BigDecimal defaultOvertimeRate = BigDecimal.valueOf(0.0);
 
                 if (worker.getPayrolls() != null && !worker.getPayrolls().isEmpty()) {
                         WorkerPayroll lastPayroll = worker.getPayrolls().getLast();
@@ -565,7 +561,6 @@ public class WorkAttendanceService {
         public void updatePayrollCalculations(WorkerPayroll payroll) {
                 log.info("Starting payroll calculations");
 
-                // Получаем все attendance за период
                 List<WorkerAttendance> periodAttendances = workerAttendanceRepository
                         .findAllByWorkerIdAndCheckInTimeBetween(
                                 payroll.getWorker().getId(),
@@ -574,7 +569,6 @@ public class WorkAttendanceService {
 
                 log.info("Found {} attendances for period", periodAttendances.size());
 
-                // Добавляем текущий attendance в список, если он еще не включен
                 WorkerAttendance currentAttendance = workerAttendanceRepository
                         .findFirstByWorkerAndCheckOutTimeIsNotNullOrderByCheckOutTimeDesc(payroll.getWorker())
                         .orElseThrow(() -> new RuntimeException("Current attendance not found"));
@@ -603,14 +597,12 @@ public class WorkAttendanceService {
 
                 log.info("Calculated total hours - regular: {}, overtime: {}", totalRegularHours, totalOvertimeHours);
 
-                // Устанавливаем часы
                 payroll.setRegularHours(totalRegularHours);
                 payroll.setOvertimeHours(totalOvertimeHours);
                 payroll.setTotalHours(totalRegularHours + totalOvertimeHours);
 
 
 
-                // Проверяем ставки
                 if (payroll.getBaseHourlyRate() == null || payroll.getBaseHourlyRate().compareTo(BigDecimal.ZERO) == 0) {
                         payroll.setBaseHourlyRate(BigDecimal.valueOf(15.0));
                         log.info("Set default base rate: {}", payroll.getBaseHourlyRate());
@@ -621,7 +613,6 @@ public class WorkAttendanceService {
                         log.info("Set default overtime rate: {}", payroll.getOvertimeRate());
                 }
 
-                // Рассчитываем зарплату
                 BigDecimal regularPay = payroll.getBaseHourlyRate().multiply(BigDecimal.valueOf(totalRegularHours));
                 BigDecimal overtimePay = payroll.getOvertimeRate().multiply(BigDecimal.valueOf(totalOvertimeHours));
 
@@ -666,7 +657,6 @@ public class WorkAttendanceService {
         private void calculateDeductions(WorkerPayroll payroll) {
                 BigDecimal grossPay = payroll.getGrossPay();
 
-                // Пример расчета удержаний (процентные ставки нужно настроить согласно вашим требованиям)
                 payroll.setMedicare(grossPay.multiply(BigDecimal.valueOf(0.0145)));
                 payroll.setSocialSecurityEmployee(grossPay.multiply(BigDecimal.valueOf(0.062)));
                 payroll.setFederalWithholding(grossPay.multiply(BigDecimal.valueOf(0.15)));
@@ -710,7 +700,7 @@ public class WorkAttendanceService {
 
         private LastPunchTimeDTO formatDateTimeToDTO(LocalDateTime dateTime) {
                 DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a"); // 'a' добавляет AM/PM
+                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
 
                 String formattedDate = dateTime.format(dateFormatter);
                 String formattedTime = dateTime.format(timeFormatter);

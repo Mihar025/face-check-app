@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 class ProgressCircle extends StatefulWidget {
   final double workedHours;
-  final double? size; // Опциональный параметр для задания размера
+  final double? size;
 
   const ProgressCircle({
     super.key,
@@ -22,13 +22,11 @@ class _ProgressCircleState extends State<ProgressCircle> with SingleTickerProvid
   void initState() {
     super.initState();
 
-    // Создаем контроллер с автозапуском
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    // Немедленно запускаем анимацию
     _controller.forward();
   }
 
@@ -40,14 +38,11 @@ class _ProgressCircleState extends State<ProgressCircle> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    // Получаем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
-    // Используем заданный размер или вычисляем адаптивный размер
     final circleSize = widget.size ?? (isSmallScreen ? 130.0 : 150.0);
 
-    // Адаптивная толщина линий и размеры шрифта
     final fontSize = isSmallScreen ? 16.0 : 18.0;
     final labelSize = isSmallScreen ? 12.0 : 14.0;
 
@@ -98,7 +93,7 @@ class _ProgressCircleState extends State<ProgressCircle> with SingleTickerProvid
 
 class AnimatedProgressPainter extends CustomPainter {
   final double workedHours;
-  final double progress; // Общий прогресс анимации (0.0 - 1.0)
+  final double progress;
   final bool isSmallScreen;
 
   AnimatedProgressPainter({
@@ -112,10 +107,8 @@ class AnimatedProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2;
 
-    // Адаптивная ширина линии для разных размеров экрана
     final strokeWidth = isSmallScreen ? 18.0 : 22.0;
 
-    // Background circle
     final backgroundPaint = Paint()
       ..color = Colors.grey[300]!
       ..style = PaintingStyle.stroke
@@ -125,7 +118,6 @@ class AnimatedProgressPainter extends CustomPainter {
 
     final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
 
-    // Определяем сегменты и цвета
     final List<double> segments = [];
     final List<Color> colors = [];
 
@@ -149,10 +141,9 @@ class AnimatedProgressPainter extends CustomPainter {
       colors.add(Colors.yellow);
     }
 
-    // Рисуем сегменты с учетом прогресса анимации
     double startAngle = -math.pi / 2;
     for (int i = 0; i < segments.length; i++) {
-      final sweepAngle = 2 * math.pi * segments[i] * progress; // Умножаем на прогресс
+      final sweepAngle = 2 * math.pi * segments[i] * progress;
 
       final paint = Paint()
         ..color = colors[i]

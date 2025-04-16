@@ -69,8 +69,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
     final theme = Theme.of(context);
     final l10n = context.watch<LocalizationProvider>().localizations;
 
-    // Получаем размеры экрана для адаптивности
-    final screenSize = MediaQuery.of(context).size;
+     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
     return AppBar(
@@ -162,13 +161,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   String _getCurrentPeriod() {
     final now = DateTime.now();
 
-    // Find the most recent Sunday (start of the week)
     final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
 
-    // Find the next Saturday (end of the week)
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-    // Format dates as DD/MM/YYYY
     final startFormatted = '${startOfWeek.day.toString().padLeft(2, '0')}/${startOfWeek.month.toString().padLeft(2, '0')}/${startOfWeek.year}';
     final endFormatted = '${endOfWeek.day.toString().padLeft(2, '0')}/${endOfWeek.month.toString().padLeft(2, '0')}/${endOfWeek.year}';
 
@@ -231,7 +227,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     final theme = Theme.of(context);
     final l10n = context.watch<LocalizationProvider>().localizations;
 
-    // Получаем размеры экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
@@ -255,13 +250,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         drawer: const CustomDrawer(),
         body: Column(
           children: [
-            // Верхняя линия
             Container(
               height: 1,
               width: double.infinity,
               color: Colors.grey[600],
             ),
-            // Верхний информационный блок
             Container(
               height: isSmallScreen ? 50 : 60,
               child: Stack(
@@ -327,16 +320,15 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 ],
               ),
             ),
-            // Основное содержимое с возможностью прокрутки
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: MediaQuery.of(context).size.height -
-                        (isSmallScreen ? 75 : 90) - // Высота нижнего блока
-                        (isSmallScreen ? 50 : 60) - // Высота верхнего инфо-блока
-                        (kToolbarHeight + (isSmallScreen ? 12 : 16) * 2), // Высота AppBar с отступами
+                        (isSmallScreen ? 75 : 90) -
+                        (isSmallScreen ? 50 : 60) -
+                        (kToolbarHeight + (isSmallScreen ? 12 : 16) * 2),
                   ),
                   child: Center(
                     child: Padding(
@@ -409,18 +401,15 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 ),
               ),
             ),
-            // Нижний блок с серой линией и элементами
             Container(
               height: 1,
               width: double.infinity,
               color: Colors.grey[600],
             ),
-            // Нижний блок с Last Punch и кнопкой FaceCheck
             SizedBox(
               height: isSmallScreen ? 75 : 90,
               child: Row(
                 children: [
-                  // Last Punch блок
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.only(left: isSmallScreen ? 20 : 40),
@@ -456,7 +445,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                       ),
                     ),
                   ),
-                  // FaceCheck кнопка
                   Padding(
                     padding: EdgeInsets.only(right: isSmallScreen ? 15 : 20),
                     child: Transform.scale(

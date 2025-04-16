@@ -23,23 +23,18 @@ import java.util.regex.Pattern;
 public class SqlFilter implements Filter {
 
     private static final Pattern[] SQL_PATTERNS = {
-            // DDL (Data Definition Language) команды
             Pattern.compile("(?i)(.*)(\\b)+(CREATE|DROP|ALTER|TRUNCATE)(\\b)+\\s.*"),
 
-            // DML (Data Manipulation Language) команды
             Pattern.compile("(?i)(.*)(\\b)+(SELECT|INSERT|UPDATE|DELETE|MERGE)(\\b)+\\s.*"),
 
-            // DCL (Data Control Language) команды
             Pattern.compile("(?i)(.*)(\\b)+(GRANT|REVOKE)(\\b)+\\s.*"),
 
-            // TCL (Transaction Control Language) команды
             Pattern.compile("(?i)(.*)(\\b)+(COMMIT|ROLLBACK|SAVEPOINT)(\\b)+\\s.*"),
 
-            // Специальные операторы и комментарии
             Pattern.compile("(?i)(.*)(\\b)+(UNION|INTERSECT|MINUS)(\\b)+\\s.*"),
             Pattern.compile("(?i)(.*)(\\b)+(EXECUTE|EXEC)(\\b)+\\s.*"),
-            Pattern.compile("--.*"),            // SQL комментарии
-            Pattern.compile("/\\*.*?\\*/")      // Многострочные комментарии
+            Pattern.compile("--.*"),
+            Pattern.compile("/\\*.*?\\*/")
     };
 
     private static final String[] SUSPICIOUS_CHARS = {
@@ -61,14 +56,12 @@ public class SqlFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         try {
-            // 1. Сначала проверяем URI и параметры
             if (isSqlInjectionDetected(httpRequest)) {
                 log.warn("SQL Injection attempt detected in URI or parameters");
                 sendErrorResponse(httpResponse);
                 return;
             }
 
-            // 2. Проверяем JSON тело для POST/PUT запросов
             if (isPostOrPutRequest(httpRequest) && hasJsonContent(httpRequest)) {
                 String jsonBody = readJsonBody(httpRequest);
                 if (containsSqlInjectionInJson(jsonBody)) {
@@ -76,7 +69,6 @@ public class SqlFilter implements Filter {
                     sendErrorResponse(httpResponse);
                     return;
                 }
-                // Восстанавливаем тело запроса для дальнейшего использования
                 request = new RequestWrapper(httpRequest, jsonBody);
             }
 
@@ -88,25 +80,20 @@ public class SqlFilter implements Filter {
     }
 
     private boolean isSqlInjectionDetected(HttpServletRequest request) {
-        // 1. Проверяем URI
         if (checkForSqlInjection(request.getRequestURI())) {
             log.warn("SQL Injection pattern found in URI");
             return true;
         }
 
-        // 2. Проверяем параметры запроса
         Map<String, String[]> params = request.getParameterMap();
         for (Map.Entry<String, String[]> entry : params.entrySet()) {
             String paramName = entry.getKey();
             String[] paramValues = entry.getValue();
 
-            // Проверяем имя параметра
             if (checkForSqlInjection(paramName)) {
                 log.warn("SQL Injection pattern found in parameter name: {}", paramName);
                 return true;
             }
-
-            // Проверяем значения параметра
             for (String value : paramValues) {
                 if (checkForSqlInjection(value)) {
                     log.warn("SQL Injection pattern found in parameter value: {}", value);
@@ -169,10 +156,8 @@ public class SqlFilter implements Filter {
             return false;
         }
 
-        // Декодируем URL-encoded строку
         String decodedValue = urlDecode(value);
 
-        // 1. Проверяем на SQL паттерны
         for (Pattern pattern : SQL_PATTERNS) {
             if (pattern.matcher(decodedValue).matches()) {
                 log.debug("SQL pattern matched: {}", pattern.pattern());
@@ -180,10 +165,8 @@ public class SqlFilter implements Filter {
             }
         }
 
-        // 2. Проверяем на подозрительные символы
         for (String suspect : SUSPICIOUS_CHARS) {
             if (decodedValue.contains(suspect)) {
-                // Проверяем контекст использования подозрительного символа
                 if (isSymbolInSuspiciousContext(decodedValue, suspect)) {
                     log.debug("Suspicious character found in suspicious context: {}", suspect);
                     return true;
@@ -223,7 +206,6 @@ public class SqlFilter implements Filter {
         response.getWriter().write("{\"error\": \"SQL injection detected\", \"status\": 400}");
     }
 
-    // Вспомогательный класс для сохранения тела запроса
     private static class RequestWrapper extends HttpServletRequestWrapper {
         private final String body;
 

@@ -6,7 +6,6 @@ import {DeleteCompany$Params} from "../../../../../services/fn/company-controlle
 import {Router} from "@angular/router";
 import {FileControllerService} from "../../../../../services/services/file-controller.service";
 import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
-import {PhotoService} from "../../../additionalServices/photo.service";
 
 
 @Component({
@@ -65,7 +64,6 @@ export class SettingsComponent implements OnInit {
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private companyService: CompanyControllerService,
-    private photoService: PhotoService,
     private fileService: FileControllerService,
     http: HttpClient,
     private router: Router
@@ -209,7 +207,6 @@ export class SettingsComponent implements OnInit {
       return;
     }
 
-    // Передаем только строку, а не JSON-объект
     const params = {
       body: this.companyNameInput
     };
@@ -218,8 +215,6 @@ export class SettingsComponent implements OnInit {
       () => {
         this.companyNameSuccess = true;
         this.companyName = String(this.companyNameInput);
-
-        // Сбрасываем сообщение об успехе через 3 секунды
         setTimeout(() => {
           this.companyNameSuccess = false;
         }, 3000);
@@ -232,7 +227,6 @@ export class SettingsComponent implements OnInit {
   }
 
   updateCompanyEmail(): void {
-    // Сбрасываем сообщения
     this.companyEmailSuccess = false;
     this.companyEmailError = null;
 
@@ -240,8 +234,6 @@ export class SettingsComponent implements OnInit {
       this.companyEmailError = 'Company email cannot be empty';
       return;
     }
-
-    // Передаем только строку, а не JSON-объект
     const params = {
       body: this.companyEmailInput
     };
@@ -249,8 +241,6 @@ export class SettingsComponent implements OnInit {
     this.companyService.updateCompanyEmail(params).subscribe(
       () => {
         this.companyEmailSuccess = true;
-
-        // Сбрасываем сообщение об успехе через 3 секунды
         setTimeout(() => {
           this.companyEmailSuccess = false;
         }, 3000);
@@ -263,7 +253,6 @@ export class SettingsComponent implements OnInit {
   }
 
   updateCompanyPhone(): void {
-    // Сбрасываем сообщения
     this.companyPhoneSuccess = false;
     this.companyPhoneError = null;
 
@@ -271,8 +260,6 @@ export class SettingsComponent implements OnInit {
       this.companyPhoneError = 'Company phone cannot be empty';
       return;
     }
-
-    // Передаем только строку, а не JSON-объект
     const params = {
       body: this.companyPhoneInput
     };
@@ -280,8 +267,6 @@ export class SettingsComponent implements OnInit {
     this.companyService.updateCompanyPhone(params).subscribe(
       () => {
         this.companyPhoneSuccess = true;
-
-        // Сбрасываем сообщение об успехе через 3 секунды
         setTimeout(() => {
           this.companyPhoneSuccess = false;
         }, 3000);
@@ -322,9 +307,7 @@ export class SettingsComponent implements OnInit {
     );
   }
 
-  // Методы обновления данных админа
   updateAdminEmail(): void {
-    // Сбрасываем сообщения
     this.adminEmailSuccess = false;
     this.adminEmailError = null;
 
@@ -340,8 +323,6 @@ export class SettingsComponent implements OnInit {
     this.userService.updateEmail(params).subscribe(
       () => {
         this.adminEmailSuccess = true;
-
-        // Сбрасываем сообщение об успехе через 3 секунды
         setTimeout(() => {
           this.adminEmailSuccess = false;
         }, 3000);
@@ -354,7 +335,6 @@ export class SettingsComponent implements OnInit {
   }
 
   updateAdminPhone(): void {
-    // Сбрасываем сообщения
     this.adminPhoneSuccess = false;
     this.adminPhoneError = null;
 
@@ -370,8 +350,6 @@ export class SettingsComponent implements OnInit {
     this.userService.updatePhone(params).subscribe(
       () => {
         this.adminPhoneSuccess = true;
-
-        // Сбрасываем сообщение об успехе через 3 секунды
         setTimeout(() => {
           this.adminPhoneSuccess = false;
         }, 3000);
@@ -384,7 +362,6 @@ export class SettingsComponent implements OnInit {
   }
 
   updateAdminAddress(): void {
-    // Сбрасываем сообщения
     this.adminAddressSuccess = false;
     this.adminAddressError = null;
 
@@ -400,8 +377,6 @@ export class SettingsComponent implements OnInit {
     this.userService.updateHomeAddress(params).subscribe(
       () => {
         this.adminAddressSuccess = true;
-
-        // Сбрасываем сообщение об успехе через 3 секунды
         setTimeout(() => {
           this.adminAddressSuccess = false;
         }, 3000);
@@ -414,7 +389,6 @@ export class SettingsComponent implements OnInit {
   }
 
   updateAdminPassword(): void {
-    // Сбрасываем сообщения
     this.adminPasswordSuccess = false;
     this.adminPasswordError = null;
 
@@ -435,9 +409,7 @@ export class SettingsComponent implements OnInit {
     this.userService.updatePassword(params).subscribe(
       () => {
         this.adminPasswordSuccess = true;
-        this.adminPasswordInput = ''; // Очищаем поле пароля после успешного обновления
-
-        // Сбрасываем сообщение об успехе через 3 секунды
+        this.adminPasswordInput = '';
         setTimeout(() => {
           this.adminPasswordSuccess = false;
         }, 3000);
@@ -493,12 +465,6 @@ export class SettingsComponent implements OnInit {
     this.showDeleteModal = false;
   }
 
-  /*
-    getUserPhoto(): void {
-      this.photoService.getUserPhoto(this.userPhotoUrl);
-    }
-
-   */
   getUserPhoto(): void {
     this.userService.findWorkerFullContactInformation().subscribe(
       response => {
@@ -526,7 +492,7 @@ export class SettingsComponent implements OnInit {
         const selectedFile = files[0];
 
         if (!selectedFile.type.startsWith('image/')) {
-          this.photoUploadError = 'Пожалуйста, выберите файл изображения';
+          this.photoUploadError = 'Please, select file';
           return;
         }
 
@@ -564,13 +530,11 @@ export class SettingsComponent implements OnInit {
           (error: HttpErrorResponse) => {
             console.error('Error uploading photo:', error);
             this.isUploadingPhoto = false;
-            this.photoUploadError = 'Ошибка загрузки фото: ' + (error.message || 'Неизвестная ошибка');
+            this.photoUploadError = 'Error: ' + (error.message || 'Unknown');
           }
         );
       }
     };
-
-
     fileInput.click();
   }
 

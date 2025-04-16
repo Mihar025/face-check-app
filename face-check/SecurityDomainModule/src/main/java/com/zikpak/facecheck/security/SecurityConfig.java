@@ -61,11 +61,8 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
-                //XSS filter
                 .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)
-                // SQL filter
                 .addFilterAfter(sqlFilter, XssFilter.class)
-                // JWT фильтр после SQL фильтра
                 .addFilterAfter(jwtAuthFilter, SqlFilter.class);
         // .addFilterAfter(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

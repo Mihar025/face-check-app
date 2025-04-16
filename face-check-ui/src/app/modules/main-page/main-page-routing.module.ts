@@ -4,7 +4,6 @@ import { HomeComponent } from "./pages/home/home.component";
 import { AboutUsComponent } from "./pages/about-us/about-us.component";
 import { PricingComponent } from "./pages/pricing/pricing.component";
 import { AdminPageComponent } from "./pages/admin-page/admin-page.component";
-import { UserPageComponent } from "./pages/user-page/user-page.component";
 import {SignInComponent} from "./authentication/sign-in/sign-in.component";
 import {RegisterComponent} from "./authentication/register/register.component";
 import {VerificationCodeComponent} from "./authentication/verification-code/verification-code.component";
@@ -62,10 +61,6 @@ const routes: Routes = [
     component: AdminPageComponent
   },
   {
-    path: 'main-page/user',
-    component: UserPageComponent
-  },
-  {
     path: 'main-page/about',
     component: AboutUsComponent
   },
@@ -74,7 +69,6 @@ const routes: Routes = [
     component: PricingComponent
   },
 
-  //Admin Home
   {
     path: 'main-page/admin/company-information',
     component: CompanyInformationComponent

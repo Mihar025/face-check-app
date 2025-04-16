@@ -22,7 +22,6 @@ public class WorkerPayrollResponse {
     private BigDecimal overtimePay;
     private BigDecimal grossPay;
 
-    // Налоги и вычеты
     private BigDecimal medicare;
     private BigDecimal socialSecurity;
     private BigDecimal federalWithholding;

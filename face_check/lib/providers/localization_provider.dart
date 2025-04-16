@@ -16,7 +16,6 @@ class LocalizationProvider extends ChangeNotifier {
   Future<void> _loadSavedLanguage() async {
     _currentLanguage = await _settings.getLanguage();
     _localizations = AppLocalizations(_currentLanguage);
-    // Обновляем язык уведомлений при загрузке сохраненного языка
     try {
       if (NotificationService.instance != null) {
         await NotificationService.instance.updateLanguage(_currentLanguage);
@@ -31,8 +30,6 @@ class LocalizationProvider extends ChangeNotifier {
     _currentLanguage = languageCode;
     _localizations = AppLocalizations(languageCode);
     await _settings.setLanguage(languageCode);
-
-    // Обновляем язык уведомлений при смене языка
     try {
       if (NotificationService.instance != null) {
         await NotificationService.instance.updateLanguage(languageCode);

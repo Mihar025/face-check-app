@@ -30,7 +30,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
   double _weekNetAmount = 0.0;
   List<DailyEarning> _weeklyEarnings = [];
 
-  // Константы для размеров и отступов
   static const double _largeSpacing = 40.0;
   static const double _smallSpacing = 30.0;
   static const double _largeFontSize = 18.0;
@@ -56,7 +55,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
 
       if (mounted) {
         setState(() {
-          // Using dynamic to access .data property
           _baseHourRate = (futures[0] as dynamic).data?.toDouble() ?? 0.0;
           _weekGrossAmount = (futures[1] as dynamic).data?.toDouble() ?? 0.0;
           _weekTaxesAmount = (futures[2] as dynamic).data?.toDouble() ?? 0.0;
@@ -84,8 +82,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
     final overtimeHours = widget.workedHours > 40 ? widget.workedHours - 40 : 0.0;
     final missedHours = widget.workedHours < 40 ? 40 - widget.workedHours : 0.0;
 
-    // Получаем размеры экрана один раз
-    final isSmallScreen = MediaQuery.of(context).size.width < 400;
+                       final isSmallScreen = MediaQuery.of(context).size.width < 400;
     final padding = isSmallScreen ? 12.0 : 16.0;
     final sectionSpacing = isSmallScreen ? _smallSpacing : _largeSpacing;
 
@@ -146,7 +143,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
 
               SizedBox(height: sectionSpacing),
 
-              // Финансовая статистика
               Padding(
                 padding: EdgeInsets.only(left: isSmallScreen ? 8.0 : 12.0),
                 child: Text(
@@ -163,7 +159,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
     );
   }
 
-  // Объединенный метод для создания секций
   Widget _buildSection(
       AppLocalizations l10n,
       String titleKey,
@@ -184,7 +179,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
 
     final spacingAfterTitle = isSmallScreen ? 16.0 : 24.0;
 
-    // Для маленьких экранов используем колонку
     if (isSmallScreen) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +196,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
       );
     }
 
-    // Для больших экранов используем строку
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -231,7 +224,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
     );
   }
 
-  // Универсальный метод создания информационных строк
   Widget _buildInfoRow(
       AppLocalizations l10n,
       String labelKey,
@@ -250,7 +242,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
     );
   }
 
-  // Стиль заголовков секций
   TextStyle _getSectionStyle(bool isSmallScreen) {
     return GoogleFonts.poppins(
       fontSize: isSmallScreen ? _smallFontSize : _largeFontSize,
@@ -311,9 +302,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
     );
   }
 
-  // Оптимизированный график
   Widget _buildOptimizedChart(bool isSmallScreen) {
-    // Мемоизация расчетов максимального значения
     final maxValue = _getMaxEarning();
 
     return CustomPaint(
@@ -327,13 +316,11 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
   }
 }
 
-// Оптимизированная версия рисования графика
 class OptimizedLineChartPainter extends CustomPainter {
   final List<DailyEarning> earnings;
   final double maxValue;
   final bool isSmallScreen;
 
-  // Константы для рисования
   final List<String> _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -347,7 +334,6 @@ class OptimizedLineChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (earnings.isEmpty) return;
 
-    // Предварительный расчет размеров
     final double bottomPadding = isSmallScreen ? 30 : 40;
     final double rightPadding = isSmallScreen ? 40 : 60;
     final double leftPadding = isSmallScreen ? 30 : 40;
@@ -355,7 +341,6 @@ class OptimizedLineChartPainter extends CustomPainter {
     final double width = size.width - rightPadding - leftPadding;
     final double startX = leftPadding;
 
-    // Настройка стилей для отрисовки
     final linePaint = Paint()
       ..color = Colors.red
       ..style = PaintingStyle.stroke
@@ -373,22 +358,17 @@ class OptimizedLineChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.5;
 
-    // Создаем путь для линии используя кэшированные координаты
     final List<Offset> points = _calculatePoints(startX, width, height);
     final path = _createPath(points);
 
-    // Рисуем вертикальные линии сетки
     _drawVerticalGrid(canvas, points, height, gridPaint);
 
-    // Рисуем свечение и основную линию
     canvas.drawPath(path, glowPaint);
     canvas.drawPath(path, linePaint);
 
-    // Рисуем точки и подписи
     _drawPointsAndLabels(canvas, points, size, height);
   }
 
-  // Расчет координат точек графика (кэширование)
   List<Offset> _calculatePoints(double startX, double width, double height) {
     final points = <Offset>[];
 
@@ -401,7 +381,6 @@ class OptimizedLineChartPainter extends CustomPainter {
     return points;
   }
 
-  // Создание пути для линии
   Path _createPath(List<Offset> points) {
     final path = Path();
 
@@ -413,7 +392,6 @@ class OptimizedLineChartPainter extends CustomPainter {
       final prevPoint = points[i-1];
       final currentPoint = points[i];
 
-      // Плавная кривая между точками
       final controlX = prevPoint.dx + (currentPoint.dx - prevPoint.dx) * 0.5;
       path.quadraticBezierTo(
           controlX, prevPoint.dy,
@@ -424,9 +402,7 @@ class OptimizedLineChartPainter extends CustomPainter {
     return path;
   }
 
-  // Рисование вертикальных линий сетки
   void _drawVerticalGrid(Canvas canvas, List<Offset> points, double height, Paint gridPaint) {
-    // На маленьких экранах рисуем меньше вертикальных линий
     final step = isSmallScreen && earnings.length > 5 ? 2 : 1;
 
     for (int i = 0; i < points.length; i += step) {
@@ -438,7 +414,6 @@ class OptimizedLineChartPainter extends CustomPainter {
     }
   }
 
-  // Рисование точек и подписей
   void _drawPointsAndLabels(Canvas canvas, List<Offset> points, Size size, double height) {
     final markerSize = isSmallScreen ? 4.0 : 6.0;
     final innerMarkerSize = isSmallScreen ? 3.0 : 4.0;
@@ -446,7 +421,6 @@ class OptimizedLineChartPainter extends CustomPainter {
     for (int i = 0; i < points.length; i++) {
       final point = points[i];
 
-      // Рисуем маркер (точку)
       canvas.drawCircle(
         point,
         markerSize,
@@ -459,7 +433,6 @@ class OptimizedLineChartPainter extends CustomPainter {
         Paint()..color = Colors.white,
       );
 
-      // Добавляем текст с датой
       final dateText = _formatDate(earnings[i].date);
       _drawText(
         canvas,
@@ -470,7 +443,6 @@ class OptimizedLineChartPainter extends CustomPainter {
         TextAlign.center,
       );
 
-      // Показываем значения только для некоторых точек на маленьких экранах
       bool showValue = !isSmallScreen || (i % 2 == 0);
 
       if (showValue) {
@@ -488,7 +460,6 @@ class OptimizedLineChartPainter extends CustomPainter {
     }
   }
 
-  // Вспомогательный метод для рисования текста
   void _drawText(
       Canvas canvas,
       String text,
@@ -523,7 +494,6 @@ class OptimizedLineChartPainter extends CustomPainter {
     textPainter.paint(canvas, offset);
   }
 
-  // Форматирование даты
   String _formatDate(DateTime date) {
     if (isSmallScreen) {
       return '${date.day}/${date.month}';
@@ -534,7 +504,6 @@ class OptimizedLineChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     if (oldDelegate is OptimizedLineChartPainter) {
-      // Перерисовываем только если изменились данные или размер экрана
       return oldDelegate.earnings != earnings ||
           oldDelegate.maxValue != maxValue ||
           oldDelegate.isSmallScreen != isSmallScreen;

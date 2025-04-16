@@ -7,7 +7,7 @@ class PayrollProgressCircle extends StatefulWidget {
   final double taxesAmount;
   final double netAmount;
   final double maxAmount;
-  final double? size; // Добавляем опциональный параметр для размера
+  final double? size;
 
   const PayrollProgressCircle({
     super.key,
@@ -16,7 +16,7 @@ class PayrollProgressCircle extends StatefulWidget {
     required this.taxesAmount,
     required this.netAmount,
     required this.maxAmount,
-    this.size, // Размер может быть указан или использоваться по умолчанию
+    this.size,
   });
 
   @override
@@ -30,13 +30,11 @@ class _PayrollProgressCircleState extends State<PayrollProgressCircle> with Sing
   void initState() {
     super.initState();
 
-    // Создаем контроллер с автозапуском
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    // Немедленно запускаем анимацию
     _controller.forward();
   }
 
@@ -48,14 +46,11 @@ class _PayrollProgressCircleState extends State<PayrollProgressCircle> with Sing
 
   @override
   Widget build(BuildContext context) {
-    // Получаем размер экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
-    // Используем заданный размер или вычисляем адаптивный размер
     final circleSize = widget.size ?? (isSmallScreen ? 130.0 : 150.0);
 
-    // Адаптивная толщина линий и размеры шрифта
     final fontSize = isSmallScreen ? 16.0 : 18.0;
     final labelSize = isSmallScreen ? 12.0 : 14.0;
 
@@ -114,7 +109,7 @@ class AnimatedPayrollPainter extends CustomPainter {
   final double taxesAmount;
   final double netAmount;
   final double maxAmount;
-  final double progress; // Общий прогресс анимации (0.0 - 1.0)
+  final double progress;
   final bool isSmallScreen;
 
   AnimatedPayrollPainter({
@@ -132,10 +127,8 @@ class AnimatedPayrollPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2;
 
-    // Адаптивная ширина линии на основе размера экрана
     final strokeWidth = isSmallScreen ? 18.0 : 22.0;
 
-    // Background circle
     final backgroundPaint = Paint()
       ..color = Colors.grey[300]!
       ..style = PaintingStyle.stroke
@@ -145,11 +138,9 @@ class AnimatedPayrollPainter extends CustomPainter {
 
     final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
 
-    // Определяем сегменты и цвета
     final List<double> segments = [];
     final List<Color> colors = [];
 
-    // Add segments for each part
     segments.add(baseRate / maxAmount);
     colors.add(Colors.purpleAccent);
 
@@ -162,10 +153,9 @@ class AnimatedPayrollPainter extends CustomPainter {
     segments.add((netAmount - taxesAmount) / maxAmount);
     colors.add(Colors.indigoAccent);
 
-    // Рисуем сегменты с учетом прогресса анимации
     double startAngle = -math.pi / 2;
     for (int i = 0; i < segments.length; i++) {
-      final sweepAngle = 2 * math.pi * segments[i] * progress; // Умножаем на прогресс
+      final sweepAngle = 2 * math.pi * segments[i] * progress;
 
       final paint = Paint()
         ..color = colors[i]

@@ -30,6 +30,6 @@ public class WorkerSchedule {
     private LocalDate scheduleDate;
     private LocalTime expectedStartTime;
     private LocalTime expectedEndTime;
-    private String shift; // MORNING, EVENING, etc.
+    private String shift;
     private Boolean isOnDuty;
 }

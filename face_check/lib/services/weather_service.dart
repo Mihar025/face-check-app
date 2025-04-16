@@ -12,7 +12,7 @@ class WeatherService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Ошибка получения погоды: ${response.statusCode}');
+      throw Exception('Ошибка: ${response.statusCode}');
     }
   }
 }

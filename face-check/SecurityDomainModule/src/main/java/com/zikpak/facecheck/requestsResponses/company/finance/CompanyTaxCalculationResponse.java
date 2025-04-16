@@ -15,15 +15,13 @@ public class CompanyTaxCalculationResponse {
     private BigDecimal monthlyIncome;
     private BigDecimal totalTaxes;
 
-    // Налоги компании
-    private BigDecimal socialSecurityTax;     // 6.2% от зарплаты до $160,200 (2023)
-    private BigDecimal medicareTax;           // 1.45% от всей зарплаты
-    private BigDecimal federalUnemploymentTax; // 6% на первые $7,000
-    private BigDecimal nyUnemploymentTax;     // ~4.1% на первые $12,000
-    private BigDecimal nyDisabilityInsurance; // ~$0.14 за $100 зарплаты
-    private BigDecimal workersCompensation;   // Зависит от типа работы
+    private BigDecimal socialSecurityTax;
+    private BigDecimal medicareTax;
+    private BigDecimal federalUnemploymentTax;
+    private BigDecimal nyUnemploymentTax;
+    private BigDecimal nyDisabilityInsurance;
+    private BigDecimal workersCompensation;
 
-    // Дополнительная информация
     private Integer employeeCount;
     private BigDecimal totalPayroll;
     private LocalDate calculationDate;

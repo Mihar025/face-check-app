@@ -18,19 +18,17 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByEmail(String username);
 
-    boolean existsByEmail(@Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$", message = "Email is not formatted well!") @NotBlank(message = "Email is required!") @Pattern(regexp = "^[^;'\"]*$", message = "Email contains invalid characters") String email);
-
-
-
-
+    boolean existsByEmail(@Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$" , message = "Email is not formatted well!")
+                          @NotBlank(message = "Email is required!")
+                          @Pattern(regexp = "^[^;'\"]*$", message = "Email contains invalid characters") String email);
     @Query("SELECT u FROM User u WHERE u.company.id = :companyId ORDER BY u.createdDate DESC")
     Page<User> findAllEmployeesInCompany(Pageable pageable, @Param("companyId") Integer companyId);
 
-    // Дополнительные полезные методы:
+
+
     @Query("SELECT COUNT(u) FROM User u WHERE u.company.id = :companyId")
     long countEmployeesByCompanyId(@Param("companyId") Integer companyId);
 
-    // Поиск по имени или email
     @Query("""
     SELECT u 
     FROM User u 

@@ -30,7 +30,7 @@ public interface WorkSiteService {
 
     SetNewCustomRadiusResponse setCustomRadiusForWorkSite(Authentication authentication,
                                   Integer workSiteId,
-                                  SetNewCustomRadiusRequest customRadius);  // для работников которым нужен особый радиус
+                                  SetNewCustomRadiusRequest customRadius);
 
 
 
@@ -45,19 +45,19 @@ public interface WorkSiteService {
 
     // Activity management
     void setWorkSiteActiveOrNotActive(Authentication authentication, Integer workSiteId, UpdateStatusWorkSiteRequest isActive);
-    ScheduleInactiveDayResponse scheduleInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest inactiveDate);  // запланировать неактивный день
-    ScheduleInactiveDayResponse removeInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest date);  // удалить неактивный день
+    ScheduleInactiveDayResponse scheduleInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest inactiveDate);
+    ScheduleInactiveDayResponse removeInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest date);
 
     // Validation methods
-    boolean isWorkSiteActive(Integer workSiteId);  // проверка активна ли сейчас площадка
+    boolean isWorkSiteActive(Integer workSiteId);
 
 
-    IsWithinRadiusResponse isWithinRadius(Integer workSiteId,     // проверка находится ли работник в радиусе
+    IsWithinRadiusResponse isWithinRadius(Integer workSiteId,
                            IsWithinRadiusRequest request);
 
     boolean canPunchInOut( Authentication authentication,
-                            Integer workSiteId,      // проверка можно ли сейчас делать punch in/out
-                          Integer userId,           // (проверяет время и активность)
+                            Integer workSiteId,
+                          Integer userId,
                           CanPunchOutRequestWorkSite canPunchOutRequest);
 
 
@@ -65,7 +65,6 @@ public interface WorkSiteService {
 
     PageResponse<WorkerCurrentlyWorkingInWorkSite> findAllWorkerInWorkSiteRelated(Integer workSiteId, int page, int size, Authentication authentication);
 
-    //findAll Worksites to which admin related!;
-    //
+
 
 }

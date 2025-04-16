@@ -28,25 +28,20 @@ public class WorkerPayroll {
     @ManyToOne
     private Company company;
 
-    // Период
     private LocalDate periodStart;
     private LocalDate periodEnd;
 
-    // Базовые ставки
     private BigDecimal baseHourlyRate;
     private BigDecimal overtimeRate;
 
-    // Отработанное время
     private Double regularHours;
     private Double overtimeHours;
     private Double totalHours;
 
-    // Зарплата
     private BigDecimal regularPay;
     private BigDecimal overtimePay;
     private BigDecimal grossPay;
 
-    // Удержания
     private BigDecimal medicare;
     private BigDecimal socialSecurityEmployee;
     private BigDecimal federalWithholding;
@@ -56,7 +51,6 @@ public class WorkerPayroll {
     private BigDecimal nyPaidFamilyLeave;
     private BigDecimal totalDeductions;
 
-    // Итоговая сумма
     private BigDecimal netPay;
 }
 

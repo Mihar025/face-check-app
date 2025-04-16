@@ -29,7 +29,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
       spaceBetween: 30,
       loop: true,
 
-      // Пагинация внизу
       pagination: {
         el: '.swiper-pagination',
         clickable: true,

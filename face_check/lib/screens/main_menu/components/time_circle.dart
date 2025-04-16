@@ -61,7 +61,6 @@ class TimeCircle extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    // Адаптивные размеры
     final containerWidth = isSmallScreen ? 220.0 : 250.0;
     final containerHeight = isSmallScreen ? 230.0 : 260.0;
     final circleSize = isSmallScreen ? 280.0 : 320.0;

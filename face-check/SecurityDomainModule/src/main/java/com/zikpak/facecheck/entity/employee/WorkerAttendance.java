@@ -29,7 +29,6 @@ public class WorkerAttendance {
     private Double checkInLongitude;
     private String checkInLocation;
 
-    // Информация об уходе
     private LocalDateTime checkOutTime;
     private String checkOutPhotoUrl;
     private Double checkOutLatitude;

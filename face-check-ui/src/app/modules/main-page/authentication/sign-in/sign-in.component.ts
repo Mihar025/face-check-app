@@ -19,7 +19,6 @@ export class SignInComponent implements OnDestroy {
     private fb: FormBuilder,
     private authService: AuthService
   ) {
-    // Initialize form with validators
     this.loginForm = this.fb.group({
       login: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
@@ -48,7 +47,6 @@ export class SignInComponent implements OnDestroy {
       )
       .subscribe({
         next: () => {
-          // Ничего делать не нужно, перенаправление происходит в AuthService
           console.log('Login successful');
         },
         error: (error) => {
@@ -65,7 +63,6 @@ export class SignInComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Отписываемся при уничтожении компонента
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }

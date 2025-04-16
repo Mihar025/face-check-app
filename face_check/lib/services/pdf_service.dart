@@ -16,16 +16,13 @@ class FinancePdfService {
   static Future<void> generateFinanceReport(FinanceInfoResponse financeInfo) async {
     final pdf = pw.Document();
 
-    // Загружаем шрифты
     final font = await PdfGoogleFonts.robotoRegular();
     final boldFont = await PdfGoogleFonts.robotoBold();
 
-    // Загружаем логотип
     final ByteData logoBytes = await rootBundle.load('assets/images/logo.jpg');
     final Uint8List logoData = logoBytes.buffer.asUint8List();
     final pw.MemoryImage logoImage = pw.MemoryImage(logoData);
 
-    // Стили для документа
     final titleStyle = pw.TextStyle(
       fontSize: 24,
       font: boldFont,
@@ -45,7 +42,6 @@ class FinancePdfService {
         font: font
     );
 
-    // Форматирование дат
     final dateFormatter = DateFormat('MM/dd/yyyy');
     final weekDayFormatter = DateFormat('EEE');
 
@@ -57,7 +53,6 @@ class FinancePdfService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Шапка с логотипом
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
@@ -77,7 +72,6 @@ class FinancePdfService {
               ),
               pw.SizedBox(height: 32),
 
-              // Сводная информация
               pw.Container(
                 padding: const pw.EdgeInsets.all(16),
                 decoration: pw.BoxDecoration(
@@ -116,7 +110,6 @@ class FinancePdfService {
               ),
               pw.SizedBox(height: 32),
 
-              // Детальная таблица
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300),
                 columnWidths: {
@@ -126,7 +119,6 @@ class FinancePdfService {
                   3: const pw.FlexColumnWidth(1.5),
                 },
                 children: [
-                  // Заголовок таблицы
                   pw.TableRow(
                     decoration: pw.BoxDecoration(color: PdfColors.grey100),
                     children: [
@@ -148,7 +140,6 @@ class FinancePdfService {
                       ),
                     ],
                   ),
-                  // Строки с данными
                   ...financeInfo.dailyInfo.map((daily) => pw.TableRow(
                     children: [
                       pw.Padding(
@@ -203,7 +194,6 @@ class FinancePdfService {
     final file = File('${output.path}/finance_report_$formattedDate.pdf');
     await file.writeAsBytes(await pdf.save());
     await OpenFilex.open(file.path);
-    print('PDF сохранен по пути: ${file.path}');
 
   }
 

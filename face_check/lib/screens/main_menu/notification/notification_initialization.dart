@@ -26,9 +26,7 @@ class _InitializationWidgetState extends State<InitializationWidget> {
 
   Future<void> _initializeApp() async {
     try {
-      // Ждем один кадр, чтобы context был доступен
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        // Инициализируем уведомления
         await NotificationService.initialize(context);
         await NotificationService.instance.scheduleWeeklyNotifications();
 
@@ -40,7 +38,6 @@ class _InitializationWidgetState extends State<InitializationWidget> {
       });
     } catch (e) {
       print('Ошибка инициализации: $e');
-      // В случае ошибки все равно показываем приложение
       if (mounted) {
         setState(() {
           _initialized = true;
@@ -51,7 +48,6 @@ class _InitializationWidgetState extends State<InitializationWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Получаем размеры экрана для адаптивности
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 

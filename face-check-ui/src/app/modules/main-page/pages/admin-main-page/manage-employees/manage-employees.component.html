@@ -37,11 +37,9 @@
         </button>
       </div>
 
-      <!-- Сообщения об успехе или ошибке -->
       <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
       <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-      <!-- Секция списка сотрудников -->
       <div class="employees-section">
         <h2>Current Employees</h2>
 
@@ -116,7 +114,6 @@
   </div>
 </div>
 
-<!-- Модальное окно информации о сотруднике -->
 <div class="modal-overlay" *ngIf="showEmployeeInfoModal">
   <div class="modal-container modal-large">
     <div class="modal-header">
@@ -130,7 +127,6 @@
       </div>
 
       <div *ngIf="!loading && employeePersonalInfo" class="employee-info-container">
-        <!-- Личная информация сотрудника -->
         <div class="employee-info-section">
           <h4>Personal Information</h4>
           <div class="info-grid">
@@ -171,32 +167,29 @@
         </div>
 
         <div class="role-management-section">
-          <h5>Управление ролями</h5>
+          <h5>Managing roles</h5>
           <div class="role-buttons">
-            <!-- Кнопки для роли USER -->
             <ng-container *ngIf="employeePersonalInfo?.role === 'USER'">
               <button class="action-button promote-button" (click)="promoteToForeman()">
-                <i class="fas fa-arrow-up"></i> Повысить до Foreman
+                <i class="fas fa-arrow-up"></i> Promote to Foreman
               </button>
               <button class="action-button promote-admin-button" (click)="promoteToAdmin()">
-                <i class="fas fa-arrow-up"></i> Повысить до Admin
+                <i class="fas fa-arrow-up"></i> Promote to Admin
               </button>
             </ng-container>
 
-            <!-- Кнопки для роли FOREMAN -->
             <ng-container *ngIf="employeePersonalInfo?.role === 'FOREMAN'">
               <button class="action-button demote-button" (click)="demoteToUser()">
-                <i class="fas fa-arrow-down"></i> Понизить до User
+                <i class="fas fa-arrow-down"></i> Demote to User
               </button>
               <button class="action-button promote-admin-button" (click)="promoteToAdmin()">
-                <i class="fas fa-arrow-up"></i> Повысить до Admin
+                <i class="fas fa-arrow-up"></i> Promote to Admin
               </button>
             </ng-container>
 
-            <!-- Кнопки для роли ADMIN -->
             <ng-container *ngIf="employeePersonalInfo?.role === 'ADMIN'">
               <button class="action-button demote-foreman-button" (click)="demoteToForeman()">
-                <i class="fas fa-arrow-down"></i> Понизить до Foreman
+                <i class="fas fa-arrow-down"></i> Demote to Foreman
               </button>
             </ng-container>
           </div>
@@ -223,7 +216,6 @@
             </div>
           </div>
 
-          <!-- Форма для создания нового входа -->
           <div *ngIf="activeTimeTab === 'changeNewPunchIn'" class="time-form">
             <h5>Set New Punch In</h5>
             <div class="form-group">
@@ -251,7 +243,6 @@
             </div>
           </div>
 
-          <!-- Форма для создания нового выхода -->
           <div *ngIf="activeTimeTab === 'changeNewPunchOut'" class="time-form">
             <h5>Set New Punch Out</h5>
             <div class="form-group">
@@ -282,7 +273,6 @@
 
         </div>
 
-        <!-- Форма генерации расписания -->
         <div class="schedule-section">
           <div class="schedule-header">
             <h4>Work Schedule</h4>
@@ -320,7 +310,6 @@
             </div>
           </div>
 
-          <!-- Сгенерированное расписание -->
           <div *ngIf="employeeGeneratedSchedule" class="generated-schedule">
             <h5>Current Schedule</h5>
             <div class="schedule-info">
@@ -429,7 +418,6 @@
   </div>
 </div>
 
-<!-- Модальное окно увольнения сотрудника -->
 <div class="modal-overlay" *ngIf="showFireModal">
   <div class="modal-container">
     <div class="modal-header">
@@ -451,7 +439,6 @@
   </div>
 </div>
 
-<!-- Модальное окно изменения почасовой ставки -->
 <div class="modal-overlay" *ngIf="showRateModal">
   <div class="modal-container">
     <div class="modal-header">

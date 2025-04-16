@@ -31,13 +31,10 @@ export class RegisterCompanyComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Проверка аутентификации пользователя
     this.isAuthenticated = this.authService.isUserAuthenticated();
 
-    // Если пользователь не аутентифицирован, перенаправляем на страницу входа
     if (!this.isAuthenticated) {
       this.errorMessage = 'Authentication required. Please sign in to register a company.';
-      // Сохраняем URL для перенаправления после входа
       localStorage.setItem('redirectAfterLogin', '/registration/company');
       setTimeout(() => {
         this.router.navigate(['/sign-in']);
@@ -65,7 +62,6 @@ export class RegisterCompanyComponent implements OnInit, OnDestroy {
       this.authSubscription.unsubscribe();
     }
 
-    // Проверяем еще раз наличие токена
     if (!this.authService.getToken()) {
       this.errorMessage = 'Authentication token not found. Please sign in again.';
       this.isLoading = false;
@@ -85,9 +81,7 @@ export class RegisterCompanyComponent implements OnInit, OnDestroy {
       ).subscribe({
         next: () => {
           console.log('Registration Company successful!');
-          // Показываем пользователю сообщение об успехе
           this.showSuccessMessage();
-          // Перенаправляем на страницу регистрации администратора
           setTimeout(() => {
             this.router.navigate(['/main-page/admin']);
           }, 1500);
@@ -106,11 +100,8 @@ export class RegisterCompanyComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Метод для отображения сообщения об успешной регистрации
   private showSuccessMessage(): void {
-    // Можно реализовать через сервис уведомлений или через состояние компонента
-    this.errorMessage = ''; // Очищаем ошибки
-    // Здесь можно добавить логику для отображения сообщения об успехе
+    this.errorMessage = '';
   }
 
   ngOnDestroy(): void {

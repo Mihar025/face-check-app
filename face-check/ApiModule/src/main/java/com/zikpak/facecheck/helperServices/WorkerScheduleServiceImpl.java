@@ -25,7 +25,6 @@ import java.util.List;
 public class WorkerScheduleServiceImpl implements WorkerScheduleI {
     private final WorkerScheduleRepository workerScheduleRepository;
     private final UserRepository userRepository;
-    private final WorkerScheduleMapper workerScheduleMapper;
 
 
     @Override
@@ -81,15 +80,11 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
         request.validate();
         var worker = findWorkerById(workerId);
 
-        // Находим ближайшее воскресенье
         LocalDate startDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        // Конец периода - через год
         LocalDate endDate = startDate.plusYears(1);
 
-        // Проходим по всем дням в году
         LocalDate currentDate = startDate;
         while (currentDate.isBefore(endDate)) {
-            // Пропускаем субботу
             if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY) {
                 WorkerSchedule workerSchedule = WorkerSchedule.builder()
                         .worker(worker)
@@ -102,7 +97,6 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
 
                 workerScheduleRepository.save(workerSchedule);
             }
-            // Переходим к следующему дню
             currentDate = currentDate.plusDays(1);
         }
 
@@ -112,41 +106,6 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
                 .endTime(request.getEndTime())
                 .build();
     }
-
-    /*
-@Override
-public WorkSchedulerResponse setScheduleForWorkerScenario( Integer workerId, WorkerSetScheduleRequest request) {
-    request.validate();
-    //  checkIsPersonHasAdminAndBusinessOwnerRoleAuthenticatedAndFindHim(authentication);
-    var worker = findWorkerById(workerId);
-
-    LocalDate currentDate = LocalDate.now();
-    if (currentDate.getDayOfWeek() == DayOfWeek.SATURDAY) {
-        throw new IllegalStateException("Construction work is not allowed on Saturdays!");
-    }
-
-    WorkerSchedule workerSchedule = WorkerSchedule.builder()
-            .worker(worker)
-            // .scheduleDate(currentDate)
-            .expectedStartTime(request.getStartTime())
-            .expectedEndTime(request.getEndTime())
-            .shift("DAY")
-            .isOnDuty(false)
-            .build();
-
-    workerScheduleRepository.save(workerSchedule);
-
-    return WorkSchedulerResponse.builder()
-            .workerId(worker.getId())
-            .startTime(request.getStartTime())
-            .endTime(request.getEndTime())
-            .build();
-}
-
-
-     */
-
-
 
 
     @Override

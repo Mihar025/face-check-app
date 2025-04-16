@@ -173,7 +173,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     final theme = Theme.of(context);
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    // Добавляем адаптивность для разных размеров экрана
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 

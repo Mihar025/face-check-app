@@ -15,7 +15,6 @@ export class PricingComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Инициализация компонента
   }
 
   navigateToSignIn(): void {
@@ -39,7 +38,6 @@ export class PricingComponent implements OnInit {
     this.router.navigate(['/sign-in'], { queryParams: { plan: plan } });
   }
 
-  // Добавляем метод для скролла
   scrollToPricingPlans(): void {
     const pricingPlans = this.document.getElementById('pricingPlans');
     if (pricingPlans) {

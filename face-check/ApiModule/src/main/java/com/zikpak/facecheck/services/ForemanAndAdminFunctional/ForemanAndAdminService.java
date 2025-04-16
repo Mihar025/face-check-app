@@ -36,7 +36,6 @@ public class ForemanAndAdminService implements AdminAndForemanFunctionality {
     private final WorkerAttendanceRepository workerAttendanceRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final WorkerPayrollRepository workerPayrollRepository;
 
 
 

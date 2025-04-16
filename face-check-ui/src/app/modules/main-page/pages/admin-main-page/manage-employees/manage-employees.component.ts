@@ -4,7 +4,7 @@ import {
   AdminControllerService,
   AuthenticationService,
   CompanyControllerService,
-  UserServiceControllerService, WorkScheduleControllerService
+  UserServiceControllerService, WorkerAttendanceControllerService, WorkScheduleControllerService
 } from "../../../../../services/services";
 import {RelatedUserInCompanyResponse} from "../../../../../services/models/related-user-in-company-response";
 import {GetAllEmployees$Params} from "../../../../../services/fn/company-controller/get-all-employees";
@@ -27,9 +27,7 @@ import {
 import {WorkerPersonalInformationResponse} from "../../../../../services/models/worker-personal-information-response";
 import {PunchInUpdateRequest} from "../../../../../services/models/punch-in-update-request";
 import {UpdatePunchInTime$Params} from "../../../../../services/fn/admin-controller/update-punch-in-time";
-import {ChangePunchInRequest} from "../../../../../services/models/change-punch-in-request";
 import {ChangePunchInForWorker$Params} from "../../../../../services/fn/admin-controller/change-punch-in-for-worker";
-import {ChangePunchOutRequest} from "../../../../../services/models/change-punch-out-request";
 import {ChangePunchOutForWorker$Params} from "../../../../../services/fn/admin-controller/change-punch-out-for-worker";
 import {PromoteToForeman$Params} from "../../../../../services/fn/company-controller/promote-to-foreman";
 import {
@@ -269,7 +267,7 @@ export class ManageEmployeesComponent implements OnInit {
       response => {
         if (response && response.companyName) {
           this.companyName = response.companyName;
-          this.companyName2 = response.companyName; // Устанавливаем имя компании для формы регистрации
+          this.companyName2 = response.companyName;
         }
       },
       error => {
@@ -309,7 +307,6 @@ export class ManageEmployeesComponent implements OnInit {
     this.loadAllEmployeesRelatedToCertainCompany();
   }
 
-  // Модальное окно информации о сотруднике
   openEmployeeInfoModal(workerId: number | undefined) {
     if (workerId === undefined) {
       this.errorMessage = "Cannot show employee info: Employee ID is not defined";
@@ -332,12 +329,10 @@ export class ManageEmployeesComponent implements OnInit {
 
   toggleScheduleForm() {
     this.showScheduleForm = !this.showScheduleForm;
-    // Reset schedule form
     this.startTime = {};
     this.endTime = {};
   }
 
-  // Модальное окно добавления сотрудника
   openAddEmployeeModal() {
     this.resetForm();
     this.showAddEmployeeModal = true;
@@ -373,7 +368,7 @@ export class ManageEmployeesComponent implements OnInit {
       () => {
         this.loading = false;
         this.successMessage = "Employee registered successfully!";
-        this.closeAddEmployeeModal(); // Закрываем модальное окно после успеха
+        this.closeAddEmployeeModal();
         this.resetForm();
         this.loadAllEmployeesRelatedToCertainCompany();
       },
@@ -384,7 +379,6 @@ export class ManageEmployeesComponent implements OnInit {
     );
   }
 
-  // Увольнение сотрудника
   openFireModal(workerId: number | undefined) {
     if (workerId === undefined) {
       this.errorMessage = "Cannot fire employee: Employee ID is not defined";
@@ -413,7 +407,7 @@ export class ManageEmployeesComponent implements OnInit {
         this.loading = false;
         this.showFireModal = false;
         this.successMessage = "Employee fired successfully.";
-        this.loadAllEmployeesRelatedToCertainCompany(); // Обновляем список сотрудников
+        this.loadAllEmployeesRelatedToCertainCompany();
       },
       error => {
         this.errorMessage = 'Cannot fire employee: ' + (error.message || 'Unknown problem');
@@ -422,7 +416,6 @@ export class ManageEmployeesComponent implements OnInit {
     );
   }
 
-  // Изменение почасовой ставки
   openChangeRateModal(workerId: number | undefined, currentRate: number | undefined) {
     if (workerId === undefined) {
       this.errorMessage = "Cannot change rate: Employee ID is not defined";
@@ -465,34 +458,6 @@ export class ManageEmployeesComponent implements OnInit {
     });
   }
 
-  loadEmployeeRateInfo(workerId: number | undefined) {
-    if (workerId === undefined) {
-      this.errorMessage = "Cannot load employee rate: Employee ID is not defined";
-      return;
-    }
-
-    this.loading = true;
-    this.errorMessage = '';
-
-    // Получаем ID компании
-    this.loadAdminsCompanyId().then(companyId => {
-      const params: GetEmployeeRate$Params = {
-        companyId: companyId,
-        employeeId: workerId
-      };
-
-      this.companyService.getEmployeeRate(params).subscribe(
-        (response: EmployeeSalaryResponse) => {
-          this.employeeRateInfo = response;
-          this.loading = false;
-        },
-        error => {
-          this.errorMessage = 'Cannot load employee rate information: ' + (error.message || 'Unknown problem');
-          this.loading = false;
-        }
-      );
-    });
-  }
 
   findWorkerPersonalInformation(workerId: number | undefined) {
     if (workerId === undefined) {
@@ -533,7 +498,6 @@ export class ManageEmployeesComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    // Преобразуем время в строковый формат ISO-8601, который ожидает Jackson для LocalTime
     const startTimeStr = `${this.startTime.hour.toString().padStart(2, '0')}:${(this.startTime.minute || 0).toString().padStart(2, '0')}:00`;
     const endTimeStr = `${this.endTime.hour.toString().padStart(2, '0')}:${(this.endTime.minute || 0).toString().padStart(2, '0')}:00`;
 
@@ -688,6 +652,4 @@ export class ManageEmployeesComponent implements OnInit {
       }
     );
   }
-
-
 }

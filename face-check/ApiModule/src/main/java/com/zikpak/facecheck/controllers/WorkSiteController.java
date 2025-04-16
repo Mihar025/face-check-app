@@ -203,7 +203,6 @@ public class WorkSiteController {
 
 
 
-    //todo tomorrow figure out what wrong with start day time!
     @GetMapping("/{workSiteId}/active-workers")
     @Operation(summary = "Get list of workers whose working right now in worksite and related to special company")
     public ResponseEntity<PageResponse<WorkerCurrentlyWorkingInWorkSite>> getActiveWorkers(
