@@ -1,5 +1,8 @@
 package com.zikpak.facecheck.entity;
 
+import com.zikpak.facecheck.entity.W4.EmploymentType;
+import com.zikpak.facecheck.entity.W4.FilingStatus;
+import com.zikpak.facecheck.entity.W4.PayFrequency;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.entity.employee.WorkerPayroll;
@@ -84,6 +87,26 @@ public class User implements UserDetails, Principal {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private FilingStatus filingStatus;
+
+    @Column(nullable = false)
+    private Integer dependents; // <- Reminder this field for how many childrens has person which working! For W4 Form
+
+    @Column(nullable = false)
+    private BigDecimal extraWithHoldings;
+
+    @Column(nullable = false)
+    private Boolean livesInNYC;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PayFrequency payFrequency;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EmploymentType employmentType;
 
 
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
