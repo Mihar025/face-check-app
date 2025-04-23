@@ -56,7 +56,6 @@ public class AuthenticationService {
        var role = authenticationServiceImpl.findRoleUser();
             var company = authenticationServiceImpl.findCompanyByName(request.getCompanyName());
             var user = userMapper.toWorker(request);
-            user.setPhoneNumber(request.getPhoneNumber());
 
             user.setRoles(List.of(role));
             user.setCompany(company);
