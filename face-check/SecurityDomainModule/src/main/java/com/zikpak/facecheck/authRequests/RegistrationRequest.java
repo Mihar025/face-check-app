@@ -1,6 +1,9 @@
 package com.zikpak.facecheck.authRequests;
 
 import com.zikpak.facecheck.entity.Gender;
+import com.zikpak.facecheck.entity.W4.EmploymentType;
+import com.zikpak.facecheck.entity.W4.FilingStatus;
+import com.zikpak.facecheck.entity.W4.PayFrequency;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +24,7 @@ public class RegistrationRequest {
     @NotBlank(message = "Home Address cannot be empty or blank")
     private String homeAddress;
 
+    @NotNull(message = "Date of birth is required")
     private LocalDate dateOfBirth;
 
     @NotBlank(message = "Company name cannot be empty or blank")
@@ -32,6 +36,7 @@ public class RegistrationRequest {
     @NotNull(message = "Gender is required")
     private Gender gender;
 
+    @NotNull(message = "SSN is required")
     private String SSN_WORKER;
 
     @NotBlank(message = "Phonenumber is required!")
@@ -46,4 +51,21 @@ public class RegistrationRequest {
     @Size(min = 6, message = "Password should be minimum 4 characters")
     private String password;
 
+
+    @NotNull(message = "Filling status is required")
+    private FilingStatus filingStatus;
+    @NotNull(message = "Number of Child is required")
+    private Integer dependents;
+
+    @NotNull(message = "Extra withholding is required")
+    private BigDecimal extraWithHoldings;
+
+    @NotNull(message = " is person live in NYC required")
+    private Boolean livesInNYC;
+
+    @NotNull(message = " Pay Frequency is required")
+    private PayFrequency payFrequency;
+
+    @NotNull(message = "Employment type is required")
+    private EmploymentType employmentType;
 }

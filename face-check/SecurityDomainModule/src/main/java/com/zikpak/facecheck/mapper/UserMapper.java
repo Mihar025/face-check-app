@@ -63,18 +63,24 @@ public class UserMapper {
         return User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .homeAddress(request.getHomeAddress())
+                .dateOfBirth(request.getDateOfBirth())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .SSN_WORKER((request.getSSN_WORKER()))
-                .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
                 .accountLocked(false)
                 .enabled(false)
                 .isAdmin(false)
                 .isForeman(false)
                 .isUser(true)
-                .homeAddress(request.getHomeAddress())
                 .phoneNumber(request.getPhoneNumber())
+
+                .dependents(request.getDependents())
+                .extraWithHoldings(request.getExtraWithHoldings())
+                .livesInNYC(request.getLivesInNYC())
+                .payFrequency(request.getPayFrequency())
+                .employmentType(request.getEmploymentType())
                 .build();
     }
 
@@ -112,6 +118,12 @@ public class UserMapper {
                 .isForeman(false)
                 .isUser(false)
                 .homeAddress(request.getHomeAddress())
+
+                .dependents(request.getDependents())
+                .extraWithHoldings(request.getExtraWithHoldings())
+                .livesInNYC(request.getLivesInNYC())
+                .payFrequency(request.getPayFrequency())
+                .employmentType(request.getEmploymentType())
                 .build();
     }
 
