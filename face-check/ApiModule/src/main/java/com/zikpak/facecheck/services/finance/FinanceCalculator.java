@@ -185,7 +185,6 @@ public class FinanceCalculator {
 
         FilingStatus status = user.getFilingStatus();
 
-        // === Брейкеты для каждого FilingStatus ===
         BigDecimal[] brackets;
         BigDecimal[] rates;
         BigDecimal[] baseTax;
