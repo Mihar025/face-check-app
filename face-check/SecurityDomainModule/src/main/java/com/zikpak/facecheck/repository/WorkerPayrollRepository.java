@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,4 +34,5 @@ public interface WorkerPayrollRepository extends JpaRepository<WorkerPayroll, In
             User worker, LocalDate startDate, LocalDate endDate);
 
 
+    List<WorkerPayroll> findAllByWorkerIdAndPeriodEndLessThanEqual(Integer workerId, LocalDate endDate);
 }

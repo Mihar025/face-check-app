@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -26,10 +27,12 @@ public class WorkerSchedule {
 
     @ManyToOne
     private WorkSite workSite;
-
     private LocalDate scheduleDate;
     private LocalTime expectedStartTime;
     private LocalTime expectedEndTime;
     private String shift;
     private Boolean isOnDuty;
+    private LocalDateTime startLunch;
+    private LocalDateTime endLunch;
+    private Boolean isCompanyPayingLunch;
 }
