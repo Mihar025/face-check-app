@@ -7,9 +7,11 @@ import com.zikpak.facecheck.entity.employee.WorkerPayroll;
 import com.zikpak.facecheck.entity.employee.WorkerSchedule;
 import com.zikpak.facecheck.repository.*;
 import com.zikpak.facecheck.requestsResponses.attendance.*;
+import com.zikpak.facecheck.requestsResponses.finance.PayStubResponse;
 import com.zikpak.facecheck.requestsResponses.worker.DailyFinanceInfo;
 import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinanceScreenResponse;
 import com.zikpak.facecheck.security.AuthenticationServiceImpl;
+import com.zikpak.facecheck.services.finance.FinanceCalculator;
 import com.zikpak.facecheck.services.workSiteService.WorkSiteService;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import jakarta.transaction.Transactional;
@@ -41,6 +43,7 @@ public class WorkAttendanceService {
         private final WorkerSiteRepository workSiteRepository;
         private final WorkerPayrollRepository workerPayrollRepository;
         private final WorkerScheduleRepository workerScheduleRepository;
+        private final FinanceCalculator financeCalculator;
 
         @Transactional
         public PunchInResponse makePunchIn(Authentication authentication, PunchInRequest punchInRequest) {
@@ -74,14 +77,14 @@ public class WorkAttendanceService {
                         user.setCurrentWorkSite(workSite);
                         return createSuccessResponseForPunchIn(user, workSite, savedAttendance);
 
-                }catch (Exception e){
+                } catch (Exception e) {
                         log.error(e.getMessage());
                         return createErrorResponseForPunchIn(e.getMessage());
                 }
 
         }
 
-        @Transactional
+
         public PunchOutResponse makePunchOut(Authentication authentication, PunchOutRequest punchOutRequest) {
                 try {
                         User user = validateAndGetUserByEmail(authentication);
@@ -112,13 +115,13 @@ public class WorkAttendanceService {
                         calculateWorkedHours(existingAttendance);
                         WorkerAttendance savedAttendance = workerAttendanceRepository.save(existingAttendance);
 
-                        log.info("Before updatePayrollOnPunchOut - attendance hours: {}, overtime: {}",
+                        log.info("After calculating hours - hours worked: {}, overtime: {}",
                                 savedAttendance.getHoursWorked(), savedAttendance.getOvertimeHours());
 
-
                         WorkerPayroll payroll = updatePayrollOnPunchOut(savedAttendance);
-                        log.info("After updatePayrollOnPunchOut - payroll ID: {}, regular hours: {}, overtime: {}, gross pay: {}",
-                                payroll.getId(), payroll.getRegularHours(), payroll.getOvertimeHours(), payroll.getGrossPay());
+
+                        log.info("After payroll update - attendance hours: {}, payroll hours: {}",
+                                savedAttendance.getHoursWorked(), payroll.getRegularHours() + payroll.getOvertimeHours());
 
                         workSite.setIsWorkerDidPunchIn(Boolean.FALSE);
                         return createSuccessResponseForPunchOut(user, workSite, savedAttendance);
@@ -253,7 +256,6 @@ public class WorkAttendanceService {
         }
 
 
-
         private WorkerSchedule getWorkerScheduleForDate(User worker, LocalDate date) {
                 return workerScheduleRepository.findByWorkerAndScheduleDate(worker, date)
                         .orElseThrow(() -> new IllegalStateException("No schedule found for worker on date: " + date));
@@ -261,73 +263,125 @@ public class WorkAttendanceService {
 
 
         private void calculateWorkedHours(WorkerAttendance attendance) {
+                // Получаем данные о сотруднике из посещения
                 User worker = attendance.getWorker();
                 LocalDate attendanceDate = attendance.getCheckInTime().toLocalDate();
 
+                // Находим расписание для конкретного сотрудника на этот день
                 WorkerSchedule schedule = getWorkerScheduleForDate(worker, attendanceDate);
+                if (schedule == null) {
+                        log.error("No schedule found for worker ID {} on date {}", worker.getId(), attendanceDate);
+                        throw new IllegalStateException("No schedule found for worker on date: " + attendanceDate);
+                }
 
-                LocalDateTime checkInTime = attendance.getCheckInTime();
-                LocalDateTime checkOutTime = attendance.getCheckOutTime();
+                // Получаем время начала и конца смены из расписания
+                LocalTime scheduleStartTime = schedule.getExpectedStartTime();
+                LocalTime scheduleEndTime = schedule.getExpectedEndTime();
 
-                log.info("Calculating hours for worker {} - Schedule: {} to {}, Actual: {} to {}",
+                // Создаем реальные datetime объекты для расписания на текущий день
+                LocalDateTime scheduledStart = attendance.getCheckInTime().toLocalDate().atTime(scheduleStartTime);
+                LocalDateTime scheduledEnd = attendance.getCheckInTime().toLocalDate().atTime(scheduleEndTime);
+
+                // Получаем время обеда
+                LocalDateTime lunchStartTime = attendance.getCheckInTime().toLocalDate().atTime(schedule.getStartLunch().toLocalTime());
+                LocalDateTime lunchEndTime = attendance.getCheckInTime().toLocalDate().atTime(schedule.getEndLunch().toLocalTime());
+                boolean isPayingLunch = schedule.getIsCompanyPayingLunch();
+                double lunchDuration = java.time.Duration.between(lunchStartTime, lunchEndTime).toMinutes() / 60.0;
+
+                // Получаем фактическое время входа/выхода
+                LocalDateTime actualCheckIn = attendance.getCheckInTime();
+                LocalDateTime actualCheckOut = attendance.getCheckOutTime();
+
+                log.info("Worker {} schedule - Expected hours: {} to {}, Lunch: {} to {}, Paying lunch: {}",
                         worker.getId(),
-                        schedule.getExpectedStartTime(),
-                        schedule.getExpectedEndTime(),
-                        checkInTime.toLocalTime(),
-                        checkOutTime.toLocalTime());
+                        scheduleStartTime,
+                        scheduleEndTime,
+                        schedule.getStartLunch().toLocalTime(),
+                        schedule.getEndLunch().toLocalTime(),
+                        isPayingLunch);
 
-                LocalDateTime scheduleStart = checkInTime.with(schedule.getExpectedStartTime());
-                LocalDateTime scheduleEnd = checkInTime.with(schedule.getExpectedEndTime());
+                log.info("Worker actual attendance - Check in: {}, Check out: {}",
+                        actualCheckIn, actualCheckOut);
 
-                LocalDateTime effectiveStartTime;
-                if (checkInTime.isBefore(scheduleStart)) {
-                        effectiveStartTime = scheduleStart;
+                // Определяем эффективное время начала работы (не раньше запланированного)
+                LocalDateTime effectiveCheckIn;
+                if (actualCheckIn.isBefore(scheduledStart)) {
+                        effectiveCheckIn = scheduledStart;
+                        log.info("Worker checked in early at {}, adjusted to scheduled start: {}", actualCheckIn, effectiveCheckIn);
                 } else {
-                        effectiveStartTime = checkInTime;
+                        effectiveCheckIn = actualCheckIn;
                 }
 
-                LocalDateTime effectiveEndTime;
-                if (checkOutTime.isAfter(scheduleEnd)) {
-                        effectiveEndTime = scheduleEnd;
+                // Определяем эффективное время окончания работы (не позже запланированного, если нет овертайма)
+                LocalDateTime effectiveCheckOut;
+                if (actualCheckOut.isAfter(scheduledEnd)) {
+                        // Сохраняем только часы работы по графику, овертайм будет рассчитан отдельно
+                        effectiveCheckOut = scheduledEnd;
+                        log.info("Worker checked out late at {}, regular hours capped at scheduled end: {}", actualCheckOut, effectiveCheckOut);
                 } else {
-                        effectiveEndTime = checkOutTime;
+                        effectiveCheckOut = actualCheckOut;
                 }
 
-                log.info("Effective times - Start: {}, End: {}", effectiveStartTime, effectiveEndTime);
+                // Обработка обеденного перерыва
+                double totalHours;
 
+                // Случай 1: Работник ушел до начала обеда
+                if (effectiveCheckOut.isBefore(lunchStartTime)) {
+                        // Просто считаем время между входом и выходом
+                        totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
+                        log.info("Worker left before lunch break, total hours: {}", totalHours);
+                }
+                // Случай 2: Работник ушел во время обеда и компания не платит за обед
+                else if (effectiveCheckOut.isAfter(lunchStartTime) && effectiveCheckOut.isBefore(lunchEndTime) && !isPayingLunch) {
+                        // Считаем только до начала обеда
+                        totalHours = java.time.Duration.between(effectiveCheckIn, lunchStartTime).toMinutes() / 60.0;
+                        log.info("Worker left during lunch and company doesn't pay lunch, hours counted to lunch start: {}", totalHours);
+                }
+                // Случай 3: Работник работал через обед
+                else {
+                        if (isPayingLunch) {
+                                // Компания платит за обед, считаем всё время
+                                totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
+                                log.info("Company pays for lunch, counting full time: {}", totalHours);
+                        } else {
+                                // Компания не платит за обед, вычитаем время обеда
+                                double hoursBeforeLunch = 0;
+                                if (effectiveCheckIn.isBefore(lunchStartTime)) {
+                                        hoursBeforeLunch = java.time.Duration.between(effectiveCheckIn, lunchStartTime).toMinutes() / 60.0;
+                                }
 
-                double totalHours = java.time.Duration.between(effectiveStartTime, effectiveEndTime)
-                        .toMinutes() / 60.0;
+                                double hoursAfterLunch = 0;
+                                if (effectiveCheckOut.isAfter(lunchEndTime)) {
+                                        hoursAfterLunch = java.time.Duration.between(lunchEndTime, effectiveCheckOut).toMinutes() / 60.0;
+                                }
 
-
-                if (totalHours > 6.0) {
-                        totalHours -= 0.75;
-                        log.info("Deducted 1 hour for lunch break");
+                                totalHours = hoursBeforeLunch + hoursAfterLunch;
+                                log.info("Company doesn't pay for lunch, hours calculated: before lunch {}, after lunch {}, total {}",
+                                        hoursBeforeLunch, hoursAfterLunch, totalHours);
+                        }
                 }
 
-                log.info("Regular hours calculated: {}", totalHours);
+                // Устанавливаем рассчитанные часы
                 attendance.setHoursWorked(totalHours);
+                log.info("Total regular hours calculated: {}", totalHours);
 
-                if (checkOutTime.isAfter(scheduleEnd)) {
-                        double overtimeHours = java.time.Duration.between(scheduleEnd, checkOutTime)
-                                .toMinutes() / 60.0;
+                // Расчет овертайма, если работник работал дольше запланированного времени
+                calculateOvertime(attendance, scheduledEnd, actualCheckOut);
+        }
+
+        private void calculateOvertime(WorkerAttendance attendance, LocalDateTime scheduledEnd, LocalDateTime actualCheckOut) {
+                if (actualCheckOut.isAfter(scheduledEnd)) {
+                        double overtimeHours = java.time.Duration.between(scheduledEnd, actualCheckOut).toMinutes() / 60.0;
                         attendance.setOvertimeHours(overtimeHours);
                         log.info("Overtime hours: {}", overtimeHours);
                 } else {
                         attendance.setOvertimeHours(0.0);
                 }
-
         }
 
 
-        private User validateAndGetUser(Authentication authentication) {
-                User user = ((User) authentication.getPrincipal());
-                if(user == null || user.getId() == null){
-                        throw new RuntimeException("User not found");
-                }
-                return userRepository.findById(user.getId())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-        }
+
+
 
         private User validateAndGetUserByEmail(Authentication authentication) {
                 User user = ((User) authentication.getPrincipal());
@@ -396,22 +450,7 @@ public class WorkAttendanceService {
                 }
         }
 
-        private void validatePunchOutTime(WorkerSchedule schedule) {
-                LocalTime currentTime = LocalTime.now();
-                LocalTime earliestAllowed = schedule.getExpectedEndTime().minusHours(1);
-                LocalTime latestAllowed = schedule.getExpectedEndTime().plusHours(1);
-                if (currentTime.isBefore(earliestAllowed)) {
-                        throw new IllegalStateException(
-                                "Too early for punch-out. Allowed from: " + earliestAllowed
-                        );
-                }
 
-                if (currentTime.isAfter(latestAllowed)) {
-                        throw new IllegalStateException(
-                                "Too late for punch-out. Last allowed time was: " + latestAllowed
-                        );
-                }
-        }
 
 
         private WorkerAttendance createAttendance(User user, PunchInRequest punchInRequest, String photoUrl) {
@@ -424,17 +463,6 @@ public class WorkAttendanceService {
                         .build();
         }
 
-        private WorkerAttendance createAttendanceForPunchOut(User user, PunchOutRequest punchOutRequest, String photoUrl) {
-                return WorkerAttendance.builder()
-                        .worker(user)
-
-                        .checkOutTime(LocalDateTime.now())
-                        .checkOutPhotoUrl(photoUrl)
-                        .checkOutLatitude(punchOutRequest.getLatitude())
-                        .checkOutLongitude(punchOutRequest.getLongitude())
-                        .build();
-
-        }
 
         private PunchInResponse createSuccessResponseForPunchIn(User user, WorkSite workSite, WorkerAttendance savedAttendance) {
                 return PunchInResponse.builder()
@@ -498,12 +526,12 @@ public class WorkAttendanceService {
         }
 
 
-        @Transactional
         public WorkerPayroll updatePayrollOnPunchOut(WorkerAttendance workerAttendance) {
                 User worker = workerAttendance.getWorker();
                 LocalDate now = workerAttendance.getCheckOutTime().toLocalDate();
 
-                log.info("Starting updatePayrollOnPunchOut - worker: {}, date: {}", worker.getId(), now);
+                log.info("Starting updatePayrollOnPunchOut - worker: {}, date: {}, hours: {}",
+                        worker.getId(), now, workerAttendance.getHoursWorked());
 
                 WorkerPayroll currentPayroll = workerPayrollRepository
                         .findFirstByWorkerAndPeriodStartLessThanEqualAndPeriodEndGreaterThanEqualOrderByPeriodEndDesc(worker, now, now)
@@ -518,7 +546,7 @@ public class WorkAttendanceService {
                 log.info("Before calculations - payroll ID: {}, base rate: {}",
                         currentPayroll.getId(), currentPayroll.getBaseHourlyRate());
 
-                updatePayrollCalculations(currentPayroll);
+                updatePayrollCalculations(currentPayroll, workerAttendance);
 
                 log.info("After calculations - regular hours: {}, overtime: {}, gross pay: {}",
                         currentPayroll.getRegularHours(), currentPayroll.getOvertimeHours(), currentPayroll.getGrossPay());
@@ -557,103 +585,125 @@ public class WorkAttendanceService {
                         .build();
         }
 
-        @Transactional
-        public void updatePayrollCalculations(WorkerPayroll payroll) {
-                log.info("Starting payroll calculations");
+        public void updatePayrollCalculations(WorkerPayroll payroll, WorkerAttendance currentAttendance) {
+                log.info("🔄 Starting payroll calculations with current attendance - hours worked: {}, overtime: {}",
+                        currentAttendance.getHoursWorked(), currentAttendance.getOvertimeHours());
 
+                // Получаем все посещения за период, кроме текущего
                 List<WorkerAttendance> periodAttendances = workerAttendanceRepository
                         .findAllByWorkerIdAndCheckInTimeBetween(
                                 payroll.getWorker().getId(),
                                 payroll.getPeriodStart().atStartOfDay(),
-                                payroll.getPeriodEnd().atTime(LocalTime.MAX));
+                                payroll.getPeriodEnd().atTime(LocalTime.MAX))
+                        .stream()
+                        .filter(a -> !a.getId().equals(currentAttendance.getId())) // Исключаем текущее посещение
+                        .collect(Collectors.toList());
 
-                log.info("Found {} attendances for period", periodAttendances.size());
+                log.info("✅ Found {} previous attendances for payroll period", periodAttendances.size());
 
-                WorkerAttendance currentAttendance = workerAttendanceRepository
-                        .findFirstByWorkerAndCheckOutTimeIsNotNullOrderByCheckOutTimeDesc(payroll.getWorker())
-                        .orElseThrow(() -> new RuntimeException("Current attendance not found"));
-
-                if (!periodAttendances.contains(currentAttendance)) {
-                        periodAttendances.add(currentAttendance);
-                        log.info("Added current attendance to calculations");
-                }
+                // Добавляем текущее посещение
+                periodAttendances.add(currentAttendance);
 
                 double totalRegularHours = 0;
                 double totalOvertimeHours = 0;
 
+                // Суммируем часы по всем посещениям
                 for (WorkerAttendance attendance : periodAttendances) {
                         if (attendance.getHoursWorked() != null) {
-                                double dailyHours = attendance.getHoursWorked();
-                                log.info("Processing attendance ID: {} - hours worked: {}", attendance.getId(), dailyHours);
-
-                                if (dailyHours > 8) {
-                                        totalRegularHours += 8;
-                                        totalOvertimeHours += dailyHours - 8;
-                                } else {
-                                        totalRegularHours += dailyHours;
-                                }
+                                totalRegularHours += attendance.getHoursWorked();
+                        }
+                        if (attendance.getOvertimeHours() != null) {
+                                totalOvertimeHours += attendance.getOvertimeHours();
                         }
                 }
 
-                log.info("Calculated total hours - regular: {}, overtime: {}", totalRegularHours, totalOvertimeHours);
+                log.info("Total hours calculated - regular: {}, overtime: {}", totalRegularHours, totalOvertimeHours);
 
                 payroll.setRegularHours(totalRegularHours);
                 payroll.setOvertimeHours(totalOvertimeHours);
                 payroll.setTotalHours(totalRegularHours + totalOvertimeHours);
 
-
-
+                // Проверяем и устанавливаем базовые ставки
                 if (payroll.getBaseHourlyRate() == null || payroll.getBaseHourlyRate().compareTo(BigDecimal.ZERO) == 0) {
                         payroll.setBaseHourlyRate(BigDecimal.valueOf(15.0));
-                        log.info("Set default base rate: {}", payroll.getBaseHourlyRate());
+                        log.info("📌 Set default base hourly rate: {}", payroll.getBaseHourlyRate());
                 }
 
                 if (payroll.getOvertimeRate() == null || payroll.getOvertimeRate().compareTo(BigDecimal.ZERO) == 0) {
-                        payroll.setOvertimeRate(BigDecimal.valueOf(22.5));
-                        log.info("Set default overtime rate: {}", payroll.getOvertimeRate());
+                        payroll.setOvertimeRate(payroll.getBaseHourlyRate().multiply(BigDecimal.valueOf(1.5)));
+                        log.info("📌 Set default overtime rate: {}", payroll.getOvertimeRate());
                 }
 
-                BigDecimal regularPay = payroll.getBaseHourlyRate().multiply(BigDecimal.valueOf(totalRegularHours));
-                BigDecimal overtimePay = payroll.getOvertimeRate().multiply(BigDecimal.valueOf(totalOvertimeHours));
+                // Расчет заработной платы
+                PayStubResponse response = financeCalculator.calculateNetPay(
+                        payroll.getWorker(),
+                        payroll.getBaseHourlyRate(),
+                        payroll.getOvertimeRate(),
+                        payroll.getTotalHours(),
+                        calculateYtdPFL(payroll.getWorker(), payroll.getPeriodStart()),
+                        calculateYtdSocialSecurity(payroll.getWorker(), payroll.getPeriodStart())
+                );
 
-                payroll.setRegularPay(regularPay);
-                payroll.setOvertimePay(overtimePay);
-                payroll.setGrossPay(regularPay.add(overtimePay));
+                // Обновляем зарплатные данные
+                payroll.setGrossPay(response.getGrossPay());
+                payroll.setNetPay(response.getNetPay());
+                payroll.setMedicare(response.getMedicare());
+                payroll.setSocialSecurityEmployee(response.getSocialSecurity());
+                payroll.setFederalWithholding(response.getFederalTax());
+                payroll.setNyStateWithholding(response.getStateTax());
+                payroll.setNyLocalWithholding(response.getNycTax());
+                payroll.setNyDisabilityWithholding(response.getDisability());
+                payroll.setNyPaidFamilyLeave(response.getPfl());
+                payroll.setTotalDeductions(response.getTotalDeductions());
 
+                // Расчет зарплаты за текущий день
+                BigDecimal baseRate = payroll.getBaseHourlyRate();
+                BigDecimal overtimeRate = payroll.getOvertimeRate();
+                double dayRegularHours = currentAttendance.getHoursWorked() != null ? currentAttendance.getHoursWorked() : 0.0;
+                double dayOvertimeHours = currentAttendance.getOvertimeHours() != null ? currentAttendance.getOvertimeHours() : 0.0;
 
-                log.info("Set payroll values - regular pay: {}, overtime pay: {}, gross pay: {}",
-                        regularPay, overtimePay, payroll.getGrossPay());
+                // Рассчитываем дневную зарплату
+                BigDecimal dayRegularPay = baseRate.multiply(BigDecimal.valueOf(dayRegularHours));
+                BigDecimal dayOvertimePay = overtimeRate.multiply(BigDecimal.valueOf(dayOvertimeHours));
+                BigDecimal dayGrossPay = dayRegularPay.add(dayOvertimePay);
 
-                calculateDeductions(payroll);
-                var x = payroll.getGrossPay().subtract(payroll.getTotalDeductions());
-                payroll.setNetPay(payroll.getGrossPay().subtract(payroll.getTotalDeductions()));
+                // Расчет удержаний за день (пропорционально дневной зарплате)
+                BigDecimal dayDeductionsRatio = dayGrossPay.compareTo(BigDecimal.ZERO) > 0 && response.getGrossPay().compareTo(BigDecimal.ZERO) > 0
+                        ? dayGrossPay.divide(response.getGrossPay(), 4, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO;
 
-                double currentDayHours = currentAttendance.getHoursWorked() != null ? currentAttendance.getHoursWorked() : 0.0;
+                BigDecimal dayDeductions = response.getTotalDeductions().multiply(dayDeductionsRatio);
+                BigDecimal dayNetPay = dayGrossPay.subtract(dayDeductions);
 
-                double regularHours = Math.min(currentDayHours, 8.0);
-                double overtimeHours = currentDayHours > 8.0 ? currentDayHours - 8.0 : 0.0;
+                // Обновляем данные о дневной зарплате в записи о посещении
+                currentAttendance.setGrossPayPerDay(dayGrossPay);
+                currentAttendance.setNetPay(dayNetPay);
 
+                // Сохраняем обновленную запись о посещении
+                workerAttendanceRepository.save(currentAttendance);
 
-                BigDecimal currentDayRegularPay = payroll.getBaseHourlyRate()
-                        .multiply(BigDecimal.valueOf(regularHours));
-                BigDecimal currentDayOvertimePay = payroll.getOvertimeRate()
-                        .multiply(BigDecimal.valueOf(overtimeHours));
-
-
-                BigDecimal currentDayGrossPay = currentDayRegularPay.add(currentDayOvertimePay);
-
-                log.info("Daily pay calculation - hours: {}, regular hours: {}, overtime: {}, total pay: {}",
-                        currentDayHours, regularHours, overtimeHours, currentDayGrossPay);
-
-
-                BigDecimal dailyDeductions = payroll.getTotalDeductions()
-                        .multiply(currentDayGrossPay)
-                        .divide(payroll.getGrossPay(), 2, RoundingMode.HALF_UP);
-                currentAttendance.setNetPay(currentDayGrossPay.subtract(dailyDeductions));
-                currentAttendance.setGrossPayPerDay(currentDayGrossPay);
-
+                log.info("✅ Daily pay calculated - gross: {}, net: {}", dayGrossPay, dayNetPay);
+                log.info("✅ Total payroll updated - gross: {}, net: {}", response.getGrossPay(), response.getNetPay());
         }
 
+        private BigDecimal calculateYtdPFL(User user, LocalDate untilDate) {
+                return workerPayrollRepository
+                        .findAllByWorkerIdAndPeriodEndLessThanEqual(user.getId(), untilDate)
+                        .stream()
+                        .map(p -> p.getNyPaidFamilyLeave() != null ? p.getNyPaidFamilyLeave() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        private BigDecimal calculateYtdSocialSecurity(User user, LocalDate untilDate) {
+                return workerPayrollRepository
+                        .findAllByWorkerIdAndPeriodEndLessThanEqual(user.getId(), untilDate)
+                        .stream()
+                        .map(p -> p.getGrossPay() != null ? p.getGrossPay() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+
+        /*
         private void calculateDeductions(WorkerPayroll payroll) {
                 BigDecimal grossPay = payroll.getGrossPay();
 
@@ -677,6 +727,8 @@ public class WorkAttendanceService {
 
                 payroll.setTotalDeductions(totalDeductions);
         }
+
+         */
 
         public LastPunchTimeDTO getLastPunchTime(Authentication authentication) {
                 User user = validateAndGetUserByEmail(authentication);

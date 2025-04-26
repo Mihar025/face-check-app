@@ -88,24 +88,24 @@ public class User implements UserDetails, Principal {
     private Gender gender;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true)
     private FilingStatus filingStatus;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Integer dependents; // <- Reminder this field for how many childrens has person which working! For W4 Form
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private BigDecimal extraWithHoldings;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Boolean livesInNYC;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true)
     private PayFrequency payFrequency;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true)
     private EmploymentType employmentType;
 
 

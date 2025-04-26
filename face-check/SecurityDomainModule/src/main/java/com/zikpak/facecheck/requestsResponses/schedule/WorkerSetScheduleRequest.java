@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Data
@@ -17,6 +18,12 @@ public class WorkerSetScheduleRequest {
     private LocalTime startTime;
     @NotNull(message = "End Time cannot be null")
     private LocalTime endTime;
+    @NotNull(message = "startLunch cannot be null")
+    private LocalDateTime startLunch;
+    @NotNull(message = "endLunch cannot be null")
+    private LocalDateTime endLunch;
+    @NotNull(message = "isCompanyPayingLunch cannot be null")
+    private Boolean isCompanyPayingLunch;
 
     public void validate(){
         LocalTime minimumStartTime = LocalTime.of(6,30);

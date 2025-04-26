@@ -91,6 +91,9 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
                         .scheduleDate(currentDate)
                         .expectedStartTime(request.getStartTime())
                         .expectedEndTime(request.getEndTime())
+                        .startLunch(request.getStartLunch())
+                        .endLunch(request.getEndLunch())
+                        .isCompanyPayingLunch(request.getIsCompanyPayingLunch())
                         .shift("DAY")
                         .isOnDuty(false)
                         .build();
@@ -104,6 +107,9 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
                 .workerId(worker.getId())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
+                .isCompanyPayingLunch(request.getIsCompanyPayingLunch())
+                .startLunch(request.getStartLunch())
+                .endLunch(request.getEndLunch())
                 .build();
     }
 
