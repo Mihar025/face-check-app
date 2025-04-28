@@ -23,8 +23,10 @@ public class WorkerAttendanceController {
     public ResponseEntity<PunchInResponse> punchIn(
             @RequestBody PunchInRequest request,
             Authentication authentication) {
+        long start = System.currentTimeMillis();
         PunchInResponse response = workAttendanceService.makePunchIn(authentication, request);
-
+        long end = System.currentTimeMillis();
+        System.out.println(" Время выполнения запроса: " + (end - start) + " мс");
         return response.getIsSuccessful()
                 ? ResponseEntity.ok(response)
                 : ResponseEntity.badRequest().body(response);
@@ -34,8 +36,10 @@ public class WorkerAttendanceController {
     public ResponseEntity<PunchOutResponse> punchOut(
             @RequestBody PunchOutRequest request,
             Authentication authentication) {
+        long start = System.currentTimeMillis();
         PunchOutResponse response = workAttendanceService.makePunchOut(authentication, request);
-
+        long end = System.currentTimeMillis();
+        System.out.println("Время выполнения запроса: " + (end - start) + " мс");
         return response.getIsSuccessful()
                 ? ResponseEntity.ok(response)
                 : ResponseEntity.badRequest().body(response);

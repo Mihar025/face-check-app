@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -134,5 +135,6 @@ AND u.id IN (
             @Param("workSiteId") Integer workSiteId
     );
 
-    Optional<User> findUserByFirstName(String firstName);
+
+    List<User> findAllByCompanyId(Integer companyId);
 }

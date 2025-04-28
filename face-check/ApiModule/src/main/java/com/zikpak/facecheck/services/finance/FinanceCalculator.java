@@ -351,46 +351,63 @@ public class FinanceCalculator {
 
 
 
-    public PayStubResponse calculateNetPay(User user,
-                                           BigDecimal hourlyRate,
-                                           BigDecimal overtimeRate,
-                                           double totalHoursWorked,
-                                           BigDecimal ytdPFL,
-                                           BigDecimal ytdSocialSecurityWages) {
-
+    public PayStubResponse calculateNetPay(
+            User user,
+            BigDecimal hourlyRate,
+            BigDecimal overtimeRate,
+            double totalHoursWorked,
+            BigDecimal ytdPFL,
+            BigDecimal ytdSocialSecurityWages
+    ) {
+        // Gross Pay
         BigDecimal grossPay = calculateGrossPay(hourlyRate, overtimeRate, totalHoursWorked);
 
-        BigDecimal ss = calculateSocialSecurity(user, grossPay, ytdSocialSecurityWages);
+        // Рассчитываем налоги правильно
+        BigDecimal socialSecurity = calculateSocialSecurity(user, grossPay, ytdSocialSecurityWages);
         BigDecimal medicare = calculateMedicare(user, grossPay);
         BigDecimal disability = calculateNYDisability();
         BigDecimal pfl = calculateNYPaidFamilyLeave(grossPay, ytdPFL);
-        BigDecimal federal = calculateFederalTax(user, grossPay);
-        BigDecimal state = calculateNYStateTax(user, grossPay);
-        BigDecimal nyc = calculateNYCLocalTax(user, grossPay);
 
-        BigDecimal totalDeductions = ss
+        // ❗ Реально пересчитываем на основе годового дохода
+        int payPeriods = switch (user.getPayFrequency()) {
+            case WEEKLY -> 52;
+            case BIWEEKLY -> 26;
+            case MONTHLY -> 12;
+        };
+
+        BigDecimal annualGrossIncome = grossPay.multiply(BigDecimal.valueOf(payPeriods));
+
+        // Теперь правильно считаем federal, state, local
+        BigDecimal federalTax = calculateFederalTax(user, grossPay);
+        BigDecimal stateTax = calculateNYStateTax(user, grossPay);
+        BigDecimal nycTax = calculateNYCLocalTax(user, grossPay);
+
+        // Считаем общие удержания
+        BigDecimal totalDeductions = socialSecurity
                 .add(medicare)
                 .add(disability)
                 .add(pfl)
-                .add(federal)
-                .add(state)
-                .add(nyc);
+                .add(federalTax)
+                .add(stateTax)
+                .add(nycTax);
 
+        // Чистая зарплата
         BigDecimal netPay = grossPay.subtract(totalDeductions);
 
         return PayStubResponse.builder()
                 .grossPay(TaxRates.round(grossPay))
-                .socialSecurity(ss)
-                .medicare(medicare)
-                .disability(disability)
-                .pfl(pfl)
-                .federalTax(federal)
-                .stateTax(state)
-                .nycTax(nyc)
+                .socialSecurity(TaxRates.round(socialSecurity))
+                .medicare(TaxRates.round(medicare))
+                .disability(TaxRates.round(disability))
+                .pfl(TaxRates.round(pfl))
+                .federalTax(TaxRates.round(federalTax))
+                .stateTax(TaxRates.round(stateTax))
+                .nycTax(TaxRates.round(nycTax))
                 .totalDeductions(TaxRates.round(totalDeductions))
                 .netPay(TaxRates.round(netPay))
                 .build();
     }
+
 
 
     public BigDecimal calculateGrossPay(BigDecimal hourlyRate, BigDecimal overtimeRate, double totalHoursWorked) {

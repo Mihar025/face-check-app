@@ -53,6 +53,10 @@ public class User implements UserDetails, Principal {
 
     private String homeAddress;
 
+    private String city;
+    private String state;
+    private String zipcode;
+
     @Column
     private String photoFileName;
     @Column
