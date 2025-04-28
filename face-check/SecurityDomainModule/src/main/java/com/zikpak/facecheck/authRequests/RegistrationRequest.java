@@ -68,4 +68,13 @@ public class RegistrationRequest {
 
     @NotNull(message = "Employment type is required")
     private EmploymentType employmentType;
+
+    @NotNull(message = "This field maximal required!!!")
+    private String city;
+
+    @NotNull(message = "This field maximal required!!!")
+    private String state;
+
+    @NotNull(message = "This field maximal required!!!")
+    private String zipcode;
 }

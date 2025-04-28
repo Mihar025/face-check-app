@@ -35,4 +35,14 @@ public interface WorkerPayrollRepository extends JpaRepository<WorkerPayroll, In
 
 
     List<WorkerPayroll> findAllByWorkerIdAndPeriodEndLessThanEqual(Integer workerId, LocalDate endDate);
+
+    @Query("SELECT wp FROM WorkerPayroll wp " +
+            "WHERE wp.worker.id = :workerId " +
+            "AND wp.periodStart >= :startOfYear " +
+            "AND wp.periodStart <= :endOfYear")
+    List<WorkerPayroll> findAllByWorkerIdAndYear(@Param("workerId") Integer workerId,
+                                                 @Param("startOfYear") LocalDate startOfYear,
+                                                 @Param("endOfYear") LocalDate endOfYear);
+
+
 }

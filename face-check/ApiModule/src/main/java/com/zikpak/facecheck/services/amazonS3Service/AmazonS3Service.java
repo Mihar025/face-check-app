@@ -132,6 +132,20 @@ public class AmazonS3Service {
         }
     }
 
+    public String uploadPdfToS3(byte[] pdfContent, String fileName) {
+        ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentType("application/pdf");
+        metadata.setContentLength(pdfContent.length);
+
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(pdfContent);
+
+        s3Client.putObject(bucketName, fileName, inputStream, metadata);
+
+        return s3Client.getUrl(bucketName, fileName).toString();
+    }
+
+
+
     private String generateAttendancePhotoName(String userEmail, String prefix) {
         return String.format("%s-%s-%s.jpg",
                 prefix,
