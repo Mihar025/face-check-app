@@ -51,6 +51,11 @@ public class WorkerPayroll {
     private BigDecimal nyPaidFamilyLeave;
     private BigDecimal totalDeductions;
 
+    private BigDecimal retirement401kContribution;
+    private BigDecimal healthInsuranceCost;
+    private Boolean hasRetirementPlan;
+
+
     private BigDecimal netPay;
 }
 

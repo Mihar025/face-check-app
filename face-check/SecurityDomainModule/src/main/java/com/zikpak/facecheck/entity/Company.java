@@ -35,6 +35,19 @@ public class Company {
     private String companyEmail;
 
 
+  //  @Column(nullable = false)
+    private String companyCity;
+
+  //  @Column(nullable = false)
+    private String companyState;
+
+   // @Column(nullable = false)
+    private String companyZipCode;
+
+  //  @Column(nullable = false, unique = true)
+    private String employerEIN;
+
+
 
     private BigDecimal companyIncomePerMonth;
 
