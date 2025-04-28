@@ -27,4 +27,16 @@ public class CompanyRegistrationRequest {
     @NotEmpty(message = "Company email cannot be empty")
     private String companyEmail;
 
+    @NotNull(message = "Company city is required")
+    private String companyCity;
+
+    @NotNull(message = "Company State is required")
+    private String companyState;
+
+    @NotNull(message = "Company ZipCode is required")
+    private String companyZipCode;
+
+    @NotNull(message = "This field maximal required!!!")
+    private String employerEIN; // Обязательно уникальный EIN для каждой компании
+
 }
