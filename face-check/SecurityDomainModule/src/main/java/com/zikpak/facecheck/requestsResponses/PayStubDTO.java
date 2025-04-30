@@ -14,7 +14,6 @@ public class PayStubDTO {
 
     private String employeeName;
     private String employeeSsn;
-    private String position;
     private String employeeAddress;
 
     private String employerName;

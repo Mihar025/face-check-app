@@ -27,6 +27,7 @@ public class PayStubService {
 
         PayStubDTO stub = PayStubDTO.builder()
                 .employeeName(worker.getFirstName() + " " + worker.getLastName())
+                .employeeSsn(worker.getSSN_WORKER())
                 .employeeAddress(worker.getHomeAddress())
                 .employerName(company.getCompanyName())
                 .employerAddress(company.getCompanyAddress())
