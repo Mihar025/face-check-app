@@ -73,8 +73,6 @@ public class PayStubPdfGeneratorService {
             infoTable.addCell(createValueCell(stub.getEmployeeName(), regularFont));
             infoTable.addCell(createLabelCell("Employee SSN:", boldFont));
             infoTable.addCell(createValueCell(stub.getEmployeeSsn(), regularFont));
-            infoTable.addCell(createLabelCell("Position:", boldFont));
-            infoTable.addCell(createValueCell(stub.getPosition(), regularFont));
             document.add(infoTable);
 
             document.add(new Paragraph(" "));
