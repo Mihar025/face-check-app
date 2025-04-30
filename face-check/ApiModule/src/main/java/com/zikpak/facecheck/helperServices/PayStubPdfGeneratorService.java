@@ -1,6 +1,5 @@
 package com.zikpak.facecheck.helperServices;
 
-
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.font.PdfFont;
@@ -8,9 +7,7 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.border.SolidBorder;
 import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.property.TextAlignment;
@@ -25,10 +22,10 @@ import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.format.TextStyle;
 import java.util.Locale;
+import java.util.Map;
 
 import static com.itextpdf.io.font.FontConstants.HELVETICA;
 import static com.itextpdf.io.font.FontConstants.HELVETICA_BOLD;
-import static com.itextpdf.kernel.color.Color.BLACK;
 
 @Service
 @RequiredArgsConstructor
@@ -43,12 +40,10 @@ public class PayStubPdfGeneratorService {
             PdfFont regularFont = PdfFontFactory.createFont(HELVETICA);
             PdfFont boldFont = PdfFontFactory.createFont(HELVETICA_BOLD);
 
-            // Логотип
             String logoPath = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/logo.jpg";
             ImageData logoData = ImageDataFactory.create(logoPath);
             document.add(new com.itextpdf.layout.element.Image(logoData).scaleToFit(80, 80).setTextAlignment(TextAlignment.CENTER));
 
-            // Название компании
             document.add(new Paragraph("Face-Check Corporation")
                     .setFont(boldFont)
                     .setFontSize(18)
@@ -67,7 +62,6 @@ public class PayStubPdfGeneratorService {
                     .setTextAlignment(TextAlignment.CENTER)
                     .setMarginBottom(30));
 
-            // Информация о сотруднике
             Table infoTable = new Table(UnitValue.createPercentArray(new float[]{1, 2})).useAllAvailableWidth();
             infoTable.addCell(createLabelCell("Employee Name:", boldFont));
             infoTable.addCell(createValueCell(stub.getEmployeeName(), regularFont));
@@ -77,30 +71,27 @@ public class PayStubPdfGeneratorService {
 
             document.add(new Paragraph(" "));
 
-            // Таблица по дням недели
-            Table daysTable = new Table(UnitValue.createPercentArray(new float[]{2, 2, 2})).useAllAvailableWidth();
-            daysTable.addHeaderCell(createHeaderCell("Day"));
-            daysTable.addHeaderCell(createHeaderCell("Hours Worked"));
-            daysTable.addHeaderCell(createHeaderCell("Gross Pay"));
+            Map<DayOfWeek, BigDecimal> hoursWorkedMap = stub.getHoursWorkedPerDay();
+            Map<DayOfWeek, BigDecimal> grossPayMap = stub.getGrossPayPerDay();
 
-            for (DayOfWeek day : DayOfWeek.values()) {
-                BigDecimal hoursWorked = stub.getHoursWorkedPerDay() != null
-                        ? stub.getHoursWorkedPerDay().getOrDefault(day, BigDecimal.ZERO)
-                        : BigDecimal.ZERO;
+            if (hoursWorkedMap != null && grossPayMap != null) {
+                Table daysTable = new Table(UnitValue.createPercentArray(new float[]{2, 2, 2})).useAllAvailableWidth();
+                daysTable.addHeaderCell(createHeaderCell("Day"));
+                daysTable.addHeaderCell(createHeaderCell("Hours Worked"));
+                daysTable.addHeaderCell(createHeaderCell("Gross Pay"));
 
-                BigDecimal grossPay = stub.getGrossPayPerDay() != null
-                        ? stub.getGrossPayPerDay().getOrDefault(day, BigDecimal.ZERO)
-                        : BigDecimal.ZERO;
+                for (DayOfWeek day : DayOfWeek.values()) {
+                    BigDecimal hoursWorked = hoursWorkedMap.getOrDefault(day, BigDecimal.ZERO);
+                    BigDecimal grossPay = grossPayMap.getOrDefault(day, BigDecimal.ZERO);
 
-                daysTable.addCell(createValueCell(day.getDisplayName(TextStyle.FULL, Locale.ENGLISH), regularFont));
-                daysTable.addCell(createValueCell(hoursWorked.toString(), regularFont));
-                daysTable.addCell(createValueCell("$" + grossPay.toString(), regularFont));
+                    daysTable.addCell(createValueCell(day.getDisplayName(TextStyle.FULL, Locale.ENGLISH), regularFont));
+                    daysTable.addCell(createValueCell(hoursWorked.toString(), regularFont));
+                    daysTable.addCell(createValueCell("$" + grossPay.toString(), regularFont));
+                }
+
+                document.add(daysTable);
+                document.add(new Paragraph(" "));
             }
-
-
-            document.add(daysTable);
-
-            document.add(new Paragraph(" "));
 
             BigDecimal totalHours = stub.getTotalHours() != null ? stub.getTotalHours() : BigDecimal.ZERO;
             BigDecimal totalGrossPay = stub.getTotalGrossPay() != null ? stub.getTotalGrossPay() : BigDecimal.ZERO;
@@ -129,7 +120,6 @@ public class PayStubPdfGeneratorService {
             summaryTable.addCell(createLabelCell("Net Pay:", boldFont));
             summaryTable.addCell(createValueCell("$" + netPay, regularFont));
 
-
             document.add(summaryTable);
 
             document.close();
@@ -156,7 +146,6 @@ public class PayStubPdfGeneratorService {
                 .setTextAlignment(TextAlignment.LEFT)
                 .setPadding(5);
     }
-
 
     private Cell createHeaderCell(String text) {
         return new Cell()
