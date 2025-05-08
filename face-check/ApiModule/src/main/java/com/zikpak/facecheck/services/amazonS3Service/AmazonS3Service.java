@@ -5,7 +5,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.util.IOUtils;
-import com.zikpak.facecheck.controllers.S3FileDTO;
+import com.zikpak.facecheck.requestsResponses.S3FileDTO;
 import com.zikpak.facecheck.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -123,6 +123,9 @@ public class AmazonS3Service {
         }
     }
 
+
+
+
     public void deleteAttendancePhoto(String fileName) {
         try {
             s3Client.deleteObject(bucketName, fileName);
@@ -131,6 +134,10 @@ public class AmazonS3Service {
             throw new RuntimeException("Failed to delete attendance photo", e);
         }
     }
+
+
+
+
 
     public String uploadPdfToS3(byte[] pdfContent, String fileName) {
         ObjectMetadata metadata = new ObjectMetadata();
@@ -146,6 +153,10 @@ public class AmazonS3Service {
 
 
 
+
+
+
+
     private String generateAttendancePhotoName(String userEmail, String prefix) {
         return String.format("%s-%s-%s.jpg",
                 prefix,
@@ -154,6 +165,9 @@ public class AmazonS3Service {
         );
     }
 
+
+
+
     private String generatePhoto(String userEmail, String prefix) {
         return String.format("%s_%s_%s.jpg",
                 prefix,
@@ -161,6 +175,9 @@ public class AmazonS3Service {
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
         );
     }
+
+
+
 
     private String determineContentType(String fileName) {
         String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
