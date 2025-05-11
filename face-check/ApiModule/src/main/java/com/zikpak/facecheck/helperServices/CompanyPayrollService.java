@@ -2,8 +2,10 @@ package com.zikpak.facecheck.helperServices;
 
 
 import com.zikpak.facecheck.entity.Company;
+import com.zikpak.facecheck.entity.EmployerTaxRecord;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.repository.CompanyRepository;
+import com.zikpak.facecheck.repository.EmployerTaxRecordRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.requestsResponses.finance.CompanyYearlySummaryDTO;
 import com.zikpak.facecheck.requestsResponses.finance.WorkerYearlySummaryDto;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -26,6 +29,7 @@ public class CompanyPayrollService {
     private final CompanyRepository companyRepository;
     private final W3PdfGeneratorService w3PdfGeneratorService;
     private final AmazonS3Service amazonS3Service;
+    private final EmployerTaxRecordRepository employerTaxRecordRepository;
 
 
     public CompanyYearlySummaryDTO calculateCompanyYearlySummary(Integer companyId, int year){
@@ -57,9 +61,21 @@ public class CompanyPayrollService {
                 .totalMedicareTax(totalMedicareTax)
                 .totalEmployees(totalEmployees)
                 .year(year)
+                .totalEmployerTaxes(getTotalEmployerTaxesForYear(companyId, year))
                 .build();
 
     }
+
+    public BigDecimal getTotalEmployerTaxesForYear(Integer companyId, int year) {
+        LocalDate start = LocalDate.of(year, 1, 1);
+        LocalDate end = LocalDate.of(year, 12, 31);
+        return employerTaxRecordRepository.findByCompanyIdAndWeekStartBetween(companyId, start, end)
+                .stream()
+                .map(EmployerTaxRecord::getTotalEmployerTax)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+
 
 
     public Company findCompanyById(Integer companyId) {

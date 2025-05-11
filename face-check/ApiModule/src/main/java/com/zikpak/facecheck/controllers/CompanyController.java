@@ -1,9 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
 
-import com.zikpak.facecheck.helperServices.CompanyPayrollService;
 import com.zikpak.facecheck.helperServices.PayStubService;
-import com.zikpak.facecheck.helperServices.W3PdfGeneratorService;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingRequest;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingResponse;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
