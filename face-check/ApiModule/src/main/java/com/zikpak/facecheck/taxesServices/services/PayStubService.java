@@ -1,4 +1,4 @@
-package com.zikpak.facecheck.helperServices;
+package com.zikpak.facecheck.taxesServices.services;
 
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.entity.employee.WorkerPayroll;
@@ -6,13 +6,14 @@ import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
 import com.zikpak.facecheck.repository.WorkerPayrollRepository;
 import com.zikpak.facecheck.requestsResponses.PayStubDTO;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import com.zikpak.facecheck.taxesServices.pdfServices.PayStubPdfGeneratorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.*;
 
 @RequiredArgsConstructor
@@ -39,7 +40,34 @@ public class PayStubService {
                 payroll.getPeriodEnd().atTime(23, 59, 59)
         );
 
-        // 2. Инициализируем Map-ы
+        Map<DayOfWeek, LocalDate> datesPerDay = new HashMap<>();
+
+        for (WorkerAttendance attendance : attendanceList) {
+            if (attendance.getCheckInTime() == null) continue;
+
+            DayOfWeek day = attendance.getCheckInTime().getDayOfWeek();
+            LocalDate attendanceDate = attendance.getCheckInTime().toLocalDate();
+
+            if (!datesPerDay.containsKey(day)) {
+                datesPerDay.put(day, attendanceDate);
+            }
+        }
+
+        List<WorkerPayroll> ytdPayrolls = workerPayrollRepository
+                .findAllByWorkerIdAndPeriodEndBetween(worker.getId(),
+                        LocalDate.of(payroll.getPeriodEnd().getYear() , 1, 1),
+                        payroll.getPeriodEnd());
+
+        BigDecimal yearToDateGross = ytdPayrolls.stream()
+                .map(p -> p.getGrossPay() != null ? p.getGrossPay() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal yearToDateNet = ytdPayrolls.stream()
+                .map(p -> p.getNetPay() != null ? p.getNetPay() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+
+
         Map<DayOfWeek, BigDecimal> hoursWorkedPerDay = new HashMap<>();
         Map<DayOfWeek, BigDecimal> grossPayPerDay = new HashMap<>();
 
@@ -74,6 +102,12 @@ public class PayStubService {
                 .netPay(payroll.getNetPay())
                 .hoursWorkedPerDay(hoursWorkedPerDay)
                 .grossPayPerDay(grossPayPerDay)
+                .companyName(company.getCompanyName())
+                .YearToDate(yearToDateGross)
+                .baseHourlyRate(worker.getBaseHourlyRate())
+                .date(datesPerDay)
+                .totalHours(payroll.getTotalHours())
+                .YearToDateNet(yearToDateNet)
                 .build();
 
         byte[] pdf = payStubPdfGeneratorService.generatePayStubPdf(stub);
