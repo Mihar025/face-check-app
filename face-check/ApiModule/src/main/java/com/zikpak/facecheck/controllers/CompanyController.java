@@ -1,7 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
 
-import com.zikpak.facecheck.helperServices.PayStubService;
+import com.zikpak.facecheck.taxesServices.services.PayStubService;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingRequest;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingResponse;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
@@ -9,8 +9,6 @@ import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
 import com.zikpak.facecheck.services.company.CompanyService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -244,25 +242,5 @@ public class CompanyController {
         companyService.updateCompanyEmail(email, authentication);
         return ResponseEntity.ok().build();
     }
-
-
-
-
-    @GetMapping("/generate/{payrollId}")
-    public ResponseEntity<byte[]> generatePayStub(@PathVariable Integer payrollId) {
-        byte[] pdf = payStubService.generatePayStubPdf(payrollId);
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=pay_stub_" + payrollId + ".pdf")
-                .body(pdf);
-    }
-
-
-
-
-
-
-
 
 }
