@@ -1,4 +1,4 @@
-package com.zikpak.facecheck.controllers;
+package com.zikpak.facecheck.requestsResponses;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
