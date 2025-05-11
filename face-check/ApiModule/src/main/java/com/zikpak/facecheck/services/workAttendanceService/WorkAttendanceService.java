@@ -10,10 +10,9 @@ import com.zikpak.facecheck.requestsResponses.attendance.*;
 import com.zikpak.facecheck.requestsResponses.finance.PayStubResponse;
 import com.zikpak.facecheck.requestsResponses.worker.DailyFinanceInfo;
 import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinanceScreenResponse;
-import com.zikpak.facecheck.security.AuthenticationServiceImpl;
-import com.zikpak.facecheck.services.finance.FinanceCalculator;
 import com.zikpak.facecheck.services.workSiteService.WorkSiteService;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import com.zikpak.facecheck.taxesServices.calculators.FinanceCalculator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -602,13 +601,12 @@ public class WorkAttendanceService {
                 log.info("After calculations - regular hours: {}, overtime: {}, gross pay: {}",
                         currentPayroll.getRegularHours(), currentPayroll.getOvertimeHours(), currentPayroll.getGrossPay());
 
+                // Сохраняем payroll после расчётов
                 WorkerPayroll savedPayroll = workerPayrollRepository.save(currentPayroll);
-
-                log.info("After save - payroll ID: {}, saved regular hours: {}, saved overtime: {}, saved gross pay: {}",
-                        savedPayroll.getId(), savedPayroll.getRegularHours(), savedPayroll.getOvertimeHours(), savedPayroll.getGrossPay());
 
                 return savedPayroll;
         }
+
 
 
 
