@@ -19,4 +19,6 @@ public class CompanyYearlySummaryDTO {
     private BigDecimal totalMedicareTax;
     private Integer totalEmployees;
     private Integer year;
+    private BigDecimal totalEmployerTaxes;
+
 }
