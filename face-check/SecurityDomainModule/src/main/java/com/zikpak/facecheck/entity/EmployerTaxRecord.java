@@ -38,6 +38,8 @@ public class EmployerTaxRecord {
     private BigDecimal medicareTax;
     private BigDecimal futaTax;
     private BigDecimal sutaTax;
+    private BigDecimal federalWithholding;
+
 
     private BigDecimal totalEmployerTax;
 
