@@ -1,4 +1,4 @@
-package com.zikpak.facecheck.taxesServices.services;
+package com.zikpak.facecheck.taxesServices.ASCIIservices;
 
 import com.zikpak.facecheck.entity.Company;
 import com.zikpak.facecheck.entity.User;
@@ -10,19 +10,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.math.BigDecimal;
 
-/**
- * Service for generating the EFW2 text file (SSA electronic file) for a given company and year.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EFW2GeneratorService {
+public  class EFW2GeneratorService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final WorkerPayRollService workerPayRollService;
@@ -86,50 +83,49 @@ public class EFW2GeneratorService {
 
 
         // Record Type 3: W-3 summary (totals)
-    BigDecimal totalW = BigDecimal.ZERO;
-    BigDecimal totalF = BigDecimal.ZERO;
-    BigDecimal totalS = BigDecimal.ZERO;
-    BigDecimal totalM = BigDecimal.ZERO;
+        BigDecimal totalW = BigDecimal.ZERO;
+        BigDecimal totalF = BigDecimal.ZERO;
+        BigDecimal totalS = BigDecimal.ZERO;
+        BigDecimal totalM = BigDecimal.ZERO;
         for (User u : employees) {
-        WorkerYearlySummaryDto d = workerPayRollService.calculateWorkerYearlyTotals(u.getId(), year);
-        totalW = totalW.add(d.getGrossPayTotal() != null ? d.getGrossPayTotal() : BigDecimal.ZERO);
-        totalF = totalF.add(d.getFederalWithholdingTotal() != null ? d.getFederalWithholdingTotal() : BigDecimal.ZERO);
-        totalS = totalS.add(d.getSocialSecurityEmployeeTotal() != null ? d.getSocialSecurityEmployeeTotal() : BigDecimal.ZERO);
-        totalM = totalM.add(d.getMedicareTotal() != null ? d.getMedicareTotal() : BigDecimal.ZERO);
-    }
-    String rec3 = "3"
-            + padRight(employerEin, 9)
-            + padLeft(formatAmount(totalW), 10)
-            + padLeft(formatAmount(totalF), 10)
-            + padLeft(formatAmount(totalS), 10)
-            + padLeft(formatAmount(totalM), 10)
-            + padRight("", 466);
-    rec3 = padRight(rec3, 511) + "\n";
+            WorkerYearlySummaryDto d = workerPayRollService.calculateWorkerYearlyTotals(u.getId(), year);
+            totalW = totalW.add(d.getGrossPayTotal() != null ? d.getGrossPayTotal() : BigDecimal.ZERO);
+            totalF = totalF.add(d.getFederalWithholdingTotal() != null ? d.getFederalWithholdingTotal() : BigDecimal.ZERO);
+            totalS = totalS.add(d.getSocialSecurityEmployeeTotal() != null ? d.getSocialSecurityEmployeeTotal() : BigDecimal.ZERO);
+            totalM = totalM.add(d.getMedicareTotal() != null ? d.getMedicareTotal() : BigDecimal.ZERO);
+        }
+        String rec3 = "3"
+                + padRight(employerEin, 9)
+                + padLeft(formatAmount(totalW), 10)
+                + padLeft(formatAmount(totalF), 10)
+                + padLeft(formatAmount(totalS), 10)
+                + padLeft(formatAmount(totalM), 10)
+                + padRight("", 466);
+        rec3 = padRight(rec3, 511) + "\n";
         sb.append(rec3);
 
-    // Record Type 9: File Trailer (count of Record 2)
-    String rec9 = "9"
-            + padLeft(String.valueOf(employees.size()), 6)
-            + padRight("", 494);
-    rec9 = padRight(rec9, 511) + "\n";
+        String rec9 = "9"
+                + padLeft(String.valueOf(employees.size()), 6)
+                + padRight("", 494);
+        rec9 = padRight(rec9, 511) + "\n";
         sb.append(rec9);
 
         return sb.toString().getBytes(StandardCharsets.US_ASCII);
-}
+    }
 
-private String padRight(String s, int len) {
-    if (s == null) s = "";
-    return String.format("%-" + len + "s", s);
-}
+    private String padRight(String s, int len) {
+        if (s == null) s = "";
+        return String.format("%-" + len + "s", s);
+    }
 
-private String padLeft(String s, int len) {
-    if (s == null) s = "";
-    return String.format("%" + len + "s", s);
-}
+    private String padLeft(String s, int len) {
+        if (s == null) s = "";
+        return String.format("%" + len + "s", s);
+    }
 
-private String formatAmount(BigDecimal value) {
-    if (value == null) return "0";
-    long cents = value.multiply(BigDecimal.valueOf(100)).longValue();
-    return String.valueOf(cents);
-}
+    private String formatAmount(BigDecimal value) {
+        if (value == null) return "0";
+        long cents = value.multiply(BigDecimal.valueOf(100)).longValue();
+        return String.valueOf(cents);
+    }
 }
