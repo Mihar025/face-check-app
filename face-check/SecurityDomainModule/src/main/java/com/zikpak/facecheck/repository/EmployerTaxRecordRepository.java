@@ -132,4 +132,64 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
             @Param("start") LocalDate start,
             @Param("end") LocalDate end
     );
+
+
+    // новые:
+    @Query("SELECT COALESCE(SUM(r.socialSecurityTaxableWages),0) FROM EmployerTaxRecord r WHERE r.employee.id = :employeeId AND YEAR(r.createdAt) = :year")
+    BigDecimal sumSsTaxableWagesByEmployeeAndYear(@Param("employeeId") Integer employeeId, @Param("year") int year);
+
+    @Query("SELECT COALESCE(SUM(r.socialSecurityTips),0) FROM EmployerTaxRecord r WHERE r.employee.id = :employeeId AND YEAR(r.createdAt) = :year")
+    BigDecimal sumSsTipsByEmployeeAndYear(@Param("employeeId") Integer employeeId, @Param("year") int year);
+
+    @Query("SELECT COALESCE(SUM(r.medicareTaxableWages),0) FROM EmployerTaxRecord r WHERE r.employee.id = :employeeId AND YEAR(r.createdAt) = :year")
+    BigDecimal sumMedicareTaxableByEmployeeAndYear(@Param("employeeId") Integer employeeId, @Param("year") int year);
+
+    @Query("SELECT COALESCE(SUM(r.additionalMedicareWages),0) FROM EmployerTaxRecord r WHERE r.employee.id = :employeeId AND YEAR(r.createdAt) = :year")
+    BigDecimal sumAddlMedicareByEmployeeAndYear(@Param("employeeId") Long employeeId, @Param("year") int year);
+
+
+    @Query("SELECT COALESCE(SUM(r.socialSecurityTaxableWages),0) " +
+            "FROM EmployerTaxRecord r " +
+            "WHERE r.company.id = :companyId " +
+            "  AND r.weekStart BETWEEN :start AND :end")
+    BigDecimal sumSocialSecurityTaxableWages(
+            @Param("companyId") Integer companyId,
+            @Param("start") LocalDate start,
+            @Param("end")   LocalDate end);
+
+    /**
+     * Сумма Taxable Social Security tips (5b) за период для компании
+     */
+    @Query("SELECT COALESCE(SUM(r.socialSecurityTips),0) " +
+            "FROM EmployerTaxRecord r " +
+            "WHERE r.company.id = :companyId " +
+            "  AND r.weekStart BETWEEN :start AND :end")
+    BigDecimal sumSocialSecurityTips(
+            @Param("companyId") Integer companyId,
+            @Param("start") LocalDate start,
+            @Param("end")   LocalDate end);
+
+    /**
+     * Сумма Taxable Medicare wages & tips (5c) за период для компании
+     */
+    @Query("SELECT COALESCE(SUM(r.medicareTaxableWages),0) " +
+            "FROM EmployerTaxRecord r " +
+            "WHERE r.company.id = :companyId " +
+            "  AND r.weekStart BETWEEN :start AND :end")
+    BigDecimal sumMedicareTaxableWages(
+            @Param("companyId") Integer companyId,
+            @Param("start") LocalDate start,
+            @Param("end")   LocalDate end);
+
+    /**
+     * Сумма Wages subject to Additional Medicare Tax (5d) за период для компании
+     */
+    @Query("SELECT COALESCE(SUM(r.additionalMedicareWages),0) " +
+            "FROM EmployerTaxRecord r " +
+            "WHERE r.company.id = :companyId " +
+            "  AND r.weekStart BETWEEN :start AND :end")
+    BigDecimal sumAdditionalMedicareTaxableWages(
+            @Param("companyId") Integer companyId,
+            @Param("start") LocalDate start,
+            @Param("end")   LocalDate end);
 }
