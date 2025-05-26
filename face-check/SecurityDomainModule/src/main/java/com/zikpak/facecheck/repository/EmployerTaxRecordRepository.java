@@ -192,4 +192,8 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
             @Param("end")   LocalDate end);
+
+
+
+
 }
