@@ -47,4 +47,15 @@ public class EmployerTaxRecord {
     private LocalDate weekEnd;
 
     private LocalDate createdAt;
+
+
+    private BigDecimal socialSecurityTaxableWages;
+
+    private BigDecimal socialSecurityTips;
+
+    private BigDecimal medicareTaxableWages;
+
+    private BigDecimal additionalMedicareWages;
+
+    private LocalDate paymentDate;
 }
