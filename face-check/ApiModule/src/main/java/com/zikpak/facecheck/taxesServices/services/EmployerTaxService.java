@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 
 @Service
 @RequiredArgsConstructor
@@ -97,8 +100,10 @@ public class EmployerTaxService {
                 .weekStart(payroll.getPeriodStart())
                 .weekEnd(payroll.getPeriodEnd())
                 .createdAt(LocalDate.now())
+                .paymentDate(
+                        payroll.getPeriodEnd()
+                                .with(TemporalAdjusters.next(DayOfWeek.FRIDAY)))
                 .build();
-
         return employerTaxRecordRepository.save(record);
     }
 

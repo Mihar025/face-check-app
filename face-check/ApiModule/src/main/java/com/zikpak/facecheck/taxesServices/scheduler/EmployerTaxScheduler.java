@@ -35,6 +35,7 @@ public class EmployerTaxScheduler {
             try {
                 employerTaxService.calculateAndSaveEmployerTaxes(payroll);
                 payroll.setEmployerTaxesCalculated(true);
+
                 workerPayrollRepository.save(payroll);
                 log.info("✅ Расчёт выполнен для payroll ID: {}", payroll.getId());
             } catch (Exception e) {
