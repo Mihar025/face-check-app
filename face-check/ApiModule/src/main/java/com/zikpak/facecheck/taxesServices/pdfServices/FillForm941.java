@@ -251,7 +251,7 @@ IRS требует, чтобы вы вёлись систематические 
 
 
 
-        BigDecimal depositedAmount= paymentHistoryService.getTotalPaymentsForQuarter(companyId, year, quarter);
+        BigDecimal depositedAmount= paymentHistoryService.getTotalPaymentsForQuarter(companyId, quarter, year);
         String[] partsForDepositedAmount = splitAmount(depositedAmount);
         fill(fields, "topmostSubform[0].Page1[0].f1_51[0]", partsForDepositedAmount[0]);
         fill(fields, "topmostSubform[0].Page1[0].f1_52[0]", partsForDepositedAmount[1]);
