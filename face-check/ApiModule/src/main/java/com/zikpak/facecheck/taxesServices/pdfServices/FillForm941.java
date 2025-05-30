@@ -293,8 +293,8 @@ IRS требует, чтобы вы вёлись систематические 
 
 
         //Check one: choice
-        fill(fields, "topmostSubform[0].Page1[0].c1_3[0]", "44"); // Apply to next return
-        fill(fields, "topmostSubform[0].Page1[0].c1_3[1]", "45"); // Send a refund!
+     //  fill(fields, "topmostSubform[0].Page1[0].c1_3[0]", "44"); // Apply to next return
+    //    fill(fields, "topmostSubform[0].Page1[0].c1_3[1]", "45"); // Send a refund!
 
         // Name + EIN!
         // fill(fields, "topmostSubform[0].Page2[0]", "MYKHAILO");
