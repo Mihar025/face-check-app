@@ -38,9 +38,35 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
           AND EXTRACT(YEAR FROM week_start) = :year
     """, nativeQuery = true)
     BigDecimal sumGrossPayByEmployeeAndYear(
-            @Param("employeeId") Long employeeId,
+            @Param("employeeId") Integer employeeId,
             @Param("year") int year
     );
+
+    @Query(value = """
+        SELECT COALESCE(SUM(gross_pay), 0)
+        FROM employer_tax_record
+        WHERE company_id = :companyId
+          AND EXTRACT(YEAR FROM week_start) = :year
+    """, nativeQuery = true)
+    BigDecimal sumGrossPayByAllEmployeeAndYear(@Param("companyId") Integer companyId,
+                                               @Param("year") int year );
+
+    @Query(value = """
+        SELECT employee_id AS empId,
+               SUM(gross_pay) AS totalGross
+          FROM employer_tax_record
+         WHERE company_id = :companyId
+           AND EXTRACT(YEAR FROM week_start) = :year
+         GROUP BY employee_id
+        HAVING SUM(gross_pay) > 7000
+    """, nativeQuery = true)
+    List<Object[]> findEmployeesWithYearlyGrossOver7000(
+            @Param("companyId") Integer companyId,
+            @Param("year") int year
+    );
+
+
+
 
     /**
      * Сумма FUTA-налога (futa_tax) для компании за указанный год
