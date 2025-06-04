@@ -41,9 +41,9 @@ public class EmployerTaxService {
         BigDecimal ytdSsWages = employerTaxRecordRepository
                 .sumSsTaxableWagesByEmployeeAndYear(empId, year);
 
-        // 4) Суммы за текущий период
+
         BigDecimal dayGross = payroll.getGrossPay();
-        // чаевых нет:
+
         BigDecimal dayTips  = BigDecimal.ZERO;
 
         // 5) Вычисляем дневные базы:
@@ -114,7 +114,7 @@ public class EmployerTaxService {
     private BigDecimal calculateFuta(User employee, LocalDate periodStart, BigDecimal currentGross) {
         int year = periodStart.getYear();
         BigDecimal ytdGross = employerTaxRecordRepository
-                .sumGrossPayByEmployeeAndYear(employee.getId().longValue(), year);
+                .sumGrossPayByEmployeeAndYear(employee.getId(), year);
 
         BigDecimal futaLimit = BigDecimal.valueOf(7000);
         BigDecimal remainingFutaGross = futaLimit.subtract(ytdGross);

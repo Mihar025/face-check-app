@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -66,7 +67,11 @@ public class Company {
     private BigDecimal nyStateWithholdingForCompany;
     private BigDecimal nyLocalWithholdingForCompany;
 
+    @Enumerated(EnumType.STRING)
+    private CompanyPaymentPosition companyPaymentPosition;
 
+    private BigDecimal irsDepositAmount;
+    private LocalDateTime whenDepositAmountWasMade;
 
 
 
@@ -76,9 +81,14 @@ public class Company {
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private List<User> employees = new ArrayList<>();
 
+
+
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private Set<WorkSite> workSites = new HashSet<>();
 
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "owner_id")
+    private User companyOwner;
 
     public void addWorkSite(WorkSite workSite) {
         workSites.add(workSite);
