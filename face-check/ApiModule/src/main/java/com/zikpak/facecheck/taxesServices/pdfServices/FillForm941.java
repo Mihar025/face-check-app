@@ -251,7 +251,7 @@ IRS требует, чтобы вы вёлись систематические 
 
 
 
-        BigDecimal depositedAmount= paymentHistoryService.getTotalPaymentsForQuarter(companyId, quarter, year);
+        BigDecimal depositedAmount= paymentHistoryService.getTotalPaymentsForQuarter941Form(companyId, quarter, year);
         String[] partsForDepositedAmount = splitAmount(depositedAmount);
         fill(fields, "topmostSubform[0].Page1[0].f1_51[0]", partsForDepositedAmount[0]);
         fill(fields, "topmostSubform[0].Page1[0].f1_52[0]", partsForDepositedAmount[1]);
@@ -438,7 +438,6 @@ IRS требует, чтобы вы вёлись систематические 
             fill(fields, "topmostSubform[0].Page3[0].Line3_ReadOrder[0].c3_1[3]", "On"); // quarter 4
         }
 
-        fill(fields, "topmostSubform[0].Page3[0].f1_3[0]", company.getCompanyName());
         fill(fields, "topmostSubform[0].Page3[0].f3_3[0]", admin.getHomeAddress());
         fill(fields, "topmostSubform[0].Page3[0].f3_4[0]", admin.getCity() + " " + admin.getState() + " " + admin.getZipcode());
 
