@@ -97,7 +97,17 @@ public class CompanyPayrollService {
                     company.getCompanyAddress()
             );
 
-            String fileName = "w3-summary/" + year + "/" + "w3_" + companyId + ".pdf";
+            String companyKeyPart = company.getCompanyName()
+                    .trim()
+                    .replaceAll("[^A-Za-z0-9]", "_");
+            String fileName = String.format(
+                    "%s/%d/w3-summary/%d/w3_%d.pdf",
+                    companyKeyPart,
+                    company.getId(),
+                    year,
+                    companyId
+            );
+
             amazonS3Service.uploadPdfToS3(pdfContent, fileName);
 
             return pdfContent;
