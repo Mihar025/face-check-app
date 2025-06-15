@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,22 +20,20 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public  class EFW2GeneratorService {
+public class EFW2GeneratorService {
+    private static final int RECORD_LENGTH = 512;
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final WorkerPayRollService workerPayRollService;
 
     /**
      * Generates the electronic EFW2 file as ASCII bytes.
-     * @param companyId ID of the company (from which we fetch EIN and employees)
-     * @param year Tax year (e.g. 2025)
-     * @return ASCII-encoded EFW2 file ready for SSA BSO upload
      */
     public byte[] generateEfw2File(Integer companyId, int year) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found: " + companyId));
-        String rawEin = company.getEmployerEIN() != null ? company.getEmployerEIN().replaceAll("\\D", "") : "";
-        // Pad EIN to 9 digits (leading zeros if needed)
+        String rawEin = company.getEmployerEIN() != null
+                ? company.getEmployerEIN().replaceAll("\\D", "") : "";
         String employerEin = padLeft(rawEin, 9).replace(' ', '0');
         if (employerEin.length() != 9) {
             log.warn("Normalized EIN length not 9 for company {}: {}", companyId, rawEin);
@@ -47,70 +46,82 @@ public  class EFW2GeneratorService {
         StringBuilder sb = new StringBuilder();
 
         // Record Type 1: File Header
-        String rec1 = "1"
-                + padRight(employerEin, 9)      // EIN
-                + fmt.format(today)            // File date YYYYMMDD
-                + padRight(String.valueOf(year), 4)  // Tax year
-                + padRight("EFW2", 4);       // File type
-        rec1 = padRight(rec1, 511) + "\n";
-        sb.append(rec1);
+        String headerBody = "1"
+                + employerEin
+                + fmt.format(today)
+                + padRight(String.valueOf(year), 4)
+                + "W2  "; // Standard EFW2 file type
+        sb.append(formatRecord(headerBody));
 
-        // Record Type 2: One line per employee (W-2 detail)
+        // Record Type 2: One line per employee
         for (User user : employees) {
             WorkerYearlySummaryDto dto = workerPayRollService.calculateWorkerYearlyTotals(user.getId(), year);
             String rawSsn = user.getSSN_WORKER() != null
-                    ? user.getSSN_WORKER().replaceAll("\\D", "")
-                    : "";
+                    ? user.getSSN_WORKER().replaceAll("\\D", "") : "";
             String ssn = padLeft(rawSsn, 9).replace(' ', '0');
             if (ssn.length() != 9) {
                 log.warn("Normalized SSN length not 9 for user {}: {}", user.getId(), rawSsn);
             }
 
-            String rec2Body = "2"
-                    + padRight(ssn, 9)
-                    + padRight(employerEin, 9)
-                    + padLeft(formatAmount(dto.getGrossPayTotal()), 10)
-                    + padLeft(formatAmount(dto.getFederalWithholdingTotal()), 10)
-                    + padLeft(formatAmount(dto.getSocialSecurityEmployeeTotal()), 10)
-                    + padLeft(formatAmount(dto.getMedicareTotal()), 10)
-                    + padLeft(formatAmount(dto.getMedicareTotal()), 10);
+            BigDecimal wages = dto.getGrossPayTotal() != null ? dto.getGrossPayTotal() : BigDecimal.ZERO;
+            BigDecimal federal = dto.getFederalWithholdingTotal() != null
+                    ? dto.getFederalWithholdingTotal() : BigDecimal.ZERO;
+            BigDecimal ssTax = dto.getSocialSecurityEmployeeTotal() != null
+                    ? dto.getSocialSecurityEmployeeTotal() : BigDecimal.ZERO;
+            BigDecimal medWages = dto.getMedicareTotal() != null
+                    ? dto.getMedicareTotal() : BigDecimal.ZERO;
+            // Medicare tax withheld: 1.45% of wages
+            BigDecimal medTax = medWages.multiply(new BigDecimal("0.0145"))
+                    .setScale(0, RoundingMode.HALF_UP);
 
-            // Правильно добавляем символ перевода строки:
-            String rec2 = padRight(rec2Body, 511) + "\n";
-            sb.append(rec2);
+            String detailBody = "2"
+                    + ssn
+                    + employerEin
+                    + padLeft(formatCents(wages), 10)
+                    + padLeft(formatCents(federal), 10)
+                    + padLeft(formatCents(ssTax), 10)
+                    + padLeft(formatCents(medWages), 10)
+                    + padLeft(formatCents(medTax), 10);
+            sb.append(formatRecord(detailBody));
         }
-
-
 
         // Record Type 3: W-3 summary (totals)
-        BigDecimal totalW = BigDecimal.ZERO;
-        BigDecimal totalF = BigDecimal.ZERO;
-        BigDecimal totalS = BigDecimal.ZERO;
-        BigDecimal totalM = BigDecimal.ZERO;
+        BigDecimal totalWages = BigDecimal.ZERO;
+        BigDecimal totalFed = BigDecimal.ZERO;
+        BigDecimal totalSS = BigDecimal.ZERO;
+        BigDecimal totalMedW = BigDecimal.ZERO;
+        BigDecimal totalMedT = BigDecimal.ZERO;
         for (User u : employees) {
             WorkerYearlySummaryDto d = workerPayRollService.calculateWorkerYearlyTotals(u.getId(), year);
-            totalW = totalW.add(d.getGrossPayTotal() != null ? d.getGrossPayTotal() : BigDecimal.ZERO);
-            totalF = totalF.add(d.getFederalWithholdingTotal() != null ? d.getFederalWithholdingTotal() : BigDecimal.ZERO);
-            totalS = totalS.add(d.getSocialSecurityEmployeeTotal() != null ? d.getSocialSecurityEmployeeTotal() : BigDecimal.ZERO);
-            totalM = totalM.add(d.getMedicareTotal() != null ? d.getMedicareTotal() : BigDecimal.ZERO);
+            BigDecimal medW = d.getMedicareTotal() != null ? d.getMedicareTotal() : BigDecimal.ZERO;
+            BigDecimal medT = medW.multiply(new BigDecimal("0.0145"))
+                    .setScale(0, RoundingMode.HALF_UP);
+            totalWages = totalWages.add(d.getGrossPayTotal() != null ? d.getGrossPayTotal() : BigDecimal.ZERO);
+            totalFed = totalFed.add(d.getFederalWithholdingTotal() != null ? d.getFederalWithholdingTotal() : BigDecimal.ZERO);
+            totalSS = totalSS.add(d.getSocialSecurityEmployeeTotal() != null ? d.getSocialSecurityEmployeeTotal() : BigDecimal.ZERO);
+            totalMedW = totalMedW.add(medW);
+            totalMedT = totalMedT.add(medT);
         }
-        String rec3 = "3"
-                + padRight(employerEin, 9)
-                + padLeft(formatAmount(totalW), 10)
-                + padLeft(formatAmount(totalF), 10)
-                + padLeft(formatAmount(totalS), 10)
-                + padLeft(formatAmount(totalM), 10)
-                + padRight("", 466);
-        rec3 = padRight(rec3, 511) + "\n";
-        sb.append(rec3);
+        String summaryBody = "3"
+                + employerEin
+                + padLeft(formatCents(totalWages), 10)
+                + padLeft(formatCents(totalFed), 10)
+                + padLeft(formatCents(totalSS), 10)
+                + padLeft(formatCents(totalMedW), 10)
+                + padLeft(formatCents(totalMedT), 10);
+        sb.append(formatRecord(summaryBody));
 
-        String rec9 = "9"
-                + padLeft(String.valueOf(employees.size()), 6)
-                + padRight("", 494);
-        rec9 = padRight(rec9, 511) + "\n";
-        sb.append(rec9);
+        // Record Type 9: Trailer
+        String trailerBody = "9" + padLeft(String.valueOf(employees.size()), 6);
+        sb.append(formatRecord(trailerBody));
 
         return sb.toString().getBytes(StandardCharsets.US_ASCII);
+    }
+
+    /** Formats to exactly 512 bytes: pads to 510 then CRLF */
+    private String formatRecord(String body) {
+        String padded = padRight(body, RECORD_LENGTH - 2);
+        return padded + "\r\n";
     }
 
     private String padRight(String s, int len) {
@@ -123,7 +134,8 @@ public  class EFW2GeneratorService {
         return String.format("%" + len + "s", s);
     }
 
-    private String formatAmount(BigDecimal value) {
+    /** Converts BigDecimal dollars to cents without decimal point */
+    private String formatCents(BigDecimal value) {
         if (value == null) return "0";
         long cents = value.multiply(BigDecimal.valueOf(100)).longValue();
         return String.valueOf(cents);
