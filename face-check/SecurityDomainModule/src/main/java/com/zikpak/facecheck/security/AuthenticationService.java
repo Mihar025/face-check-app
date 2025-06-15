@@ -125,6 +125,7 @@ public class AuthenticationService {
         }
 
        var newCompany = authenticationServiceImpl.createNewCompany(companyRegistrationRequest);
+        newCompany.setCompanyOwner(user);
        authenticationServiceImpl.setBusinessInformation(user, newCompany);
     }
 
