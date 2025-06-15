@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class EmployeeTaxSummaryDTO {
+public class EmployeeTaxSummaryDTO {
     private String employeeName;
     private BigDecimal grossWages;
     private BigDecimal federalWithholding;
