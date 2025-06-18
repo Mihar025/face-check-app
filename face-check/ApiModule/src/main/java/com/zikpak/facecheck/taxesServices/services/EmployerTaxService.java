@@ -138,13 +138,13 @@ public class EmployerTaxService {
 
     private BigDecimal calculateSuta(User employee, Company company, LocalDate periodStart, BigDecimal currentGross) {
         BigDecimal sutaRate = company.getSocialSecurityTaxForCompany();
-        if (sutaRate == null) sutaRate = BigDecimal.valueOf(4.0);
+        if (sutaRate == null) sutaRate = BigDecimal.valueOf(4.1);
 
         int year = periodStart.getYear();
         BigDecimal ytdSuta = employerTaxRecordRepository
                 .sumSutaTaxableWagesByEmployeeAndYear(employee.getId(), year);
 
-        BigDecimal sutaLimit = BigDecimal.valueOf(12300);
+        BigDecimal sutaLimit = BigDecimal.valueOf(13000);
         BigDecimal remainingSuta = sutaLimit.subtract(ytdSuta).max(BigDecimal.ZERO);
         BigDecimal taxableGross = currentGross.min(remainingSuta);
 
