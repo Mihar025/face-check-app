@@ -11,6 +11,9 @@ import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
 import com.zikpak.facecheck.repository.WorkerPayrollRepository;
 import com.zikpak.facecheck.taxesServices.ASCIIservices.EFW2GeneratorService;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportDTO;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportPdfService;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.hoursReport.HoursReportDTO;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.hoursReport.HoursReportDataService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.hoursReport.HoursReportPdfService;
@@ -34,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +74,10 @@ public class EmployerTaxScheduler {
 
     private final Form940XmlGenerator form940XmlGenerator;
     private final Form940ScheduleAXmlGenerator generateForm940ScheduleAXml;
+
+
+    private final FutaReportService futaReportService;
+    private final FutaReportPdfService futaReportPdfService;
 
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье в 4:00 утра
     // @Scheduled(fixedDelay = 10000) // каждые 10 секунд
@@ -803,6 +811,278 @@ public class EmployerTaxScheduler {
 
         log.info("🏁 Annual Form940ScheduleAXML Scheduler завершил работу за {} год", previousYear);
     }
+
+
+    /**
+     * Генерирует квартальные FUTA отчеты
+     * Запускается 15 числа каждого квартального месяца (янв, апр, июль, окт) в 8:00
+     */
+    @Scheduled(cron = "0 0 8 15 1,4,7,10 *", zone = "America/New_York")
+    public void generateQuarterlyFutaReports() {
+        log.info("📋 Quarterly FUTA Report Scheduler запущен: генерируем quarterly FUTA reports");
+
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        int currentMonth = today.getMonthValue();
+
+        // Определяем какой квартал только что закончился
+        int completedQuarter;
+        if (currentMonth == 1) {        // 15 января - закончился Q4 прошлого года
+            completedQuarter = 4;
+            currentYear = currentYear - 1;
+        } else if (currentMonth == 4) { // 15 апреля - закончился Q1
+            completedQuarter = 1;
+        } else if (currentMonth == 7) { // 15 июля - закончился Q2
+            completedQuarter = 2;
+        } else if (currentMonth == 10) { // 15 октября - закончился Q3
+            completedQuarter = 3;
+        } else {
+            log.info("ℹ️ Ошибка в логике quarterly FUTA scheduler. Текущий месяц: {}", currentMonth);
+            return;
+        }
+
+        log.info("📅 Генерируем FUTA Reports за Q{} {}", completedQuarter, currentYear);
+
+        List<Company> allCompanies = companyRepository.findAll();
+
+        for (Company company : allCompanies) {
+            try {
+                // Проверяем, есть ли сотрудники в компании
+                List<User> employees = userRepository.findAllByCompanyId(company.getId());
+
+                if (!employees.isEmpty()) {
+                    // Генерируем квартальный FUTA отчет
+                    FutaReportDTO reportData = futaReportService.generateQuarterlyFutaReport(
+                            company.getId(), currentYear, completedQuarter);
+
+                    // Генерируем PDF и сохраняем в S3
+                    byte[] pdfBytes = futaReportPdfService.generateFutaReportPdf(reportData);
+
+                    log.info("✅ Quarterly FUTA Report сгенерен для компании: {} (ID: {}) за Q{} {}, размер PDF: {} bytes",
+                            company.getCompanyName(), company.getId(), completedQuarter, currentYear, pdfBytes.length);
+                } else {
+                    log.info("ℹ️ Нет сотрудников в компании: {} за Q{} {}",
+                            company.getCompanyName(), completedQuarter, currentYear);
+                }
+
+            } catch (Exception ex) {
+                log.error("❌ Ошибка генерации quarterly FUTA report для компании ID: {} за Q{} {}",
+                        company.getId(), completedQuarter, currentYear, ex);
+            }
+        }
+
+        log.info("🏁 Quarterly FUTA Report Scheduler завершил работу за Q{} {}", completedQuarter, currentYear);
+    }
+
+// =============================================================================
+// 📋 ANNUAL FUTA REPORTS
+// =============================================================================
+
+    /**
+     * Генерирует годовые FUTA отчеты
+     * Запускается 31 января в 9:00 утра (дедлайн для Form 940)
+     */
+    @Scheduled(cron = "0 0 9 31 1 *", zone = "America/New_York")
+    public void generateAnnualFutaReports() {
+        log.info("📄 Annual FUTA Report Scheduler запущен: генерируем annual FUTA reports за прошлый год");
+
+        LocalDate today = LocalDate.now();
+        int previousYear = today.getYear() - 1; // Годовой отчет генерируем за прошлый год
+
+        log.info("📅 Генерируем Annual FUTA Reports за {} год", previousYear);
+
+        List<Company> allCompanies = companyRepository.findAll();
+
+        for (Company company : allCompanies) {
+            try {
+                // Проверяем, есть ли сотрудники в компании за прошлый год
+                List<User> employees = userRepository.findAllByCompanyId(company.getId());
+
+                if (!employees.isEmpty()) {
+                    // Генерируем годовой FUTA отчет
+                    FutaReportDTO reportData = futaReportService.generateAnnualFutaReport(
+                            company.getId(), previousYear);
+
+                    // Генерируем PDF и сохраняем в S3
+                    byte[] pdfBytes = futaReportPdfService.generateFutaReportPdf(reportData);
+
+                    log.info("✅ Annual FUTA Report сгенерен для компании: {} (ID: {}) за {} год, размер PDF: {} bytes",
+                            company.getCompanyName(), company.getId(), previousYear, pdfBytes.length);
+                } else {
+                    log.info("ℹ️ Нет сотрудников в компании: {} за {} год",
+                            company.getCompanyName(), previousYear);
+                }
+
+            } catch (Exception ex) {
+                log.error("❌ Ошибка генерации annual FUTA report для компании ID: {} за {} год",
+                        company.getId(), previousYear, ex);
+            }
+        }
+
+        log.info("🏁 Annual FUTA Report Scheduler завершил работу за {} год", previousYear);
+    }
+
+// =============================================================================
+// 📋 QUARTERLY FUTA COMPLIANCE CHECK
+// =============================================================================
+
+    /**
+     * Проверяет compliance и отправляет уведомления о предстоящих дедлайнах
+     * Запускается каждый понедельник в 6:00 утра
+     */
+    @Scheduled(cron = "0 0 6 * * MON", zone = "America/New_York")
+    public void checkQuarterlyFutaCompliance() {
+        log.info("⚠️ FUTA Compliance Check Scheduler запущен: проверяем compliance и дедлайны");
+
+        LocalDate today = LocalDate.now();
+        int currentMonth = today.getMonthValue();
+        int currentYear = today.getYear();
+
+        // Определяем текущий квартал и следующий дедлайн
+        int currentQuarter;
+        LocalDate nextDeadline;
+
+        if (currentMonth >= 1 && currentMonth <= 3) {
+            currentQuarter = 1;
+            nextDeadline = LocalDate.of(currentYear, 4, 30); // Q1 deadline
+        } else if (currentMonth >= 4 && currentMonth <= 6) {
+            currentQuarter = 2;
+            nextDeadline = LocalDate.of(currentYear, 7, 31); // Q2 deadline
+        } else if (currentMonth >= 7 && currentMonth <= 9) {
+            currentQuarter = 3;
+            nextDeadline = LocalDate.of(currentYear, 10, 31); // Q3 deadline
+        } else {
+            currentQuarter = 4;
+            nextDeadline = LocalDate.of(currentYear + 1, 1, 31); // Q4 deadline
+        }
+
+        // Проверяем только если до дедлайна осталось меньше 2 недель
+        long daysUntilDeadline = today.until(nextDeadline).getDays();
+
+        if (daysUntilDeadline <= 14 && daysUntilDeadline > 0) {
+            log.info("⚠️ До FUTA дедлайна осталось {} дней. Проверяем compliance для Q{} {}",
+                    daysUntilDeadline, currentQuarter, currentYear);
+
+            List<Company> allCompanies = companyRepository.findAll();
+
+            for (Company company : allCompanies) {
+                try {
+                    // Генерируем текущий квартальный отчет для проверки
+                    FutaReportDTO currentReport = futaReportService.generateQuarterlyFutaReport(
+                            company.getId(), currentYear, currentQuarter);
+
+                    // Проверяем compliance
+                    if (!currentReport.getComplianceStatus() || currentReport.getNeedsPayment()) {
+                        log.warn("⚠️ COMPLIANCE ALERT: Компания {} (ID: {}) требует внимания по FUTA за Q{} {}. " +
+                                        "Compliance: {}, Needs Payment: {}, Remaining Liability: ${}",
+                                company.getCompanyName(), company.getId(), currentQuarter, currentYear,
+                                currentReport.getComplianceStatus(), currentReport.getNeedsPayment(),
+                                currentReport.getRemainingFutaLiability());
+
+                        // Здесь можно добавить отправку email уведомлений админам компании
+                        // sendFutaComplianceAlert(company, currentReport, daysUntilDeadline);
+                    }
+
+                } catch (Exception ex) {
+                    log.error("❌ Ошибка проверки FUTA compliance для компании ID: {}", company.getId(), ex);
+                }
+            }
+        } else if (daysUntilDeadline <= 0) {
+            log.warn("🚨 FUTA дедлайн просрочен на {} дней!", Math.abs(daysUntilDeadline));
+        }
+
+        log.info("🏁 FUTA Compliance Check завершен");
+    }
+
+// =============================================================================
+// 📋 FUTA YEAR-END PREPARATION
+// =============================================================================
+
+    /**
+     * Подготавливает данные к концу года (проверяет все квартальные отчеты)
+     * Запускается 15 декабря в 10:00 утра
+     */
+    @Scheduled(cron = "0 0 10 15 12 *", zone = "America/New_York")
+    public void prepareFutaYearEndReports() {
+        log.info("📋 FUTA Year-End Preparation Scheduler запущен: подготавливаем данные к концу года");
+
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+
+        log.info("📅 Подготавливаем FUTA данные за {} год к концу года", currentYear);
+
+        List<Company> allCompanies = companyRepository.findAll();
+
+        for (Company company : allCompanies) {
+            try {
+                log.info("🔍 Проверяем все квартальные FUTA отчеты для компании: {} (ID: {})",
+                        company.getCompanyName(), company.getId());
+
+                // Проверяем все 4 квартала текущего года
+                BigDecimal totalAnnualLiability = BigDecimal.ZERO;
+                BigDecimal totalAnnualPaid = BigDecimal.ZERO;
+                List<String> missingQuarters = new ArrayList<>();
+
+                for (int quarter = 1; quarter <= 4; quarter++) {
+                    try {
+                        FutaReportDTO quarterlyReport = futaReportService.generateQuarterlyFutaReport(
+                                company.getId(), currentYear, quarter);
+
+                        totalAnnualLiability = totalAnnualLiability.add(quarterlyReport.getTotalFutaTaxOwed());
+                        totalAnnualPaid = totalAnnualPaid.add(quarterlyReport.getTotalFutaTaxPaid());
+
+                        if (!quarterlyReport.getComplianceStatus()) {
+                            missingQuarters.add("Q" + quarter);
+                        }
+
+                        log.info("✅ Q{} {}: Owed=${}, Paid=${}, Compliant={}",
+                                quarter, currentYear,
+                                quarterlyReport.getTotalFutaTaxOwed(),
+                                quarterlyReport.getTotalFutaTaxPaid(),
+                                quarterlyReport.getComplianceStatus());
+
+                    } catch (Exception ex) {
+                        log.error("❌ Ошибка проверки Q{} для компании {}", quarter, company.getId(), ex);
+                        missingQuarters.add("Q" + quarter + " (ERROR)");
+                    }
+                }
+
+                // Итоговый отчет по компании
+                BigDecimal remainingLiability = totalAnnualLiability.subtract(totalAnnualPaid);
+
+                log.info("📊 Итоги {} года для {}: Total Owed=${}, Total Paid=${}, Remaining=${}, Issues={}",
+                        currentYear, company.getCompanyName(),
+                        totalAnnualLiability, totalAnnualPaid, remainingLiability,
+                        missingQuarters.isEmpty() ? "None" : String.join(", ", missingQuarters));
+
+                if (!missingQuarters.isEmpty() || remainingLiability.compareTo(BigDecimal.ONE) > 0) {
+                    log.warn("⚠️ YEAR-END ALERT: Компания {} требует внимания перед концом года. " +
+                                    "Проблемные кварталы: {}, Remaining Liability: ${}",
+                            company.getCompanyName(),
+                            missingQuarters.isEmpty() ? "None" : String.join(", ", missingQuarters),
+                            remainingLiability);
+
+                    // Здесь можно добавить отправку email уведомлений
+                    // sendFutaYearEndAlert(company, totalAnnualLiability, totalAnnualPaid, missingQuarters);
+                }
+
+            } catch (Exception ex) {
+                log.error("❌ Ошибка year-end preparation для компании ID: {}", company.getId(), ex);
+            }
+        }
+
+        log.info("🏁 FUTA Year-End Preparation завершен за {} год", currentYear);
+    }
+
+
+
+
+
+
+
+
+
+
 
 
 
