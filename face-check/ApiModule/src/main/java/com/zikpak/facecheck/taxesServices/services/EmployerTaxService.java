@@ -66,7 +66,16 @@ public class EmployerTaxService {
         BigDecimal futa           = calculateFuta(payroll.getWorker(),
                 payroll.getPeriodStart(),
                 dayGross);
-        BigDecimal suta           = calculateSuta(payroll.getCompany(), dayGross);
+        BigDecimal suta = calculateSuta(payroll.getWorker(), payroll.getCompany(), payroll.getPeriodStart(), dayGross);
+
+        BigDecimal ytdFuta = employerTaxRecordRepository
+                .sumFutaTaxableWagesByEmployeeAndYear(empId, year);
+        BigDecimal ytdSuta = employerTaxRecordRepository
+                .sumSutaTaxableWagesByEmployeeAndYear(empId, year);
+
+        BigDecimal taxableFuta = dayGross.min(BigDecimal.valueOf(7000).subtract(ytdFuta).max(BigDecimal.ZERO));
+        BigDecimal taxableSuta = dayGross.min(BigDecimal.valueOf(12300).subtract(ytdSuta).max(BigDecimal.ZERO));
+
 
         BigDecimal totalEmployerTax = socialSecurity
                 .add(medicare)
@@ -96,10 +105,14 @@ public class EmployerTaxService {
                 .medicareTaxableWages(dailyMedBase)
                 .additionalMedicareWages(dailyAddlMedBase)
 
+                .futaTaxableWages(taxableFuta)
+                .sutaTaxableWages(taxableSuta)
+
                 // периоды
                 .weekStart(payroll.getPeriodStart())
                 .weekEnd(payroll.getPeriodEnd())
                 .createdAt(LocalDate.now())
+
                 .paymentDate(
                         payroll.getPeriodEnd()
                                 .with(TemporalAdjusters.next(DayOfWeek.FRIDAY)))
@@ -114,25 +127,28 @@ public class EmployerTaxService {
     private BigDecimal calculateFuta(User employee, LocalDate periodStart, BigDecimal currentGross) {
         int year = periodStart.getYear();
         BigDecimal ytdGross = employerTaxRecordRepository
-                .sumGrossPayByEmployeeAndYear(employee.getId(), year);
+                .sumFutaTaxableWagesByEmployeeAndYear(employee.getId(), year);
 
         BigDecimal futaLimit = BigDecimal.valueOf(7000);
-        BigDecimal remainingFutaGross = futaLimit.subtract(ytdGross);
-
-        if (remainingFutaGross.compareTo(BigDecimal.ZERO) <= 0) {
-            return BigDecimal.ZERO;
-        }
-
+        BigDecimal remainingFutaGross = futaLimit.subtract(ytdGross).max(BigDecimal.ZERO);
         BigDecimal taxableGross = currentGross.min(remainingFutaGross);
+
         return calculatePercentage(taxableGross, 0.6); // 0.6%
     }
 
-    private BigDecimal calculateSuta(Company company, BigDecimal gross) {
+    private BigDecimal calculateSuta(User employee, Company company, LocalDate periodStart, BigDecimal currentGross) {
         BigDecimal sutaRate = company.getSocialSecurityTaxForCompany();
-        if (sutaRate == null) {
-            sutaRate = BigDecimal.valueOf(4.0); // default fallback
-        }
-        return gross.multiply(sutaRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP))
+        if (sutaRate == null) sutaRate = BigDecimal.valueOf(4.0);
+
+        int year = periodStart.getYear();
+        BigDecimal ytdSuta = employerTaxRecordRepository
+                .sumSutaTaxableWagesByEmployeeAndYear(employee.getId(), year);
+
+        BigDecimal sutaLimit = BigDecimal.valueOf(12300);
+        BigDecimal remainingSuta = sutaLimit.subtract(ytdSuta).max(BigDecimal.ZERO);
+        BigDecimal taxableGross = currentGross.min(remainingSuta);
+
+        return taxableGross.multiply(sutaRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP))
                 .setScale(2, RoundingMode.HALF_UP);
     }
 }
