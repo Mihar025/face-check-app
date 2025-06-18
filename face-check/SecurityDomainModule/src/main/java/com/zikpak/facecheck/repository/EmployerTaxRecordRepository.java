@@ -220,6 +220,10 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
             @Param("end")   LocalDate end);
 
 
+    @Query("SELECT COALESCE(SUM(e.sutaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.weekEnd) = :year")
+    BigDecimal sumSutaTaxableWagesByEmployeeAndYear(@Param("id") Integer id, @Param("year") int year);
 
+    @Query("SELECT COALESCE(SUM(e.futaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.weekEnd) = :year")
+    BigDecimal sumFutaTaxableWagesByEmployeeAndYear(@Param("id") Integer id, @Param("year") int year);
 
 }
