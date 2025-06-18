@@ -58,4 +58,8 @@ public class EmployerTaxRecord {
     private BigDecimal additionalMedicareWages;
 
     private LocalDate paymentDate;
+
+    private BigDecimal futaTaxableWages;
+
+    private BigDecimal sutaTaxableWages;
 }
