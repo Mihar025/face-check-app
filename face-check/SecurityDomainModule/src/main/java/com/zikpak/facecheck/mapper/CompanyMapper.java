@@ -88,6 +88,12 @@ public class CompanyMapper {
                 .companyAddress(companyRegistrationRequest.getCompanyAddress())
                 .companyPhone(companyRegistrationRequest.getCompanyPhone())
                 .companyEmail(companyRegistrationRequest.getCompanyEmail())
+                .companyCity(companyRegistrationRequest.getCompanyCity())
+                .companyState(companyRegistrationRequest.getCompanyState())
+                .companyZipCode(companyRegistrationRequest.getCompanyZipCode())
+                .employerEIN(companyRegistrationRequest.getEmployerEIN())
+                .socialSecurityTaxForCompany(companyRegistrationRequest.getSocialSecurityTaxForCompany()) // FUTA
+                .companyPaymentPosition(companyRegistrationRequest.getCompanyPaymentPosition())
                 .workersQuantity(0)
                 .build();
     }
