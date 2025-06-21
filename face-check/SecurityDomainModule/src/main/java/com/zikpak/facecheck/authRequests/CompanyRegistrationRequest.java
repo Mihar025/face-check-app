@@ -1,10 +1,13 @@
 package com.zikpak.facecheck.authRequests;
 
+import com.zikpak.facecheck.entity.CompanyPaymentPosition;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 @Getter
 @Setter
@@ -36,7 +39,14 @@ public class CompanyRegistrationRequest {
     @NotNull(message = "Company ZipCode is required")
     private String companyZipCode;
 
-    @NotNull(message = "This field maximal required!!!")
-    private String employerEIN; // Обязательно уникальный EIN для каждой компании
+    @NotNull(message = "This field is required!!!")
+    private String employerEIN;
+
+    @NotNull(message = "This field is required!!!")
+    private CompanyPaymentPosition companyPaymentPosition;
+
+    @NotNull
+    private BigDecimal socialSecurityTaxForCompany; // SUAT RATE;
+
 
 }
