@@ -137,8 +137,6 @@ public class AmazonS3Service {
 
 
 
-
-
     public String uploadPdfToS3(byte[] pdfContent, String fileName) {
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType("application/pdf");
