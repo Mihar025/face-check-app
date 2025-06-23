@@ -70,7 +70,7 @@ public class CompanyPayrollService {
     public BigDecimal getTotalEmployerTaxesForYear(Integer companyId, int year) {
         LocalDate start = LocalDate.of(year, 1, 1);
         LocalDate end = LocalDate.of(year, 12, 31);
-        return employerTaxRecordRepository.findByCompanyIdAndWeekStartBetween(companyId, start, end)
+        return employerTaxRecordRepository.findByCompanyIdAndPeriodStartBetween(companyId, start, end)
                 .stream()
                 .map(EmployerTaxRecord::getTotalEmployerTax)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
