@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,12 +72,13 @@ public class Company {
     private CompanyPaymentPosition companyPaymentPosition;
 
     private BigDecimal irsDepositAmount;
+
     private LocalDateTime whenDepositAmountWasMade;
 
-
-
-
     private Integer workersQuantity;
+
+    private LocalDate firstBiweeklyDate;
+
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private List<User> employees = new ArrayList<>();
