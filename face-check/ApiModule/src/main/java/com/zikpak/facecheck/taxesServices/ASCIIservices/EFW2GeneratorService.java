@@ -6,6 +6,7 @@ import com.zikpak.facecheck.helperServices.WorkerPayRollService;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.requestsResponses.finance.WorkerYearlySummaryDto;
+import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class EFW2GeneratorService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final WorkerPayRollService workerPayRollService;
+    private final AmazonS3Service amazonS3Service;
 
     /**
      * Generates the electronic EFW2 file as ASCII bytes.
@@ -115,7 +117,11 @@ public class EFW2GeneratorService {
         String trailerBody = "9" + padLeft(String.valueOf(employees.size()), 6);
         sb.append(formatRecord(trailerBody));
 
-        return sb.toString().getBytes(StandardCharsets.US_ASCII);
+        byte[] fileContent = sb.toString().getBytes(StandardCharsets.US_ASCII);
+        uploadToS3(company, companyId, year, fileContent);
+
+
+        return fileContent;
     }
 
     /** Formats to exactly 512 bytes: pads to 510 then CRLF */
@@ -139,5 +145,29 @@ public class EFW2GeneratorService {
         if (value == null) return "0";
         long cents = value.multiply(BigDecimal.valueOf(100)).longValue();
         return String.valueOf(cents);
+    }
+
+    private void uploadToS3(Company company, Integer companyId, int year, byte[] fileContent) {
+        try {
+            String companyKeyPart = company.getCompanyName()
+                    .trim()
+                    .replaceAll("[^A-Za-z0-9]+", "_");
+
+            String fileName = String.format("EFW2_%d_%d.txt", companyId, year);
+
+            String key = String.format("%s/%d/efw2/%d/%s",
+                    companyKeyPart,
+                    companyId,
+                    year,
+                    fileName
+            );
+
+            amazonS3Service.uploadPdfToS3(fileContent, key);
+            log.info("Successfully uploaded EFW2 file to S3 with key: {}", key);
+
+        } catch (Exception e) {
+            log.error("Failed to upload EFW2 file to S3", e);
+            // Don't throw exception, just log the error since file generation succeeded
+        }
     }
 }
