@@ -61,4 +61,44 @@ public class EmailService {
     }
 
 
+
+    @Async
+    public void sendEmailCustomReport(
+            String to, String username,
+            EmailTemplateName emailTemplate,
+            String confirmationURL,
+            String subject
+    ) throws MessagingException {
+        String templateName;
+        if(emailTemplate == null){
+            templateName = "confirm-email";
+        }
+        else{
+            templateName = emailTemplate.getName();
+        }
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(
+                mimeMessage,
+                MimeMessageHelper.MULTIPART_MODE_MIXED,
+                StandardCharsets.UTF_8.name()
+        );
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("username", username);
+        properties.put("confirmationUrl", confirmationURL);
+
+
+        Context context = new Context();
+        context.setVariables(properties);
+
+        helper.setFrom("contact@mishkaProCoder.com");
+        helper.setTo(to);
+        helper.setSubject(subject);
+
+        String template = templateEngine.process(templateName, context);
+        helper.setText(template, true);
+        mailSender.send(mimeMessage);
+    }
+
+
 }
