@@ -43,8 +43,8 @@ public class EmployerTaxRecord {
 
     private BigDecimal totalEmployerTax;
 
-    private LocalDate weekStart;
-    private LocalDate weekEnd;
+    private LocalDate periodStart;
+    private LocalDate periodEnd;
 
     private LocalDate createdAt;
 
