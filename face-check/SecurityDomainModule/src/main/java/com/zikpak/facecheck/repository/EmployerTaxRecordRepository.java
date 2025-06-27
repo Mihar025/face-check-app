@@ -19,8 +19,11 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     // Найти все записи по компании
     List<EmployerTaxRecord> findByCompanyId(Integer companyId);
 
-    // Найти записи по компании за период
-    List<EmployerTaxRecord> findByCompanyIdAndWeekStartBetween(Integer companyId, LocalDate start, LocalDate end);
+    List<EmployerTaxRecord> findByCompanyIdAndPeriodStartBetween(
+            Integer companyId,
+            LocalDate start,
+            LocalDate end
+    );
 
     // Найти все записи по сотруднику
     List<EmployerTaxRecord> findByEmployeeId(Integer employeeId);
@@ -100,7 +103,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
      * Сумма FUTA-налога для компании за произвольный период
      */
     @Query("SELECT COALESCE(SUM(e.futaTax), 0) FROM EmployerTaxRecord e " +
-            "WHERE e.company.id = :companyId AND e.weekStart BETWEEN :start AND :end")
+            "WHERE e.company.id = :companyId AND e.periodStart BETWEEN :start AND :end")
     BigDecimal sumFutaTaxByCompanyAndYear(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -111,7 +114,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
      * Количество уникальных сотрудников у компании за произвольный период
      */
     @Query("SELECT COUNT(DISTINCT e.employee.id) FROM EmployerTaxRecord e " +
-            "WHERE e.company.id = :companyId AND e.weekStart BETWEEN :start AND :end")
+            "WHERE e.company.id = :companyId AND e.periodStart BETWEEN :start AND :end")
     int countDistinctEmployeesByCompanyAndYear(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -122,7 +125,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(e.federalWithholding), 0) " +
             "FROM EmployerTaxRecord e " +
             "WHERE e.company.id = :companyId " +
-            "AND e.weekStart BETWEEN :start AND :end")
+            "AND e.periodStart BETWEEN :start AND :end")
     BigDecimal sumFederalWithholding(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -132,7 +135,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(e.socialSecurityTax), 0) " +
             "FROM EmployerTaxRecord e " +
             "WHERE e.company.id = :companyId " +
-            "AND e.weekStart BETWEEN :start AND :end")
+            "AND e.periodStart BETWEEN :start AND :end")
     BigDecimal sumSocialSecurity(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -142,7 +145,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(e.medicareTax), 0) " +
             "FROM EmployerTaxRecord e " +
             "WHERE e.company.id = :companyId " +
-            "AND e.weekStart BETWEEN :start AND :end")
+            "AND e.periodStart BETWEEN :start AND :end")
     BigDecimal sumMedicare(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -152,7 +155,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(e.grossPay), 0) " +
             "FROM EmployerTaxRecord e " +
             "WHERE e.company.id = :companyId " +
-            "AND e.weekStart BETWEEN :start AND :end")
+            "AND e.periodStart BETWEEN :start AND :end")
     BigDecimal sumGrossWages(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -177,7 +180,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(r.socialSecurityTaxableWages),0) " +
             "FROM EmployerTaxRecord r " +
             "WHERE r.company.id = :companyId " +
-            "  AND r.weekStart BETWEEN :start AND :end")
+            "  AND r.periodStart BETWEEN :start AND :end")
     BigDecimal sumSocialSecurityTaxableWages(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -189,7 +192,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(r.socialSecurityTips),0) " +
             "FROM EmployerTaxRecord r " +
             "WHERE r.company.id = :companyId " +
-            "  AND r.weekStart BETWEEN :start AND :end")
+            "  AND r.periodStart BETWEEN :start AND :end")
     BigDecimal sumSocialSecurityTips(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -201,7 +204,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(r.medicareTaxableWages),0) " +
             "FROM EmployerTaxRecord r " +
             "WHERE r.company.id = :companyId " +
-            "  AND r.weekStart BETWEEN :start AND :end")
+            "  AND r.periodStart BETWEEN :start AND :end")
     BigDecimal sumMedicareTaxableWages(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
@@ -213,17 +216,34 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(r.additionalMedicareWages),0) " +
             "FROM EmployerTaxRecord r " +
             "WHERE r.company.id = :companyId " +
-            "  AND r.weekStart BETWEEN :start AND :end")
+            "  AND r.periodStart BETWEEN :start AND :end")
     BigDecimal sumAdditionalMedicareTaxableWages(
             @Param("companyId") Integer companyId,
             @Param("start") LocalDate start,
             @Param("end")   LocalDate end);
 
 
-    @Query("SELECT COALESCE(SUM(e.sutaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.weekEnd) = :year")
+    @Query("SELECT COALESCE(SUM(e.sutaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.periodEnd) = :year")
     BigDecimal sumSutaTaxableWagesByEmployeeAndYear(@Param("id") Integer id, @Param("year") int year);
 
-    @Query("SELECT COALESCE(SUM(e.futaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.weekEnd) = :year")
+    @Query("SELECT COALESCE(SUM(e.futaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.periodEnd) = :year")
     BigDecimal sumFutaTaxableWagesByEmployeeAndYear(@Param("id") Integer id, @Param("year") int year);
+
+
+
+    boolean existsByEmployeeIdAndPeriodStartAndPeriodEnd(
+            Integer employeeId,
+            LocalDate periodStart,
+            LocalDate periodEnd
+    );
+
+
+    List<EmployerTaxRecord> findByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(
+            Integer companyId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
+
+
 
 }

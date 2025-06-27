@@ -2,14 +2,14 @@ package com.zikpak.facecheck.taxesServices.scheduler;
 
 
 import com.zikpak.facecheck.entity.Company;
+import com.zikpak.facecheck.entity.CompanyPaymentPosition;
+import com.zikpak.facecheck.entity.Role;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.entity.employee.WorkerPayroll;
 import com.zikpak.facecheck.helperServices.WorkerPayRollService;
-import com.zikpak.facecheck.repository.CompanyRepository;
-import com.zikpak.facecheck.repository.UserRepository;
-import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
-import com.zikpak.facecheck.repository.WorkerPayrollRepository;
+import com.zikpak.facecheck.repository.*;
+import com.zikpak.facecheck.security.mailServiceForReports.ReportsMailSender;
 import com.zikpak.facecheck.taxesServices.ASCIIservices.EFW2GeneratorService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportDTO;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportPdfService;
@@ -20,6 +20,9 @@ import com.zikpak.facecheck.taxesServices.customReportsForCompanys.hoursReport.H
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.payrollReport.PayrollSummaryDataService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.payrollReport.PayrollSummaryReportDTO;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.payrollReport.PayrollSummaryReportService;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.sutaCustomTaxReturn.SutaReportDTO;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.sutaCustomTaxReturn.SutaReportPdfService;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.sutaCustomTaxReturn.SutaReportService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryDataService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryPdfService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryReportDTO;
@@ -39,8 +42,10 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -58,6 +63,7 @@ public class EmployerTaxScheduler {
     private final HoursReportDataService hoursReportDataService;
     private final HoursReportPdfService hoursReportPdfService;
     private final WorkerAttendanceRepository attendanceRepository;
+    private final RoleRepository roleRepository;
     private final TaxSummaryDataService taxSummaryDataService;
     private final TaxSummaryPdfService taxSummaryPdfService;
 
@@ -79,23 +85,36 @@ public class EmployerTaxScheduler {
     private final FutaReportService futaReportService;
     private final FutaReportPdfService futaReportPdfService;
 
+    private final SutaReportService sutaReportService;
+    private final SutaReportPdfService sutaReportPdfService;
+
+    private final ReportsMailSender reportsMailSender;
+
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье в 4:00 утра
-    // @Scheduled(fixedDelay = 10000) // каждые 10 секунд
     public void calculateWeeklyEmployerTaxes() {
         log.info("🧮 Scheduler запущен: начинаем расчёт налогов для всех payroll'ов");
 
+        LocalDate today = LocalDate.now();
+
         List<WorkerPayroll> payrolls = workerPayrollRepository
-                .findAllByPeriodEnd(LocalDate.now().minusDays(1)) // вчера была суббота
+                .findAllByPeriodEnd(today.minusDays(1)) // проверяем вчерашний день
                 .stream()
                 .filter(p -> !p.isEmployerTaxesCalculated())
                 .toList();
 
         for (WorkerPayroll payroll : payrolls) {
             try {
+                Company company = payroll.getCompany(); // ⬅️ вот как берём компанию
+
+                if (!shouldCreateEmployerTaxRecord(payroll, company)) {
+                    log.info("⏩ Пропускаем payroll ID {} — период ещё не завершён", payroll.getId());
+                    continue;
+                }
+
                 employerTaxService.calculateAndSaveEmployerTaxes(payroll);
                 payroll.setEmployerTaxesCalculated(true);
-
                 workerPayrollRepository.save(payroll);
+
                 log.info("✅ Расчёт выполнен для payroll ID: {}", payroll.getId());
             } catch (Exception e) {
                 log.error("❌ Ошибка при расчёте налогов для payroll ID: {}", payroll.getId(), e);
@@ -105,57 +124,208 @@ public class EmployerTaxScheduler {
         log.info("🏁 Scheduler завершил работу");
     }
 
-    @Scheduled(cron = "0 0 5 * * SUN", zone = "America/New_York")
-    public void generateWeeklyPayStubs() {
-        log.info("🗓 PayStubScheduler запущен: генерируем paystubs за субботу");
 
-        LocalDate yesterday = LocalDate.now().minusDays(1); // суббота
+/*
+
+    @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье
+    public void generatePayStubs() {
+        log.info("📄 Scheduler: генерация Paystubs началась");
+
+        LocalDate today = LocalDate.now();
+
         List<WorkerPayroll> payrolls = workerPayrollRepository
-                .findAllByPeriodEnd(yesterday).stream()
+                .findAllByPeriodEnd(today)
+                .stream()
                 .filter(p -> !Boolean.TRUE.equals(p.getPayStubGenerated()))
                 .toList();
 
         for (WorkerPayroll payroll : payrolls) {
             try {
+                Company company = payroll.getCompany();
+
+                // Если период компании подходит — генерируем
+                if (company.getCompanyPaymentPosition() != null &&
+                        today.equals(payroll.getPeriodEnd())) {
+
+                    payStubService.generatePayStubPdf(payroll.getId());
+                    payroll.setPayStubGenerated(true);
+                    workerPayrollRepository.save(payroll);
+
+                    log.info("✅ Paystub создан для payroll ID: {}", payroll.getId());
+                    log.info("📄 Обработано payrolls: {}", payrolls.size());
+                }
+            } catch (Exception e) {
+                log.error("❌ Ошибка при генерации paystub для payroll ID: {}", payroll.getId(), e);
+            }
+        }
+
+        log.info("🏁 Scheduler: генерация Paystubs завершена");
+    }
+
+ */
+
+
+ // 1) Еженедельные – только для компаний с WEEKLY
+    @Scheduled(cron = "0 0 4 * * SUN", zone = "America/New_York")
+    public void generateWeeklyPayStubs() {
+        log.info("📄 Scheduler (WEEKLY): запуск генерации Paystubs");
+
+        LocalDate today = LocalDate.now(ZoneId.of("America/New_York"));
+
+        List<WorkerPayroll> payrolls = workerPayrollRepository
+            .findAllByPeriodEnd(today).stream()
+            .filter(p -> !Boolean.TRUE.equals(p.getPayStubGenerated()))
+            .filter(p -> p.getCompany().getCompanyPaymentPosition() == CompanyPaymentPosition.WEEKLY)
+            .toList();
+
+        // Группируем по компаниям
+        Map<Company, List<WorkerPayroll>> payrollsByCompany = payrolls.stream()
+                .collect(Collectors.groupingBy(WorkerPayroll::getCompany));
+
+        for (Map.Entry<Company, List<WorkerPayroll>> entry : payrollsByCompany.entrySet()) {
+            Company company = entry.getKey();
+            List<WorkerPayroll> companyPayrolls = entry.getValue();
+            int successCount = 0;
+
+            for (WorkerPayroll payroll : companyPayrolls) {
+                try {
+                    payStubService.generatePayStubPdf(payroll.getId());
+                    payroll.setPayStubGenerated(true);
+                    workerPayrollRepository.save(payroll);
+                    successCount++;
+                    log.info("✅ WEEKLY paystub создан для payroll ID: {}", payroll.getId());
+                } catch (Exception e) {
+                    log.error("❌ Ошибка WEEKLY для payroll ID: {}", payroll.getId(), e);
+                }
+            }
+            if (successCount > 0) {
+                try {
+                    reportsMailSender.sendEmailPaystubs(company.getCompanyEmail());
+                    log.info("📧 Email отправлен компании: {} (paystubs: {})",
+                            company.getCompanyEmail(), successCount);
+                } catch (Exception e) {
+                    log.error("❌ Ошибка отправки email для компании: {}",
+                            company.getCompanyEmail(), e);
+                }
+            }
+        }
+
+        log.info("🏁 Scheduler (WEEKLY): завершено, всего: {}", payrolls.size());
+    }
+
+    // 2) Би-недельные – только для BIWEEKLY и только в «чётные» недели
+    @Scheduled(cron = "0 30 4 * * SUN", zone = "America/New_York")
+    public void generateBiweeklyPayStubs() {
+        log.info("📄 Scheduler (BIWEEKLY): запуск генерации Paystubs");
+
+        LocalDate today = LocalDate.now(ZoneId.of("America/New_York"));
+
+        List<WorkerPayroll> payrolls = workerPayrollRepository
+            .findAllByPeriodEnd(today).stream()
+            .filter(p -> !Boolean.TRUE.equals(p.getPayStubGenerated()))
+            .filter(p -> p.getCompany().getCompanyPaymentPosition() == CompanyPaymentPosition.BIWEEKLY)
+            .filter(p -> {
+
+                LocalDate first = p.getCompany().getFirstBiweeklyDate();
+                long weeks = ChronoUnit.WEEKS.between(first, today);
+                return weeks % 2 == 0; // только чётная
+            })
+            .toList();
+
+        // Группируем по компаниям
+        Map<Company, List<WorkerPayroll>> payrollsByCompany = payrolls.stream()
+                .collect(Collectors.groupingBy(WorkerPayroll::getCompany));
+
+        for (Map.Entry<Company, List<WorkerPayroll>> entry : payrollsByCompany.entrySet()) {
+            Company company = entry.getKey();
+            List<WorkerPayroll> companyPayrolls = entry.getValue();
+            int successCount = 0;
+
+
+        for (WorkerPayroll payroll : companyPayrolls) {
+            try {
                 payStubService.generatePayStubPdf(payroll.getId());
                 payroll.setPayStubGenerated(true);
                 workerPayrollRepository.save(payroll);
-                log.info("✅ PayStub сгенерён для payroll ID={}", payroll.getId());
-            } catch (Exception ex) {
-                log.error("❌ Ошибка генерации paystub для payroll ID={}", payroll.getId(), ex);
+                successCount++;
+                log.info("✅ BIWEEKLY paystub создан для payroll ID: {}", payroll.getId());
+            } catch (Exception e) {
+                log.error("❌ Ошибка BIWEEKLY для payroll ID: {}", payroll.getId(), e);
             }
         }
-
-        log.info("🏁 PayStubScheduler завершил работу");
+            if (successCount > 0) {
+                try {
+                    reportsMailSender.sendEmailPaystubs(company.getCompanyEmail());
+                    log.info("📧 Email отправлен компании: {} (paystubs: {})",
+                            company.getCompanyEmail(), successCount);
+                } catch (Exception e) {
+                    log.error("❌ Ошибка отправки email для компании: {}",
+                            company.getCompanyEmail(), e);
+                }
+            }
+        }
+        log.info("🏁 Scheduler (BIWEEKLY): завершено, всего: {}", payrolls.size());
     }
+
 
     @Scheduled(cron = "0 0 5 3 1 *", zone = "America/New_York")
     public void generateAllW2FormsFor2025() {
-        if(LocalDate.now().getYear() != 2026){
+        int currentYear = LocalDate.now().getYear();
+        int targetYear = currentYear - 1; // W-2 за прошлый год
+
+        // Выполняем только в правильный год
+        if (currentYear != 2026) {
+            log.info("⏭️ Пропускаем генерацию W-2. Текущий год: {}, ожидаем: 2026", currentYear);
             return;
         }
 
-        int targetYear = 2025;
-
         log.info("📄 W2FormScheduler запущен: генерируем W-2 за {} всем работникам", targetYear);
 
-        // 1) Берём всех пользователей (или, при необходимости, фильтруйте только тех, кто — работники)
-        for (User worker : userRepository.findAll()) {
-            Integer workerId = worker.getId();
+        // Получаем всех пользователей, у которых есть компания (т.е. они работники)
+        List<User> workers = userRepository.findAll().stream()
+                .filter(user -> user.getCompany() != null)
+                .filter(user -> !user.isBusinessOwner()) // исключаем владельцев бизнеса
+                .toList();
+
+        // ИЛИ можно создать специальный метод в репозитории:
+        // @Query("SELECT u FROM User u WHERE u.company IS NOT NULL AND u.isBusinessOwner = false")
+        // List<User> findAllWorkers();
+
+        // Группируем по компаниям для отправки уведомлений
+        Map<Company, List<User>> workersByCompany = new HashMap<>();
+
+        for (User worker : workers) {
             try {
-                // 2) Сервис внутри заливает PDF в S3 по нужному пути
-                workerPayRollService.generatePDF(workerId, targetYear);
-                log.info("✅ Сгенерирован W-2 для workerId={} за {}", workerId, targetYear);
+                // Генерируем W-2
+                workerPayRollService.generatePDF(worker.getId(), targetYear);
+                log.info("✅ Сгенерирован W-2 для workerId={} за {}", worker.getId(), targetYear);
+
+                // Добавляем в группу для компании
+                Company company = worker.getCompany();
+                workersByCompany.computeIfAbsent(company, k -> new ArrayList<>()).add(worker);
+
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации W-2 для workerId={}", workerId, ex);
+                log.error("❌ Ошибка генерации W-2 для workerId={}", worker.getId(), ex);
             }
         }
 
-        log.info("🏁 W2FormScheduler завершил генерацию W-2 за {}", targetYear);
+        // Отправляем уведомления компаниям
+        for (Map.Entry<Company, List<User>> entry : workersByCompany.entrySet()) {
+            Company company = entry.getKey();
+            int count = entry.getValue().size();
+            try {
+                reportsMailSender.sendEmailW2Forms(company.getCompanyEmail());
+                log.info("📧 Уведомление о W-2 отправлено компании: {} (forms: {})",
+                        company.getCompanyEmail(), count);
+            } catch (Exception e) {
+                log.error("❌ Ошибка отправки уведомления для компании: {}",
+                        company.getCompanyEmail(), e);
+            }
+        }
+
+        log.info("🏁 W2FormScheduler завершил генерацию W-2 за {}. Всего: {} работников",
+                targetYear, workers.size());
     }
-
-
-
 
 
 
@@ -168,38 +338,43 @@ public class EmployerTaxScheduler {
     public void generateWeeklyPayrollReports() {
         log.info("📊 Weekly PayrollReportScheduler запущен: генерируем еженедельные отчеты");
 
-        LocalDate endDate = LocalDate.now().minusDays(1); // суббота (последний день недели)
-        LocalDate startDate = endDate.minusDays(6); // воскресенье (первый день недели)
+        LocalDate endDate = LocalDate.now().minusDays(1);
+        LocalDate startDate = endDate.minusDays(6);
 
-        log.info("📅 Генерируем отчеты за период: {} - {}", startDate, endDate);
+        // ОДИН запрос вместо N+1
+        List<WorkerPayroll> allWeeklyPayrolls = workerPayrollRepository
+                .findAllByPeriodBetween(startDate, endDate);
 
-        // Получаем все компании
-        List<Company> allCompanies = companyRepository.findAll();
+        // Группируем по компаниям в памяти
+        Map<Company, List<WorkerPayroll>> payrollsByCompany = allWeeklyPayrolls.stream()
+                .collect(Collectors.groupingBy(wp -> wp.getCompany()));
 
-        for (Company company : allCompanies) {
+        // Теперь обрабатываем только компании с payrolls
+        for (Map.Entry<Company, List<WorkerPayroll>> entry : payrollsByCompany.entrySet()) {
+            Company company = entry.getKey();
+            List<WorkerPayroll> companyPayrolls = entry.getValue();
+
             try {
-                // Проверяем, есть ли payrolls за эту неделю для этой компании
-                List<WorkerPayroll> weeklyPayrolls = workerPayrollRepository
-                        .findAllByCompanyIdAndPeriodBetween(company.getId(), startDate, endDate);
+                // Генерируем данные отчета
+                PayrollSummaryReportDTO reportData = payrollSummaryDataService
+                        .generatePayrollSummaryData(company.getId(), startDate, endDate);
 
-                if (!weeklyPayrolls.isEmpty()) {
-                    // Генерируем данные отчета
-                    PayrollSummaryReportDTO reportData = payrollSummaryDataService
-                            .generatePayrollSummaryData(company.getId(), startDate, endDate);
+                // Генерируем PDF и сохраняем в S3
+                payrollSummaryReportService.generatePayrollSummaryReport(reportData);
 
-                    // Генерируем PDF и сохраняем в S3
-                    payrollSummaryReportService.generatePayrollSummaryReport(reportData);
-                    log.info("✅ Weekly report сгенерен для компании: {} (ID: {})",
-                            company.getCompanyName(), company.getId());
-                } else {
-                    log.info("ℹ️ Нет payrolls за эту неделю для компании: {}", company.getCompanyName());
-                }
+                log.info("✅ Weekly report сгенерен для компании: {} (ID: {})",
+                        company.getCompanyName(), company.getId());
+
+                reportsMailSender.sendEmailWeeklyPayrollReport(company.getCompanyEmail());
+
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации weekly report для компании ID: {}", company.getId(), ex);
+                log.error("❌ Ошибка генерации weekly report для компании ID: {}",
+                        company.getId(), ex);
             }
         }
 
-        log.info("🏁 Weekly PayrollReportScheduler завершил работу");
+        log.info("🏁 Weekly PayrollReportScheduler завершил работу. Обработано компаний: {}",
+                payrollsByCompany.size());
     }
 
 
@@ -214,35 +389,46 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем отчеты за период: {} - {}", startDate, endDate);
 
-        // Получаем все компании
-        List<Company> allCompanies = companyRepository.findAll();
+        // ОДИН запрос вместо N+1
+        List<WorkerPayroll> allMonthlyPayrolls = workerPayrollRepository
+                .findAllByPeriodBetween(startDate, endDate);
 
-        for (Company company : allCompanies) {
+        // Группируем по компаниям
+        Map<Company, List<WorkerPayroll>> payrollsByCompany = allMonthlyPayrolls.stream()
+                .collect(Collectors.groupingBy(WorkerPayroll::getCompany));
+
+        int successCount = 0;
+        int errorCount = 0;
+
+        for (Map.Entry<Company, List<WorkerPayroll>> entry : payrollsByCompany.entrySet()) {
+            Company company = entry.getKey();
+
             try {
-                // Проверяем, есть ли payrolls за этот месяц для этой компании
-                List<WorkerPayroll> monthlyPayrolls = workerPayrollRepository
-                        .findAllByCompanyIdAndPeriodBetween(company.getId(), startDate, endDate);
+                PayrollSummaryReportDTO reportData = payrollSummaryDataService
+                        .generatePayrollSummaryData(company.getId(), startDate, endDate);
 
-                if (!monthlyPayrolls.isEmpty()) {
-                    PayrollSummaryReportDTO reportData = payrollSummaryDataService
-                            .generatePayrollSummaryData(company.getId(), startDate, endDate);
+                payrollSummaryReportService.generatePayrollSummaryReport(reportData);
 
-                    payrollSummaryReportService.generatePayrollSummaryReport(reportData);
+                reportsMailSender.sendEmailWeeklyPayrollReport(company.getCompanyEmail());
 
-                    log.info("✅ Monthly report сгенерен для компании: {} (ID: {}) за {}/{}",
-                            company.getCompanyName(), company.getId(),
-                            startDate.getMonthValue(), startDate.getYear());
-                } else {
-                    log.info("ℹ️ Нет payrolls за месяц {}/{} для компании: {}",
-                            startDate.getMonthValue(), startDate.getYear(), company.getCompanyName());
-                }
+                log.info("✅ Monthly report сгенерен для компании: {} (ID: {}) за {}/{}",
+                        company.getCompanyName(), company.getId(),
+                        startDate.getMonthValue(), startDate.getYear());
+
+                successCount++;
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации monthly report для компании ID: {}", company.getId(), ex);
+                log.error("❌ Ошибка генерации monthly report для компании ID: {}",
+                        company.getId(), ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Monthly PayrollReportScheduler завершил работу");
+        log.info("🏁 Monthly PayrollReportScheduler завершил работу. " +
+                        "Обработано компаний: {}, успешно: {}, с ошибками: {}",
+                payrollsByCompany.size(), successCount, errorCount);
     }
+
+
 
     @Scheduled(cron = "0 30 6 * * SUN", zone = "America/New_York")
     public void generateWeeklyHoursReports() {
@@ -253,50 +439,58 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем отчеты по часам за период: {} - {}", startDate, endDate);
 
-        List<Company> allCompanies = companyRepository.findAll();
+        // ОДИН запрос для всех attendance за неделю
+        List<WorkerAttendance> allWeeklyAttendances = attendanceRepository
+                .findAllByCheckInTimeBetween(
+                        startDate.atStartOfDay(),
+                        endDate.atTime(23, 59, 59)
+                );
 
-        for (Company company : allCompanies) {
+        // Группируем по компаниям через работников
+        Map<Company, List<WorkerAttendance>> attendancesByCompany = allWeeklyAttendances.stream()
+                .collect(Collectors.groupingBy(att -> att.getWorker().getCompany()));
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
+
+        for (Map.Entry<Company, List<WorkerAttendance>> entry : attendancesByCompany.entrySet()) {
+            Company company = entry.getKey();
+            List<WorkerAttendance> companyAttendances = entry.getValue();
+
             try {
-                // ✅ ПРАВИЛЬНО: Проверяем есть ли workers в компании
-                List<User> workers = userRepository.findAllByCompanyId(company.getId());
+                // Генерируем данные отчета по часам
+                HoursReportDTO reportData = hoursReportDataService
+                        .generateHoursReportData(company.getId(), startDate, endDate);
 
-                if (!workers.isEmpty()) {
-                    // ✅ ПРАВИЛЬНО: Используем тот же метод что в service
-                    List<WorkerAttendance> weeklyAttendances = new ArrayList<>();
+                // Генерируем PDF и сохраняем в S3
+                hoursReportPdfService.generateHoursReport(reportData, company.getId());
 
-                    for (User worker : workers) {
-                        List<WorkerAttendance> workerAttendances = attendanceRepository
-                                .findAllByWorkerIdAndCheckInTimeBetween(
-                                        worker.getId(),
-                                        startDate.atStartOfDay(),
-                                        endDate.atTime(23, 59, 59)
-                                );
-                        weeklyAttendances.addAll(workerAttendances);
-                    }
+                // Отправляем email
+                reportsMailSender.sendEmailHoursReport(company.getCompanyEmail());
 
-                    if (!weeklyAttendances.isEmpty()) {
-                        // Генерируем данные отчета по часам
-                        HoursReportDTO reportData = hoursReportDataService
-                                .generateHoursReportData(company.getId(), startDate, endDate);
+                log.info("✅ Weekly hours report сгенерен для компании: {} (ID: {}, attendances: {})",
+                        company.getCompanyName(), company.getId(), companyAttendances.size());
 
-                        // Генерируем PDF и сохраняем в S3
-                        hoursReportPdfService.generateHoursReport(reportData, company.getId());
-
-                        log.info("✅ Weekly hours report сгенерен для компании: {} (ID: {})",
-                                company.getCompanyName(), company.getId());
-                    } else {
-                        log.info("ℹ️ Нет attendance за эту неделю для компании: {}", company.getCompanyName());
-                    }
-                } else {
-                    log.info("ℹ️ Нет сотрудников в компании: {}", company.getCompanyName());
-                }
+                successCount++;
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации weekly hours report для компании ID: {}", company.getId(), ex);
+                log.error("❌ Ошибка генерации weekly hours report для компании ID: {}",
+                        company.getId(), ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Weekly HoursReportScheduler завершил работу");
+        long companiesWithoutAttendance = companyRepository.count() - attendancesByCompany.size();
+        if (companiesWithoutAttendance > 0) {
+            log.info("ℹ️ Компаний без attendance за неделю: {}", companiesWithoutAttendance);
+        }
+
+        log.info("🏁 Weekly HoursReportScheduler завершил работу. " +
+                        "Обработано: {}, успешно: {}, с ошибками: {}",
+                attendancesByCompany.size(), successCount, errorCount);
     }
+
+
 
     // ✅ МЕСЯЧНЫЙ HOURS REPORT (каждое первое воскресенье месяца в 7:30 утра)
     @Scheduled(cron = "0 30 7 1-7 * SUN", zone = "America/New_York")
@@ -310,51 +504,60 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем отчеты по часам за период: {} - {}", startDate, endDate);
 
-        List<Company> allCompanies = companyRepository.findAll();
+        // ОДИН запрос для всех attendance за месяц
+        List<WorkerAttendance> allMonthlyAttendances = attendanceRepository
+                .findAllByCheckInTimeBetween(
+                        startDate.atStartOfDay(),
+                        endDate.atTime(23, 59, 59)
+                );
 
-        for (Company company : allCompanies) {
+        // Группируем по компаниям
+        Map<Company, List<WorkerAttendance>> attendancesByCompany = allMonthlyAttendances.stream()
+                .collect(Collectors.groupingBy(att -> att.getWorker().getCompany()));
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
+
+        for (Map.Entry<Company, List<WorkerAttendance>> entry : attendancesByCompany.entrySet()) {
+            Company company = entry.getKey();
+            List<WorkerAttendance> companyAttendances = entry.getValue();
+
             try {
-                // ✅ ПРАВИЛЬНО: Проверяем есть ли workers в компании
-                List<User> workers = userRepository.findAllByCompanyId(company.getId());
+                // Генерируем отчет
+                HoursReportDTO reportData = hoursReportDataService
+                        .generateHoursReportData(company.getId(), startDate, endDate);
 
-                if (!workers.isEmpty()) {
-                    // ✅ ПРАВИЛЬНО: Используем тот же метод что в service
-                    List<WorkerAttendance> monthlyAttendances = new ArrayList<>();
+                // Генерируем PDF
+                hoursReportPdfService.generateHoursReport(reportData, company.getId());
 
-                    for (User worker : workers) {
-                        List<WorkerAttendance> workerAttendances = attendanceRepository
-                                .findAllByWorkerIdAndCheckInTimeBetween(
-                                        worker.getId(),
-                                        startDate.atStartOfDay(),
-                                        endDate.atTime(23, 59, 59)
-                                );
-                        monthlyAttendances.addAll(workerAttendances);
-                    }
+                // Отправляем email
+                reportsMailSender.sendEmailHoursReport(company.getCompanyEmail());
 
-                    if (!monthlyAttendances.isEmpty()) {
-                        HoursReportDTO reportData = hoursReportDataService
-                                .generateHoursReportData(company.getId(), startDate, endDate);
+                log.info("✅ Monthly hours report сгенерен для компании: {} (ID: {}) за {}/{} (attendances: {})",
+                        company.getCompanyName(), company.getId(),
+                        startDate.getMonthValue(), startDate.getYear(),
+                        companyAttendances.size());
 
-                        hoursReportPdfService.generateHoursReport(reportData, company.getId());
-
-                        log.info("✅ Monthly hours report сгенерен для компании: {} (ID: {}) за {}/{}",
-                                company.getCompanyName(), company.getId(),
-                                startDate.getMonthValue(), startDate.getYear());
-                    } else {
-                        log.info("ℹ️ Нет attendance за месяц {}/{} для компании: {}",
-                                startDate.getMonthValue(), startDate.getYear(), company.getCompanyName());
-                    }
-                } else {
-                    log.info("ℹ️ Нет сотрудников в компании: {}", company.getCompanyName());
-                }
+                successCount++;
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации monthly hours report для компании ID: {}", company.getId(), ex);
+                log.error("❌ Ошибка генерации monthly hours report для компании ID: {}",
+                        company.getId(), ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Monthly HoursReportScheduler завершил работу");
-    }
+        // Логируем компании без attendance
+        long companiesWithoutAttendance = companyRepository.count() - attendancesByCompany.size();
+        if (companiesWithoutAttendance > 0) {
+            log.info("ℹ️ Компаний без attendance за месяц {}/{}: {}",
+                    startDate.getMonthValue(), startDate.getYear(), companiesWithoutAttendance);
+        }
 
+        log.info("🏁 Monthly HoursReportScheduler завершил работу. " +
+                        "Обработано: {}, успешно: {}, с ошибками: {}",
+                attendancesByCompany.size(), successCount, errorCount);
+    }
 
 
     @Scheduled(cron = "0 0 9 1 1,4,7,10 *", zone = "America/New_York")
@@ -391,6 +594,9 @@ public class EmployerTaxScheduler {
         // Получаем все компании
         List<Company> allCompanies = companyRepository.findAll();
 
+        int successCount = 0;
+        int errorCount = 0;
+
         for (Company company : allCompanies) {
             try {
                 // Генерируем Tax Summary Report
@@ -400,16 +606,23 @@ public class EmployerTaxScheduler {
                 // Генерируем PDF и сохраняем в S3
                 taxSummaryPdfService.generateTaxSummaryReport(reportData);
 
-                log.info("✅ Quarterly Tax Summary Report сгенерен для компании: {} (ID: {}) за Q{} {}",
+                // ✅ ДОБАВЛЕНО: Отправляем email
+                reportsMailSender.sendEmailTaxSummaryReport(company.getCompanyEmail());
+                log.info("✅ Quarterly Tax Summary Report сгенерен и отправлен для компании: {} (ID: {}) за Q{} {}",
                         company.getCompanyName(), company.getId(), completedQuarter, currentYear);
+
+                successCount++;
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации Tax Summary Report для компании ID: {} за Q{} {}",
                         company.getId(), completedQuarter, currentYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Quarterly TaxSummaryScheduler завершил работу за Q{} {}", completedQuarter, currentYear);
+        log.info("🏁 Quarterly TaxSummaryScheduler завершил работу за Q{} {}. " +
+                        "Обработано компаний: {}, успешно: {}, с ошибками: {}",
+                completedQuarter, currentYear, allCompanies.size(), successCount, errorCount);
     }
 
 // =============================================================================
@@ -425,31 +638,47 @@ public class EmployerTaxScheduler {
                 today.minusMonths(1).lengthOfMonth());
         LocalDate startDate = endDate.withDayOfMonth(1);
 
-        List<Company> allCompanies = companyRepository.findAll();
+        // ОДИН запрос для всех payrolls за месяц
+        List<WorkerPayroll> allMonthlyPayrolls = workerPayrollRepository
+                .findAllByPeriodBetween(startDate, endDate);
 
-        for (Company company : allCompanies) {
+        // Группируем по компаниям
+        Map<Company, List<WorkerPayroll>> payrollsByCompany = allMonthlyPayrolls.stream()
+                .collect(Collectors.groupingBy(WorkerPayroll::getCompany));
+
+        int successCount = 0;
+        int errorCount = 0;
+
+        for (Map.Entry<Company, List<WorkerPayroll>> entry : payrollsByCompany.entrySet()) {
+            Company company = entry.getKey();
+
             try {
-                List<WorkerPayroll> monthlyPayrolls = workerPayrollRepository
-                        .findAllByCompanyIdAndPeriodBetween(company.getId(), startDate, endDate);
+                PayrollSummaryReportDTO reportData = payrollSummaryDataService
+                        .generatePayrollSummaryData(company.getId(), startDate, endDate);
 
-                if (!monthlyPayrolls.isEmpty()) {
-                    PayrollSummaryReportDTO reportData = payrollSummaryDataService
-                            .generatePayrollSummaryData(company.getId(), startDate, endDate);
+                // Генерируем CSV и сохраняем в S3
+                payrollSummaryReportCsvService.generatePayrollSummaryReportCsv(reportData, company.getId());
 
-                    // Генерируем CSV и сохраняем в S3
-                    payrollSummaryReportCsvService.generatePayrollSummaryReportCsv(reportData, company.getId());
+                // Отправляем email
+                reportsMailSender.sendEmailCSV(company.getCompanyEmail());
 
-                    log.info("✅ Monthly CSV report сгенерен для компании: {} (ID: {}) за {}/{}",
-                            company.getCompanyName(), company.getId(),
-                            startDate.getMonthValue(), startDate.getYear());
-                }
+                log.info("✅ Monthly CSV report сгенерен для компании: {} (ID: {}) за {}/{}",
+                        company.getCompanyName(), company.getId(),
+                        startDate.getMonthValue(), startDate.getYear());
+
+                successCount++;
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации monthly CSV report для компании ID: {}", company.getId(), ex);
+                log.error("❌ Ошибка генерации monthly CSV report для компании ID: {}",
+                        company.getId(), ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Monthly PayrollReportCSV Scheduler завершил работу");
+        log.info("🏁 Monthly PayrollReportCSV Scheduler завершил работу. " +
+                        "Обработано компаний: {}, успешно: {}, с ошибками: {}",
+                payrollsByCompany.size(), successCount, errorCount);
     }
+
 
     @Scheduled(cron = "0 45 7 1-7 * SUN", zone = "America/New_York") // 45 минут после PDF генерации
     public void generateMonthlyHoursReportsCsv() {
@@ -460,43 +689,48 @@ public class EmployerTaxScheduler {
                 today.minusMonths(1).lengthOfMonth());
         LocalDate startDate = endDate.withDayOfMonth(1);
 
-        List<Company> allCompanies = companyRepository.findAll();
+        // ОДИН запрос для всех attendance за месяц
+        List<WorkerAttendance> allMonthlyAttendances = attendanceRepository
+                .findAllByCheckInTimeBetween(
+                        startDate.atStartOfDay(),
+                        endDate.atTime(23, 59, 59)
+                );
 
-        for (Company company : allCompanies) {
+        // Группируем по компаниям
+        Map<Company, List<WorkerAttendance>> attendancesByCompany = allMonthlyAttendances.stream()
+                .collect(Collectors.groupingBy(att -> att.getWorker().getCompany()));
+
+        int successCount = 0;
+        int errorCount = 0;
+
+        for (Map.Entry<Company, List<WorkerAttendance>> entry : attendancesByCompany.entrySet()) {
+            Company company = entry.getKey();
+
             try {
-                List<User> workers = userRepository.findAllByCompanyId(company.getId());
+                HoursReportDTO reportData = hoursReportDataService
+                        .generateHoursReportData(company.getId(), startDate, endDate);
 
-                if (!workers.isEmpty()) {
-                    List<WorkerAttendance> monthlyAttendances = new ArrayList<>();
+                // Генерируем CSV и сохраняем в S3
+                hoursReportCsvService.generateHoursReportCsv(reportData, company.getId());
 
-                    for (User worker : workers) {
-                        List<WorkerAttendance> workerAttendances = attendanceRepository
-                                .findAllByWorkerIdAndCheckInTimeBetween(
-                                        worker.getId(),
-                                        startDate.atStartOfDay(),
-                                        endDate.atTime(23, 59, 59)
-                                );
-                        monthlyAttendances.addAll(workerAttendances);
-                    }
+                // Отправляем email ПОСЛЕ успешной генерации
+                reportsMailSender.sendEmailCSV(company.getCompanyEmail());
 
-                    if (!monthlyAttendances.isEmpty()) {
-                        HoursReportDTO reportData = hoursReportDataService
-                                .generateHoursReportData(company.getId(), startDate, endDate);
+                log.info("✅ Monthly hours CSV report сгенерен и отправлен для компании: {} (ID: {}) за {}/{}",
+                        company.getCompanyName(), company.getId(),
+                        startDate.getMonthValue(), startDate.getYear());
 
-                        // Генерируем CSV и сохраняем в S3
-                        hoursReportCsvService.generateHoursReportCsv(reportData, company.getId());
-
-                        log.info("✅ Monthly hours CSV report сгенерен для компании: {} (ID: {}) за {}/{}",
-                                company.getCompanyName(), company.getId(),
-                                startDate.getMonthValue(), startDate.getYear());
-                    }
-                }
+                successCount++;
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации monthly hours CSV report для компании ID: {}", company.getId(), ex);
+                log.error("❌ Ошибка генерации monthly hours CSV report для компании ID: {}",
+                        company.getId(), ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Monthly HoursReportCSV Scheduler завершил работу");
+        log.info("🏁 Monthly HoursReportCSV Scheduler завершил работу. " +
+                        "Обработано компаний: {}, успешно: {}, с ошибками: {}",
+                attendancesByCompany.size(), successCount, errorCount);
     }
 
 // =============================================================================
@@ -536,6 +770,9 @@ public class EmployerTaxScheduler {
 
         List<Company> allCompanies = companyRepository.findAll();
 
+        int successCount = 0;
+        int errorCount = 0;
+
         for (Company company : allCompanies) {
             try {
                 TaxSummaryReportDTO reportData = taxSummaryDataService
@@ -544,23 +781,30 @@ public class EmployerTaxScheduler {
                 // Генерируем CSV и сохраняем в S3
                 taxSummaryReportCsvService.generateTaxSummaryReportCsv(reportData, company.getId());
 
-                log.info("✅ Quarterly Tax Summary CSV Report сгенерен для компании: {} (ID: {}) за Q{} {}",
+                // ✅ ДОБАВЛЕНО: Отправляем email
+                reportsMailSender.sendEmailCSV(company.getCompanyEmail());
+
+                log.info("✅ Quarterly Tax Summary CSV Report сгенерен и отправлен для компании: {} (ID: {}) за Q{} {}",
                         company.getCompanyName(), company.getId(), completedQuarter, currentYear);
+
+                successCount++;
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации Tax Summary CSV Report для компании ID: {} за Q{} {}",
                         company.getId(), completedQuarter, currentYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Quarterly TaxSummaryCSV Scheduler завершил работу за Q{} {}", completedQuarter, currentYear);
+        log.info("🏁 Quarterly TaxSummaryCSV Scheduler завершил работу за Q{} {}. " +
+                        "Обработано компаний: {}, успешно: {}, с ошибками: {}",
+                completedQuarter, currentYear, allCompanies.size(), successCount, errorCount);
     }
-
 
 // 📋 QUARTERLY E-FILE GENERATION (Form 941 & Schedule B)
 // =============================================================================
 
-    @Scheduled(cron = "0 0 10 15 1,4,7,10 *", zone = "America/New_York") // 15 число квартальных месяцев в 10:00
+    @Scheduled(cron = "0 0 10 15 1,4,7,10 *", zone = "America/New_York")
     public void generateQuarterlyForm941XmlFiles() {
         log.info("📋 Quarterly Form941XML Scheduler запущен: генерируем quarterly Form 941 XML files");
 
@@ -570,14 +814,14 @@ public class EmployerTaxScheduler {
 
         // Определяем какой квартал только что закончился
         int completedQuarter;
-        if (currentMonth == 1) {        // 15 января - закончился Q4 прошлого года
+        if (currentMonth == 1) {
             completedQuarter = 4;
             currentYear = currentYear - 1;
-        } else if (currentMonth == 4) { // 15 апреля - закончился Q1
+        } else if (currentMonth == 4) {
             completedQuarter = 1;
-        } else if (currentMonth == 7) { // 15 июля - закончился Q2
+        } else if (currentMonth == 7) {
             completedQuarter = 2;
-        } else if (currentMonth == 10) { // 15 октября - закончился Q3
+        } else if (currentMonth == 10) {
             completedQuarter = 3;
         } else {
             log.info("ℹ️ Ошибка в логике quarterly Form941XML scheduler. Текущий месяц: {}", currentMonth);
@@ -586,32 +830,62 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем Form 941 XML files за Q{} {}", completedQuarter, currentYear);
 
+        // Получаем роль ADMIN
+        Role adminRole = roleRepository.findByName("ADMIN")
+                .orElseThrow(() -> new RuntimeException("Admin role not found"));
+
+        // Получаем всех пользователей с ролью ADMIN
+        List<User> allAdmins = userRepository.findAll().stream()
+                .filter(user -> user.getRoles().contains(adminRole))
+                .toList();
+
+        // Группируем админов по компаниям
+        Map<Integer, User> adminsByCompanyId = allAdmins.stream()
+                .filter(admin -> admin.getCompany() != null)
+                .collect(Collectors.toMap(
+                        admin -> admin.getCompany().getId(),
+                        admin -> admin,
+                        (existing, replacement) -> existing
+                ));
+
         List<Company> allCompanies = companyRepository.findAll();
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
 
         for (Company company : allCompanies) {
             try {
-                // Получаем admin пользователя для подписи (берем первого админа компании)
-                List<User> admins = userRepository.findAllByCompanyIdAndRole(company.getId(), "ADMIN");
-                if (admins.isEmpty()) {
-                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Form 941 XML", company.getCompanyName());
+                User admin = adminsByCompanyId.get(company.getId());
+                if (admin == null) {
+                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Form 941 XML",
+                            company.getCompanyName());
+                    skipCount++;
                     continue;
                 }
-                User admin = admins.get(0);
 
                 // Генерируем Form 941 XML
                 String form941Xml = form941XmlGenerator.generateForm941Xml(
                         admin.getId(), company.getId(), currentYear, completedQuarter);
 
-                log.info("✅ Form 941 XML сгенерен для компании: {} (ID: {}) за Q{} {}",
+                // Специфичный метод для Form 941
+                reportsMailSender.sendEmailXMLReport(company.getCompanyEmail());
+
+                log.info("✅ Form 941 XML сгенерен и отправлен для компании: {} (ID: {}) за Q{} {}",
                         company.getCompanyName(), company.getId(), completedQuarter, currentYear);
+
+                successCount++;
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации Form 941 XML для компании ID: {} за Q{} {}",
                         company.getId(), completedQuarter, currentYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Quarterly Form941XML Scheduler завершил работу за Q{} {}", completedQuarter, currentYear);
+        log.info("🏁 Quarterly Form941XML Scheduler завершил работу за Q{} {}. " +
+                        "Обработано: {}, успешно: {}, пропущено: {}, с ошибками: {}",
+                completedQuarter, currentYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
 
     @Scheduled(cron = "0 30 10 15 1,4,7,10 *", zone = "America/New_York") // 30 минут после Form 941
@@ -622,7 +896,7 @@ public class EmployerTaxScheduler {
         int currentYear = today.getYear();
         int currentMonth = today.getMonthValue();
 
-        // Определяем какой квартал только что закончился (та же логика)
+        // Определяем какой квартал только что закончился
         int completedQuarter;
         if (currentMonth == 1) {
             completedQuarter = 4;
@@ -640,34 +914,63 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем Form 941 Schedule B XML files за Q{} {}", completedQuarter, currentYear);
 
+        // Получаем роль ADMIN
+        Role adminRole = roleRepository.findByName("ADMIN")
+                .orElseThrow(() -> new RuntimeException("Admin role not found"));
+
+        // Получаем всех пользователей с ролью ADMIN
+        List<User> allAdmins = userRepository.findAll().stream()
+                .filter(user -> user.getRoles().contains(adminRole))
+                .toList();
+
+        // Группируем админов по компаниям
+        Map<Integer, User> adminsByCompanyId = allAdmins.stream()
+                .filter(admin -> admin.getCompany() != null)
+                .collect(Collectors.toMap(
+                        admin -> admin.getCompany().getId(),
+                        admin -> admin,
+                        (existing, replacement) -> existing
+                ));
+
         List<Company> allCompanies = companyRepository.findAll();
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
 
         for (Company company : allCompanies) {
             try {
-                // Получаем admin пользователя для подписи
-                List<User> admins = userRepository.findAllByCompanyIdAndRole(company.getId(), "ADMIN");
-                if (admins.isEmpty()) {
-                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Form 941 Schedule B XML", company.getCompanyName());
+                User admin = adminsByCompanyId.get(company.getId());
+                if (admin == null) {
+                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Form 941 Schedule B XML",
+                            company.getCompanyName());
+                    skipCount++;
                     continue;
                 }
-                User admin = admins.get(0);
 
                 // Генерируем Form 941 Schedule B XML
                 String form941ScheduleBXml = form941ScheduleBXmlGenerator.generateForm941ScheduleBXml(
                         admin.getId(), company.getId(), currentYear, completedQuarter);
 
-                log.info("✅ Form 941 Schedule B XML сгенерен для компании: {} (ID: {}) за Q{} {}",
+                // Специфичный метод для Schedule B
+                reportsMailSender.sendEmailXMLReport(company.getCompanyEmail());
+
+                log.info("✅ Form 941 Schedule B XML сгенерен и отправлен для компании: {} (ID: {}) за Q{} {}",
                         company.getCompanyName(), company.getId(), completedQuarter, currentYear);
+
+                successCount++;
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации Form 941 Schedule B XML для компании ID: {} за Q{} {}",
                         company.getId(), completedQuarter, currentYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Quarterly Form941ScheduleBXML Scheduler завершил работу за Q{} {}", completedQuarter, currentYear);
+        log.info("🏁 Quarterly Form941ScheduleBXML Scheduler завершил работу за Q{} {}. " +
+                        "Обработано: {}, успешно: {}, пропущено: {}, с ошибками: {}",
+                completedQuarter, currentYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
-
 // =============================================================================
 // 📄 ANNUAL E-FILE GENERATION (EFW2)
 // =============================================================================
@@ -683,28 +986,45 @@ public class EmployerTaxScheduler {
 
         List<Company> allCompanies = companyRepository.findAll();
 
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
+
         for (Company company : allCompanies) {
             try {
-                // Проверяем, есть ли сотрудники в компании за этот год
-                List<User> employees = userRepository.findAllByCompanyId(company.getId());
+                // Проверяем, были ли payrolls у компании за прошлый год
+                LocalDate yearStart = LocalDate.of(previousYear, 1, 1);
+                LocalDate yearEnd = LocalDate.of(previousYear, 12, 31);
 
-                if (!employees.isEmpty()) {
+                boolean hasPayrollsInYear = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), yearStart, yearEnd);
+
+                if (hasPayrollsInYear) {
                     // Генерируем EFW2 файл
                     byte[] efw2Content = efw2GeneratorService.generateEfw2File(company.getId(), previousYear);
 
-                    log.info("✅ EFW2 file сгенерен для компании: {} (ID: {}) за {} год, размер: {} bytes",
+                    // Отправляем email
+                    reportsMailSender.sendEmailEFW2(company.getCompanyEmail());
+
+                    log.info("✅ EFW2 file сгенерен и отправлен для компании: {} (ID: {}) за {} год, размер: {} bytes",
                             company.getCompanyName(), company.getId(), previousYear, efw2Content.length);
+
+                    successCount++;
                 } else {
-                    log.info("ℹ️ Нет сотрудников в компании: {} за {} год", company.getCompanyName(), previousYear);
+                    log.info("ℹ️ Нет payrolls в компании: {} за {} год", company.getCompanyName(), previousYear);
+                    skipCount++;
                 }
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации EFW2 file для компании ID: {} за {} год",
                         company.getId(), previousYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Annual EFW2 Scheduler завершил работу за {} год", previousYear);
+        log.info("🏁 Annual EFW2 Scheduler завершил работу за {} год. " +
+                        "Обработано: {}, успешно: {}, пропущено: {}, с ошибками: {}",
+                previousYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
 
 
@@ -712,20 +1032,58 @@ public class EmployerTaxScheduler {
     public void generateAnnualForm940AndScheduleA() {
         log.info("📄 Annual Form940 + Schedule A Scheduler запущен");
 
+        LocalDate today = LocalDate.now();
+        int previousYear = today.getYear() - 1; // Form 940 за прошлый год
+
+        log.info("📅 Генерируем Form 940 + Schedule A за {} год", previousYear);
+
         List<Company> allCompanies = companyRepository.findAll();
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
 
         for (Company company : allCompanies) {
             try {
-                //todo change later on 2025!
-                form940PdfGeneratorService.generate940Pdf(company.getId(), 2024);
-                fillForm940SA.generateFilledPdf(company.getId(), 2024);
+                // Проверяем, были ли payrolls у компании за прошлый год
+                LocalDate yearStart = LocalDate.of(previousYear, 1, 1);
+                LocalDate yearEnd = LocalDate.of(previousYear, 12, 31);
 
-                log.info("✅ Form 940 + Schedule A сгенерены для {}", company.getCompanyName());
+                boolean hasPayrollsInYear = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), yearStart, yearEnd);
+
+                if (hasPayrollsInYear) {
+                    // Генерируем Form 940
+                    form940PdfGeneratorService.generate940Pdf(company.getId(), previousYear);
+
+                    // Генерируем Schedule A
+                    fillForm940SA.generateFilledPdf(company.getId(), previousYear);
+
+                    // Отправляем email
+                    reportsMailSender.sendEmail940FormAndScheduleA(
+                            company.getCompanyEmail());
+
+                    log.info("✅ Form 940 + Schedule A сгенерены и отправлены для {} (ID: {}) за {} год",
+                            company.getCompanyName(), company.getId(), previousYear);
+
+                    successCount++;
+                } else {
+                    log.info("ℹ️ Нет payrolls для компании {} за {} год",
+                            company.getCompanyName(), previousYear);
+                    skipCount++;
+                }
             } catch (Exception ex) {
-                log.error("❌ Ошибка генерации для компании {}", company.getId(), ex);
+                log.error("❌ Ошибка генерации Form 940 + Schedule A для компании ID: {} за {} год",
+                        company.getId(), previousYear, ex);
+                errorCount++;
             }
         }
+
+        log.info("🏁 Annual Form940 + Schedule A Scheduler завершил работу за {} год. " +
+                        "Обработано: {}, успешно: {}, пропущено: {}, с ошибками: {}",
+                previousYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
+
 
     @Scheduled(cron = "0 0 12 31 1 *", zone = "America/New_York") // 31 января в 12:00 (после PDF)
     public void generateAnnualForm940XmlFiles() {
@@ -736,33 +1094,79 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем Form 940 XML e-files за {} год", previousYear);
 
+        // Получаем роль ADMIN
+        Role adminRole = roleRepository.findByName("ADMIN")
+                .orElseThrow(() -> new RuntimeException("Admin role not found"));
+
+        // Получаем всех админов одним запросом
+        List<User> allAdmins = userRepository.findAll().stream()
+                .filter(user -> user.getRoles().contains(adminRole))
+                .toList();
+
+        // Группируем админов по компаниям
+        Map<Integer, User> adminsByCompanyId = allAdmins.stream()
+                .filter(admin -> admin.getCompany() != null)
+                .collect(Collectors.toMap(
+                        admin -> admin.getCompany().getId(),
+                        admin -> admin,
+                        (existing, replacement) -> existing
+                ));
+
         List<Company> allCompanies = companyRepository.findAll();
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
 
         for (Company company : allCompanies) {
             try {
-                // Получаем админа компании для подписи
-                List<User> admins = getCompanyAdmins(company.getId());
-                if (admins.isEmpty()) {
-                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Form 940 XML", company.getCompanyName());
+                // Проверяем наличие данных за год
+                LocalDate yearStart = LocalDate.of(previousYear, 1, 1);
+                LocalDate yearEnd = LocalDate.of(previousYear, 12, 31);
+
+                boolean hasPayrollsInYear = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), yearStart, yearEnd);
+
+                if (!hasPayrollsInYear) {
+                    log.info("ℹ️ Нет payrolls для компании {} за {} год",
+                            company.getCompanyName(), previousYear);
+                    skipCount++;
                     continue;
                 }
-                User admin = admins.get(0);
+
+                // Получаем админа компании
+                User admin = adminsByCompanyId.get(company.getId());
+                if (admin == null) {
+                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Form 940 XML",
+                            company.getCompanyName());
+                    skipCount++;
+                    continue;
+                }
 
                 // Генерируем Form 940 XML e-file
                 String form940Xml = form940XmlGenerator.generateForm940Xml(
                         admin.getId(), company.getId(), previousYear);
 
-                log.info("✅ Form 940 XML e-file сгенерен для компании: {} (ID: {}) за {} год",
+                // Отправляем email
+                reportsMailSender.sendEmail940Form(company.getCompanyEmail());
+
+                log.info("✅ Form 940 XML e-file сгенерен и отправлен для компании: {} (ID: {}) за {} год",
                         company.getCompanyName(), company.getId(), previousYear);
+
+                successCount++;
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации Form 940 XML для компании ID: {} за {} год",
                         company.getId(), previousYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Annual Form940XML Scheduler завершил работу за {} год", previousYear);
+        log.info("🏁 Annual Form940XML Scheduler завершил работу за {} год. " +
+                        "Обработано: {}, успешно: {}, пропущено: {}, с ошибками: {}",
+                previousYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
+
 
     @Scheduled(cron = "0 30 12 31 1 *", zone = "America/New_York") // 31 января в 12:30 (после Form 940 XML)
     public void generateAnnualForm940ScheduleAXmlFiles() {
@@ -773,43 +1177,85 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем Form 940 Schedule A XML e-files за {} год", previousYear);
 
-        List<Company> allCompanies = companyRepository.findAll();
+        // Получаем роль ADMIN
+        Role adminRole = roleRepository.findByName("ADMIN")
+                .orElseThrow(() -> new RuntimeException("Admin role not found"));
 
-        for (Company company : allCompanies) {
+        // Получаем всех админов одним запросом
+        List<User> allAdmins = userRepository.findAll().stream()
+                .filter(user -> user.getRoles().contains(adminRole))
+                .toList();
+
+        // Группируем админов по компаниям
+        Map<Integer, User> adminsByCompanyId = allAdmins.stream()
+                .filter(admin -> admin.getCompany() != null)
+                .collect(Collectors.toMap(
+                        admin -> admin.getCompany().getId(),
+                        admin -> admin,
+                        (existing, replacement) -> existing
+                ));
+
+        // Получаем только NY компании
+        List<Company> nyCompanies = companyRepository.findAll().stream()
+                .filter(company -> "NY".equals(company.getCompanyState()))
+                .toList();
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
+        int notNyCount = companyRepository.findAll().size() - nyCompanies.size();
+
+        for (Company company : nyCompanies) {
             try {
-                // Только для NY компаний
-                if (!"NY".equals(company.getCompanyState())) {
-                    log.info("ℹ️ Компания {} в штате {} - Schedule A XML не нужна",
-                            company.getCompanyName(), company.getCompanyState());
+                // Проверяем наличие данных за год
+                LocalDate yearStart = LocalDate.of(previousYear, 1, 1);
+                LocalDate yearEnd = LocalDate.of(previousYear, 12, 31);
+
+                boolean hasPayrollsInYear = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), yearStart, yearEnd);
+
+                if (!hasPayrollsInYear) {
+                    log.info("ℹ️ Нет payrolls для компании {} за {} год",
+                            company.getCompanyName(), previousYear);
+                    skipCount++;
                     continue;
                 }
 
-                // Получаем админа компании для подписи
-                List<User> admins = getCompanyAdmins(company.getId());
-                if (admins.isEmpty()) {
-                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Schedule A XML", company.getCompanyName());
+                // Получаем админа компании
+                User admin = adminsByCompanyId.get(company.getId());
+                if (admin == null) {
+                    log.warn("⚠️ Нет админов для компании {}, пропускаем генерацию Schedule A XML",
+                            company.getCompanyName());
+                    skipCount++;
                     continue;
                 }
-                User admin = admins.get(0);
 
                 // Генерируем Schedule A XML e-file
                 String scheduleAXml = generateForm940ScheduleAXml.generateForm940ScheduleAXml(
                         admin.getId(), company.getId(), previousYear);
 
                 if (!scheduleAXml.isEmpty()) {
-                    log.info("✅ Form 940 Schedule A XML e-file сгенерен для компании: {} (ID: {}) за {} год",
+                    // Отправляем email
+                    reportsMailSender.sendEmail940FormAndScheduleA(company.getCompanyEmail());
+
+                    log.info("✅ Form 940 Schedule A XML e-file сгенерен и отправлен для компании: {} (ID: {}) за {} год",
                             company.getCompanyName(), company.getId(), previousYear);
+                    successCount++;
                 } else {
                     log.info("ℹ️ Schedule A XML не требуется для компании: {}", company.getCompanyName());
+                    skipCount++;
                 }
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации Schedule A XML для компании ID: {} за {} год",
                         company.getId(), previousYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Annual Form940ScheduleAXML Scheduler завершил работу за {} год", previousYear);
+        log.info("🏁 Annual Form940ScheduleAXML Scheduler завершил работу за {} год. " +
+                        "NY компании: {}, успешно: {}, пропущено: {}, с ошибками: {}, не-NY компании: {}",
+                previousYear, nyCompanies.size(), successCount, skipCount, errorCount, notNyCount);
     }
 
 
@@ -841,16 +1287,26 @@ public class EmployerTaxScheduler {
             return;
         }
 
-        log.info("📅 Генерируем FUTA Reports за Q{} {}", completedQuarter, currentYear);
+        // Вычисляем даты квартала
+        LocalDate startDate = LocalDate.of(currentYear, (completedQuarter - 1) * 3 + 1, 1);
+        LocalDate endDate = startDate.plusMonths(3).minusDays(1);
+
+        log.info("📅 Генерируем FUTA Reports за Q{} {} (период: {} - {})",
+                completedQuarter, currentYear, startDate, endDate);
 
         List<Company> allCompanies = companyRepository.findAll();
 
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
+
         for (Company company : allCompanies) {
             try {
-                // Проверяем, есть ли сотрудники в компании
-                List<User> employees = userRepository.findAllByCompanyId(company.getId());
+                // Проверяем, есть ли payrolls за квартал
+                boolean hasPayrollsInQuarter = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), startDate, endDate);
 
-                if (!employees.isEmpty()) {
+                if (hasPayrollsInQuarter) {
                     // Генерируем квартальный FUTA отчет
                     FutaReportDTO reportData = futaReportService.generateQuarterlyFutaReport(
                             company.getId(), currentYear, completedQuarter);
@@ -858,20 +1314,30 @@ public class EmployerTaxScheduler {
                     // Генерируем PDF и сохраняем в S3
                     byte[] pdfBytes = futaReportPdfService.generateFutaReportPdf(reportData);
 
-                    log.info("✅ Quarterly FUTA Report сгенерен для компании: {} (ID: {}) за Q{} {}, размер PDF: {} bytes",
+                    // Отправляем email
+                    reportsMailSender.sendEmailQuarterFUTAReport(
+                            company.getCompanyEmail());
+
+                    log.info("✅ Quarterly FUTA Report сгенерен и отправлен для компании: {} (ID: {}) за Q{} {}, размер PDF: {} bytes",
                             company.getCompanyName(), company.getId(), completedQuarter, currentYear, pdfBytes.length);
+
+                    successCount++;
                 } else {
-                    log.info("ℹ️ Нет сотрудников в компании: {} за Q{} {}",
+                    log.info("ℹ️ Нет payrolls для компании: {} за Q{} {}",
                             company.getCompanyName(), completedQuarter, currentYear);
+                    skipCount++;
                 }
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации quarterly FUTA report для компании ID: {} за Q{} {}",
                         company.getId(), completedQuarter, currentYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Quarterly FUTA Report Scheduler завершил работу за Q{} {}", completedQuarter, currentYear);
+        log.info("🏁 Quarterly FUTA Report Scheduler завершил работу за Q{} {}. " +
+                        "Обработано: {}, успешно: {}, пропущено: {}, с ошибками: {}",
+                completedQuarter, currentYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
 
 // =============================================================================
@@ -880,9 +1346,9 @@ public class EmployerTaxScheduler {
 
     /**
      * Генерирует годовые FUTA отчеты
-     * Запускается 31 января в 9:00 утра (дедлайн для Form 940)
+     * Запускается 15 января в 9:00 утра (дедлайн для Form 940)
      */
-    @Scheduled(cron = "0 0 9 31 1 *", zone = "America/New_York")
+    @Scheduled(cron = "0 0 9 15 1 *", zone = "America/New_York")
     public void generateAnnualFutaReports() {
         log.info("📄 Annual FUTA Report Scheduler запущен: генерируем annual FUTA reports за прошлый год");
 
@@ -891,14 +1357,23 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Генерируем Annual FUTA Reports за {} год", previousYear);
 
+        // Даты за весь прошлый год
+        LocalDate yearStart = LocalDate.of(previousYear, 1, 1);
+        LocalDate yearEnd = LocalDate.of(previousYear, 12, 31);
+
         List<Company> allCompanies = companyRepository.findAll();
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
 
         for (Company company : allCompanies) {
             try {
-                // Проверяем, есть ли сотрудники в компании за прошлый год
-                List<User> employees = userRepository.findAllByCompanyId(company.getId());
+                // Проверяем, есть ли payrolls за прошлый год
+                boolean hasPayrollsInYear = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), yearStart, yearEnd);
 
-                if (!employees.isEmpty()) {
+                if (hasPayrollsInYear) {
                     // Генерируем годовой FUTA отчет
                     FutaReportDTO reportData = futaReportService.generateAnnualFutaReport(
                             company.getId(), previousYear);
@@ -906,30 +1381,36 @@ public class EmployerTaxScheduler {
                     // Генерируем PDF и сохраняем в S3
                     byte[] pdfBytes = futaReportPdfService.generateFutaReportPdf(reportData);
 
-                    log.info("✅ Annual FUTA Report сгенерен для компании: {} (ID: {}) за {} год, размер PDF: {} bytes",
+                    // Отправляем email
+                    reportsMailSender.sendEmailAnnualFutaReport(
+                            company.getCompanyEmail());
+
+                    log.info("✅ Annual FUTA Report сгенерен и отправлен для компании: {} (ID: {}) за {} год, размер PDF: {} bytes",
                             company.getCompanyName(), company.getId(), previousYear, pdfBytes.length);
+
+                    successCount++;
                 } else {
-                    log.info("ℹ️ Нет сотрудников в компании: {} за {} год",
+                    log.info("ℹ️ Нет payrolls для компании: {} за {} год",
                             company.getCompanyName(), previousYear);
+                    skipCount++;
                 }
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка генерации annual FUTA report для компании ID: {} за {} год",
                         company.getId(), previousYear, ex);
+                errorCount++;
             }
         }
 
-        log.info("🏁 Annual FUTA Report Scheduler завершил работу за {} год", previousYear);
+        log.info("🏁 Annual FUTA Report Scheduler завершил работу за {} год. " +
+                        "Обработано: {}, успешно: {}, пропущено: {}, с ошибками: {}",
+                previousYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
 
 // =============================================================================
 // 📋 QUARTERLY FUTA COMPLIANCE CHECK
 // =============================================================================
 
-    /**
-     * Проверяет compliance и отправляет уведомления о предстоящих дедлайнах
-     * Запускается каждый понедельник в 6:00 утра
-     */
     @Scheduled(cron = "0 0 6 * * MON", zone = "America/New_York")
     public void checkQuarterlyFutaCompliance() {
         log.info("⚠️ FUTA Compliance Check Scheduler запущен: проверяем compliance и дедлайны");
@@ -963,9 +1444,21 @@ public class EmployerTaxScheduler {
             log.info("⚠️ До FUTA дедлайна осталось {} дней. Проверяем compliance для Q{} {}",
                     daysUntilDeadline, currentQuarter, currentYear);
 
-            List<Company> allCompanies = companyRepository.findAll();
+            // Даты текущего квартала
+            LocalDate quarterStart = LocalDate.of(currentYear, (currentQuarter - 1) * 3 + 1, 1);
+            LocalDate quarterEnd = quarterStart.plusMonths(3).minusDays(1);
 
-            for (Company company : allCompanies) {
+            // Получаем только компании с payrolls в текущем квартале
+            List<Company> companiesWithPayrolls = companyRepository.findAll().stream()
+                    .filter(company -> workerPayrollRepository
+                            .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), quarterStart, quarterEnd))
+                    .toList();
+
+            int totalCompanies = companiesWithPayrolls.size();
+            int complianceIssues = 0;
+            int checkErrors = 0;
+
+            for (Company company : companiesWithPayrolls) {
                 try {
                     // Генерируем текущий квартальный отчет для проверки
                     FutaReportDTO currentReport = futaReportService.generateQuarterlyFutaReport(
@@ -973,27 +1466,38 @@ public class EmployerTaxScheduler {
 
                     // Проверяем compliance
                     if (!currentReport.getComplianceStatus() || currentReport.getNeedsPayment()) {
+                        complianceIssues++;
+
                         log.warn("⚠️ COMPLIANCE ALERT: Компания {} (ID: {}) требует внимания по FUTA за Q{} {}. " +
                                         "Compliance: {}, Needs Payment: {}, Remaining Liability: ${}",
                                 company.getCompanyName(), company.getId(), currentQuarter, currentYear,
                                 currentReport.getComplianceStatus(), currentReport.getNeedsPayment(),
                                 currentReport.getRemainingFutaLiability());
 
-                        // Здесь можно добавить отправку email уведомлений админам компании
-                        // sendFutaComplianceAlert(company, currentReport, daysUntilDeadline);
+                        // Отправляем уведомление
+                        reportsMailSender.sendEmailFutaCompliance(company.getCompanyEmail());
                     }
 
                 } catch (Exception ex) {
                     log.error("❌ Ошибка проверки FUTA compliance для компании ID: {}", company.getId(), ex);
+                    checkErrors++;
                 }
             }
+
+            log.info("📊 FUTA Compliance Check Summary: Проверено компаний: {}, Требуют внимания: {}, Ошибок: {}",
+                    totalCompanies, complianceIssues, checkErrors);
+
         } else if (daysUntilDeadline <= 0) {
             log.warn("🚨 FUTA дедлайн просрочен на {} дней!", Math.abs(daysUntilDeadline));
+
+            // Можно отправить критические уведомления всем компаниям с непогашенными обязательствами
+
+        } else {
+            log.info("✅ До FUTA дедлайна еще {} дней. Проверка не требуется.", daysUntilDeadline);
         }
 
         log.info("🏁 FUTA Compliance Check завершен");
     }
-
 // =============================================================================
 // 📋 FUTA YEAR-END PREPARATION
 // =============================================================================
@@ -1002,6 +1506,7 @@ public class EmployerTaxScheduler {
      * Подготавливает данные к концу года (проверяет все квартальные отчеты)
      * Запускается 15 декабря в 10:00 утра
      */
+
     @Scheduled(cron = "0 0 10 15 12 *", zone = "America/New_York")
     public void prepareFutaYearEndReports() {
         log.info("📋 FUTA Year-End Preparation Scheduler запущен: подготавливаем данные к концу года");
@@ -1011,9 +1516,22 @@ public class EmployerTaxScheduler {
 
         log.info("📅 Подготавливаем FUTA данные за {} год к концу года", currentYear);
 
-        List<Company> allCompanies = companyRepository.findAll();
+        // Даты всего года
+        LocalDate yearStart = LocalDate.of(currentYear, 1, 1);
+        LocalDate yearEnd = LocalDate.of(currentYear, 12, 31);
 
-        for (Company company : allCompanies) {
+        // Получаем только компании с payrolls в текущем году
+        List<Company> companiesWithPayrolls = companyRepository.findAll().stream()
+                .filter(company -> workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), yearStart, yearEnd))
+                .toList();
+
+        int totalCompanies = companiesWithPayrolls.size();
+        int companiesWithIssues = 0;
+        int perfectCompliance = 0;
+        int checkErrors = 0;
+
+        for (Company company : companiesWithPayrolls) {
             try {
                 log.info("🔍 Проверяем все квартальные FUTA отчеты для компании: {} (ID: {})",
                         company.getCompanyName(), company.getId());
@@ -1022,28 +1540,39 @@ public class EmployerTaxScheduler {
                 BigDecimal totalAnnualLiability = BigDecimal.ZERO;
                 BigDecimal totalAnnualPaid = BigDecimal.ZERO;
                 List<String> missingQuarters = new ArrayList<>();
+                boolean hasAnyIssues = false;
 
                 for (int quarter = 1; quarter <= 4; quarter++) {
                     try {
-                        FutaReportDTO quarterlyReport = futaReportService.generateQuarterlyFutaReport(
-                                company.getId(), currentYear, quarter);
+                        // Проверяем есть ли данные за квартал
+                        LocalDate quarterStart = LocalDate.of(currentYear, (quarter - 1) * 3 + 1, 1);
+                        LocalDate quarterEnd = quarterStart.plusMonths(3).minusDays(1);
 
-                        totalAnnualLiability = totalAnnualLiability.add(quarterlyReport.getTotalFutaTaxOwed());
-                        totalAnnualPaid = totalAnnualPaid.add(quarterlyReport.getTotalFutaTaxPaid());
+                        if (workerPayrollRepository.existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(
+                                company.getId(), quarterStart, quarterEnd)) {
 
-                        if (!quarterlyReport.getComplianceStatus()) {
-                            missingQuarters.add("Q" + quarter);
+                            FutaReportDTO quarterlyReport = futaReportService.generateQuarterlyFutaReport(
+                                    company.getId(), currentYear, quarter);
+
+                            totalAnnualLiability = totalAnnualLiability.add(quarterlyReport.getTotalFutaTaxOwed());
+                            totalAnnualPaid = totalAnnualPaid.add(quarterlyReport.getTotalFutaTaxPaid());
+
+                            if (!quarterlyReport.getComplianceStatus()) {
+                                missingQuarters.add("Q" + quarter);
+                                hasAnyIssues = true;
+                            }
+
+                            log.info("✅ Q{} {}: Owed=${}, Paid=${}, Compliant={}",
+                                    quarter, currentYear,
+                                    quarterlyReport.getTotalFutaTaxOwed(),
+                                    quarterlyReport.getTotalFutaTaxPaid(),
+                                    quarterlyReport.getComplianceStatus());
                         }
-
-                        log.info("✅ Q{} {}: Owed=${}, Paid=${}, Compliant={}",
-                                quarter, currentYear,
-                                quarterlyReport.getTotalFutaTaxOwed(),
-                                quarterlyReport.getTotalFutaTaxPaid(),
-                                quarterlyReport.getComplianceStatus());
 
                     } catch (Exception ex) {
                         log.error("❌ Ошибка проверки Q{} для компании {}", quarter, company.getId(), ex);
                         missingQuarters.add("Q" + quarter + " (ERROR)");
+                        hasAnyIssues = true;
                     }
                 }
 
@@ -1056,22 +1585,184 @@ public class EmployerTaxScheduler {
                         missingQuarters.isEmpty() ? "None" : String.join(", ", missingQuarters));
 
                 if (!missingQuarters.isEmpty() || remainingLiability.compareTo(BigDecimal.ONE) > 0) {
+                    companiesWithIssues++;
+                    hasAnyIssues = true;
+
                     log.warn("⚠️ YEAR-END ALERT: Компания {} требует внимания перед концом года. " +
                                     "Проблемные кварталы: {}, Remaining Liability: ${}",
                             company.getCompanyName(),
                             missingQuarters.isEmpty() ? "None" : String.join(", ", missingQuarters),
                             remainingLiability);
 
-                    // Здесь можно добавить отправку email уведомлений
-                    // sendFutaYearEndAlert(company, totalAnnualLiability, totalAnnualPaid, missingQuarters);
+                    // Отправка email уведомлений
+                    reportsMailSender.sendEmailAnnualFutaReport(
+                            company.getCompanyEmail());
+                }
+
+                if (!hasAnyIssues) {
+                    perfectCompliance++;
                 }
 
             } catch (Exception ex) {
                 log.error("❌ Ошибка year-end preparation для компании ID: {}", company.getId(), ex);
+                checkErrors++;
             }
         }
 
-        log.info("🏁 FUTA Year-End Preparation завершен за {} год", currentYear);
+        log.info("🏁 FUTA Year-End Preparation завершен за {} год. " +
+                        "Проверено компаний: {}, С проблемами: {}, Полное соответствие: {}, Ошибок проверки: {}",
+                currentYear, totalCompanies, companiesWithIssues, perfectCompliance, checkErrors);
+    }
+
+
+
+    /**
+     * Генерирует квартальные SUTA отчеты
+     * Запускается 20 числа каждого квартального месяца в 9:00 (после FUTA)
+     */
+    @Scheduled(cron = "0 0 9 20 1,4,7,10 *", zone = "America/New_York")
+    public void generateQuarterlySutaReports() {
+        log.info("📋 Quarterly SUTA Report Scheduler запущен: генерируем quarterly SUTA reports");
+
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        int currentMonth = today.getMonthValue();
+
+        // Определяем какой квартал только что закончился
+        int completedQuarter;
+        if (currentMonth == 1) {
+            completedQuarter = 4;
+            currentYear = currentYear - 1;
+        } else if (currentMonth == 4) {
+            completedQuarter = 1;
+        } else if (currentMonth == 7) {
+            completedQuarter = 2;
+        } else if (currentMonth == 10) {
+            completedQuarter = 3;
+        } else {
+            log.info("ℹ️ Ошибка в логике quarterly SUTA scheduler. Текущий месяц: {}", currentMonth);
+            return;
+        }
+
+        // Вычисляем даты квартала
+        LocalDate startDate = LocalDate.of(currentYear, (completedQuarter - 1) * 3 + 1, 1);
+        LocalDate endDate = startDate.plusMonths(3).minusDays(1);
+
+        log.info("📅 Генерируем SUTA Reports за Q{} {} (период: {} - {})",
+                completedQuarter, currentYear, startDate, endDate);
+
+        // Получаем только NY компании
+        List<Company> nyCompanies = companyRepository.findAll().stream()
+                .filter(company -> "NY".equals(company.getCompanyState()))
+                .toList();
+
+        int totalNyCompanies = nyCompanies.size();
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
+
+        for (Company company : nyCompanies) {
+            try {
+                // Проверяем, есть ли payrolls за квартал
+                boolean hasPayrollsInQuarter = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(company.getId(), startDate, endDate);
+
+                if (hasPayrollsInQuarter) {
+                    // Генерируем квартальный SUTA отчет
+                    SutaReportDTO reportData = sutaReportService.generateQuarterlySutaReport(
+                            company.getId(), currentYear, completedQuarter);
+
+                    // Генерируем PDF и сохраняем в S3
+                    byte[] pdfBytes = sutaReportPdfService.generateSutaReportPdf(reportData);
+
+                    // Отправляем email
+                    reportsMailSender.sendEmailQuarterSutaForm(
+                            company.getCompanyEmail()
+                    );
+
+                    log.info("✅ Quarterly SUTA Report сгенерен и отправлен для компании: {} (ID: {}) за Q{} {}, размер PDF: {} bytes",
+                            company.getCompanyName(), company.getId(), completedQuarter, currentYear, pdfBytes.length);
+
+                    successCount++;
+                } else {
+                    log.info("ℹ️ Нет payrolls для компании: {} за Q{} {}",
+                            company.getCompanyName(), completedQuarter, currentYear);
+                    skipCount++;
+                }
+
+            } catch (Exception ex) {
+                log.error("❌ Ошибка генерации quarterly SUTA report для компании ID: {} за Q{} {}",
+                        company.getId(), completedQuarter, currentYear, ex);
+                errorCount++;
+            }
+        }
+
+        long notNyCompanies = companyRepository.count() - totalNyCompanies;
+
+        log.info("🏁 Quarterly SUTA Report Scheduler завершил работу за Q{} {}. " +
+                        "NY компании: {}, успешно: {}, пропущено: {}, с ошибками: {}, не-NY компании: {}",
+                completedQuarter, currentYear, totalNyCompanies, successCount, skipCount, errorCount, notNyCompanies);
+    }
+    /**
+     * Генерирует годовые SUTA отчеты
+     * Запускается 15 января в 10:00 утра (после FUTA, дедлайн для NYS-45)
+     */
+    @Scheduled(cron = "0 0 10 15 1 *", zone = "America/New_York")
+    public void generateAnnualSutaReports() {
+        log.info("📄 Annual SUTA Report Scheduler запущен: генерируем annual SUTA reports за прошлый год");
+
+        LocalDate today = LocalDate.now();
+        int previousYear = today.getYear() - 1;
+
+        // 1. Берём все компании
+        List<Company> companies = companyRepository.findAll();
+        if (companies.isEmpty()) {
+            log.info("ℹ️ Нет компаний для обработки");
+            return;
+        }
+
+        // 2. Собираем их ID и одним запросом вытаскиваем всех сотрудников
+        List<Integer> companyIds = companies.stream()
+                .map(Company::getId)
+                .toList();
+        List<User> allEmployees = userRepository.findAllByCompanyIdIn(companyIds);
+
+        // 3. Группируем сотрудников по компании
+        Map<Integer, List<User>> employeesByCompany = allEmployees.stream()
+                .collect(Collectors.groupingBy(u -> u.getCompany().getId()));
+
+        // 4. Проходим по компаниям
+        for (Company company : companies) {
+            try {
+                List<User> employees = employeesByCompany
+                        .getOrDefault(company.getId(), Collections.emptyList());
+
+                if (employees.isEmpty()) {
+                    log.info("ℹ️ Нет сотрудников в компании: {} за {} год",
+                            company.getCompanyName(), previousYear);
+                    continue;
+                }
+
+                // 5. Генерируем отчёт и сохраняем PDF в S3
+                SutaReportDTO reportData = sutaReportService
+                        .generateAnnualSutaReport(company.getId(), previousYear);
+                byte[] pdfBytes = sutaReportPdfService
+                        .generateSutaReportPdf(reportData);
+
+                log.info("✅ Annual SUTA Report сгенерен для компании: {} (ID: {}) за {} год, размер PDF: {} bytes",
+                        company.getCompanyName(), company.getId(), previousYear, pdfBytes.length);
+
+                // 6. И сразу шлём письмо, как в других методах
+                reportsMailSender.sendAnnualSUTAReport(company.getCompanyEmail());
+                log.info("📧 Email с Annual SUTA Report отправлен компании: {}", company.getCompanyEmail());
+
+            } catch (Exception ex) {
+                log.error("❌ Ошибка генерации или отправки annual SUTA report для компании ID: {} за {} год",
+                        company.getId(), previousYear, ex);
+            }
+        }
+
+        log.info("🏁 Annual SUTA Report Scheduler завершил работу за {} год", previousYear);
     }
 
 
@@ -1080,8 +1771,13 @@ public class EmployerTaxScheduler {
 
 
 
+    private boolean shouldCreateEmployerTaxRecord(WorkerPayroll payroll, Company company) {
+        if (payroll == null || company == null || company.getCompanyPaymentPosition() == null) {
+            return false;
+        }
 
-
+        return LocalDate.now().isEqual(payroll.getPeriodEnd());
+    }
 
 
 
