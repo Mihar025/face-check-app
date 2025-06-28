@@ -82,6 +82,11 @@ public class EmployerTaxService {
                 .add(futa)
                 .add(suta);
 
+        boolean exists = employerTaxRecordRepository.existsByEmployeeIdAndPeriodStartAndPeriodEnd(
+                payroll.getWorker().getId(), payroll.getPeriodStart(), payroll.getPeriodEnd());
+        if (exists) return null;
+
+
         // 7) Составляем и сохраняем запись с новыми полями
         EmployerTaxRecord record = EmployerTaxRecord.builder()
                 .company(payroll.getCompany())
@@ -109,8 +114,8 @@ public class EmployerTaxService {
                 .sutaTaxableWages(taxableSuta)
 
                 // периоды
-                .weekStart(payroll.getPeriodStart())
-                .weekEnd(payroll.getPeriodEnd())
+                .periodStart(payroll.getPeriodStart())
+                .periodEnd(payroll.getPeriodEnd())
                 .createdAt(LocalDate.now())
 
                 .paymentDate(
@@ -139,7 +144,6 @@ public class EmployerTaxService {
     private BigDecimal calculateSuta(User employee, Company company, LocalDate periodStart, BigDecimal currentGross) {
         BigDecimal sutaRate = company.getSocialSecurityTaxForCompany();
         if (sutaRate == null) sutaRate = BigDecimal.valueOf(4.1);
-
         int year = periodStart.getYear();
         BigDecimal ytdSuta = employerTaxRecordRepository
                 .sumSutaTaxableWagesByEmployeeAndYear(employee.getId(), year);
@@ -151,4 +155,7 @@ public class EmployerTaxService {
         return taxableGross.multiply(sutaRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP))
                 .setScale(2, RoundingMode.HALF_UP);
     }
+
+
+
 }
