@@ -38,7 +38,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
         SELECT COALESCE(SUM(gross_pay), 0)
         FROM employer_tax_record
         WHERE employee_id = :employeeId
-          AND EXTRACT(YEAR FROM week_start) = :year
+          AND EXTRACT(YEAR FROM period_start) = :year
     """, nativeQuery = true)
     BigDecimal sumGrossPayByEmployeeAndYear(
             @Param("employeeId") Integer employeeId,
@@ -49,7 +49,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
         SELECT COALESCE(SUM(gross_pay), 0)
         FROM employer_tax_record
         WHERE company_id = :companyId
-          AND EXTRACT(YEAR FROM week_start) = :year
+          AND EXTRACT(YEAR FROM period_start) = :year
     """, nativeQuery = true)
     BigDecimal sumGrossPayByAllEmployeeAndYear(@Param("companyId") Integer companyId,
                                                @Param("year") int year );
@@ -59,7 +59,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
                SUM(gross_pay) AS totalGross
           FROM employer_tax_record
          WHERE company_id = :companyId
-           AND EXTRACT(YEAR FROM week_start) = :year
+           AND EXTRACT(YEAR FROM period_start) = :year
          GROUP BY employee_id
         HAVING SUM(gross_pay) > 7000
     """, nativeQuery = true)
@@ -78,7 +78,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
         SELECT COALESCE(SUM(futa_tax), 0)
         FROM employer_tax_record
         WHERE company_id = :companyId
-          AND EXTRACT(YEAR FROM week_start) = :year
+          AND EXTRACT(YEAR FROM period_start) = :year
     """, nativeQuery = true)
     BigDecimal sumFutaWagesForYear(
             @Param("companyId") Integer companyId,
@@ -92,23 +92,14 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
         SELECT COUNT(DISTINCT employee_id)
         FROM employer_tax_record
         WHERE company_id = :companyId
-          AND EXTRACT(YEAR FROM week_start) = :year
+          AND EXTRACT(YEAR FROM period_start) = :year
     """, nativeQuery = true)
     int countDistinctEmployeesForYear(
             @Param("companyId") Integer companyId,
             @Param("year") int year
     );
 
-    /**
-     * Сумма FUTA-налога для компании за произвольный период
-     */
-    @Query("SELECT COALESCE(SUM(e.futaTax), 0) FROM EmployerTaxRecord e " +
-            "WHERE e.company.id = :companyId AND e.periodStart BETWEEN :start AND :end")
-    BigDecimal sumFutaTaxByCompanyAndYear(
-            @Param("companyId") Integer companyId,
-            @Param("start") LocalDate start,
-            @Param("end") LocalDate end
-    );
+
 
     /**
      * Количество уникальных сотрудников у компании за произвольный период
@@ -120,6 +111,7 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
             @Param("start") LocalDate start,
             @Param("end") LocalDate end
     );
+
 
 
     @Query("SELECT COALESCE(SUM(e.federalWithholding), 0) " +
