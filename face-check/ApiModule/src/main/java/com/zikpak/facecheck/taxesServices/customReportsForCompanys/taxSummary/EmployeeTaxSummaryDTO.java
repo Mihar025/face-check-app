@@ -18,6 +18,7 @@ public class EmployeeTaxSummaryDTO {
     private BigDecimal socialSecurityWithholding;
     private BigDecimal medicareWithholding;
     private BigDecimal stateWithholding;
+    private BigDecimal localWithholding;
     private BigDecimal totalWithholdings;
     private BigDecimal netPay;
 }
