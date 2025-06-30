@@ -218,6 +218,8 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     @Query("SELECT COALESCE(SUM(e.sutaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.periodEnd) = :year")
     BigDecimal sumSutaTaxableWagesByEmployeeAndYear(@Param("id") Integer id, @Param("year") int year);
 
+
+
     @Query("SELECT COALESCE(SUM(e.futaTaxableWages), 0) FROM EmployerTaxRecord e WHERE e.employee.id = :id AND YEAR(e.periodEnd) = :year")
     BigDecimal sumFutaTaxableWagesByEmployeeAndYear(@Param("id") Integer id, @Param("year") int year);
 
@@ -237,5 +239,26 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
     );
 
 
+    @Query("""
+    SELECT COALESCE(SUM(e.sutaTaxableWages), 0)
+    FROM EmployerTaxRecord e
+    WHERE e.employee.id = :employeeId
+      AND e.periodEnd < :periodStart
+""")
+    BigDecimal sumSutaTaxableWagesByEmployeeBeforeDate(@Param("employeeId") Integer employeeId,
+                                                       @Param("periodStart") LocalDate periodStart);
+
+
+
+    @Query("""
+    SELECT COALESCE(SUM(e.grossPay),0)
+    FROM EmployerTaxRecord e
+    WHERE e.employee.id = :employeeId
+      AND e.periodStart < :periodStart
+""")
+    BigDecimal sumGrossPayByEmployeeBeforeDate(
+            @Param("employeeId") Integer employeeId,
+            @Param("periodStart") LocalDate periodStart
+    );
 
 }
