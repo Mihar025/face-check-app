@@ -6,10 +6,12 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 
+import com.zikpak.facecheck.entity.employee.WorkerPayroll;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.EmployerTaxRecordRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerPayrollRepository;
+import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import com.zikpak.facecheck.taxesServices.dto.Form941Data;
 import com.zikpak.facecheck.taxesServices.services.PaymentHistoryService;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,10 +19,13 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.validator.internal.constraintvalidators.hv.CodePointLengthValidator;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -31,22 +36,28 @@ public class FillForm941 {
     private final CompanyRepository companyRepository;
     private final EmployerTaxRecordRepository taxRecordRepo;
     private final PaymentHistoryService paymentHistoryService;
+    private final AmazonS3Service amazonS3Service;
+    private final WorkerPayrollRepository payrollRepo;
 
 
-    public void generateFilledPdf(Integer userId, Integer companyId, int year, int quarter) throws IOException {
+    public byte[] generateFilledPdf(Integer userId, Integer companyId, int year, int quarter) throws IOException {
         String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/f941.pdf";
-        String dest = "filled_f941_output.pdf";
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfDocument pdfDoc = new PdfDocument(
+                new PdfReader(src),
+                new PdfWriter(baos)
+        );
+
+        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+        Map<String, PdfFormField> fields = form.getFormFields();
+
         var admin = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User Not Found"));
         var company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Company Not Found"));
 
-        PdfReader reader = new PdfReader(src);
-        PdfWriter writer = new PdfWriter(dest);
-        PdfDocument pdfDoc = new PdfDocument(reader, writer);
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
-        Map<String, PdfFormField> fields = form.getFormFields();
 
         System.out.println("==== Список полей формы ====");
         for (String fieldName : fields.keySet()) {
@@ -74,7 +85,47 @@ public class FillForm941 {
 
 
 
-        Form941Data data = getQuarterly941Data(companyId, year, quarter);
+      //  Form941Data data = getQuarterly941Data(companyId, year, quarter);
+
+// 1) Определяем границы квартала
+        LocalDate start = LocalDate.of(year, (quarter - 1) * 3 + 1, 1);
+        LocalDate end   = start.plusMonths(3).minusDays(1);
+
+// 2) Достаём компанию и требуемое число дней (7 или 14)
+        int expectedDays = switch (company.getCompanyPaymentPosition()) {
+            case BIWEEKLY -> 14;
+            default       -> 7;
+        };
+
+// 3) Берём все payroll’ы за квартал и фильтруем только полные периоды
+        List<WorkerPayroll> filtered = payrollRepo
+                .findAllByCompanyIdAndPeriodBetween(companyId, start, end).stream()
+                .filter(wp -> {
+                    long days = ChronoUnit.DAYS.between(wp.getPeriodStart(), wp.getPeriodEnd()) + 1;
+                    return days == expectedDays;
+                })
+                .collect(Collectors.toList());
+
+// 4) Собираем Form941Data на основе отфильтрованных записей
+        Form941Data data = new Form941Data();
+        data.setEmployeeCount((int) filtered.stream()
+                .map(wp -> wp.getWorker().getId())
+                .distinct()
+                .count());
+        data.setTotalGross(filtered.stream()
+                .map(WorkerPayroll::getGrossPay)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        data.setTotalFederalWithholding(filtered.stream()
+                .map(WorkerPayroll::getFederalWithholding)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        data.setSsTaxableWages(filtered.stream()
+                .map(WorkerPayroll::getSocialSecurityEmployee)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        data.setSsTaxableTips(BigDecimal.ZERO); // у тебя нет поля tips, оставляем 0
+        data.setMedicareTaxableWages(filtered.stream()
+                .map(WorkerPayroll::getMedicare)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        data.setAdditionalMedicareTaxableWages(BigDecimal.ZERO); // если нет — 0
 
 
         // Part 1 Rows , 1,2,3,4!
@@ -442,8 +493,30 @@ IRS требует, чтобы вы вёлись систематические 
         fill(fields, "topmostSubform[0].Page3[0].f3_4[0]", admin.getCity() + " " + admin.getState() + " " + admin.getZipcode());
 
 
-       form.flattenFields();
+        form.flattenFields();
         pdfDoc.close();
+
+
+        byte[] pdfBytes = baos.toByteArray();
+
+
+        String companyKeyPart = company.getCompanyName()
+                .trim()
+                .replaceAll("[^A-Za-z0-9]+", "_");
+
+        String fileName = String.format("f941_%d_%d_%d.pdf",
+                companyId, year, quarter);
+
+        String key = String.format("%s/%d/941form/941Pdf/%d/%d/%s",
+                companyKeyPart,
+                companyId,
+                year,
+                quarter,
+                fileName
+        );
+
+        amazonS3Service.uploadPdfToS3(pdfBytes, key);
+        return  pdfBytes;
     }
 
     private void fill(Map<String, PdfFormField> fields, String name, String value) {
