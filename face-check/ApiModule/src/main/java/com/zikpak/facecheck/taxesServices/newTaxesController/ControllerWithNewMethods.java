@@ -23,6 +23,7 @@ public class ControllerWithNewMethods {
     private final WorkAttendanceService workAttendanceService;
     private final ReportsMailSender reportsMailSender;
 
+
     @PutMapping("/worker/{workerId}/punch")
     public ResponseEntity<UpdatePunchForWorkerResponse> updatePunchForWorker(
             @PathVariable Integer workerId,
@@ -201,7 +202,7 @@ public class ControllerWithNewMethods {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    @PostMapping("/custom-mail/940/{email}")
+    @PostMapping("/custom-mail/W2F/{email}")
     public ResponseEntity<Void> sendEmailW2F(@PathVariable("email") String email) {
         try {
             reportsMailSender.sendEmailW2Forms(email);
@@ -213,7 +214,7 @@ public class ControllerWithNewMethods {
         }
     }
 
-    @PostMapping("/custom-mail/940/{email}")
+    @PostMapping("/custom-mail/WRP/{email}")
     public ResponseEntity<Void> sendEmailWPR(@PathVariable("email") String email) {
         try {
             reportsMailSender.sendEmailWeeklyPayrollReport(email);
