@@ -9,11 +9,13 @@ import com.zikpak.facecheck.entity.PaymentHistoryIrs;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.PaymentHistoryIrsRepository;
+import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -27,20 +29,22 @@ public class FillForm941ScheduleB {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PaymentHistoryIrsRepository paymentHistoryIrsRepository;
+    private final AmazonS3Service amazonS3Service;
 
-    public void generateFilledPdf(Integer userId, Integer companyId, int year, int quarter) throws IOException {
+    public byte[] generateFilledPdf(Integer userId, Integer companyId, int year, int quarter) throws IOException {
         String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/f941sb22.pdf";
-        String dest = "filled_f941sb_output.pdf";
+
 
         var admin = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User Not Found"));
         var company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Company Not Found"));
 
-        PdfReader reader = new PdfReader(src);
-        PdfWriter writer = new PdfWriter(dest);
-        PdfDocument pdfDoc = new PdfDocument(reader, writer);
-
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfDocument pdfDoc = new PdfDocument(
+                new PdfReader(src),
+                new PdfWriter(baos)
+        );
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
         Map<String, PdfFormField> fields = form.getFormFields();
 
@@ -175,6 +179,28 @@ public class FillForm941ScheduleB {
 
         form.flattenFields();
         pdfDoc.close();
+
+
+        byte[] pdfBytes = baos.toByteArray();
+
+
+        String companyKeyPart = company.getCompanyName()
+                .trim()
+                .replaceAll("[^A-Za-z0-9]+", "_");
+
+        String fileName = String.format("f941sb_%d_%d_%d.pdf",
+                companyId, year, quarter);
+
+        String key = String.format("%s/%d/941sbform/941Pdf/%d/%d/%s",
+                companyKeyPart,
+                companyId,
+                year,
+                quarter,
+                fileName
+        );
+
+        amazonS3Service.uploadPdfToS3(pdfBytes, key);
+        return  pdfBytes;
     }
 
     private void fill(Map<String, PdfFormField> fields, String name, String value) {
