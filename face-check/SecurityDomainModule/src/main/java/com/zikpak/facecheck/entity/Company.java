@@ -92,6 +92,16 @@ public class Company {
     @JoinColumn(name = "owner_id")
     private User companyOwner;
 
+    /** EMR (Experience Modifier Rate), напр. 1.25 */
+    @Column(precision = 4, scale = 2, nullable = true)
+    private BigDecimal emr;
+
+    @Column(name = "wc_policy_number", length = 50, nullable = true)
+    private String wcPolicyNumber;
+
+    @Column(name = "wc_insurance_carrier", length = 100, nullable = true)
+    private String wcInsuranceCarrier;
+
     public void addWorkSite(WorkSite workSite) {
         workSites.add(workSite);
         workSite.setCompany(this);
