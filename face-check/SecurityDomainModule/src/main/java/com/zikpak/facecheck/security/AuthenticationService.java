@@ -49,6 +49,7 @@ public class AuthenticationService {
     private final AuthenticationServiceImpl authenticationServiceImpl;
 
 
+
     @Transactional
     public void register(RegistrationRequest request) throws MessagingException {
 
