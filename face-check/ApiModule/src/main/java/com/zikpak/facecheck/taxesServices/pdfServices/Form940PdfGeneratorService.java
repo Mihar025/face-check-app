@@ -6,18 +6,19 @@ import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.pdf.ReaderProperties;
 
 import com.zikpak.facecheck.entity.EmployerTaxRecord;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.EmployerTaxRecordRepository;
-import com.zikpak.facecheck.repository.UserRepository;
-import com.zikpak.facecheck.taxesServices.services.PaymentHistoryService;
+import com.zikpak.facecheck.repository.PaymentHistoryIrsRepository;
+import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,19 +32,23 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class Form940PdfGeneratorService {
     private final CompanyRepository companyRepository;
     private final EmployerTaxRecordRepository employerTaxRecordRepository;
-
+    private final PaymentHistoryIrsRepository paymentHistoryIrsRepository;
+    private final AmazonS3Service amazonS3Service;
+    private final FillForm940SA fillForm940SA;
 
     //Form940SummaryDto s
-    public  void generate940Pdf(Integer companyId, int year) throws IOException {
+    public  byte[] generate940Pdf(Integer companyId, int year) throws IOException {
         String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/forms/f940.pdf";
-        String dest = "filled_f940_output.pdf";
 
-        PdfReader reader = new PdfReader(src);
-        PdfWriter writer = new PdfWriter(dest);
-        PdfDocument pdfDoc = new PdfDocument(reader, writer);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfDocument pdfDoc = new PdfDocument(
+                new PdfReader(src),
+                new PdfWriter(baos)
+        );
 
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
         Map<String, PdfFormField> fields = form.getFormFields();
@@ -139,11 +144,14 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
         String[] line9Split = splitAmount(line9);
         fill(fields, "topmostSubform[0].Page1[0].f1_26[0]", line9Split[0]);
         fill(fields, "topmostSubform[0].Page1[0].f1_27[0]", line9Split[1]);
+
         BigDecimal line10 = BigDecimal.ZERO;
         String[] line10Split = splitAmount(line10);
         fill(fields, "topmostSubform[0].Page1[0].f1_28[0]", line10Split[0]);
         fill(fields, "topmostSubform[0].Page1[0].f1_29[0]", line10Split[1]);
-        BigDecimal line11 = BigDecimal.ZERO;
+
+
+        BigDecimal line11 = fillForm940SA.getNYCreditReduction(companyId, year);
         String[] line11Split = splitAmount(line11);
         fill(fields, "topmostSubform[0].Page1[0].f1_30[0]", line11Split[0]);
         fill(fields, "topmostSubform[0].Page1[0].f1_31[0]", line11Split[1]);
@@ -156,7 +164,8 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
 
         //Made for payments to FUTA! Sum of maded payments! How much i payed to IRS deposites, each quarter!
         //Temporary Zero! Tamporary!
-        BigDecimal line13 = BigDecimal.ZERO.setScale(2);
+        BigDecimal totalForYear = paymentHistoryIrsRepository.getTotalPaidForFUTA(companyId, year);
+        BigDecimal line13 = totalForYear.setScale(2);
         String[] line13Split = splitAmount(line13);
         fill(fields, "topmostSubform[0].Page1[0].f1_34[0]", line13Split[0]);
         fill(fields, "topmostSubform[0].Page1[0].f1_35[0]", line13Split[1]);
@@ -264,6 +273,28 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
 
         form.flattenFields();
         pdfDoc.close();
+
+        byte[] pdfBytes = baos.toByteArray();
+
+
+        String companyKeyPart = company.getCompanyName()
+                .trim()
+                .replaceAll("[^A-Za-z0-9]+", "_");
+
+        String fileName = String.format("f940_%d_%d.pdf",
+                companyId,
+                year);
+
+        String key = String.format("%s/%d/940pdf/%s",
+                companyKeyPart,
+                companyId,
+                fileName
+        );
+
+
+        amazonS3Service.uploadPdfToS3(pdfBytes, key);
+
+        return  pdfBytes;
     }
 
 
@@ -314,7 +345,7 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
         LocalDate endOfYear   = LocalDate.of(year, Month.DECEMBER, 31);
 
         List<EmployerTaxRecord> allRecords = employerTaxRecordRepository
-                .findByCompanyIdAndWeekStartBetween(companyId, startOfYear, endOfYear);
+                .findByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(companyId, startOfYear, endOfYear);
 
         // 2. Группируем записи по сотруднику и по кварталу
         //    Словарь: employeeId → Map<номерКвартала, суммарный grossPay в этом квартале>
@@ -322,7 +353,7 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
 
         for (EmployerTaxRecord rec : allRecords) {
             Integer empId = rec.getEmployee().getId();
-            LocalDate date = rec.getWeekStart(); // берем любую дату, попадающую в период выплаты
+            LocalDate date = rec.getPeriodStart(); // берем любую дату, попадающую в период выплаты
             BigDecimal pay = rec.getGrossPay();
 
             // Определим номер квартала по дате weekStart
@@ -410,7 +441,6 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
         result.put("16c", futuraQ3);
         result.put("16d", futuraQ4);
         result.put("17",  totalQuarterly);
-
         return result;
     }
 
