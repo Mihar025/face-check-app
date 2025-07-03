@@ -48,5 +48,15 @@ public class CompanyRegistrationRequest {
     @NotNull
     private BigDecimal socialSecurityTaxForCompany; // SUAT RATE;
 
+    @NotNull
+    private BigDecimal experienceModRate;
+
+
+    @NotNull(message = "WC Policy Number is required")
+    private String wcPolicyNumber;
+
+    @NotNull(message = "WC Insurance Carrier is required")
+    private String wcInsuranceCarrier;
+
 
 }
