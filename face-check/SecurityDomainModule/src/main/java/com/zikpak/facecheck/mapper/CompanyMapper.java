@@ -95,6 +95,9 @@ public class CompanyMapper {
                 .socialSecurityTaxForCompany(companyRegistrationRequest.getSocialSecurityTaxForCompany()) // FUTA
                 .companyPaymentPosition(companyRegistrationRequest.getCompanyPaymentPosition())
                 .workersQuantity(0)
+                .emr(companyRegistrationRequest.getExperienceModRate())
+                .wcPolicyNumber(companyRegistrationRequest.getWcPolicyNumber())
+                .wcInsuranceCarrier(companyRegistrationRequest.getWcInsuranceCarrier())
                 .build();
     }
 
