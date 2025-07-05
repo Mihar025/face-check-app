@@ -48,29 +48,29 @@ public class FillForm1095C {
         var foundedCompany = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         var foundedUser = userRepository.findById(workerId)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
 
-      //  fill(fields, "topmostSubform[0]", "1");
-      //  fill(fields, "topmostSubform[0].Page1[0]", "2");
-     //   fill(fields, "topmostSubform[0].Page1[0].PgHeader[0]", "3");
+        //  fill(fields, "topmostSubform[0]", "1");
+        //  fill(fields, "topmostSubform[0].Page1[0]", "2");
+        //   fill(fields, "topmostSubform[0].Page1[0].PgHeader[0]", "3");
 
         //void
-        fill(fields, "topmostSubform[0].Page1[0].PgHeader[0].c1_1[0]", "4");
+        // fill(fields, "topmostSubform[0].Page1[0].PgHeader[0].c1_1[0]", "4");
         //corrected
-        fill(fields, "topmostSubform[0].Page1[0].PgHeader[0].c1_1[1]", "5");
+        // fill(fields, "topmostSubform[0].Page1[0].PgHeader[0].c1_1[1]", "5");
 
 
-      //  fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0]", "6");
+        //  fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0]", "6");
 
         fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_1[0]", foundedUser.getFirstName());
-            if(foundedUser.getMiddleInitial() != null) {
-                fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_2[0]", foundedUser.getMiddleInitial());
-            }
-            else {
-                fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_2[0]", " ");
+        if(foundedUser.getMiddleInitial() != null) {
+            fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_2[0]", foundedUser.getMiddleInitial());
+        }
+        else {
+            fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_2[0]", " ");
 
-            }
+        }
         fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_3[0]", foundedUser.getLastName());
         fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_4[0]", foundedUser.getSSN_WORKER());
         fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_5[0]", foundedUser.getHomeAddress());
@@ -78,7 +78,7 @@ public class FillForm1095C {
         fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_7[0]", foundedUser.getState());
         fill(fields, "topmostSubform[0].Page1[0].EmployeeName[0].f1_8[0]", foundedUser.getZipcode());
 
-      //  fill(fields, "topmostSubform[0].Page1[0].EmployerIssuer[0]", "15");
+        //  fill(fields, "topmostSubform[0].Page1[0].EmployerIssuer[0]", "15");
 
 
         fill(fields, "topmostSubform[0].Page1[0].EmployerIssuer[0].f1_9[0]", foundedCompany.getCompanyName());
@@ -88,7 +88,7 @@ public class FillForm1095C {
         fill(fields, "topmostSubform[0].Page1[0].EmployerIssuer[0].f1_13[0]", foundedCompany.getCompanyCity());
         fill(fields, "topmostSubform[0].Page1[0].EmployerIssuer[0].f1_14[0]", foundedCompany.getCompanyState());
         fill(fields, "topmostSubform[0].Page1[0].EmployerIssuer[0].f1_15[0]", foundedCompany.getCompanyZipCode());
-     //   fill(fields, "topmostSubform[0].Page1[0].PartII[0]", "23");
+        //   fill(fields, "topmostSubform[0].Page1[0].PartII[0]", "23");
 
         int age = LocalDate.now().getYear() - foundedUser.getDateOfBirth().getYear();
         String ageSplit = String.valueOf(age);
@@ -118,23 +118,25 @@ public class FillForm1095C {
         }
 
 
-       // fill(fields, "topmostSubform[0].Page1[0].Table1[0]", "26");
-      //  fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0]", "27");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_17[0]", "28");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_18[0]", "29");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_19[0]", "30");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_20[0]", "31");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_21[0]", "32");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_22[0]", "33");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_23[0]", "34");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_24[0]", "35");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_25[0]", "36");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_26[0]", "37");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_27[0]", "38");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_28[0]", "39");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_29[0]", "40");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0]", "41");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_30[0]", "42");
+        // fill(fields, "topmostSubform[0].Page1[0].Table1[0]", "26");
+        //  fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0]", "27");
+        //   fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_17[0]", "28");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_18[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_19[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_20[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_21[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_22[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_23[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_24[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_25[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_26[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_27[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_28[0]", "1A");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row1[0].f1_29[0]", "1A");
+
+        //fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0]", "41");
+
+        /*fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_30[0]", "42");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_31[0]", "43");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_32[0]", "44");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_33[0]", "45");
@@ -147,20 +149,26 @@ public class FillForm1095C {
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_40[0]", "52");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_41[0]", "53");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row2[0].f1_42[0]", "54");
+
+
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0]", "55");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_43[0]", "56");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_44[0]", "57");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_45[0]", "58");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_46[0]", "59");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_47[0]", "60");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_48[0]", "61");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_49[0]", "62");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_50[0]", "63");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_51[0]", "64");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_52[0]", "65");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_53[0]", "66");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_54[0]", "67");
-        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_55[0]", "68");
+
+         */
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_44[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_45[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_46[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_47[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_48[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_49[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_50[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_51[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_52[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_53[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_54[0]", "2F");
+        fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row3[0].f1_55[0]", "2F");
+
+        /*
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row4[0]", "69");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row4[0].f1_56[0]", "70");
         fill(fields, "topmostSubform[0].Page1[0].Table1[0].Row4[0].f1_57[0]", "71");
@@ -429,12 +437,15 @@ public class FillForm1095C {
         fill(fields, "topmostSubform[0].Page3[0].Table_Part3[0].Row13[0].c3_150[0]", "332");
         fill(fields, "topmostSubform[0].Page3[0].Table_Part3[0].Row13[0].c3_151[0]", "333");
 
+         */
 
-       // fill(fields, "topmostSubform[0].Page3[0].Table_Part3[0].Row6[0].c3
+
+        // fill(fields, "topmostSubform[0].Page3[0].Table_Part3[0].Row6[0].c3
 
 
 
         form.flattenFields();
+
         pdfDoc.close();
     }
 
