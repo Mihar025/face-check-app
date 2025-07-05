@@ -1,18 +1,23 @@
 package com.zikpak.facecheck.taxesServices.calculators;
 
+import com.zikpak.facecheck.entity.TaxBracket;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.W4.FilingStatus;
 import com.zikpak.facecheck.entity.W4.TaxRates;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.requestsResponses.finance.PayStubResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FinanceCalculator {
 
 
@@ -31,75 +36,135 @@ public class FinanceCalculator {
     }
 
 
-    public BigDecimal calculateMedicare(User user, BigDecimal grossPay) {
+    public BigDecimal calculateMedicare(User user, BigDecimal grossPay, BigDecimal ytdMedicareWages) {
         if (grossPay == null) return BigDecimal.ZERO;
+        if(ytdMedicareWages == null)  ytdMedicareWages = BigDecimal.ZERO;
 
-        return TaxRates.round(grossPay.multiply(TaxRates.MEDICARE_RATE));
+        BigDecimal baseMedicare = grossPay.multiply(TaxRates.MEDICARE_RATE);
+
+        BigDecimal cumulative = ytdMedicareWages.add(grossPay);
+
+        BigDecimal aboveThreshold;
+            if(ytdMedicareWages.compareTo(TaxRates.ADDL_MEDICARE_THRESHOLD) >= 0){
+                aboveThreshold= grossPay;
+            }
+            else {
+                aboveThreshold = cumulative
+                        .subtract(TaxRates.ADDL_MEDICARE_THRESHOLD)
+                        .max(BigDecimal.ZERO);
+            }
+            BigDecimal addlMedicare = aboveThreshold.multiply(TaxRates.ADDITIONAL_MEDICARE_RATE);
+            BigDecimal totalMedicare = baseMedicare.add(addlMedicare);
+
+        return TaxRates.round(totalMedicare);
     }
 
-    public BigDecimal calculateNYDisability() {
-        return TaxRates.round(TaxRates.NY_DISABILITY_WEEKLY_MAX);
+    public BigDecimal calculateNYDisability(User user) {
+        int payPeriods = switch (user.getPayFrequency()){
+            case WEEKLY -> 52;
+            case BIWEEKLY -> 26;
+            case MONTHLY -> 12;
+        };
+        BigDecimal weekPerPeriod = BigDecimal.valueOf(52)
+                .divide(BigDecimal.valueOf(payPeriods), 6, RoundingMode.HALF_UP);
+
+        BigDecimal periodicMax = TaxRates.NY_DISABILITY_WEEKLY_MAX.multiply(weekPerPeriod);
+
+        return TaxRates.round(periodicMax);
     }
+
 
     public BigDecimal calculateNYPaidFamilyLeave(BigDecimal grossPay, BigDecimal yearToDatePFL) {
-        if (grossPay == null || yearToDatePFL == null) return BigDecimal.ZERO;
-
-        BigDecimal thisPeriod = TaxRates.round(grossPay.multiply(TaxRates.NY_PFL_RATE));
+        if(grossPay == null){
+            return BigDecimal.ZERO;
+        }
+        if(yearToDatePFL == null){
+            yearToDatePFL = BigDecimal.ZERO;
+        }
+        BigDecimal thisPeriod = grossPay.multiply(TaxRates.NY_PFL_RATE);
 
         BigDecimal remaining = TaxRates.NY_PFL_ANNUAL_MAX.subtract(yearToDatePFL);
         if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
             return BigDecimal.ZERO;
         }
+        BigDecimal result = thisPeriod.min(remaining);
 
-        return thisPeriod.min(remaining);
+        return TaxRates.round(result);
     }
-
 
 
 
     public BigDecimal calculateFederalTax(User user, BigDecimal grossPay) {
         if (grossPay == null) return BigDecimal.ZERO;
 
+        // Step 5: Exempt
+        if (Boolean.TRUE.equals(user.getExemptFromWithholding())) {
+            return BigDecimal.ZERO;
+        }
+
+        // 1) Number of pay periods per year
         int payPeriods = switch (user.getPayFrequency()) {
-            case WEEKLY    -> 52;
-            case BIWEEKLY  -> 26;
-            case MONTHLY   -> 12;
+            case WEEKLY   -> 52;
+            case BIWEEKLY -> 26;
+            case MONTHLY  -> 12;
         };
 
+        // 2) Annualize gross pay
         BigDecimal annualGross = grossPay.multiply(BigDecimal.valueOf(payPeriods));
 
+        // Step 4(a)/(b) adjustments
+        BigDecimal otherIncome = Optional.ofNullable(user.getOtherIncome()).orElse(BigDecimal.ZERO);
+        BigDecimal deductions  = Optional.ofNullable(user.getDeductions()).orElse(BigDecimal.ZERO);
 
+        // 3) Adjusted annual income
+        BigDecimal adjustedIncome = annualGross.add(otherIncome).subtract(deductions).max(BigDecimal.ZERO);
+
+        // 4) Standard deduction
         BigDecimal standardDeduction = switch (user.getFilingStatus()) {
             case SINGLE, MARRIED_FILLING_SEPARATELY ->
                     TaxRates.FEDERAL_STANDARD_DEDUCTION_SINGLE;
             case MARRIED_FILLING_JOINTLY ->
                     TaxRates.FEDERAL_STANDARD_DEDUCTION_MARRIED;
             case HEAD_OF_HOUSEHOLD ->
-                    TaxRates.FEDERAL_STANDARD_DEDUCTION_SINGLE.add(new BigDecimal("5000"));
+                    TaxRates.FEDERAL_STANDARD_DEDUCTION_HEAD_OF_HOUSEHOLD;
         };
 
-        // 2. Детские кредиты
-        BigDecimal dependentsDeduction = TaxRates.FEDERAL_CHILD_TAX_CREDIT
-                .multiply(BigDecimal.valueOf(user.getDependents()));
+        // 5) Taxable income
+        BigDecimal taxableIncome = adjustedIncome.subtract(standardDeduction).max(BigDecimal.ZERO);
 
-        // 3. Налогооблагаемый доход
-        BigDecimal taxableIncome = annualGross
-                .subtract(standardDeduction)
-                .subtract(dependentsDeduction)
-                .max(BigDecimal.ZERO);
+        // 6) Raw annual tax
+        BigDecimal rawAnnualTax = calculateFederalTaxForIncome(taxableIncome, user.getFilingStatus());
 
-        // 4. Налог по брекетам
-        BigDecimal annualTax = calculateFederalTaxForIncome(taxableIncome, user.getFilingStatus());
+        // Step 3: Child Tax Credit
+        BigDecimal credit = Optional.ofNullable(user.getTotalDependentsCredit()).orElse(BigDecimal.ZERO);
+        BigDecimal netAnnualTax = rawAnnualTax.subtract(credit).max(BigDecimal.ZERO);
 
-        // 5. На выплату
-        BigDecimal taxPerPayPeriod = annualTax
-                .divide(BigDecimal.valueOf(payPeriods), 2, RoundingMode.HALF_UP);
+        // Distribute per period
+        BigDecimal perPeriod = netAnnualTax.divide(BigDecimal.valueOf(payPeriods), 2, RoundingMode.HALF_UP);
 
-        // 6. Extra withholding
-        return TaxRates.round(taxPerPayPeriod.add(user.getExtraWithHoldings()));
+        // --- ШАГ 2: Multiple Jobs or Spouse Works ---
+        if (Boolean.TRUE.equals(user.getMultipleJobsOrSpouseWorks())) {
+            if (Boolean.TRUE.equals(user.getTwoJobsCheckBox())) {
+                // (c) Two-jobs checkbox: отмечено, не прибавляем Worksheet-result
+            } else {
+                // (b) Multiple Jobs Worksheet: прибавляем именно этот результат
+                BigDecimal worksheet = Optional.ofNullable(user.getMultipleJobsAdditionalWithholding())
+                        .orElse(BigDecimal.ZERO);
+                perPeriod = perPeriod.add(worksheet);
+            }
+        }
+
+        // --- ШАГ 1(c): Extra withholding (always applies last) ---
+        BigDecimal extra = Optional.ofNullable(user.getExtraWithHoldings()).orElse(BigDecimal.ZERO);
+        perPeriod = perPeriod.add(extra);
+
+        // Финальное округление
+        return TaxRates.round(perPeriod);
     }
 
 
+
+/*
     private BigDecimal calculateFederalTaxForIncome(BigDecimal income, FilingStatus status) {
         BigDecimal tax = BigDecimal.ZERO;
 
@@ -200,7 +265,27 @@ public class FinanceCalculator {
     }
 
 
+ */
 
+    //todo this method version 2.0!
+private BigDecimal calculateFederalTaxForIncome(BigDecimal income, FilingStatus status) {
+    return switch (status) {
+        case SINGLE, MARRIED_FILLING_SEPARATELY ->
+                calculateTax(SINGLE_BRACKETS, income);
+        case MARRIED_FILLING_JOINTLY ->
+                calculateTax(MARRIED_JOINTLY_BRACKETS, income);
+        case HEAD_OF_HOUSEHOLD ->
+                calculateTax(HEAD_OF_HOUSEHOLD_BRACKETS, income);
+    };
+}
+
+
+
+
+
+
+
+/*
     public BigDecimal calculateNYStateTax(User user, BigDecimal grossPay) {
         if (grossPay == null) {
             return BigDecimal.ZERO;
@@ -359,8 +444,57 @@ public class FinanceCalculator {
         return TaxRates.round(taxPerPeriod);
     }
 
+ */
+
+    public BigDecimal calculateNYStateTax(User user, BigDecimal grossPay) {
+        if (grossPay == null) return BigDecimal.ZERO;
+
+        // 1) Определяем payPeriods и annualGross
+        int payPeriods = switch (user.getPayFrequency()) {
+            case WEEKLY   -> 52;
+            case BIWEEKLY -> 26;
+            case MONTHLY  -> 12;
+        };
+        BigDecimal annualGross = grossPay.multiply(BigDecimal.valueOf(payPeriods));
+
+        // 2) Вычитаем штатный стандартный вычет
+        BigDecimal standardDeduction = switch (user.getFilingStatus()) {
+            case SINGLE, MARRIED_FILLING_SEPARATELY ->
+                    TaxRates.NY_STANDARD_DEDUCTION_SINGLE;
+            case MARRIED_FILLING_JOINTLY ->
+                    TaxRates.NY_STANDARD_DEDUCTION_MARRIED;
+            case HEAD_OF_HOUSEHOLD ->
+                    TaxRates.NY_STANDARD_DEDUCTION_HEAD_OF_HOUSEHOLD;
+        };
+        BigDecimal taxableIncome = annualGross
+                .subtract(standardDeduction)
+                .max(BigDecimal.ZERO);
+
+        // 3) Выбор нужных брекетов
+        List<TaxBracket> brackets = switch (user.getFilingStatus()) {
+            case SINGLE, MARRIED_FILLING_SEPARATELY -> NY_SINGLE_BRACKETS;
+            case MARRIED_FILLING_JOINTLY           -> NY_MARRIED_JOINTLY_BRACKETS;
+            case HEAD_OF_HOUSEHOLD                 -> NY_HOH_BRACKETS;
+        };
+
+        // 4) Считаем annual NY-tax по брекетам
+        BigDecimal annualStateTax = calculateTax(brackets, taxableIncome);
+
+        // 5) Переводим в per-period и округляем
+        BigDecimal perPeriod = annualStateTax
+                .divide(BigDecimal.valueOf(payPeriods), 2, RoundingMode.HALF_UP);
+        return TaxRates.round(perPeriod);
+    }
+
+
+
+
+
     public BigDecimal calculateNYCLocalTax(User user, BigDecimal grossPay) {
-        if (grossPay == null || !user.getLivesInNYC()) return BigDecimal.ZERO;
+       // if (grossPay == null || !user.getLivesInNYC()) return BigDecimal.ZERO;
+        if(grossPay == null) {
+            return BigDecimal.ZERO;
+        }
 
         int payPeriods = switch (user.getPayFrequency()) {
             case WEEKLY -> 52;
@@ -395,10 +529,16 @@ public class FinanceCalculator {
             BigDecimal overtimeRate,
             double totalHoursWorked,
             BigDecimal ytdPFL,
-            BigDecimal ytdSocialSecurityWages
+            BigDecimal ytdSocialSecurityWages,
+            BigDecimal ytdMedicareWages
     ) {
         // Gross Pay
-        BigDecimal grossPay = calculateGrossPay(hourlyRate, overtimeRate, totalHoursWorked);
+      // Maybe not correct method!
+        // BigDecimal grossPay = calculateGrossPay(hourlyRate, overtimeRate, totalHoursWorked);
+        //New method temporary!
+        double regularHours = Math.min(totalHoursWorked, 40);
+        double overTimeHours = Math.max(0, totalHoursWorked - 40d);
+        BigDecimal grossPay = calculateGrossPay(hourlyRate, overtimeRate, regularHours, overTimeHours);
 
         BigDecimal healthDeduction = BigDecimal.ZERO;;
         if(Boolean.TRUE.equals(user.getEnrolledInHealthPlan()) && user.getCoverageStartDate() != null && user.getMonthlyHealthPremium() != null) {
@@ -413,8 +553,8 @@ public class FinanceCalculator {
 
         // Рассчитываем налоги правильно
         BigDecimal socialSecurity = calculateSocialSecurity(user, taxableBase, ytdSocialSecurityWages);
-        BigDecimal medicare = calculateMedicare(user, taxableBase);
-        BigDecimal disability = calculateNYDisability();
+        BigDecimal medicare = calculateMedicare(user, taxableBase, ytdMedicareWages);
+        BigDecimal disability = calculateNYDisability(user);
         BigDecimal pfl = calculateNYPaidFamilyLeave(taxableBase, ytdPFL);
 
         // ❗ Реально пересчитываем на основе годового дохода
@@ -459,8 +599,9 @@ public class FinanceCalculator {
     }
 
 
+//todo we commenting this method and changin on other method temporary!
 
-    public BigDecimal calculateGrossPay(BigDecimal hourlyRate, BigDecimal overtimeRate, double totalHoursWorked) {
+/*    public BigDecimal calculateGrossPay(BigDecimal hourlyRate, BigDecimal overtimeRate, double totalHoursWorked) {
         double regularHours = Math.min(totalHoursWorked, 40);
         double overtimeHours = Math.max(0, totalHoursWorked - 40);
 
@@ -469,5 +610,183 @@ public class FinanceCalculator {
 
         return TaxRates.round(regularPay.add(overtimePay));
     }
+
+ */
+
+public BigDecimal calculateGrossPay(BigDecimal hourlyRate, BigDecimal overtimeRate, double regularHours, double overtimeHours) {
+    BigDecimal regularPay = hourlyRate.multiply(BigDecimal.valueOf(regularHours));
+    BigDecimal overtimePay = overtimeRate.multiply(BigDecimal.valueOf(overtimeHours));
+    return TaxRates.round(regularPay.add(overtimePay));
+}
+
+    public PayStubResponse calculateNetPayWithSeparateHours(
+            User user,
+            BigDecimal hourlyRate,
+            BigDecimal overtimeRate,
+            double regularHours,      // ✅ Уже рассчитанные regular часы
+            double overtimeHours,     // ✅ Уже рассчитанные overtime часы
+            BigDecimal ytdPFL,
+            BigDecimal ytdSocialSecurityWages,
+            BigDecimal ytdMedicareWages
+    ) {
+        // ✅ Рассчитываем gross pay с УЖЕ РАЗДЕЛЁННЫМИ часами
+        BigDecimal grossPay = calculateGrossPay(hourlyRate, overtimeRate, regularHours, overtimeHours);
+
+        BigDecimal healthDeduction = BigDecimal.ZERO;
+        if (Boolean.TRUE.equals(user.getEnrolledInHealthPlan())
+                && user.getCoverageStartDate() != null
+                && user.getMonthlyHealthPremium() != null) {
+            int payPeriods = switch (user.getPayFrequency()) {
+                case WEEKLY   -> 52;
+                case BIWEEKLY -> 26;
+                case MONTHLY  -> 12;
+            };
+            BigDecimal annualPremium = user.getMonthlyHealthPremium().multiply(BigDecimal.valueOf(12));
+            healthDeduction = annualPremium.divide(BigDecimal.valueOf(payPeriods), 2, RoundingMode.HALF_UP);
+        }
+
+
+        BigDecimal taxableBase = grossPay.subtract(healthDeduction).max(BigDecimal.ZERO);
+
+        // Рассчитываем налоги правильно
+        BigDecimal socialSecurity = calculateSocialSecurity(user, taxableBase, ytdSocialSecurityWages);
+        BigDecimal medicare = calculateMedicare(user, taxableBase, ytdMedicareWages);
+        BigDecimal disability = calculateNYDisability(user);
+        BigDecimal pfl = calculateNYPaidFamilyLeave(taxableBase, ytdPFL);
+
+        // Теперь правильно считаем federal, state, local
+        BigDecimal federalTax = calculateFederalTax(user, taxableBase);
+        BigDecimal stateTax = calculateNYStateTax(user, taxableBase);
+        BigDecimal nycTax = calculateNYCLocalTax(user, taxableBase);
+
+        // Считаем общие удержания
+        BigDecimal totalDeductions = socialSecurity
+                .add(medicare)
+                .add(disability)
+                .add(pfl)
+                .add(federalTax)
+                .add(stateTax)
+                .add(nycTax)
+                .add(healthDeduction);
+
+        // Чистая зарплата
+        BigDecimal netPay = grossPay.subtract(totalDeductions);
+
+        return PayStubResponse.builder()
+                .grossPay(TaxRates.round(grossPay))
+                .healthDeduction(TaxRates.round(healthDeduction))
+                .socialSecurity(TaxRates.round(socialSecurity))
+                .medicare(TaxRates.round(medicare))
+                .disability(TaxRates.round(disability))
+                .pfl(TaxRates.round(pfl))
+                .federalTax(TaxRates.round(federalTax))
+                .stateTax(TaxRates.round(stateTax))
+                .nycTax(TaxRates.round(nycTax))
+                .totalDeductions(TaxRates.round(totalDeductions))
+                .netPay(TaxRates.round(netPay))
+                .build();
+    }
+
+
+
+
+    private BigDecimal calculateTax(List<TaxBracket> brackets, BigDecimal income) {
+        BigDecimal tax = BigDecimal.ZERO;
+        for (int i = 0; i < brackets.size(); i++) {
+            BigDecimal lower = brackets.get(i).threshold();
+            BigDecimal upper = (i + 1 < brackets.size())
+                    ? brackets.get(i + 1).threshold()
+                    : income;
+            // сколько из income попадает в этот брекет
+            BigDecimal amountInBracket = income.min(upper)
+                    .subtract(lower)
+                    .max(BigDecimal.ZERO);
+            tax = tax.add(amountInBracket.multiply(brackets.get(i).rate()));
+        }
+        return tax.setScale(2, RoundingMode.HALF_UP);
+    }
+
+
+    // This is brackets for Federal!
+    private static final List<TaxBracket> SINGLE_BRACKETS = List.of(
+            new TaxBracket(BigDecimal.ZERO,      new BigDecimal("0.10")),
+            new TaxBracket(new BigDecimal("11925"), new BigDecimal("0.12")),
+            new TaxBracket(new BigDecimal("48475"), new BigDecimal("0.22")),
+            new TaxBracket(new BigDecimal("103350"), new BigDecimal("0.24")),
+            new TaxBracket(new BigDecimal("197300"), new BigDecimal("0.32")),
+            new TaxBracket(new BigDecimal("250525"), new BigDecimal("0.35")),
+            new TaxBracket(new BigDecimal("626350"), new BigDecimal("0.37"))
+    );
+
+    private static final List<TaxBracket> MARRIED_JOINTLY_BRACKETS = List.of(
+            new TaxBracket(BigDecimal.ZERO,      new BigDecimal("0.10")),
+            new TaxBracket(new BigDecimal("23850"), new BigDecimal("0.12")),
+            new TaxBracket(new BigDecimal("96950"), new BigDecimal("0.22")),
+            new TaxBracket(new BigDecimal("206700"), new BigDecimal("0.24")),
+            new TaxBracket(new BigDecimal("394600"), new BigDecimal("0.32")),
+            new TaxBracket(new BigDecimal("501050"), new BigDecimal("0.35")),
+            new TaxBracket(new BigDecimal("751600"), new BigDecimal("0.37"))
+    );
+
+
+    private static final List<TaxBracket> HEAD_OF_HOUSEHOLD_BRACKETS = List.of(
+            new TaxBracket(BigDecimal.ZERO,       new BigDecimal("0.10")),
+            new TaxBracket(new BigDecimal("17000"), new BigDecimal("0.12")),
+            new TaxBracket(new BigDecimal("64850"), new BigDecimal("0.22")),
+            new TaxBracket(new BigDecimal("103350"), new BigDecimal("0.24")),
+            new TaxBracket(new BigDecimal("197300"), new BigDecimal("0.32")),
+            new TaxBracket(new BigDecimal("250500"), new BigDecimal("0.35")),
+            new TaxBracket(new BigDecimal("626350"), new BigDecimal("0.37"))
+    );
+
+
+
+    //This is brackets for NY
+
+    private static final List<TaxBracket> NY_SINGLE_BRACKETS = List.of(
+            new TaxBracket(BigDecimal.ZERO,      new BigDecimal("0.04")),
+            new TaxBracket(new BigDecimal("8500"),  new BigDecimal("0.045")),
+            new TaxBracket(new BigDecimal("11700"), new BigDecimal("0.0525")),
+            new TaxBracket(new BigDecimal("13900"), new BigDecimal("0.0585")),
+            new TaxBracket(new BigDecimal("21400"), new BigDecimal("0.0625")),
+            new TaxBracket(new BigDecimal("80650"), new BigDecimal("0.0685")),
+            new TaxBracket(new BigDecimal("215400"),new BigDecimal("0.0965")),
+            new TaxBracket(new BigDecimal("1077550"),new BigDecimal("0.1030")),
+            new TaxBracket(new BigDecimal("5000000"),new BigDecimal("0.1090"))
+    );
+
+    private static final List<TaxBracket> NY_MARRIED_JOINTLY_BRACKETS = List.of(
+            new TaxBracket(BigDecimal.ZERO,       new BigDecimal("0.04")),
+            new TaxBracket(new BigDecimal("17150"), new BigDecimal("0.045")),
+            new TaxBracket(new BigDecimal("23600"), new BigDecimal("0.0525")),
+            new TaxBracket(new BigDecimal("27900"), new BigDecimal("0.0585")),
+            new TaxBracket(new BigDecimal("43000"), new BigDecimal("0.0625")),
+            new TaxBracket(new BigDecimal("161550"),new BigDecimal("0.0685")),
+            new TaxBracket(new BigDecimal("323200"),new BigDecimal("0.0965")),
+            new TaxBracket(new BigDecimal("2155350"),new BigDecimal("0.1030")),
+            new TaxBracket(new BigDecimal("5000000"),new BigDecimal("0.1090"))
+    );
+
+    private static final List<TaxBracket> NY_HOH_BRACKETS = List.of(
+            new TaxBracket(BigDecimal.ZERO,      new BigDecimal("0.04")),
+            new TaxBracket(new BigDecimal("12800"), new BigDecimal("0.045")),
+            new TaxBracket(new BigDecimal("17650"), new BigDecimal("0.0525")),
+            new TaxBracket(new BigDecimal("20900"), new BigDecimal("0.0585")),
+            new TaxBracket(new BigDecimal("32200"), new BigDecimal("0.0625")),
+            new TaxBracket(new BigDecimal("107650"),new BigDecimal("0.0685")),
+            new TaxBracket(new BigDecimal("269300"),new BigDecimal("0.0965")),
+            new TaxBracket(new BigDecimal("1616450"),new BigDecimal("0.1030")),
+            new TaxBracket(new BigDecimal("5000000"),new BigDecimal("0.1090"))
+    );
+
+
+
+
+
+
+
+
+
+
 
 }
