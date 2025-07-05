@@ -85,6 +85,34 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
             @Param("year") int year
     );
 
+    @Query(
+           value = """
+    SELECT COALESCE(SUM(e.futaTax), 0)
+    FROM EmployerTaxRecord  e 
+    WHERE e.company.id = :companyId
+    AND e.periodStart >= :periodStart
+    AND e.periodEnd <= :periodEnd
+"""
+    )
+    BigDecimal sumFutaForPeriodStartEnd(
+            @Param("companyId") Integer companyId,
+            @Param("periodStart") LocalDate periodStart,
+            @Param("periodEnd") LocalDate periodEnd
+    );
+
+    @Query(value = """
+SELECT COALESCE(SUM(e.sutaTax), 0)
+FROM EmployerTaxRecord e 
+WHERE e.company.id = :companyId
+AND e.periodStart >= :periodStart
+AND e.periodEnd <= :periodEnd
+""")
+    BigDecimal sumSutaForPeriodStartEnd(
+            @Param("companyId") Integer companyId,
+            @Param("periodStart") LocalDate periodStart,
+            @Param("periodEnd") LocalDate periodEnd
+    );
+
     /**
      * Количество уникальных сотрудников у компании за указанный год
      */
