@@ -2,7 +2,7 @@ package com.zikpak.facecheck.authController;
 
 import com.zikpak.facecheck.authRequests.*;
 import com.zikpak.facecheck.requestsResponses.settings.*;
-import com.zikpak.facecheck.security.AuthenticationService;
+import com.zikpak.facecheck.taxesServices.services.authenticationService.AuthenticationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -14,8 +14,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.lang.reflect.ClassFileFormatVersion;
-import java.lang.reflect.Method;
 
 
 @RestController
