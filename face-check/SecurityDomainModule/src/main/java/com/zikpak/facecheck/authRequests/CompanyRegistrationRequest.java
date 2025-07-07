@@ -45,8 +45,8 @@ public class CompanyRegistrationRequest {
     @NotNull(message = "This field is required!!!")
     private CompanyPaymentPosition companyPaymentPosition;
 
-    @NotNull
-    private BigDecimal socialSecurityTaxForCompany; // SUAT RATE;
+    @NotNull(message = "SUTA Rate is required! ")
+    private BigDecimal socialSecurityTaxForCompany; // SUTA RATE;
 
     @NotNull
     private BigDecimal experienceModRate;
@@ -57,6 +57,21 @@ public class CompanyRegistrationRequest {
 
     @NotNull(message = "WC Insurance Carrier is required")
     private String wcInsuranceCarrier;
+
+    @NotNull(message = "This field is required!")
+    private String fundingBankName;
+    @NotNull(message = "This field is required!")
+    private String fundingRoutingNumber;
+    @NotNull(message = "This field is required!")
+    private String fundingAccountNumber;
+    @NotNull(message = "This field is required!")
+    private String returnMailingAddress;
+    @NotNull(message = "This field is required!")
+    private String defaultMemo;
+    @NotNull(message = "This field is required!")
+    private String signatureName;
+    @NotNull(message = "This field is required!")
+    private String signatureTitle;
 
 
 }
