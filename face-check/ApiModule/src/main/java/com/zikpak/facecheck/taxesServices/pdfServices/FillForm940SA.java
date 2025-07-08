@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -29,18 +30,18 @@ public class FillForm940SA {
     private final CompanyRepository companyRepository;
     private final EmployerTaxRecordRepository employerTaxRecordRepository;
 
-    // Константы для NY 2024
+
     private static final BigDecimal NY_2024_REDUCTION_RATE = new BigDecimal("0.009"); // 0.9%
 
     public byte[] generateFilledPdf(Integer companyId, int year) throws IOException {
-        String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/forms/f940sa.pdf";
+        InputStream inputStream = getClass().getResourceAsStream( "/forms/f940sa.pdf");
 
         var company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Company Not Found"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfDocument pdfDoc = new PdfDocument(
-                new PdfReader(src),
+                new PdfReader(inputStream),
                 new PdfWriter(baos)
         );
 
