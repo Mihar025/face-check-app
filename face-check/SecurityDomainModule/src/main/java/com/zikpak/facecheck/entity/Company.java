@@ -102,6 +102,27 @@ public class Company {
     @Column(name = "wc_insurance_carrier", length = 100, nullable = true)
     private String wcInsuranceCarrier;
 
+    @Column(nullable = true)
+    private String fundingBankName;
+
+    @Column(nullable = true)
+    private String fundingRoutingNumber;
+
+    @Column(nullable = true)
+    private String fundingAccountNumber;
+
+    @Column(nullable = true)
+    private String returnMailingAddress;
+
+    @Column(nullable = true)
+    private String defaultMemo;
+
+    @Column(nullable = true)
+    private String signatureName;
+
+    @Column(nullable = true)
+    private String signatureTitle;
+
     public void addWorkSite(WorkSite workSite) {
         workSites.add(workSite);
         workSite.setCompany(this);
