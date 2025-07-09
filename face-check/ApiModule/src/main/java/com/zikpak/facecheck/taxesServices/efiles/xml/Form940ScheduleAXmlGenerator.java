@@ -44,7 +44,6 @@ public class Form940ScheduleAXmlGenerator {
     public String generateForm940ScheduleAXml(Integer userId, Integer companyId, int year) throws Exception {
         log.info("🏛️ Generating official IRS Form 940 Schedule A XML e-file for company {} year {}", companyId, year);
 
-        // Get user and company data
         var admin = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User Not Found"));
         var company = companyRepository.findById(companyId)
@@ -61,202 +60,36 @@ public class Form940ScheduleAXmlGenerator {
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.newDocument();
 
-        // Root element - IRS MeF Package structure for Schedule A
-        Element returnPackage = doc.createElement("ReturnPackage");
-        returnPackage.setAttribute("xmlns", "http://www.irs.gov/efile");
-        returnPackage.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-        returnPackage.setAttribute("xsi:schemaLocation",
+        // Правильный корневой элемент - Return, не ReturnPackage
+        Element returnElement = doc.createElementNS("http://www.irs.gov/efile", "Return");
+        doc.appendChild(returnElement);
+        returnElement.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        returnElement.setAttribute("xsi:schemaLocation",
                 "http://www.irs.gov/efile https://www.irs.gov/pub/irs-schema/" + year + "/IRS940ScheduleAv" + getSchemaVersion(year) + ".xsd");
-        doc.appendChild(returnPackage);
 
-        // Return Header (required by MeF)
-        addReturnHeader(doc, returnPackage, company, year);
+        // Return Header с правильной структурой
+        addReturnHeaderCorrected(doc, returnElement, company, year);
 
-        // Return Data container
+        // Return Data
         Element returnData = doc.createElement("ReturnData");
-        returnPackage.appendChild(returnData);
+        returnData.setAttribute("documentCnt", "1");
+        returnElement.appendChild(returnData);
 
-        // Form 940 Schedule A element
+        // IRS940ScheduleA element
         Element scheduleA = doc.createElement("IRS940ScheduleA");
         scheduleA.setAttribute("documentId", generateDocumentId(companyId, year));
-        scheduleA.setAttribute("taxYear", String.valueOf(year));
         returnData.appendChild(scheduleA);
 
-        // Header section with company info
-        addHeaderSection(doc, scheduleA, company, year);
-
-        // Credit Reduction States section
-        addCreditReductionSection(doc, scheduleA, companyId, year);
-
-        // Total Credit Reduction
-        addTotalCreditReduction(doc, scheduleA, companyId, year);
-
-        // Signature section
-        addSignatureSection(doc, scheduleA, admin);
+        // Добавляем все поля плоской структурой
+        addScheduleAFieldsFlat(doc, scheduleA, company, companyId, year, admin);
 
         String xmlContent = documentToString(doc);
-
-        // Upload to S3
         uploadXmlToS3(company, companyId, year, xmlContent);
 
-        log.info("✅ Form 940 Schedule A XML e-file generated successfully for company {} year {}", companyId, year);
+        log.info("✅ Form 940 Schedule A XML e-file generated successfully");
         return xmlContent;
     }
 
-    /**
-     * Add IRS MeF Return Header (required for production e-filing)
-     */
-    private void addReturnHeader(Document doc, Element returnPackage, Object company, int year) {
-        Element returnHeader = doc.createElement("ReturnHeader");
-        returnPackage.appendChild(returnHeader);
-
-        // Submission ID (unique identifier for this submission)
-        Element submissionId = doc.createElement("SubmissionId");
-        submissionId.setTextContent(generateSubmissionId(((com.zikpak.facecheck.entity.Company) company).getId(), year));
-        returnHeader.appendChild(submissionId);
-
-        // Tax Year
-        Element taxYear = doc.createElement("TaxYear");
-        taxYear.setTextContent(String.valueOf(year));
-        returnHeader.appendChild(taxYear);
-
-        // Tax Period End Date (December 31)
-        Element taxPeriodEndDate = doc.createElement("TaxPeriodEndDate");
-        taxPeriodEndDate.setTextContent(year + "-12-31");
-        returnHeader.appendChild(taxPeriodEndDate);
-
-        // Software ID
-        Element softwareId = doc.createElement("SoftwareId");
-        softwareId.setTextContent("FACECHECK940SAV1.0");
-        returnHeader.appendChild(softwareId);
-
-        // Software Version
-        Element softwareVersion = doc.createElement("SoftwareVersion");
-        softwareVersion.setTextContent("1.0");
-        returnHeader.appendChild(softwareVersion);
-
-        // Transmitter (your software/company info)
-        Element transmitter = doc.createElement("Transmitter");
-        returnHeader.appendChild(transmitter);
-
-        Element transmitterEIN = doc.createElement("EIN");
-        transmitterEIN.setTextContent(((com.zikpak.facecheck.entity.Company) company).getEmployerEIN());
-        transmitter.appendChild(transmitterEIN);
-
-        Element transmitterName = doc.createElement("Name");
-        transmitterName.setTextContent("FaceCheck Payroll Services");
-        transmitter.appendChild(transmitterName);
-
-        // Return Type
-        Element returnType = doc.createElement("ReturnType");
-        returnType.setTextContent("940SA"); // Schedule A return type
-        returnHeader.appendChild(returnType);
-    }
-
-    private void addHeaderSection(Document doc, Element scheduleA, Object company, int year) {
-        Element header = doc.createElement("Header");
-        scheduleA.appendChild(header);
-
-        // EIN (format: NN-NNNNNNN)
-        Element ein = doc.createElement("EIN");
-        String einValue = ((com.zikpak.facecheck.entity.Company) company).getEmployerEIN();
-        if (!einValue.contains("-") && einValue.length() == 9) {
-            einValue = einValue.substring(0, 2) + "-" + einValue.substring(2);
-        }
-        ein.setTextContent(einValue);
-        header.appendChild(ein);
-
-        // Business Name
-        Element businessName = doc.createElement("BusinessName");
-        businessName.setTextContent(((com.zikpak.facecheck.entity.Company) company).getCompanyName());
-        header.appendChild(businessName);
-
-        // Tax Year
-        Element taxYear = doc.createElement("TaxYear");
-        taxYear.setTextContent(String.valueOf(year));
-        header.appendChild(taxYear);
-    }
-
-    private void addCreditReductionSection(Document doc, Element scheduleA, Integer companyId, int year) {
-        Element creditReductionStates = doc.createElement("CreditReductionStates");
-        scheduleA.appendChild(creditReductionStates);
-
-        // New York entry
-        Element nyEntry = doc.createElement("StateEntry");
-        creditReductionStates.appendChild(nyEntry);
-
-        // State code
-        Element stateCode = doc.createElement("StateCode");
-        stateCode.setTextContent("NY");
-        nyEntry.appendChild(stateCode);
-
-        // State name
-        Element stateName = doc.createElement("StateName");
-        stateName.setTextContent("New York");
-        nyEntry.appendChild(stateName);
-
-        // FUTA taxable wages for this state
-        BigDecimal futaTaxableWages = calculateFUTATaxableWages(companyId, year);
-        Element taxableWages = doc.createElement("FUTATaxableWages");
-        taxableWages.setTextContent(formatAmount(futaTaxableWages));
-        nyEntry.appendChild(taxableWages);
-
-        // Credit reduction rate
-        Element reductionRate = doc.createElement("CreditReductionRate");
-        reductionRate.setTextContent("0.009"); // 0.9% for NY 2024
-        nyEntry.appendChild(reductionRate);
-
-        // Credit reduction amount
-        BigDecimal creditReduction = futaTaxableWages.multiply(NY_2024_REDUCTION_RATE)
-                .setScale(2, RoundingMode.HALF_UP);
-        Element creditAmount = doc.createElement("CreditReductionAmount");
-        creditAmount.setTextContent(formatAmount(creditReduction));
-        nyEntry.appendChild(creditAmount);
-    }
-
-    private void addTotalCreditReduction(Document doc, Element scheduleA, Integer companyId, int year) {
-        Element totalSection = doc.createElement("TotalCreditReduction");
-        scheduleA.appendChild(totalSection);
-
-        // Calculate total credit reduction (only NY for now)
-        BigDecimal futaTaxableWages = calculateFUTATaxableWages(companyId, year);
-        BigDecimal totalCreditReduction = futaTaxableWages.multiply(NY_2024_REDUCTION_RATE)
-                .setScale(2, RoundingMode.HALF_UP);
-
-        Element totalAmount = doc.createElement("TotalAmount");
-        totalAmount.setTextContent(formatAmount(totalCreditReduction));
-        totalSection.appendChild(totalAmount);
-
-        // Instructions reference
-        Element instructions = doc.createElement("Instructions");
-        instructions.setTextContent("Enter this amount on Form 940, Line 11");
-        totalSection.appendChild(instructions);
-    }
-
-    private void addSignatureSection(Document doc, Element scheduleA, Object admin) {
-        Element signature = doc.createElement("Signature");
-        scheduleA.appendChild(signature);
-
-        Element signedBy = doc.createElement("SignedBy");
-        signedBy.setTextContent(((com.zikpak.facecheck.entity.User) admin).fullName());
-        signature.appendChild(signedBy);
-
-        Element title = doc.createElement("Title");
-        title.setTextContent("Owner");
-        signature.appendChild(title);
-
-        Element phone = doc.createElement("Phone");
-        phone.setTextContent(((com.zikpak.facecheck.entity.User) admin).getPhoneNumber());
-        signature.appendChild(phone);
-
-        Element date = doc.createElement("Date");
-        date.setTextContent(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        signature.appendChild(date);
-
-        Element signatureMethod = doc.createElement("SignatureMethod");
-        signatureMethod.setTextContent("Electronic");
-        signature.appendChild(signatureMethod);
-    }
 
     /**
      * Calculate FUTA taxable wages (same as Form 940 line 7)
@@ -299,10 +132,6 @@ public class Form940ScheduleAXmlGenerator {
         };
     }
 
-    private String generateSubmissionId(Integer companyId, int year) {
-        return String.format("FACE940SA_%04d_%05d_%08d", year, companyId, System.currentTimeMillis() % 100000000);
-    }
-
     private String generateDocumentId(Integer companyId, int year) {
         return String.format("940SA_%d_%d_%d", companyId, year, System.currentTimeMillis());
     }
@@ -338,4 +167,109 @@ public class Form940ScheduleAXmlGenerator {
         amazonS3Service.uploadPdfToS3(xmlContent.getBytes(), key);
         log.info("✅ Form 940 Schedule A XML uploaded to S3: {}", key);
     }
+
+    private void addReturnHeaderCorrected(Document doc, Element returnElement, Object company, int year) {
+        Element returnHeader = doc.createElement("ReturnHeader");
+        returnHeader.setAttribute("binaryAttachmentCnt", "0");
+        returnElement.appendChild(returnHeader);
+
+        // Правильные элементы для IRS MeF
+        addElement(doc, returnHeader, "TaxYr", String.valueOf(year));
+        addElement(doc, returnHeader, "TaxPeriodBeginDt", year + "-01-01");
+        addElement(doc, returnHeader, "TaxPeriodEndDt", year + "-12-31");
+
+        // Software ID (должен быть зарегистрирован в IRS)
+        addElement(doc, returnHeader, "SoftwareId", "00000000"); // Placeholder
+        addElement(doc, returnHeader, "SoftwareVersionNum", "2024.1.0");
+
+        // Originator Group
+        Element originatorGrp = doc.createElement("OriginatorGrp");
+        returnHeader.appendChild(originatorGrp);
+        addElement(doc, originatorGrp, "EFIN", "000000"); // Нужен реальный EFIN
+        addElement(doc, originatorGrp, "OriginatorTypeCd", "ERO");
+
+        addElement(doc, returnHeader, "ReturnTypeCd", "940SA");
+
+        // Filer information
+        Element filer = doc.createElement("Filer");
+        returnHeader.appendChild(filer);
+
+        String ein = ((com.zikpak.facecheck.entity.Company)company).getEmployerEIN().replaceAll("-", "");
+        addElement(doc, filer, "EIN", ein);
+
+        Element businessName = doc.createElement("BusinessName");
+        filer.appendChild(businessName);
+        addElement(doc, businessName, "BusinessNameLine1Txt",
+                ((com.zikpak.facecheck.entity.Company)company).getCompanyName());
+
+        Element usAddress = doc.createElement("USAddress");
+        filer.appendChild(usAddress);
+        addElement(doc, usAddress, "AddressLine1Txt",
+                ((com.zikpak.facecheck.entity.Company)company).getCompanyAddress());
+        addElement(doc, usAddress, "CityNm",
+                ((com.zikpak.facecheck.entity.Company)company).getCompanyCity());
+        addElement(doc, usAddress, "StateAbbreviationCd",
+                ((com.zikpak.facecheck.entity.Company)company).getCompanyState());
+        addElement(doc, usAddress, "ZIPCd",
+                ((com.zikpak.facecheck.entity.Company)company).getCompanyZipCode());
+    }
+
+    private void addScheduleAFieldsFlat(Document doc, Element scheduleA, Object company, Integer companyId, int year, Object admin) {
+        // Business info
+        Element businessName = doc.createElement("BusinessName");
+        businessName.setTextContent(((com.zikpak.facecheck.entity.Company)company).getCompanyName());
+        scheduleA.appendChild(businessName);
+
+        String ein = ((com.zikpak.facecheck.entity.Company)company).getEmployerEIN().replaceAll("-", "");
+        addElement(doc, scheduleA, "EIN", ein);
+
+        // Расчет FUTA taxable wages
+        BigDecimal totalWages = employerTaxRecordRepository.sumGrossPayByAllEmployeeAndYear(companyId, year);
+        BigDecimal excessWages = calculateExcessWages(companyId, year);
+        BigDecimal futaTaxableWages = totalWages.subtract(excessWages);
+
+        // Credit Reduction State Group - правильные IRS названия
+        Element creditReductionStateGrp = doc.createElement("CreditReductionStateGrp");
+        scheduleA.appendChild(creditReductionStateGrp);
+
+        // State
+        addElement(doc, creditReductionStateGrp, "StateAbbreviationCd", "NY");
+
+        // FUTA Taxable Wages
+        addElement(doc, creditReductionStateGrp, "FUTATaxableWagesAmt", formatAmount(futaTaxableWages));
+
+        // Credit Reduction Rate
+        addElement(doc, creditReductionStateGrp, "CreditReductionRt", "0.009");
+
+        // Credit Reduction Amount
+        BigDecimal creditReduction = futaTaxableWages.multiply(NY_2024_REDUCTION_RATE)
+                .setScale(2, RoundingMode.HALF_UP);
+        addElement(doc, creditReductionStateGrp, "CreditReductionAmt", formatAmount(creditReduction));
+
+        // Total Credit Reduction
+        addElement(doc, scheduleA, "TotalCreditReductionAmt", formatAmount(creditReduction));
+
+        // Signature
+        Element businessOfficerGrp = doc.createElement("BusinessOfficerGrp");
+        scheduleA.appendChild(businessOfficerGrp);
+        addElement(doc, businessOfficerGrp, "PersonNm", ((com.zikpak.facecheck.entity.User)admin).fullName());
+        addElement(doc, businessOfficerGrp, "PersonTitleTxt", "Owner");
+
+        String phone = ((com.zikpak.facecheck.entity.User)admin).getPhoneNumber();
+        if (phone != null && !phone.isEmpty()) {
+            phone = phone.replaceAll("[^0-9]", "");
+            if (phone.length() == 10) {
+                addElement(doc, businessOfficerGrp, "PhoneNum", phone);
+            }
+        }
+
+        addElement(doc, businessOfficerGrp, "SignatureDt", LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+    }
+
+    private void addElement(Document doc, Element parent, String name, String value) {
+        Element element = doc.createElement(name);
+        element.setTextContent(value);
+        parent.appendChild(element);
+    }
+
 }
