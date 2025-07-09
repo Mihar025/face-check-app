@@ -2,10 +2,6 @@ package com.zikpak.facecheck.taxesServices.pdfServices;
 
 import com.itextpdf.forms.PdfAcroForm;
 import com.itextpdf.forms.fields.PdfFormField;
-import com.itextpdf.io.image.ImageData;
-import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -15,6 +11,7 @@ import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.DocumentsI9Repository;
 import com.zikpak.facecheck.repository.UserRepository;
+import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +24,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 
@@ -39,6 +35,7 @@ public class FillFormI9 {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final DocumentsI9Repository documentsI9Repository;
+    private final AmazonS3Service amazonS3Service;
 
 
     public byte[] generateFilledPdf(Integer userId, Integer companyId) throws IOException {
@@ -275,9 +272,40 @@ public class FillFormI9 {
        else {
            System.out.println("Hello");
        }
+
+
+
      //  form.flattenFields();
         pdfDoc.close();
-        return baos.toByteArray();
+
+        byte[] pdfBytes = baos.toByteArray();
+
+        String companyKeyPart = company.getCompanyName()
+                .trim()
+                .replaceAll("[^A-Za-z0-9]+", "_");
+
+        String workerKeyPart = String.format("%s_%s",
+                user.getFirstName().trim().replaceAll("\\s+", "_"),
+                user.getLastName().trim().replaceAll("\\s+", "_"));
+
+// 2. Имя файла (можете скорректировать по своему вкусу)
+        String fileName = String.format("I9_%d_%s_%s.pdf",
+                companyId,
+                user.getFirstName().toLowerCase(),
+                user.getLastName().toLowerCase());
+
+// 3. Собираем полный ключ
+        String key = String.format("%s/%d/I9Form/%s/%s",
+                companyKeyPart,
+                companyId,
+                workerKeyPart,
+                fileName);
+
+// 4. Загружаем в S3
+        amazonS3Service.uploadPdfToS3(pdfBytes, key);
+        log.info("✅ Form I-9 uploaded to S3: {}", key);
+
+        return pdfBytes;
     }
 
 
