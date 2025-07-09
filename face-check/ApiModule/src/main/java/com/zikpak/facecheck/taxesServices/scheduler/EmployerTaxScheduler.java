@@ -35,6 +35,8 @@ import com.zikpak.facecheck.taxesServices.pdfServices.FillForm940SA;
 import com.zikpak.facecheck.taxesServices.pdfServices.Form940PdfGeneratorService;
 import com.zikpak.facecheck.taxesServices.services.EmployerTaxService;
 import com.zikpak.facecheck.taxesServices.services.PayStubService;
+import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcRiskCsvService;
+import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcRiskServiceForPDF;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -89,6 +91,7 @@ public class EmployerTaxScheduler {
     private final SutaReportPdfService sutaReportPdfService;
 
     private final ReportsMailSender reportsMailSender;
+
 
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье в 4:00 утра
     public void calculateWeeklyEmployerTaxes() {
@@ -1764,6 +1767,10 @@ public class EmployerTaxScheduler {
 
         log.info("🏁 Annual SUTA Report Scheduler завершил работу за {} год", previousYear);
     }
+
+
+
+
 
 
 
