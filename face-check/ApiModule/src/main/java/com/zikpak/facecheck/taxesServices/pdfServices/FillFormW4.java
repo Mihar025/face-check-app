@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -39,8 +40,7 @@ public class FillFormW4 {
 
 
     public byte[] generateW4Pdf(Integer userId, Integer companyId) throws IOException {
-        String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/forms/fw4.pdf";
-
+       InputStream src = getClass().getResourceAsStream("/forms/fw4.pdf");
         PdfReader reader = new PdfReader(src);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfWriter writer = new PdfWriter(baos);
