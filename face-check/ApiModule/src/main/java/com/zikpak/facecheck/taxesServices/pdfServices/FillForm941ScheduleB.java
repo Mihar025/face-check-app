@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -32,7 +33,7 @@ public class FillForm941ScheduleB {
     private final AmazonS3Service amazonS3Service;
 
     public byte[] generateFilledPdf(Integer userId, Integer companyId, int year, int quarter) throws IOException {
-        String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/f941sb22.pdf";
+        InputStream inputStream = getClass().getResourceAsStream("/assets/f941sb22.pdf");
 
 
         var admin = userRepository.findById(userId)
@@ -42,7 +43,7 @@ public class FillForm941ScheduleB {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfDocument pdfDoc = new PdfDocument(
-                new PdfReader(src),
+                new PdfReader(inputStream),
                 new PdfWriter(baos)
         );
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
@@ -139,15 +140,11 @@ public class FillForm941ScheduleB {
             String fracField = String.format("%02d", base + 1);
             String prefix = String.format("topmostSubform[0].Page1[0].%s[0].", group);
             String[] parts = splitAmount(p.getAmount());
+
             // fill integer part
             fill(fields, prefix + "f1_" + intField, parts[0]);
-            // fill fraction or group-level for Month2 Day1
-            if (monthNum == 2 && day == 1) {
-                String groupName = String.format("topmostSubform[0].Page1[0].%s[0]", group);
-                fill(fields, groupName, parts[1]);
-            } else {
-                fill(fields, prefix + "f1_" + fracField, parts[1]);
-            }
+            // дробная часть
+            fill(fields, prefix + "f1_" + fracField, parts[1]);
         }
         // 7. Monthly liabilities (tax liability fields)
         BigDecimal monthSum1 = payments.stream()
