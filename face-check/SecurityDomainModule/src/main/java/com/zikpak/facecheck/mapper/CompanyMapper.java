@@ -98,6 +98,7 @@ public class CompanyMapper {
                 .emr(companyRegistrationRequest.getExperienceModRate())
                 .wcPolicyNumber(companyRegistrationRequest.getWcPolicyNumber())
                 .wcInsuranceCarrier(companyRegistrationRequest.getWcInsuranceCarrier())
+                .companyStateIdNumber(companyRegistrationRequest.getCompanyStateIdNumber())
                 .build();
     }
 

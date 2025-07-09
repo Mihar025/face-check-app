@@ -36,6 +36,8 @@ public class Company {
     @Column(nullable = false)
     private String companyEmail;
 
+    private String companyStateIdNumber;
+
 
   //  @Column(nullable = false)
     private String companyCity;
