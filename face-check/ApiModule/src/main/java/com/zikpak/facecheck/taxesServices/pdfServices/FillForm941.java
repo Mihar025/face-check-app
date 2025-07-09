@@ -21,12 +21,15 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,11 +44,10 @@ public class FillForm941 {
 
 
     public byte[] generateFilledPdf(Integer userId, Integer companyId, int year, int quarter) throws IOException {
-        String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/f941.pdf";
-
+        InputStream inputStream = getClass().getResourceAsStream("/assets/f941.pdf");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfDocument pdfDoc = new PdfDocument(
-                new PdfReader(src),
+                new PdfReader(inputStream),
                 new PdfWriter(baos)
         );
 
@@ -131,8 +133,8 @@ public class FillForm941 {
         // Part 1 Rows , 1,2,3,4!
         //This field should contain all worker whose were working during the special quarter day! One op them is June 12 Thursday! This field should contain
         // all workers whose were working from example: June 8 - June 15! Or other quarter!
-        //todo Fix later!
-        fill(fields, "topmostSubform[0].Page1[0].f1_12[0]", String.valueOf(data.getEmployeeCount()));
+        int line1Count = getEmployeeCountForLine1(companyId, year, quarter);
+        fill(fields, "topmostSubform[0].Page1[0].f1_12[0]", String.valueOf(line1Count));
 
 // Line 2 — Wages, Tips, and Other Compensation
         String[] grossParts = splitAmount(data.getTotalGross());
@@ -519,6 +521,34 @@ IRS требует, чтобы вы вёлись систематические 
         return  pdfBytes;
     }
 
+    // Правильный подсчет для Line 1
+    private int getEmployeeCountForLine1(Integer companyId, int year, int quarter) {
+        // Определяем месяцы квартала
+        int startMonth = (quarter - 1) * 3 + 1;
+        Set<Integer> uniqueEmployees = new HashSet<>();
+
+        for (int i = 0; i < 3; i++) {
+            int currentMonth = startMonth + i;
+            LocalDate the12th = LocalDate.of(year, currentMonth, 12);
+
+            List<WorkerPayroll> payrollsIncluding12th = payrollRepo
+                    .findAllByCompanyIdAndPeriodBetween(companyId,
+                            the12th.minusDays(14), // максимальный bi-weekly период
+                            the12th)
+                    .stream()
+                    .filter(p -> !p.getPeriodStart().isAfter(the12th) &&
+                            !p.getPeriodEnd().isBefore(the12th))
+                    .toList();
+
+            // Добавляем всех уникальных работников
+            payrollsIncluding12th.forEach(p ->
+                    uniqueEmployees.add(p.getWorker().getId())
+            );
+        }
+
+        return uniqueEmployees.size();
+    }
+
     private void fill(Map<String, PdfFormField> fields, String name, String value) {
         PdfFormField field = fields.get(name);
         if (field == null) {
@@ -554,10 +584,15 @@ IRS требует, чтобы вы вёлись систематические 
 
         data.setSsTaxableWages(
                 taxRecordRepo.sumSocialSecurityTaxableWages(companyId, start, end));
+
         data.setSsTaxableTips(
                 taxRecordRepo.sumSocialSecurityTips(companyId, start, end));
+
+
         data.setMedicareTaxableWages(
                 taxRecordRepo.sumMedicareTaxableWages(companyId, start, end));
+
+
         data.setAdditionalMedicareTaxableWages(
                 taxRecordRepo.sumAdditionalMedicareTaxableWages(companyId, start, end));
 
