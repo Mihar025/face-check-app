@@ -33,6 +33,7 @@ import com.zikpak.facecheck.taxesServices.efiles.xml.Form941XmlGenerator;
 import com.zikpak.facecheck.taxesServices.efiles.csvReports.*;
 import com.zikpak.facecheck.taxesServices.pdfServices.FillForm940SA;
 import com.zikpak.facecheck.taxesServices.pdfServices.Form940PdfGeneratorService;
+import com.zikpak.facecheck.taxesServices.pdfServices.W2OfficialPDFService;
 import com.zikpak.facecheck.taxesServices.services.EmployerTaxService;
 import com.zikpak.facecheck.taxesServices.services.PayStubService;
 import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcRiskCsvService;
@@ -91,6 +92,7 @@ public class EmployerTaxScheduler {
     private final SutaReportPdfService sutaReportPdfService;
 
     private final ReportsMailSender reportsMailSender;
+    private final W2OfficialPDFService w2OfficialPDFService;
 
 
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье в 4:00 утра
@@ -313,6 +315,61 @@ public class EmployerTaxScheduler {
         }
 
         // Отправляем уведомления компаниям
+        for (Map.Entry<Company, List<User>> entry : workersByCompany.entrySet()) {
+            Company company = entry.getKey();
+            int count = entry.getValue().size();
+            try {
+                reportsMailSender.sendEmailW2Forms(company.getCompanyEmail());
+                log.info("📧 Уведомление о W-2 отправлено компании: {} (forms: {})",
+                        company.getCompanyEmail(), count);
+            } catch (Exception e) {
+                log.error("❌ Ошибка отправки уведомления для компании: {}",
+                        company.getCompanyEmail(), e);
+            }
+        }
+
+        log.info("🏁 W2FormScheduler завершил генерацию W-2 за {}. Всего: {} работников",
+                targetYear, workers.size());
+    }
+
+
+    @Scheduled(cron = "0 0 7 3 1 *", zone = "America/New_York")
+    public void generateAllW2OfficialFormsFor2025() {
+        int currentYear = LocalDate.now().getYear();
+        int targetYear = currentYear - 1; // W-2 за прошлый год
+
+        if (currentYear != 2026) {
+            log.info("⏭️ Пропускаем генерацию W-2. Текущий год: {}, ожидаем: 2026", currentYear);
+            return;
+        }
+
+        log.info("📄 W2FormScheduler запущен: генерируем W-2 за {} всем работникам", targetYear);
+
+        // Получаем всех пользователей, у которых есть компания (т.е. они работники)
+        List<User> workers = userRepository.findAll().stream()
+                .filter(user -> user.getCompany() != null)
+                .filter(user -> !user.isBusinessOwner()) // исключаем владельцев бизнеса
+                .toList();
+
+
+        // Группируем по компаниям для отправки уведомлений
+        Map<Company, List<User>> workersByCompany = new HashMap<>();
+
+        for (User worker : workers) {
+            try {
+                // Генерируем W-2
+                w2OfficialPDFService.generateFilledPdf(worker.getId(), worker.getCompany().getId(),  targetYear);
+                log.info("✅ Сгенерирован W-2 для workerId={} за {}", worker.getId(), targetYear);
+
+                // Добавляем в группу для компании
+                Company company = worker.getCompany();
+                workersByCompany.computeIfAbsent(company, k -> new ArrayList<>()).add(worker);
+
+            } catch (Exception ex) {
+                log.error("❌ Ошибка генерации W-2 для workerId={}", worker.getId(), ex);
+            }
+        }
+
         for (Map.Entry<Company, List<User>> entry : workersByCompany.entrySet()) {
             Company company = entry.getKey();
             int count = entry.getValue().size();
