@@ -99,6 +99,7 @@ public class CompanyMapper {
                 .wcPolicyNumber(companyRegistrationRequest.getWcPolicyNumber())
                 .wcInsuranceCarrier(companyRegistrationRequest.getWcInsuranceCarrier())
                 .companyStateIdNumber(companyRegistrationRequest.getCompanyStateIdNumber())
+                .specialTwoCharConditionCodeForMTA305(companyRegistrationRequest.getSpecialTwoCharConditionCodeForMTA305())
                 .build();
     }
 
