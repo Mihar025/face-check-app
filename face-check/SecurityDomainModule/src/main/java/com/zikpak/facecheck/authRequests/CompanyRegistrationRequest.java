@@ -43,6 +43,13 @@ public class CompanyRegistrationRequest {
     private String employerEIN;
 
     @NotNull(message = "This field is required!!!")
+    private String specialTwoCharConditionCodeForMTA305;
+
+
+    @NotNull(message = "This field is required!!!")
+    private String companyStateIdNumber;
+
+    @NotNull(message = "This field is required!!!")
     private CompanyPaymentPosition companyPaymentPosition;
 
     @NotNull(message = "SUTA Rate is required! ")
