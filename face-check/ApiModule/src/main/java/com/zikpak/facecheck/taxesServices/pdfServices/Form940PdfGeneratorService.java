@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -42,21 +43,23 @@ public class Form940PdfGeneratorService {
 
     //Form940SummaryDto s
     public  byte[] generate940Pdf(Integer companyId, int year) throws IOException {
-        String src = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/forms/f940.pdf";
+        InputStream inputStream = getClass().getResourceAsStream("/forms/f940.pdf");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfDocument pdfDoc = new PdfDocument(
-                new PdfReader(src),
+                new PdfReader(inputStream),
                 new PdfWriter(baos)
         );
 
         PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
         Map<String, PdfFormField> fields = form.getFormFields();
 
-        System.out.println("==== Список полей формы ====");
+    /*    System.out.println("==== Список полей формы ====");
         for (String fieldName : fields.keySet()) {
             System.out.println(fieldName);
         }
+
+     */
 
 
   /*      topmostSubform[0]
