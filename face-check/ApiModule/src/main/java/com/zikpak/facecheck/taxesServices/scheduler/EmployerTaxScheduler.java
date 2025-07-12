@@ -31,9 +31,7 @@ import com.zikpak.facecheck.taxesServices.efiles.xml.Form940XmlGenerator;
 import com.zikpak.facecheck.taxesServices.efiles.xml.Form941ScheduleBXmlGenerator;
 import com.zikpak.facecheck.taxesServices.efiles.xml.Form941XmlGenerator;
 import com.zikpak.facecheck.taxesServices.efiles.csvReports.*;
-import com.zikpak.facecheck.taxesServices.pdfServices.FillForm940SA;
-import com.zikpak.facecheck.taxesServices.pdfServices.Form940PdfGeneratorService;
-import com.zikpak.facecheck.taxesServices.pdfServices.W2OfficialPDFService;
+import com.zikpak.facecheck.taxesServices.pdfServices.*;
 import com.zikpak.facecheck.taxesServices.services.EmployerTaxService;
 import com.zikpak.facecheck.taxesServices.services.PayStubService;
 import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcRiskCsvService;
@@ -93,6 +91,9 @@ public class EmployerTaxScheduler {
 
     private final ReportsMailSender reportsMailSender;
     private final W2OfficialPDFService w2OfficialPDFService;
+    private final W3OfficialPDFServicer w3OfficialPDFServicer;
+
+    private final FillFormMTA305 fillFormMTA305;
 
 
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье в 4:00 утра
@@ -1823,6 +1824,195 @@ public class EmployerTaxScheduler {
         }
 
         log.info("🏁 Annual SUTA Report Scheduler завершил работу за {} год", previousYear);
+    }
+
+    // =============================================================================
+// 📋 QUARTERLY MTA-305 REPORTS (NYC MCTMT)
+// =============================================================================
+
+    /**
+     * Генерирует квартальные MTA-305 формы для NYC MCTMT
+     * Запускается 25 числа каждого квартального месяца в 11:00 (после SUTA)
+     */
+    @Scheduled(cron = "0 0 11 25 1,4,7,10 *", zone = "America/New_York")
+    public void generateQuarterlyMTA305Forms() {
+        log.info("📋 Quarterly MTA-305 Scheduler запущен: генерируем quarterly MTA-305 forms");
+
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        int currentMonth = today.getMonthValue();
+
+        // Определяем какой квартал только что закончился
+        int completedQuarter;
+        if (currentMonth == 1) {
+            completedQuarter = 4;
+            currentYear = currentYear - 1;
+        } else if (currentMonth == 4) {
+            completedQuarter = 1;
+        } else if (currentMonth == 7) {
+            completedQuarter = 2;
+        } else if (currentMonth == 10) {
+            completedQuarter = 3;
+        } else {
+            log.info("ℹ️ Ошибка в логике quarterly MTA-305 scheduler. Текущий месяц: {}", currentMonth);
+            return;
+        }
+
+        // Вычисляем даты квартала
+        LocalDate startDate = LocalDate.of(currentYear, (completedQuarter - 1) * 3 + 1, 1);
+        LocalDate endDate = startDate.plusMonths(3).minusDays(1);
+
+        log.info("📅 Генерируем MTA-305 Forms за Q{} {} (период: {} - {})",
+                completedQuarter, currentYear, startDate, endDate);
+
+        // Получаем только NYC компании (Zone 1)
+        List<Company> nycCompanies = companyRepository.findAll().stream()
+                .filter(company -> isNYCCompany(company))
+                .toList();
+
+        int totalNycCompanies = nycCompanies.size();
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
+
+        for (Company company : nycCompanies) {
+            try {
+                // Проверяем, есть ли payrolls за квартал
+                boolean hasPayrollsInQuarter = workerPayrollRepository
+                        .existsByCompanyIdAndPeriodStartGreaterThanEqualAndPeriodEndLessThanEqual(
+                                company.getId(), startDate, endDate);
+
+                if (hasPayrollsInQuarter) {
+                    // Проверяем превышение лимита $312,500
+                    BigDecimal quarterlyPayroll = workerPayrollRepository
+                            .sumGrossWages(company.getId(), startDate, endDate);
+
+                    if (quarterlyPayroll.compareTo(new BigDecimal("312500")) > 0) {
+                        // Генерируем MTA-305 форму
+                        byte[] mta305Pdf = fillFormMTA305.generateFilledPdf(
+                                company.getId(), completedQuarter, currentYear);
+
+                        // Отправляем email
+                        reportsMailSender.sendEmailMTA305Form(company.getCompanyOwner().getEmail());
+
+                        log.info("✅ Quarterly MTA-305 Form was generated: {} (ID: {}) for Q{} {}, size PDF: {} bytes, quarterly payroll: ${}",
+                                company.getCompanyName(), company.getId(), completedQuarter, currentYear,
+                                mta305Pdf.length, quarterlyPayroll);
+
+                        successCount++;
+                    } else {
+                        log.info("ℹ️ Company {} didnt exceed limit $312,500 for Q{} {} (payroll: ${})",
+                                company.getCompanyName(), completedQuarter, currentYear, quarterlyPayroll);
+                        skipCount++;
+                    }
+                } else {
+                    log.info("ℹ️ No Payrolls for company: {} за Q{} {}",
+                            company.getCompanyName(), completedQuarter, currentYear);
+                    skipCount++;
+                }
+
+            } catch (Exception ex) {
+                log.error("❌ Error generating quarterly MTA-305 form for company ID: {} за Q{} {}",
+                        company.getId(), completedQuarter, currentYear, ex);
+                errorCount++;
+            }
+        }
+
+        long nonNycCompanies = companyRepository.count() - totalNycCompanies;
+
+        log.info("🏁 Quarterly MTA-305 Scheduler завершил работу за Q{} {}. " +
+                        "NYC компании: {}, успешно: {}, пропущено: {}, с ошибками: {}, не-NYC компании: {}",
+                completedQuarter, currentYear, totalNycCompanies, successCount, skipCount, errorCount, nonNycCompanies);
+    }
+
+
+
+    @Scheduled(cron = "0 0 8 3 1 *", zone = "America/New_York")
+    public void generateAnnualW3OfficialForms() {
+        int currentYear = LocalDate.now().getYear();
+        int targetYear  = currentYear - 1;  // за прошлый год
+
+        if (currentYear != 2026) {
+            log.info("⏭️ Пропускаем генерацию W-3. Текущий год: {}, ожидаем: 2026", currentYear);
+            return;
+        }
+
+        log.info("📄 Начинаем генерацию W-3 Official Forms за {} год", targetYear);
+        List<Company> companies = companyRepository.findAll();
+        for (Company company : companies) {
+            try {
+                byte[] pdf = w3OfficialPDFServicer.generateFilledPdf(company.getId(), targetYear);
+                reportsMailSender.sendEmailW3Forms(company.getCompanyOwner().getEmail());
+                log.info("✅ W-3 Official для {} (ID {}) за {} сгенерирован и отправлен, размер {} bytes",
+                        company.getCompanyName(), company.getId(), targetYear, pdf.length);
+            } catch (Exception ex) {
+                log.error("❌ Ошибка генерации W-3 Official для компании ID {} за {} год",
+                        company.getId(), targetYear, ex);
+            }
+        }
+        log.info("🏁 Генерация W-3 Official Forms завершена за {} год.", targetYear);
+    }
+
+
+
+    private boolean isNYCCompany(Company company) {
+        String city = company.getCompanyCity();
+        String state = company.getCompanyState();
+
+        // Проверяем что компания в NY State
+        if (!"NY".equalsIgnoreCase(state)) {
+            return false;
+        }
+
+        // Zone 1 includes: Manhattan, Bronx, Brooklyn, Queens, Staten Island
+        if (city != null) {
+            String cityLower = city.toLowerCase();
+            return cityLower.contains("manhattan") ||
+                    cityLower.contains("bronx") ||
+                    cityLower.contains("brooklyn") ||
+                    cityLower.contains("queens") ||
+                    cityLower.contains("staten island") ||
+                    cityLower.contains("new york city") ||
+                    cityLower.contains("nyc");
+        }
+
+        // Если город не указан, но ZIP code можно проверить
+        String zipCode = company.getCompanyZipCode();
+        if (zipCode != null) {
+            return isNYCZipCode(zipCode);
+        }
+
+        return false;
+    }
+
+    /**
+     * Проверяет, является ли ZIP код NYC Zone 1
+     */
+    private boolean isNYCZipCode(String zipCode) {
+        if (zipCode == null || zipCode.length() < 5) {
+            return false;
+        }
+
+        String zip5 = zipCode.substring(0, 5);
+
+        // NYC ZIP codes:
+        // Manhattan: 10001-10282
+        // Bronx: 10451-10475
+        // Brooklyn: 11201-11256
+        // Queens: 11101-11697
+        // Staten Island: 10301-10314
+
+        try {
+            int zipInt = Integer.parseInt(zip5);
+
+            return (zipInt >= 10001 && zipInt <= 10282) ||  // Manhattan
+                    (zipInt >= 10451 && zipInt <= 10475) ||  // Bronx
+                    (zipInt >= 11201 && zipInt <= 11256) ||  // Brooklyn
+                    (zipInt >= 11101 && zipInt <= 11697) ||  // Queens
+                    (zipInt >= 10301 && zipInt <= 10314);    // Staten Island
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
 
