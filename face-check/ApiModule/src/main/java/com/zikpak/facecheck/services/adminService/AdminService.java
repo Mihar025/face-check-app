@@ -37,8 +37,11 @@ public class AdminService implements AdminAndForemanFunctionality {
         return foremanAndAdminService.findAllWorkersInWorkSite(page, size, workSiteId, authentication);
     }
 
+
+
     @Transactional
-    public ChangePunchInForWorkerResponse ChangingPunchInForWorkerIfDoesntExist(Integer workerId, ChangePunchInRequest changePunchInRequest, Authentication authentication) {
+    public ChangePunchInForWorkerResponse ChangingPunchInForWorkerIfDoesntExist(Integer workerId,
+                                                                                ChangePunchInRequest changePunchInRequest, Authentication authentication) {
         User admin = ((User) authentication.getPrincipal());
 
         doesHaveAdminRole(admin);
@@ -119,6 +122,11 @@ public class AdminService implements AdminAndForemanFunctionality {
         }
         return foundedCompany.getWorkSites().size();
     }
+
+
+
+
+
 
 
 
