@@ -6,6 +6,7 @@ import com.zikpak.facecheck.entity.Token;
 import com.zikpak.facecheck.entity.User;
 
 import com.zikpak.facecheck.mapper.UserMapper;
+import com.zikpak.facecheck.metrics.MetricsAuthenticationService;
 import com.zikpak.facecheck.repository.TokenRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerPayrollRepository;
@@ -16,6 +17,7 @@ import com.zikpak.facecheck.security.EmailTemplateName;
 import com.zikpak.facecheck.security.JwtService;
 import com.zikpak.facecheck.taxesServices.pdfServices.FillFormI9;
 import com.zikpak.facecheck.taxesServices.pdfServices.FillFormW4;
+import io.micrometer.core.instrument.Timer;
 import jakarta.mail.MessagingException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -57,30 +59,33 @@ public class AuthenticationService {
     private final AuthenticationServiceImpl authenticationServiceImpl;
     private final FillFormI9 fillFormI9;
     private final FillFormW4 fillFormW4;
+    private final MetricsAuthenticationService metric;
 
 
     @Transactional
-    public void register(RegistrationRequest request) throws MessagingException {
-
-        authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
-        var role = authenticationServiceImpl.findRoleUser();
-        var company = authenticationServiceImpl.findCompanyByName(request.getCompanyName());
-        var user = userMapper.toWorker(request);
-
-        user.setRoles(List.of(role));
-        user.setCompany(company);
+    public void register(RegistrationRequest request) {
+        Timer.Sample timer = metric.startTimer();
         try {
+            authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
+            var role = authenticationServiceImpl.findRoleUser();
+            var company = authenticationServiceImpl.findCompanyByName(request.getCompanyName());
+            var user = userMapper.toWorker(request);
+
+            user.setRoles(List.of(role));
+            user.setCompany(company);
+
             fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
             fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        userRepository.save(user);
-        try {
-            sendValidationEmail(user);
-        } catch (MessagingException e) {
-            log.error("Failed to send validation email", user.getEmail(), e);
-            throw e;
+            userRepository.save(user);
+            metric.recordOperationTime(timer, "register_successfully");
+            try {
+                sendValidationEmail(user);
+            } catch (MessagingException e) {
+                log.error("Failed to send validation email", user.getEmail(), e);
+                throw e;
+            }
+        } catch (Exception e){
+            metric.recordError("register_failed", e.getMessage(), e);
         }
     }
 
@@ -102,16 +107,23 @@ public class AuthenticationService {
     }
 
     public void registerAdmin(RegistrationAdminRequest request) throws MessagingException {
-        authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
-        var role = authenticationServiceImpl.findRoleAdmin();
-        var user = userMapper.toAdmin(request);
-        user.setRoles(List.of(role));
-
-        userRepository.save(user);
+        Timer.Sample timer = metric.startTimer();
         try {
-            sendValidationEmail(user);
-        } catch (MessagingException e) {
-            log.error("Failed to send validation email", user.getEmail(), e);
+            authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
+            var role = authenticationServiceImpl.findRoleAdmin();
+            var user = userMapper.toAdmin(request);
+            user.setRoles(List.of(role));
+
+            userRepository.save(user);
+            metric.recordOperationTime(timer, "register_admin_successfully");
+            try {
+                sendValidationEmail(user);
+            } catch (MessagingException e) {
+                log.error("Failed to send validation email", user.getEmail(), e);
+                throw e;
+            }
+        } catch (Exception e){
+            metric.recordError("register_admin_failed", e.getMessage(), e);
             throw e;
         }
     }
@@ -121,30 +133,44 @@ public class AuthenticationService {
     public void setPaymentDataForWorkerHoursRateAndOvertime(Integer employeeId,
                                                             PaymentRequest paymentRequest,
                                                             Authentication authentication) {
-        var employee = authenticationServiceImpl.findUserById(employeeId);
-        employee.setBaseHourlyRate(paymentRequest.getHourRate());
-        employee.setOvertimeRate(paymentRequest.getOvertimeRate());
-        var payment = authenticationServiceImpl.makeWorkerPayroll(employee.getBaseHourlyRate(), employee.getOvertimeRate(), employee.getId());
-        payment.setWorker(employee);
-        payment.setCompany(employee.getCompany());
-        workerPayrollRepository.save(payment);
+        Timer.Sample timer = metric.startTimer();
+        try {
+            var employee = authenticationServiceImpl.findUserById(employeeId);
+            employee.setBaseHourlyRate(paymentRequest.getHourRate());
+            employee.setOvertimeRate(paymentRequest.getOvertimeRate());
+            var payment = authenticationServiceImpl.makeWorkerPayroll(employee.getBaseHourlyRate(), employee.getOvertimeRate(), employee.getId());
+            payment.setWorker(employee);
+            payment.setCompany(employee.getCompany());
+            workerPayrollRepository.save(payment);
+            metric.recordOperationTime(timer, "set_payment_data_for_worker_hours_rate_and_overtime");
+        } catch (Exception e){
+            metric.recordError("set_payment_data_failed", e.getMessage(), e);
+            throw e;
+        }
     }
 
 
     @Transactional(rollbackOn = Exception.class)
     public void registerCompany(CompanyRegistrationRequest companyRegistrationRequest, Authentication authentication) throws MessagingException {
-        User user = ((User) authentication.getPrincipal());
-        if (!user.isAdmin()) {
-            throw new AccessDeniedException("You dont have permission for this operation");
-        }
+        Timer.Sample timer = metric.startTimer();
+        try {
+            User user = ((User) authentication.getPrincipal());
+            if (!user.isAdmin()) {
+                throw new AccessDeniedException("You dont have permission for this operation");
+            }
 
-        var newCompany = authenticationServiceImpl.createNewCompany(companyRegistrationRequest);
-        newCompany.setCompanyOwner(user);
-        authenticationServiceImpl.setBusinessInformation(user, newCompany);
+            var newCompany = authenticationServiceImpl.createNewCompany(companyRegistrationRequest);
+            newCompany.setCompanyOwner(user);
+            authenticationServiceImpl.setBusinessInformation(user, newCompany);
+        } catch (Exception e){
+            metric.recordError("register_failed", e.getMessage(), e);
+            throw e;
+        }
     }
 
 
     public AuthenticationResponse authenticate(@Valid AuthenticationRequest request) {
+        Timer.Sample timer = metric.startTimer();
         try {
             log.info("Attempting authentication for user: {}", request.getEmail());
 
@@ -161,12 +187,13 @@ public class AuthenticationService {
             var user = ((User) auth.getPrincipal());
             claims.put("fullName", user.fullName());
             var jwtToken = jwtService.generateToken(claims, user);
-
+            metric.recordOperationTime(timer, "authenticate_successfully");
             return AuthenticationResponse
                     .builder()
                     .token(jwtToken)
                     .build();
         } catch (Exception e) {
+            metric.recordError("authenticate_failed", e.getMessage(), e);
             log.error("Authentication failed for user: {}, error: {}",
                     request.getEmail(), e.getMessage(), e);
             throw e;
@@ -324,27 +351,34 @@ public class AuthenticationService {
 
     @Transactional
     public void resetPassword(ForgotPasswordRequest request) {
-        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
-            throw new RuntimeException("Passwords do not match");
+        Timer.Sample timer = metric.startTimer();
+        try {
+            if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+                throw new RuntimeException("Passwords do not match");
+            }
+
+            var user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+            var latestToken = user.getTokens().stream()
+                    .filter(t -> t.getValidatedAt() != null)
+                    .max(Comparator.comparing(Token::getValidatedAt))
+                    .orElseThrow(() -> new RuntimeException("Please verify your reset code first"));
+
+            if (LocalDateTime.now().isAfter(latestToken.getExpiresAt())) {
+                throw new RuntimeException("Reset code has expired. Please request a new one");
+            }
+
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+
+            latestToken.setExpiresAt(LocalDateTime.now());
+            tokenRepository.save(latestToken);
+            metric.recordOperationTime(timer, "reset_password_success");
+        } catch (Exception e){
+            metric.recordOperationTime(timer, "reset_password_failed");
+            metric.recordError("reset_password_failed", e.getMessage(), e);
         }
-
-        var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        var latestToken = user.getTokens().stream()
-                .filter(t -> t.getValidatedAt() != null)
-                .max(Comparator.comparing(Token::getValidatedAt))
-                .orElseThrow(() -> new RuntimeException("Please verify your reset code first"));
-
-        if (LocalDateTime.now().isAfter(latestToken.getExpiresAt())) {
-            throw new RuntimeException("Reset code has expired. Please request a new one");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-
-        latestToken.setExpiresAt(LocalDateTime.now());
-        tokenRepository.save(latestToken);
     }
 
 
