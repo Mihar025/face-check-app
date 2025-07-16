@@ -5,9 +5,11 @@ import com.itextpdf.forms.fields.PdfFormField;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.zikpak.facecheck.metrics.MetricsForPdfServices;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.EmployerTaxRecordRepository;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,57 +31,73 @@ public class FillForm940SA {
     private final AmazonS3Service amazonS3Service;
     private final CompanyRepository companyRepository;
     private final EmployerTaxRecordRepository employerTaxRecordRepository;
-
+    private final MetricsForPdfServices metric;
 
     private static final BigDecimal NY_2024_REDUCTION_RATE = new BigDecimal("0.009"); // 0.9%
 
     public byte[] generateFilledPdf(Integer companyId, int year) throws IOException {
-        InputStream inputStream = getClass().getResourceAsStream( "/forms/f940sa.pdf");
+        final String FORM = "940SA";
+        metric.recordRequest(FORM);
+        Timer.Sample timer = metric.startTimer();
+        try {
+            InputStream inputStream = getClass().getResourceAsStream("/forms/f940sa.pdf");
 
-        var company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new EntityNotFoundException("Company Not Found"));
+            var company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new EntityNotFoundException("Company Not Found"));
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfDocument pdfDoc = new PdfDocument(
-                new PdfReader(inputStream),
-                new PdfWriter(baos)
-        );
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PdfDocument pdfDoc = new PdfDocument(
+                    new PdfReader(inputStream),
+                    new PdfWriter(baos)
+            );
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
-        Map<String, PdfFormField> fields = form.getFormFields();
+            PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+            Map<String, PdfFormField> fields = form.getFormFields();
 
-        log.info("==== Заполняем Form 940 Schedule A для {} за 2024 год (NY) ====",
-                company.getCompanyName());
+            log.info("==== Заполняем Form 940 Schedule A для {} за 2024 год (NY) ====",
+                    company.getCompanyName());
 
-        // 1. Заполняем EIN
-        fillEIN(fields, company.getEmployerEIN());
+            // 1. Заполняем EIN
+            fillEIN(fields, company.getEmployerEIN());
 
-        // 2. Заполляем название компании
-        fill(fields, "topmostSubform[0].Page1[0].f1_10[0]", company.getCompanyName());
+            // 2. Заполляем название компании
+            fill(fields, "topmostSubform[0].Page1[0].f1_10[0]", company.getCompanyName());
 
-        // 3. Вычисляем FUTA taxable wages (line 7 из Form 940)
-        BigDecimal futaTaxableWages = calculateFUTATaxableWages(companyId, year);
+            // 3. Вычисляем FUTA taxable wages (line 7 из Form 940)
+            BigDecimal futaTaxableWages = calculateFUTATaxableWages(companyId, year);
 
-        // 4. Вычисляем NY credit reduction
-        BigDecimal creditReduction = futaTaxableWages.multiply(NY_2024_REDUCTION_RATE)
-                .setScale(2, RoundingMode.HALF_UP);
+            // 4. Вычисляем NY credit reduction
+            BigDecimal creditReduction = futaTaxableWages.multiply(NY_2024_REDUCTION_RATE)
+                    .setScale(2, RoundingMode.HALF_UP);
 
-        // 5. Заполняем NY данные
-        fillNYData(fields, futaTaxableWages, creditReduction);
+            // 5. Заполняем NY данные
+            fillNYData(fields, futaTaxableWages, creditReduction);
 
-        // 6. Заполляем итоговую сумму
-        fillTotalCreditReduction(fields, creditReduction);
+            // 6. Заполляем итоговую сумму
+            fillTotalCreditReduction(fields, creditReduction);
 
-        form.flattenFields();
-        pdfDoc.close();
+            form.flattenFields();
+            pdfDoc.close();
 
-        byte[] pdfBytes = baos.toByteArray();
-        uploadToS3(company, companyId, year, pdfBytes);
+            byte[] pdfBytes = baos.toByteArray();
+            long start = System.currentTimeMillis();
+            uploadToS3(company, companyId, year, pdfBytes);
+            long end = System.currentTimeMillis() - start;
 
-        log.info("✅ Schedule A создана: FUTA Wages=${}, NY Credit Reduction=${}",
-                futaTaxableWages, creditReduction);
 
-        return pdfBytes;
+            log.info("✅ Schedule A создана: FUTA Wages=${}, NY Credit Reduction=${}",
+                    futaTaxableWages, creditReduction);
+            metric.recordGenerated(FORM, true);
+            metric.recordS3UploadTime(FORM, true,  end);
+            metric.recordOperationTime(timer,"940_SA_success");
+
+            return pdfBytes;
+        } catch (Exception e) {
+            metric.recordOperationTime(timer,"940_SA_failed");
+            metric.recordGenerated(FORM, false);
+            metric.recordError("940_SA_failed", e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
