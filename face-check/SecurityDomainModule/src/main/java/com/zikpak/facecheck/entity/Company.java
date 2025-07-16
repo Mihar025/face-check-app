@@ -51,6 +51,9 @@ public class Company {
   //  @Column(nullable = false, unique = true)
     private String employerEIN;
 
+    private String specialTwoCharConditionCodeForMTA305;
+
+
 
 
     private BigDecimal companyIncomePerMonth;
@@ -124,6 +127,7 @@ public class Company {
 
     @Column(nullable = true)
     private String signatureTitle;
+
 
     public void addWorkSite(WorkSite workSite) {
         workSites.add(workSite);
