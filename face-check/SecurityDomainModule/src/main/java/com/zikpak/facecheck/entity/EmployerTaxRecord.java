@@ -3,6 +3,7 @@ package com.zikpak.facecheck.entity;
 import com.zikpak.facecheck.entity.employee.WorkerPayroll;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,6 +33,7 @@ public class EmployerTaxRecord {
     @JoinColumn(name = "pay_stub_id")
     private WorkerPayroll payStub;
 
+
     private BigDecimal grossPay;
 
     private BigDecimal socialSecurityTax;
@@ -46,6 +48,8 @@ public class EmployerTaxRecord {
     private LocalDate periodStart;
     private LocalDate periodEnd;
 
+    @CreatedDate
+    @Column(updatable = false)
     private LocalDate createdAt;
 
 
