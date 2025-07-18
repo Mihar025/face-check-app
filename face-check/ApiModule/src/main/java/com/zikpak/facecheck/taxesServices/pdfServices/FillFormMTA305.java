@@ -9,10 +9,12 @@ import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 
 import com.zikpak.facecheck.entity.employee.WorkerPayroll;
+import com.zikpak.facecheck.metrics.MetricsForPdfServices;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.PaymentHistoryIrsRepository;
 import com.zikpak.facecheck.repository.WorkerPayrollRepository;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,9 +47,14 @@ public class FillFormMTA305 {
     private final WorkerPayrollRepository workerPayrollRepository;
     private final PaymentHistoryIrsRepository paymentHistoryIrsRepository;
     private final AmazonS3Service amazonS3Service;
-
+    private final MetricsForPdfServices metric;
 
     public byte[] generateFilledPdf(Integer companyId, int quarter, Integer year) throws IOException {
+        final String FORM = "MTa-305";
+        metric.recordRequest(FORM);
+        Timer.Sample timer = metric.startTimer();
+
+        try{
         InputStream inputStream = getClass().getResourceAsStream("/assets/mta305_fill_in.pdf");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfDocument pdfDoc = new PdfDocument(
@@ -255,13 +262,30 @@ public class FillFormMTA305 {
                     fileName);
 
 
+            long st = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
+            long end1 = System.currentTimeMillis() - st;
+
+
             log.info("✅ Form MTA-305 uploaded to S3: {}", key);
+
+
+            metric.recordGenerated(FORM, true);
+            metric.recordS3UploadTime(FORM, true,  end1);
+            metric.recordOperationTime(timer,"MTA305_success");
+
+
             return pdfBytes;
         }
         else{
             throw new RuntimeException("Company with id: " + company.getId() + " should not making this form!");
         }
+    }  catch (Exception e) {
+        metric.recordOperationTime(timer,"MTA305_failed");
+        metric.recordGenerated(FORM, false);
+        metric.recordError("MTA305_failed", e.getMessage(), e);
+        throw e;
+    }
     }
 
 
