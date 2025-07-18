@@ -3,11 +3,12 @@ package com.zikpak.facecheck.helperServices;
 import com.zikpak.facecheck.domain.WorkerScheduleI;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkerSchedule;
-import com.zikpak.facecheck.mapper.WorkerScheduleMapper;
+import com.zikpak.facecheck.metrics.MetricServiceWorkerSchedule;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerScheduleRepository;
 import com.zikpak.facecheck.requestsResponses.schedule.*;
 import com.zikpak.facecheck.requestsResponses.workScheduler.WorkSchedulerResponse;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,6 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
@@ -25,51 +25,59 @@ import java.util.List;
 public class WorkerScheduleServiceImpl implements WorkerScheduleI {
     private final WorkerScheduleRepository workerScheduleRepository;
     private final UserRepository userRepository;
-
+    private final MetricServiceWorkerSchedule metric;
 
     @Override
     public WeeklyScheduleResponse findWorkerAllDaysAndAllHours(Authentication authentication, LocalDate weekDate) {
-        var worker = checkIsUserAuthenticatedAndFindHim(authentication);
-        LocalDate date = weekDate != null ? weekDate : LocalDate.now();
+        Timer.Sample timer = metric.startTimer();
+        try {
+            var worker = checkIsUserAuthenticatedAndFindHim(authentication);
+            LocalDate date = weekDate != null ? weekDate : LocalDate.now();
 
-        var startOfWeek =date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        var endOfWeek = startOfWeek.plusDays(6);
+            var startOfWeek = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+            var endOfWeek = startOfWeek.plusDays(6);
 
-        List<WorkerSchedule> schedules = workerScheduleRepository.findByWorkerAndScheduleDateBetween(worker, startOfWeek, endOfWeek);
+            List<WorkerSchedule> schedules = workerScheduleRepository.findByWorkerAndScheduleDateBetween(worker, startOfWeek, endOfWeek);
 
-        List<DailyScheduleResponse> dailyScheduleResponses = schedules.stream()
-                .map(schedule -> {
-                    Duration duration =
-                            Duration.between(
-                                    schedule.getExpectedStartTime(),
-                                    schedule.getExpectedEndTime()
-                            );
-                    double hoursWorked = duration.toMinutes() / 60.0;
-                    return DailyScheduleResponse.builder()
-                            .dayOfWeek(schedule.getScheduleDate().getDayOfWeek().toString())
-                            .date(schedule.getScheduleDate())
-                            .hoursWorked(Math.round(hoursWorked * 100.0) / 100.0)
-                            .startTime(schedule.getExpectedStartTime())
-                            .endTime(schedule.getExpectedEndTime())
-                            .workSiteName(schedule.getWorkSite().getSiteName())
-                            .isOnDuty(schedule.getIsOnDuty())
-                            .build();
-                } )
-                .toList();
-        double totalHours = dailyScheduleResponses.stream()
-                .mapToDouble(DailyScheduleResponse::getHoursWorked)
-                .sum();
+            List<DailyScheduleResponse> dailyScheduleResponses = schedules.stream()
+                    .map(schedule -> {
+                        Duration duration =
+                                Duration.between(
+                                        schedule.getExpectedStartTime(),
+                                        schedule.getExpectedEndTime()
+                                );
+                        double hoursWorked = duration.toMinutes() / 60.0;
+                        return DailyScheduleResponse.builder()
+                                .dayOfWeek(schedule.getScheduleDate().getDayOfWeek().toString())
+                                .date(schedule.getScheduleDate())
+                                .hoursWorked(Math.round(hoursWorked * 100.0) / 100.0)
+                                .startTime(schedule.getExpectedStartTime())
+                                .endTime(schedule.getExpectedEndTime())
+                                .workSiteName(schedule.getWorkSite().getSiteName())
+                                .isOnDuty(schedule.getIsOnDuty())
+                                .build();
+                    })
+                    .toList();
+            double totalHours = dailyScheduleResponses.stream()
+                    .mapToDouble(DailyScheduleResponse::getHoursWorked)
+                    .sum();
 
-        double regularHours = Math.min(totalHours, 40.0);
-        double overtimeHours = Math.max(0, totalHours - 40.0);
-
-        return WeeklyScheduleResponse.builder()
-                .dailySchedules(dailyScheduleResponses)
-                .totalWeekHours(Math.round(totalHours * 100.0) / 100.0)
-                .regularHours(Math.round(regularHours * 100.0) / 100.0)
-                .overtimeHours(Math.round(overtimeHours * 100.0) / 100.0)
-                .build();
-
+            double regularHours = Math.min(totalHours, 40.0);
+            double overtimeHours = Math.max(0, totalHours - 40.0);
+            metric.recordWorkersDaysHours(worker.getFirstName() + " " + worker.getLastName() ,  totalHours, regularHours, overtimeHours, true);
+            metric.recordOperationTime(timer, "find_hours");
+            return WeeklyScheduleResponse.builder()
+                    .dailySchedules(dailyScheduleResponses)
+                    .totalWeekHours(Math.round(totalHours * 100.0) / 100.0)
+                    .regularHours(Math.round(regularHours * 100.0) / 100.0)
+                    .overtimeHours(Math.round(overtimeHours * 100.0) / 100.0)
+                    .build();
+        }catch (Exception e){
+            metric.recordOperationTime(timer, "find_hours_failed");
+            metric.recordScheduleError("find_hours_failed", e.getMessage(), e);
+            metric.recordWorkersDaysHours("unknown", 0.0, 0.0, 0.0, false);
+            throw e;
+        }
 
     }
 
@@ -77,107 +85,140 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
 
     @Override
     public WorkSchedulerResponse setScheduleForWorkerScenario(Integer workerId, WorkerSetScheduleRequest request) {
-        request.validate();
-        var worker = findWorkerById(workerId);
+        Timer.Sample timer = metric.startTimer();
+        try {
+            request.validate();
+            var worker = findWorkerById(workerId);
 
-        LocalDate startDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        LocalDate endDate = startDate.plusYears(1);
+            LocalDate startDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+            LocalDate endDate = startDate.plusYears(1);
 
-        LocalDate currentDate = startDate;
-        while (currentDate.isBefore(endDate)) {
-            if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY) {
-                WorkerSchedule workerSchedule = WorkerSchedule.builder()
-                        .worker(worker)
-                        .scheduleDate(currentDate)
-                        .expectedStartTime(request.getStartTime())
-                        .expectedEndTime(request.getEndTime())
-                        .startLunch(request.getStartLunch())
-                        .endLunch(request.getEndLunch())
-                        .isCompanyPayingLunch(request.getIsCompanyPayingLunch())
-                        .shift("DAY")
-                        .isOnDuty(false)
-                        .build();
+            LocalDate currentDate = startDate;
+            while (currentDate.isBefore(endDate)) {
+                if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY) {
+                    WorkerSchedule workerSchedule = WorkerSchedule.builder()
+                            .worker(worker)
+                            .scheduleDate(currentDate)
+                            .expectedStartTime(request.getStartTime())
+                            .expectedEndTime(request.getEndTime())
+                            .startLunch(request.getStartLunch())
+                            .endLunch(request.getEndLunch())
+                            .isCompanyPayingLunch(request.getIsCompanyPayingLunch())
+                            .shift("DAY")
+                            .isOnDuty(false)
+                            .build();
 
-                workerScheduleRepository.save(workerSchedule);
+                    workerScheduleRepository.save(workerSchedule);
+                }
+                currentDate = currentDate.plusDays(1);
             }
-            currentDate = currentDate.plusDays(1);
+            metric.recordNewWorkerSchedule(true);
+            metric.recordOperationTime(timer, "set_schedule_for_worker_scenario");
+            return WorkSchedulerResponse.builder()
+                    .workerId(worker.getId())
+                    .startTime(request.getStartTime())
+                    .endTime(request.getEndTime())
+                    .isCompanyPayingLunch(request.getIsCompanyPayingLunch())
+                    .startLunch(request.getStartLunch())
+                    .endLunch(request.getEndLunch())
+                    .build();
+        }catch (Exception e){
+            metric.recordNewWorkerSchedule(false);
+            metric.recordOperationTime(timer, "set_schedule_for_worker_scenario_failed");
+            metric.recordScheduleError("schedule_for_worker_scenario_failed", e.getMessage(), e);
+            throw e;
         }
-
-        return WorkSchedulerResponse.builder()
-                .workerId(worker.getId())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .isCompanyPayingLunch(request.getIsCompanyPayingLunch())
-                .startLunch(request.getStartLunch())
-                .endLunch(request.getEndLunch())
-                .build();
     }
 
 
     @Override
     public WorkerHourResponse calculateWorkerTotalHoursPerWeek(Authentication authentication) {
-        var worker = checkIsUserAuthenticatedAndFindHim(authentication);
+        Timer.Sample timer = metric.startTimer();
 
-        LocalDate sunday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        LocalDate saturday = sunday.plusDays(6);
+        try {
+            var worker = checkIsUserAuthenticatedAndFindHim(authentication);
 
-        List<WorkerSchedule> weekSchedules = workerScheduleRepository.findByWorkerAndScheduleDateBetween(
-                worker,
-                sunday,
-                saturday
-        );
+            LocalDate sunday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+            LocalDate saturday = sunday.plusDays(6);
 
-        double totalHoursPerWeek = weekSchedules.stream()
-                .mapToDouble(schedule -> {
-                    Duration duration = Duration.between(
-                            schedule.getExpectedStartTime(),
-                            schedule.getExpectedEndTime()
-                    );
-                    return duration.toMinutes() / 60.0;
-                })
-                .sum();
+            List<WorkerSchedule> weekSchedules = workerScheduleRepository.findByWorkerAndScheduleDateBetween(
+                    worker,
+                    sunday,
+                    saturday
+            );
 
-        double regularHours = Math.min(totalHoursPerWeek, 40.0);
-        double overtimeHours = Math.max(0, totalHoursPerWeek - 40.0);
+            double totalHoursPerWeek = weekSchedules.stream()
+                    .mapToDouble(schedule -> {
+                        Duration duration = Duration.between(
+                                schedule.getExpectedStartTime(),
+                                schedule.getExpectedEndTime()
+                        );
+                        return duration.toMinutes() / 60.0;
+                    })
+                    .sum();
 
-        return WorkerHourResponse.builder()
-                .regularHours(Math.round(regularHours * 100.0) / 100.0)
-                .overtimeHours(Math.round(overtimeHours * 100.0) / 100.0)
-                .totalHours(Math.round(totalHoursPerWeek * 100) / 100.0)
-                .build();
+            double regularHours = Math.min(totalHoursPerWeek, 40.0);
+            double overtimeHours = Math.max(0, totalHoursPerWeek - 40.0);
+
+            metric.recordWorkersDaysHours(worker.getFirstName() + " " + worker.getLastName() ,totalHoursPerWeek, regularHours, overtimeHours, true);
+            metric.recordOperationTime(timer, "calculate_hours_per_week");
+
+
+            return WorkerHourResponse.builder()
+                    .regularHours(Math.round(regularHours * 100.0) / 100.0)
+                    .overtimeHours(Math.round(overtimeHours * 100.0) / 100.0)
+                    .totalHours(Math.round(totalHoursPerWeek * 100) / 100.0)
+                    .build();
+        } catch (Exception e){
+            metric.recordOperationTime(timer, "calculate_hours_per_week_failed");
+            metric.recordScheduleError("calculate_hours_per_week_failed", e.getMessage(), e);
+            metric.recordWorkersDaysHours("unknown",0.0, 0.0, 0.0, false);
+            throw e;
+        }
     }
 
     @Override
     public WorkerHourResponse calculateWorkerTotalHoursForSpecialWeek(Authentication authentication, LocalDate weekDate) {
-        var worker = checkIsUserAuthenticatedAndFindHim(authentication);
+        Timer.Sample timer = metric.startTimer();
+        try {
+            var worker = checkIsUserAuthenticatedAndFindHim(authentication);
 
-        LocalDate sunday = weekDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        LocalDate saturday = sunday.plusDays(6);
+            LocalDate sunday = weekDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+            LocalDate saturday = sunday.plusDays(6);
 
-        List<WorkerSchedule> weekSchedules = workerScheduleRepository.findByWorkerAndScheduleDateBetween(
-                worker,
-                sunday,
-                saturday
-        );
+            List<WorkerSchedule> weekSchedules = workerScheduleRepository.findByWorkerAndScheduleDateBetween(
+                    worker,
+                    sunday,
+                    saturday
+            );
 
-        double totalHoursPerWeek = weekSchedules.stream()
-                .mapToDouble(schedule -> {
-                    Duration duration = Duration.between(
-                            schedule.getExpectedStartTime(),
-                            schedule.getExpectedEndTime()
-                    );
-                    return duration.toMinutes() / 60.0;
-                })
-                .sum();
+            double totalHoursPerWeek = weekSchedules.stream()
+                    .mapToDouble(schedule -> {
+                        Duration duration = Duration.between(
+                                schedule.getExpectedStartTime(),
+                                schedule.getExpectedEndTime()
+                        );
+                        return duration.toMinutes() / 60.0;
+                    })
+                    .sum();
 
-        double regularHours = Math.min(totalHoursPerWeek, 40.0);
-        double overtimeHours = Math.max(0, totalHoursPerWeek - 40.0);
+            double regularHours = Math.min(totalHoursPerWeek, 40.0);
+            double overtimeHours = Math.max(0, totalHoursPerWeek - 40.0);
 
-        return WorkerHourResponse.builder()
-                .regularHours(Math.round(regularHours * 100.0) / 100.0)
-                .overtimeHours(Math.round(overtimeHours * 100.0) / 100.0)
-                .totalHours(Math.round(totalHoursPerWeek * 100) / 100.0)
-                .build();
+
+            metric.recordWorkersDaysHours(worker.getFirstName() + " " + worker.getLastName() ,totalHoursPerWeek, regularHours, overtimeHours, true);
+            metric.recordOperationTime(timer, "calculate_hours_per_special_week");
+            return WorkerHourResponse.builder()
+                    .regularHours(Math.round(regularHours * 100.0) / 100.0)
+                    .overtimeHours(Math.round(overtimeHours * 100.0) / 100.0)
+                    .totalHours(Math.round(totalHoursPerWeek * 100) / 100.0)
+                    .build();
+        } catch(Exception e) {
+            metric.recordOperationTime(timer, "calculate_hours_per_special_week_failed");
+            metric.recordScheduleError("calculate_hours_per_special_week_failed", e.getMessage(), e);
+            metric.recordWorkersDaysHours("unknown",0.0, 0.0, 0.0, false);
+            throw e;
+        }
     }
 
 

@@ -7,13 +7,12 @@ import com.zikpak.facecheck.entity.employee.WorkerPayroll;
 import com.zikpak.facecheck.entity.workingPayRoll.TaxRates;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerPayrollRepository;
+import com.zikpak.facecheck.requestsResponses.YearToDateForWorkerResponse;
 import com.zikpak.facecheck.requestsResponses.finance.WorkerYearlySummaryDto;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import com.zikpak.facecheck.taxesServices.pdfServices.W2PdfGeneratorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -449,6 +448,65 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
                 .build();
     }
 
+
+
+    public WorkerYearlySummaryDto calculateWorkerYearlyTotalsForAllWorkers(Integer companyId, int year) {
+        List<User> workers = userRepository.findWorkersWithPayrollInYear(companyId, year);
+
+        BigDecimal grossPayTotal = BigDecimal.ZERO;
+        BigDecimal netPayTotal = BigDecimal.ZERO;
+        BigDecimal federalWithholdingTotal = BigDecimal.ZERO;
+        BigDecimal socialSecurityEmployeeTotal = BigDecimal.ZERO;
+        BigDecimal medicareTotal = BigDecimal.ZERO;
+        BigDecimal nyStateWithholdingTotal = BigDecimal.ZERO;
+        BigDecimal nyLocalWithholdingTotal = BigDecimal.ZERO;
+        BigDecimal nyDisabilityWithholdingTotal = BigDecimal.ZERO;
+        BigDecimal nyPaidFamilyLeaveTotal = BigDecimal.ZERO;
+        BigDecimal totalAllTaxes = BigDecimal.ZERO;
+
+        for (User worker : workers) {
+            WorkerYearlySummaryDto workerSummary = calculateWorkerYearlyTotals(worker.getId(), year);
+
+            grossPayTotal = grossPayTotal.add(safe(workerSummary.getGrossPayTotal()));
+            netPayTotal = netPayTotal.add(safe(workerSummary.getNetPayTotal()));
+            federalWithholdingTotal = federalWithholdingTotal.add(safe(workerSummary.getFederalWithholdingTotal()));
+            socialSecurityEmployeeTotal = socialSecurityEmployeeTotal.add(safe(workerSummary.getSocialSecurityEmployeeTotal()));
+            medicareTotal = medicareTotal.add(safe(workerSummary.getMedicareTotal()));
+            nyStateWithholdingTotal = nyStateWithholdingTotal.add(safe(workerSummary.getNyStateWithholdingTotal()));
+            nyLocalWithholdingTotal = nyLocalWithholdingTotal.add(safe(workerSummary.getNyLocalWithholdingTotal()));
+            nyDisabilityWithholdingTotal = nyDisabilityWithholdingTotal.add(safe(workerSummary.getNyDisabilityWithholdingTotal()));
+            nyPaidFamilyLeaveTotal = nyPaidFamilyLeaveTotal.add(safe(workerSummary.getNyPaidFamilyLeaveTotal()));
+
+            totalAllTaxes = totalAllTaxes
+                    .add(safe(workerSummary.getFederalWithholdingTotal()))
+                    .add(safe(workerSummary.getSocialSecurityEmployeeTotal()))
+                    .add(safe(workerSummary.getMedicareTotal()))
+                    .add(safe(workerSummary.getNyStateWithholdingTotal()))
+                    .add(safe(workerSummary.getNyLocalWithholdingTotal()))
+                    .add(safe(workerSummary.getNyDisabilityWithholdingTotal()))
+                    .add(safe(workerSummary.getNyPaidFamilyLeaveTotal()));
+        }
+
+        return WorkerYearlySummaryDto.builder()
+                .grossPayTotal(grossPayTotal)
+                .netPayTotal(netPayTotal)
+                .federalWithholdingTotal(federalWithholdingTotal)
+                .socialSecurityEmployeeTotal(socialSecurityEmployeeTotal)
+                .medicareTotal(medicareTotal)
+                .nyStateWithholdingTotal(nyStateWithholdingTotal)
+                .nyLocalWithholdingTotal(nyLocalWithholdingTotal)
+                .nyDisabilityWithholdingTotal(nyDisabilityWithholdingTotal)
+                .nyPaidFamilyLeaveTotal(nyPaidFamilyLeaveTotal)
+                .totalAllTaxes(totalAllTaxes)
+                .build();
+    }
+
+
+
+
+
+
+
     public byte[] generatePDF(Integer workerId, int year) {
         var worker = userRepository.findById(workerId)
                 .orElseThrow(() -> new RuntimeException("Worker not found"));
@@ -468,10 +526,30 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
                 year
         );
 
-        String fileName = "w2-statements/" + year + "/" + "w2_" + workerId + ".pdf";
-        amazonS3Service.uploadPdfToS3(pdfContent, fileName);
+        String companyKeyPart = company.getCompanyName()
+                .trim()
+                .replaceAll("[^A-Za-z0-9]+", "_");
+
+        // 3) Составить ключ
+        String key = String.format(
+                "%s/%d/w2-statements/%d/w2_%d.pdf",
+                companyKeyPart,       // Acme_Corp_
+                company.getId(),      // 42
+                year,                 // 2025
+                workerId              // 7
+        );
+        amazonS3Service.uploadPdfToS3(pdfContent, key);
         return pdfContent;
     }
+
+
+    public YearToDateForWorkerResponse findAllYearToDateForWorker(Integer workerId, Integer companyId, Integer year) {
+        return workerPayrollRepository.yearToDateTaxesForWorker(workerId, companyId, year)
+                .orElseThrow(() -> new RuntimeException("No payroll data found for worker: " + workerId + " in year: " + year));
+    }
+
+
+
 
 
 

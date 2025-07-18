@@ -12,12 +12,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByEmail(String username);
+
+
 
     boolean existsByEmail(@Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$" , message = "Email is not formatted well!")
                           @NotBlank(message = "Email is required!")
@@ -137,4 +140,27 @@ AND u.id IN (
 
 
     List<User> findAllByCompanyId(Integer companyId);
+
+    @Query("""
+    SELECT DISTINCT wp.worker 
+    FROM WorkerPayroll wp 
+    WHERE wp.company.id = :companyId 
+    AND YEAR(wp.periodStart) = :year
+""")
+    List<User> findWorkersWithPayrollInYear(
+            @Param("companyId") Integer companyId,
+            @Param("year") Integer year
+    );
+
+    @Query("""
+    SELECT DISTINCT u 
+    FROM User u 
+    JOIN u.roles r 
+    WHERE u.company.id = :companyId 
+    AND r.name = :roleName
+""")
+    List<User> findAllByCompanyIdAndRole(@Param("companyId") Integer companyId,
+                                         @Param("roleName") String roleName);
+
+    List<User> findAllByCompanyIdIn(Collection<Integer> companyIds);
 }

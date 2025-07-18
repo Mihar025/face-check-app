@@ -24,8 +24,9 @@ public enum EmailTemplateName {
     WEEKLY_PAYROLL_REPORT("weeklyPayrollReport"),
     TAX_SUMMARY_REPORT("tax_summary_report"),
     XML_REPORT("xml-files"),
-    ANNUAL_SUTA("annual-suta")
-    ;
+    ANNUAL_SUTA("annual-suta"),
+    MTA_305("mta-305"),
+    W3Official("w3");
     private final String name;
     EmailTemplateName(String name) {
         this.name = name;
