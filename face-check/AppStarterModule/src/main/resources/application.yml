@@ -4,6 +4,12 @@ spring:
   servlet:
     multipart:
       max-file-size: 50MB
+  flyway:
+    enabled: true
+    locations: classpath:/db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    out-of-order: false
 springdoc:
   default-produces-media-type: application/json
 server:
@@ -18,8 +24,12 @@ tax:
     futa: 0.06
     ny-unemployment: 0.041
 
+# Prometheus + Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health, info, prometheus, metrics
+  endpoint:
+    prometheus:
+      enabled: true
