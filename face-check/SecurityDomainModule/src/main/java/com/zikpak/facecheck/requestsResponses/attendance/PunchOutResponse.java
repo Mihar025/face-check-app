@@ -27,6 +27,7 @@ public class PunchOutResponse {
     private String checkOutPhotoUrl;
     private Double checkOutLatitude;
     private Double checkOutLongitude;
+    private String checkOutLocation;
 
     private Double hoursWorked;
     private Double overtimeHours;

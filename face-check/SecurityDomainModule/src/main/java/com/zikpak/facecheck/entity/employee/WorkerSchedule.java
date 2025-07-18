@@ -23,10 +23,13 @@ public class WorkerSchedule {
     private Integer id;
 
     @ManyToOne
+    @JoinColumn(name = "worker_id")
     private User worker;
 
     @ManyToOne
+    @JoinColumn(name = "work_site_id")
     private WorkSite workSite;
+
     private LocalDate scheduleDate;
     private LocalTime expectedStartTime;
     private LocalTime expectedEndTime;

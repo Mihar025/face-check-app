@@ -17,10 +17,11 @@ import java.time.LocalDateTime;
 public class WorkerAttendance {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne
+    @JoinColumn(name = "worker_id")
     private User worker;
 
     private LocalDateTime checkInTime;
@@ -47,7 +48,7 @@ public class WorkerAttendance {
     private String notes;
 
 
-    private boolean isVerified;
+    private Boolean isVerified;
     private String verifiedBy;
     private LocalDateTime verificationTime;
 

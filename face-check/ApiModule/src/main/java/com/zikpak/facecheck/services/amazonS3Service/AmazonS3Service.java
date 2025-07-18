@@ -5,8 +5,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.util.IOUtils;
+import com.zikpak.facecheck.metrics.MetricsAmazonS3Service;
 import com.zikpak.facecheck.requestsResponses.S3FileDTO;
 import com.zikpak.facecheck.repository.UserRepository;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,8 @@ public class AmazonS3Service {
 
     private final AmazonS3 s3Client;
     private final UserRepository userRepository;
+    private final MetricsAmazonS3Service metricsAmazonS3Service;
+
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -33,6 +37,7 @@ public class AmazonS3Service {
     public String uploadAttendancePhoto(String base64Photo,
                                         String email,
                                         String prefix) {
+        Timer.Sample timer = metricsAmazonS3Service.startTimer();
         if (base64Photo == null || base64Photo.isEmpty()) {
             return null;
         }
@@ -54,10 +59,12 @@ public class AmazonS3Service {
                     new ByteArrayInputStream(photoBytes),
                     metadata
             );
-
+            metricsAmazonS3Service.recordOperationTime(timer, "upload_photo_successfully");
             return s3Client.getUrl(bucketName, fileName).toString();
 
         } catch (Exception e) {
+            metricsAmazonS3Service.recordOperationTime(timer, "upload_photo_failed");
+            metricsAmazonS3Service.recordError("upload_photo_failed", e.getMessage(), e);
             log.error("Failed to upload attendance photo", e);
             throw new RuntimeException("Failed to upload attendance photo", e);
         }
@@ -67,6 +74,7 @@ public class AmazonS3Service {
     public String uploadPhotoForProfile(MultipartFile base64Photo,
                                         String email,
                                         String prefix) {
+        Timer.Sample timer = metricsAmazonS3Service.startTimer();
         var foundedUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User with provided email not found"));
         if (base64Photo == null || base64Photo.isEmpty()) {
@@ -96,9 +104,14 @@ public class AmazonS3Service {
             foundedUser.setPhotoFileName(fileName);
             foundedUser.setPhotoUrl(savedUrl);
             var savedUser = userRepository.save(foundedUser);
+
+            metricsAmazonS3Service.recordOperationTime(timer, "upload_photo_profile_successfully");
+
             return savedUser.getPhotoUrl();
 
         } catch (Exception e) {
+            metricsAmazonS3Service.recordOperationTime(timer, "upload_photo_profile_failed");
+            metricsAmazonS3Service.recordError("upload_photo_profile_failed", e.getMessage(), e);
             log.error("Failed to upload attendance photo", e);
             throw new RuntimeException("Failed to upload attendance photo", e);
         }
@@ -106,6 +119,8 @@ public class AmazonS3Service {
 
 
     public S3FileDTO downloadAttendancePhoto(String fileName) {
+        Timer.Sample timer = metricsAmazonS3Service.startTimer();
+
         try {
             S3Object s3Object = s3Client.getObject(bucketName, fileName);
             ObjectMetadata metadata = s3Object.getObjectMetadata();
@@ -115,9 +130,12 @@ public class AmazonS3Service {
             if (contentType == null) {
                 contentType = determineContentType(fileName);
             }
+            metricsAmazonS3Service.recordOperationTime(timer, "download_photo_failed");
 
             return new S3FileDTO(data, contentType);
         } catch (IOException e) {
+            metricsAmazonS3Service.recordOperationTime(timer, "download_photo_failed");
+            metricsAmazonS3Service.recordError("download_photo_failed", e.getMessage(), e);
             log.error("Failed to download attendance photo", e);
             throw new RuntimeException("Failed to download attendance photo", e);
         }
@@ -127,9 +145,13 @@ public class AmazonS3Service {
 
 
     public void deleteAttendancePhoto(String fileName) {
+        Timer.Sample timer = metricsAmazonS3Service.startTimer();
         try {
             s3Client.deleteObject(bucketName, fileName);
+            metricsAmazonS3Service.recordOperationTime(timer, "delete_photo_successfully");
         } catch (Exception e) {
+            metricsAmazonS3Service.recordOperationTime(timer, "delete_photo_successfully");
+            metricsAmazonS3Service.recordError("delete_photo_successfully", e.getMessage(), e);
             log.error("Failed to delete attendance photo", e);
             throw new RuntimeException("Failed to delete attendance photo", e);
         }
@@ -138,15 +160,22 @@ public class AmazonS3Service {
 
 
     public String uploadPdfToS3(byte[] pdfContent, String fileName) {
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType("application/pdf");
-        metadata.setContentLength(pdfContent.length);
+        Timer.Sample timer = metricsAmazonS3Service.startTimer();
+        try {
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentType("application/pdf");
+            metadata.setContentLength(pdfContent.length);
 
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(pdfContent);
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(pdfContent);
 
-        s3Client.putObject(bucketName, fileName, inputStream, metadata);
-
-        return s3Client.getUrl(bucketName, fileName).toString();
+            s3Client.putObject(bucketName, fileName, inputStream, metadata);
+            metricsAmazonS3Service.recordOperationTime(timer, "upload_pdf_successfully");
+            return s3Client.getUrl(bucketName, fileName).toString();
+        } catch (Exception e) {
+            metricsAmazonS3Service.recordError("upload_pdf_failed", e.getMessage(), e);
+            metricsAmazonS3Service.recordOperationTime(timer, "upload_pdf_failed");
+            throw e;
+        }
     }
 
 

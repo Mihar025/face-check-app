@@ -2,10 +2,10 @@ package com.zikpak.facecheck.mapper;
 
 import com.zikpak.facecheck.authRequests.RegistrationAdminRequest;
 import com.zikpak.facecheck.authRequests.RegistrationRequest;
-import com.zikpak.facecheck.entity.Role;
-import com.zikpak.facecheck.entity.User;
+import com.zikpak.facecheck.entity.*;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
+import com.zikpak.facecheck.repository.WcRiskClassRepository;
 import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
 import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
 import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
@@ -17,11 +17,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserMapper {
     private final PasswordEncoder passwordEncoder;
+    private final WcRiskClassRepository wcRiskClassRepository;
 
     public UserFullNameResponse toUserFullNameResponse(String savedFullName) {
         return UserFullNameResponse.builder()
@@ -60,72 +62,225 @@ public class UserMapper {
 
 
     public User toWorker(RegistrationRequest request){
-        return User.builder()
+        WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
+        User user = User.builder()
+                // === Основные поля ===
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .middleInitial(request.getMiddleInitial())
                 .homeAddress(request.getHomeAddress())
+                .city(request.getCity())
+                .state(request.getState())
+                .zipcode(request.getZipcode())
                 .dateOfBirth(request.getDateOfBirth())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .SSN_WORKER((request.getSSN_WORKER()))
+                .SSN_WORKER(request.getSSN_WORKER())
                 .gender(request.getGender())
+
                 .accountLocked(false)
                 .enabled(false)
                 .isAdmin(false)
                 .isForeman(false)
                 .isUser(true)
+
                 .phoneNumber(request.getPhoneNumber())
 
+                .filingStatus(request.getFilingStatus())
                 .dependents(request.getDependents())
                 .extraWithHoldings(request.getExtraWithHoldings())
                 .livesInNYC(request.getLivesInNYC())
                 .payFrequency(request.getPayFrequency())
                 .employmentType(request.getEmploymentType())
+
+                .coverageStartDate(request.getCoverageStartDate())
+                .enrolledInHealthPlan(request.getEnrolledInHealthPlan())
+                .monthlyHealthPremium(request.getMonthlyHealthPremium())
+                .apt(request.getApt())
+
+                .multipleJobsOrSpouseWorks(request.getMultipleJobsOrSpouseWorks())
+                .twoJobsCheckBox(request.getTwoJobsCheckBox())
+                .multipleJobsAdditionalWithholding(request.getMultipleJobsAdditionalWithholding())
+
+                .dependentsUnder17(request.getDependentsUnder17())
+                .otherDependents(request.getOtherDependents())
+                .totalDependentsCredit(request.getTotalDependentsCredit())
+                .otherIncome(request.getOtherIncome())
+                .deductions(request.getDeductions())
+                .exemptFromWithholding(request.getExemptFromWithholding())
+                .multipleJobsWorksheetLine2a(request.getMultipleJobsWorksheetLine2a())
+                .multipleJobsWorksheetLine2b(request.getMultipleJobsWorksheetLine2b())
+                .estimatedItemizedDeductions(request.getEstimatedItemizedDeductions())
+                .adjustmentsSchedule1(request.getAdjustmentsSchedule1())
+                .wcRiskClass(wcRiskClass)
                 .build();
+
+        // Привязка списка зависимых
+        List<Dependents> deps = request.getDependentsList().stream()
+                .map(dto -> {
+                    Dependents d = new Dependents();
+                    d.setFirstName(dto.getFirstName());
+                    d.setLastName(dto.getLastName());
+                    d.setBirthDate(dto.getBirthDate());
+                    d.setUser(user);
+                    return d;
+                })
+                .toList();
+        user.setDependent(deps);
+
+        if (request.getI9Documents() != null) {
+            List<DocumentsI9> docs = request.getI9Documents().stream()
+                    .map(d -> DocumentsI9.builder()
+                            .documentTitle(d.getDocumentTitle())
+                            .issuingAuthority(d.getIssuingAuthority())
+                            .documentNumber(d.getDocumentNumber())
+                            .expirationDate(d.getExpirationDate())
+                            .user(user)
+                            .build())
+                    .toList();
+            user.setDocumentsI9(docs);
+        }
+
+        return user;
     }
 
+
     public User toForeman(RegistrationRequest request){
-        return User.builder()
+        User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .middleInitial(request.getMiddleInitial())
+                .homeAddress(request.getHomeAddress())
+                .dateOfBirth(request.getDateOfBirth())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .SSN_WORKER((request.getSSN_WORKER()))
-                .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
                 .accountLocked(false)
                 .enabled(false)
                 .isAdmin(false)
                 .isForeman(true)
                 .isUser(false)
-                .homeAddress(request.getHomeAddress())
                 .phoneNumber(request.getPhoneNumber())
+                .dependents(request.getDependentsList().size())
+                .extraWithHoldings(request.getExtraWithHoldings())
+                .livesInNYC(request.getLivesInNYC())
+                .payFrequency(request.getPayFrequency())
+                .employmentType(request.getEmploymentType())
+                .coverageStartDate(request.getCoverageStartDate())
+                .enrolledInHealthPlan(request.getEnrolledInHealthPlan())
+                .monthlyHealthPremium(request.getMonthlyHealthPremium())
                 .build();
+
+        List<Dependents> deps = request.getDependentsList().stream()
+                .map(dto -> {
+                    Dependents d = new Dependents();
+                    d.setFirstName(dto.getFirstName());
+                    d.setLastName(dto.getLastName());
+                    d.setBirthDate(dto.getBirthDate());
+                    d.setUser(user);
+                    return d;
+                })
+                .toList();
+        user.setDependent(deps);
+        return user;
     }
 
-    public User toAdmin(RegistrationAdminRequest request){
-        return User.builder()
+    public User toAdmin(RegistrationAdminRequest request) {
+        WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
+        User user = User.builder()
+                // === Основные поля ===
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .middleInitial(request.getMiddleInitial())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .SSN_WORKER((request.getSSN_WORKER()))
+                .SSN_WORKER(request.getSSN_WORKER())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
+                .phoneNumber(request.getPhoneNumber())
+
+                // === Адресные поля ===
+                .homeAddress(request.getHomeAddress())
+                .apt(request.getApt())
+                .city(request.getCity())
+                .state(request.getState())
+                .zipcode(request.getZipcode())
+
+                // === Роли и флаги доступа ===
                 .accountLocked(false)
                 .enabled(false)
                 .isAdmin(true)
                 .isForeman(false)
                 .isUser(false)
-                .homeAddress(request.getHomeAddress())
 
-                .dependents(request.getDependents())
+                // === Здоровье ===
+                .coverageStartDate(request.getCoverageStartDate())
+                .enrolledInHealthPlan(request.getEnrolledInHealthPlan())
+                .monthlyHealthPremium(request.getMonthlyHealthPremium())
+
+                // === W-4 Step 1: Filing & Dependents ===
+                .filingStatus(request.getFilingStatus())
+                .dependents(request.getDependents())               // общее число иждивенцев
+                .dependentsUnder17(request.getDependentsUnder17())
+                .otherDependents(request.getOtherDependents())
+                .totalDependentsCredit(request.getTotalDependentsCredit())
                 .extraWithHoldings(request.getExtraWithHoldings())
+
+                // === W-4 Step 2: Multiple Jobs or Spouse Works ===
+                .multipleJobsOrSpouseWorks(request.getMultipleJobsOrSpouseWorks())
+                .twoJobsCheckBox(request.getTwoJobsCheckBox())
+                .multipleJobsAdditionalWithholding(request.getMultipleJobsAdditionalWithholding())
+
+                // === W-4 Step 4: Other Adjustments ===
+                .otherIncome(request.getOtherIncome())
+                .deductions(request.getDeductions())
+
+                // === W-4 Step 5: Exemption ===
+                .exemptFromWithholding(request.getExemptFromWithholding())
+
+                // === Payroll Settings ===
                 .livesInNYC(request.getLivesInNYC())
                 .payFrequency(request.getPayFrequency())
                 .employmentType(request.getEmploymentType())
+                .multipleJobsWorksheetLine2a(request.getMultipleJobsWorksheetLine2a())
+                .multipleJobsWorksheetLine2b(request.getMultipleJobsWorksheetLine2b())
+                .estimatedItemizedDeductions(request.getEstimatedItemizedDeductions())
+                .adjustmentsSchedule1(request.getAdjustmentsSchedule1())
+                .wcRiskClass(wcRiskClass)
                 .build();
+
+        // Связываем список зависимых
+        List<Dependents> deps = request.getDependentsList().stream()
+                .map(dto -> {
+                    Dependents d = new Dependents();
+                    d.setFirstName(dto.getFirstName());
+                    d.setLastName(dto.getLastName());
+                    d.setBirthDate(dto.getBirthDate());
+                    d.setUser(user);
+                    return d;
+                })
+                .toList();
+        user.setDependent(deps);
+
+        if (request.getI9Documents() != null) {
+            List<DocumentsI9> docs = request.getI9Documents().stream()
+                    .map(d -> DocumentsI9.builder()
+                            .documentTitle(d.getDocumentTitle())
+                            .issuingAuthority(d.getIssuingAuthority())
+                            .documentNumber(d.getDocumentNumber())
+                            .expirationDate(d.getExpirationDate())
+                            .user(user)
+                            .build())
+                    .toList();
+            user.setDocumentsI9(docs);
+        }
+
+        return user;
     }
+
 
     public WorksiteWorkerResponse toUserWorkSiteResponse(User user) {
         return WorksiteWorkerResponse.builder()

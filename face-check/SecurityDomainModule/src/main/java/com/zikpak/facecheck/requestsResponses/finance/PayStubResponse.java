@@ -12,6 +12,8 @@ public class PayStubResponse {
     private BigDecimal grossPay;
 
     private BigDecimal socialSecurity;
+    //PERSONAL PAID INSURANCE WHICH EMPLOYER OFFER!
+    private BigDecimal healthDeduction;
     private BigDecimal medicare;
     private BigDecimal federalTax;
     private BigDecimal stateTax;

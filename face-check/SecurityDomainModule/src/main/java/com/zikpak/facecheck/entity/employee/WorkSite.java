@@ -29,7 +29,6 @@ public class WorkSite {
     private Double longitude;
     private Double allowedRadius;
 
-
     private LocalTime workDayStart;
     private LocalTime workDayEnd;
     private Boolean isActive;
