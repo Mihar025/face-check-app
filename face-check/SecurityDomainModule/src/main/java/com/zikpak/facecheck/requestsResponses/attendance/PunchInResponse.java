@@ -23,6 +23,7 @@ public class PunchInResponse {
     private String checkInPhotoUrl;
     private Double checkInLatitude;
     private Double checkInLongitude;
+    private String checkInLocation;
     private String workSiteAddress;
     private Boolean isSuccessful;
     private String message;

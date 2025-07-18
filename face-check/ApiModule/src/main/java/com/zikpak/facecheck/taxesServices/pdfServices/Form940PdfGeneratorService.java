@@ -8,10 +8,12 @@ import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 
 import com.zikpak.facecheck.entity.EmployerTaxRecord;
+import com.zikpak.facecheck.metrics.MetricsForPdfServices;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.EmployerTaxRecordRepository;
 import com.zikpak.facecheck.repository.PaymentHistoryIrsRepository;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,19 +42,24 @@ public class Form940PdfGeneratorService {
     private final PaymentHistoryIrsRepository paymentHistoryIrsRepository;
     private final AmazonS3Service amazonS3Service;
     private final FillForm940SA fillForm940SA;
+    private final MetricsForPdfServices metric;
 
-    //Form940SummaryDto s
     public  byte[] generate940Pdf(Integer companyId, int year) throws IOException {
-        InputStream inputStream = getClass().getResourceAsStream("/forms/f940.pdf");
+        final String FORM = "940";
+        metric.recordRequest(FORM);
+        Timer.Sample timer = metric.startTimer();
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfDocument pdfDoc = new PdfDocument(
-                new PdfReader(inputStream),
-                new PdfWriter(baos)
-        );
+        try {
+            InputStream inputStream = getClass().getResourceAsStream("/forms/f940.pdf");
 
-        PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
-        Map<String, PdfFormField> fields = form.getFormFields();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PdfDocument pdfDoc = new PdfDocument(
+                    new PdfReader(inputStream),
+                    new PdfWriter(baos)
+            );
+
+            PdfAcroForm form = PdfAcroForm.getAcroForm(pdfDoc, true);
+            Map<String, PdfFormField> fields = form.getFormFields();
 
     /*    System.out.println("==== Список полей формы ====");
         for (String fieldName : fields.keySet()) {
@@ -68,135 +75,135 @@ topmostSubform[0].Page1[0].Header[0]
 topmostSubform[0].Page1[0].Header[0].EntityArea[0]
 
    */
-        var company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new EntityNotFoundException("Cannot find company with provided Id!"));
-        String ein1 = company.getEmployerEIN();
-        String einParts1[] = ein1.split("-");
-        if (einParts1.length != 2) {
-            throw new IllegalStateException("Некорректный формат EIN: " + ein1);
-        }
+            var company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new EntityNotFoundException("Cannot find company with provided Id!"));
+            String ein1 = company.getEmployerEIN();
+            String einParts1[] = ein1.split("-");
+            if (einParts1.length != 2) {
+                throw new IllegalStateException("Некорректный формат EIN: " + ein1);
+            }
 
 
-        fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_1[0]", spacedDigits(einParts1[0]));
-        fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_2[0]", spacedDigits(einParts1[1]));
-        fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_3[0]", company.getCompanyName());
-        //fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_4[0]", ); Trade Name
-        fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_5[0]", company.getCompanyAddress());
-        fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_6[0]", company.getCompanyCity());
-        fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_7[0]", company.getCompanyState());
-        fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_8[0]", company.getCompanyZipCode());
-       // fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_9[0]", "9");
-       // fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_10[0]", "10");
-       // fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_11[0]", "11");
+            fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_1[0]", spacedDigits(einParts1[0]));
+            fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_2[0]", spacedDigits(einParts1[1]));
+            fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_3[0]", company.getCompanyName());
+            //fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_4[0]", ); Trade Name
+            fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_5[0]", company.getCompanyAddress());
+            fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_6[0]", company.getCompanyCity());
+            fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_7[0]", company.getCompanyState());
+            fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_8[0]", company.getCompanyZipCode());
+            // fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_9[0]", "9");
+            // fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_10[0]", "10");
+            // fill(fields, "topmostSubform[0].Page1[0].EntityArea[0].f1_11[0]", "11");
 
-        //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0]", "12");
+            //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0]", "12");
 
-        //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_1[0]","1");
-        //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_2[0]","1");
-        //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_3[0]", "15");
-        //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_4[0]", "16");
+            //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_1[0]","1");
+            //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_2[0]","1");
+            //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_3[0]", "15");
+            //fill(fields, "topmostSubform[0].Page1[0].TypeReturn[0].c1_4[0]", "16");
 
-        String state = company.getCompanyState();
-        char[] letters = state.toCharArray();
-        fill(fields, "topmostSubform[0].Page1[0].f1_12[0]", String.valueOf(letters[0]));
-        fill(fields, "topmostSubform[0].Page1[0].f1_13[0]", String.valueOf(letters[1]));
+            String state = company.getCompanyState();
+            char[] letters = state.toCharArray();
+            fill(fields, "topmostSubform[0].Page1[0].f1_12[0]", String.valueOf(letters[0]));
+            fill(fields, "topmostSubform[0].Page1[0].f1_13[0]", String.valueOf(letters[1]));
 
-      //  fill(fields, "topmostSubform[0].Page1[0].c1_5[0]", "20");
-      //  fill(fields, "topmostSubform[0].Page1[0].c1_6[0]", "21");
+            //  fill(fields, "topmostSubform[0].Page1[0].c1_5[0]", "20");
+            //  fill(fields, "topmostSubform[0].Page1[0].c1_6[0]", "21");
 
-        BigDecimal line3 = employerTaxRecordRepository.sumGrossPayByAllEmployeeAndYear(companyId, year);
-        String[] line3Split = splitAmount(line3);
-        fill(fields, "topmostSubform[0].Page1[0].f1_14[0]", line3Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_15[0]", line3Split[1]);
+            BigDecimal line3 = employerTaxRecordRepository.sumGrossPayByAllEmployeeAndYear(companyId, year);
+            String[] line3Split = splitAmount(line3);
+            fill(fields, "topmostSubform[0].Page1[0].f1_14[0]", line3Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_15[0]", line3Split[1]);
 //--------------------------------------------------------------------------------------------------------------
-        BigDecimal line4 = BigDecimal.ZERO;
-        String[] totalLine4 = splitAmount(line4);
-        fill(fields, "topmostSubform[0].Page1[0].f1_16[0]",totalLine4[0] );
-        fill(fields, "topmostSubform[0].Page1[0].f1_17[0]", totalLine4[1]);
-      //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4a-b[0]", "25");
-      //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4a-b[0].c1_7[0]", "26");
-      //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4a-b[0].c1_8[0]", "27");
-      //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4c-d[0]", "28");
-      //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4c-d[0].c1_9[0]", "29");
-      //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4c-d[0].c1_10[0]", "30");
-      //  fill(fields, "topmostSubform[0].Page1[0].c1_11[0]", "31");
+            BigDecimal line4 = BigDecimal.ZERO;
+            String[] totalLine4 = splitAmount(line4);
+            fill(fields, "topmostSubform[0].Page1[0].f1_16[0]", totalLine4[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_17[0]", totalLine4[1]);
+            //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4a-b[0]", "25");
+            //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4a-b[0].c1_7[0]", "26");
+            //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4a-b[0].c1_8[0]", "27");
+            //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4c-d[0]", "28");
+            //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4c-d[0].c1_9[0]", "29");
+            //  fill(fields, "topmostSubform[0].Page1[0].Checkboxes4c-d[0].c1_10[0]", "30");
+            //  fill(fields, "topmostSubform[0].Page1[0].c1_11[0]", "31");
 //---------------------------------------------------------------------------------------------------------------
-        BigDecimal line5 = calculateLine5(companyId, year);
-        String[] line5split = splitAmount(line5);
-        fill(fields, "topmostSubform[0].Page1[0].f1_18[0]", line5split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_19[0]", line5split[1]);
+            BigDecimal line5 = calculateLine5(companyId, year);
+            String[] line5split = splitAmount(line5);
+            fill(fields, "topmostSubform[0].Page1[0].f1_18[0]", line5split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_19[0]", line5split[1]);
 
-        BigDecimal line6 = line4.add(line5);
-        String[] line6Split = splitAmount(line6);
-        fill(fields, "topmostSubform[0].Page1[0].f1_20[0]", line6Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_21[0]", line6Split[1]);
+            BigDecimal line6 = line4.add(line5);
+            String[] line6Split = splitAmount(line6);
+            fill(fields, "topmostSubform[0].Page1[0].f1_20[0]", line6Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_21[0]", line6Split[1]);
 
-        BigDecimal line7 = line3.subtract(line6);
-        String[] line7Split = splitAmount(line7);
-        fill(fields, "topmostSubform[0].Page1[0].f1_22[0]", line7Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_23[0]",  line7Split[1]);
-
-
-        BigDecimal rate = new BigDecimal("0.006");
-        BigDecimal line8 = line7.multiply(rate);
-        String[] line8Split = splitAmount(line8);
-        fill(fields, "topmostSubform[0].Page1[0].f1_24[0]", line8Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_25[0]", line8Split[1]);
-
-        BigDecimal line9 = BigDecimal.ZERO;
-        String[] line9Split = splitAmount(line9);
-        fill(fields, "topmostSubform[0].Page1[0].f1_26[0]", line9Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_27[0]", line9Split[1]);
-
-        BigDecimal line10 = BigDecimal.ZERO;
-        String[] line10Split = splitAmount(line10);
-        fill(fields, "topmostSubform[0].Page1[0].f1_28[0]", line10Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_29[0]", line10Split[1]);
+            BigDecimal line7 = line3.subtract(line6);
+            String[] line7Split = splitAmount(line7);
+            fill(fields, "topmostSubform[0].Page1[0].f1_22[0]", line7Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_23[0]", line7Split[1]);
 
 
-        BigDecimal line11 = fillForm940SA.getNYCreditReduction(companyId, year);
-        String[] line11Split = splitAmount(line11);
-        fill(fields, "topmostSubform[0].Page1[0].f1_30[0]", line11Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_31[0]", line11Split[1]);
+            BigDecimal rate = new BigDecimal("0.006");
+            BigDecimal line8 = line7.multiply(rate);
+            String[] line8Split = splitAmount(line8);
+            fill(fields, "topmostSubform[0].Page1[0].f1_24[0]", line8Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_25[0]", line8Split[1]);
 
-        BigDecimal line12 = line8.add(line9).add(line10).add(line11);
-        String[] line12Split = splitAmount(line12);
-        fill(fields, "topmostSubform[0].Page1[0].f1_32[0]", line12Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_33[0]", line12Split[1]);
+            BigDecimal line9 = BigDecimal.ZERO;
+            String[] line9Split = splitAmount(line9);
+            fill(fields, "topmostSubform[0].Page1[0].f1_26[0]", line9Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_27[0]", line9Split[1]);
+
+            BigDecimal line10 = BigDecimal.ZERO;
+            String[] line10Split = splitAmount(line10);
+            fill(fields, "topmostSubform[0].Page1[0].f1_28[0]", line10Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_29[0]", line10Split[1]);
 
 
-        //Made for payments to FUTA! Sum of maded payments! How much i payed to IRS deposites, each quarter!
-        //Temporary Zero! Tamporary!
-        BigDecimal totalForYear = paymentHistoryIrsRepository.getTotalPaidForFUTA(companyId, year);
-        BigDecimal line13 = totalForYear.setScale(2);
-        String[] line13Split = splitAmount(line13);
-        fill(fields, "topmostSubform[0].Page1[0].f1_34[0]", line13Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_35[0]", line13Split[1]);
+            BigDecimal line11 = fillForm940SA.getNYCreditReduction(companyId, year);
+            String[] line11Split = splitAmount(line11);
+            fill(fields, "topmostSubform[0].Page1[0].f1_30[0]", line11Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_31[0]", line11Split[1]);
+
+            BigDecimal line12 = line8.add(line9).add(line10).add(line11);
+            String[] line12Split = splitAmount(line12);
+            fill(fields, "topmostSubform[0].Page1[0].f1_32[0]", line12Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_33[0]", line12Split[1]);
+
+
+            //Made for payments to FUTA! Sum of maded payments! How much i payed to IRS deposites, each quarter!
+            //Temporary Zero! Tamporary!
+            BigDecimal totalForYear = paymentHistoryIrsRepository.getTotalPaidForFUTA(companyId, year);
+            BigDecimal line13 = totalForYear.setScale(2);
+            String[] line13Split = splitAmount(line13);
+            fill(fields, "topmostSubform[0].Page1[0].f1_34[0]", line13Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_35[0]", line13Split[1]);
 
 // 2) Line 14 — Balance Due: если line12 > line13 → line14 = line12−line13, иначе 0
-        BigDecimal line14;
-        if (line12.compareTo(line13) > 0) {
-            line14 = line12.subtract(line13);
-        } else {
-            line14 = BigDecimal.ZERO.setScale(2);
-        }
-        String[] line14Split = splitAmount(line14);
-        fill(fields, "topmostSubform[0].Page1[0].f1_36[0]", line14Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_37[0]", line14Split[1]);
+            BigDecimal line14;
+            if (line12.compareTo(line13) > 0) {
+                line14 = line12.subtract(line13);
+            } else {
+                line14 = BigDecimal.ZERO.setScale(2);
+            }
+            String[] line14Split = splitAmount(line14);
+            fill(fields, "topmostSubform[0].Page1[0].f1_36[0]", line14Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_37[0]", line14Split[1]);
 
 // 3) Line 15 — Overpayment: сравниваем (line13 + line14) с line12
-        BigDecimal sumPaid = line13.add(line14);
-        BigDecimal line15;
-        if (sumPaid.compareTo(line12) > 0) {
-            line15 = sumPaid.subtract(line12);
-            fill(fields, "topmostSubform[0].Page1[0].c1_12[1]", "On");
-        } else {
-            line15 = BigDecimal.ZERO.setScale(2);
-            fill(fields, "topmostSubform[0].Page1[0].c1_12[1]", "Off");
-        }
-        String[] line15Split = splitAmount(line15);
-        fill(fields, "topmostSubform[0].Page1[0].f1_38[0]", line15Split[0]);
-        fill(fields, "topmostSubform[0].Page1[0].f1_39[0]", line15Split[1]);
+            BigDecimal sumPaid = line13.add(line14);
+            BigDecimal line15;
+            if (sumPaid.compareTo(line12) > 0) {
+                line15 = sumPaid.subtract(line12);
+                fill(fields, "topmostSubform[0].Page1[0].c1_12[1]", "On");
+            } else {
+                line15 = BigDecimal.ZERO.setScale(2);
+                fill(fields, "topmostSubform[0].Page1[0].c1_12[1]", "Off");
+            }
+            String[] line15Split = splitAmount(line15);
+            fill(fields, "topmostSubform[0].Page1[0].f1_38[0]", line15Split[0]);
+            fill(fields, "topmostSubform[0].Page1[0].f1_39[0]", line15Split[1]);
 
 
         /*
@@ -207,97 +214,108 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
          */
 
 
-        //fill(fields, "topmostSubform[0].Page1[0].c1_12[0]", "54");
+            //fill(fields, "topmostSubform[0].Page1[0].c1_12[0]", "54");
 
-        //Send refund
-        //fill(fields, "topmostSubform[0].Page1[0].c1_12[1]", "55");
+            //Send refund
+            //fill(fields, "topmostSubform[0].Page1[0].c1_12[1]", "55");
 
-        fill(fields, "topmostSubform[0].Page2[0].f1_3[0]", company.getCompanyName());
-        fill(fields, "topmostSubform[0].Page2[0].f1_1[0]", einParts1[0]);
-        fill(fields, "topmostSubform[0].Page2[0].f1_2[0]", einParts1[1]);
-        Map<String, BigDecimal> quarterlyFuta = calculateQuarterlyFuta(companyId, 2024);
+            fill(fields, "topmostSubform[0].Page2[0].f1_3[0]", company.getCompanyName());
+            fill(fields, "topmostSubform[0].Page2[0].f1_1[0]", einParts1[0]);
+            fill(fields, "topmostSubform[0].Page2[0].f1_2[0]", einParts1[1]);
+            Map<String, BigDecimal> quarterlyFuta = calculateQuarterlyFuta(companyId, 2024);
 
-        String[] q1split = splitAmount(quarterlyFuta.get("16a"));
-        fill(fields, "topmostSubform[0].Page2[0].f2_1[0]", q1split[0]);
-        fill(fields, "topmostSubform[0].Page2[0].f2_2[0]", q1split[1]);
+            String[] q1split = splitAmount(quarterlyFuta.get("16a"));
+            fill(fields, "topmostSubform[0].Page2[0].f2_1[0]", q1split[0]);
+            fill(fields, "topmostSubform[0].Page2[0].f2_2[0]", q1split[1]);
 
-        String[] q2split = splitAmount(quarterlyFuta.get("16b"));
-        fill(fields, "topmostSubform[0].Page2[0].f2_3[0]", q2split[0]);
-        fill(fields, "topmostSubform[0].Page2[0].f2_4[0]", q2split[1]);
+            String[] q2split = splitAmount(quarterlyFuta.get("16b"));
+            fill(fields, "topmostSubform[0].Page2[0].f2_3[0]", q2split[0]);
+            fill(fields, "topmostSubform[0].Page2[0].f2_4[0]", q2split[1]);
 
-        String[] q3split = splitAmount(quarterlyFuta.get("16c"));
-        fill(fields, "topmostSubform[0].Page2[0].f2_5[0]", q3split[0]);
-        fill(fields, "topmostSubform[0].Page2[0].f2_6[0]", q3split[1]);
+            String[] q3split = splitAmount(quarterlyFuta.get("16c"));
+            fill(fields, "topmostSubform[0].Page2[0].f2_5[0]", q3split[0]);
+            fill(fields, "topmostSubform[0].Page2[0].f2_6[0]", q3split[1]);
 
-        String[] q4split = splitAmount(quarterlyFuta.get("16d"));
-        fill(fields, "topmostSubform[0].Page2[0].f2_7[0]", q4split[0]);
-        fill(fields, "topmostSubform[0].Page2[0].f2_8[0]", q4split[1]);
+            String[] q4split = splitAmount(quarterlyFuta.get("16d"));
+            fill(fields, "topmostSubform[0].Page2[0].f2_7[0]", q4split[0]);
+            fill(fields, "topmostSubform[0].Page2[0].f2_8[0]", q4split[1]);
 
-        String[] totalSplit = splitAmount(quarterlyFuta.get("17"));
-        fill(fields, "topmostSubform[0].Page2[0].f2_9[0]", totalSplit[0]);
-        fill(fields, "topmostSubform[0].Page2[0].f2_10[0]",  totalSplit[1]);
-
-
-    //    fill(fields, "topmostSubform[0].Page2[0].c2_1[0]", "70"); // Part 6 checkBox "YES"
-    //    fill(fields, "topmostSubform[0].Page2[0].f2_11[0]", "Mykhailo Maidanskyi");
-    //    fill(fields, "topmostSubform[0].Page2[0].f2_12[0]", "+1-347-828-5790");
-    //    fill(fields, "topmostSubform[0].Page2[0].f2_13[0]", "1         2           3         4         5");
-
-      //  fill(fields, "topmostSubform[0].Page2[0].c2_1[1]", "74"); // Part 6 checkBox "NO"
-
-        fill(fields, "topmostSubform[0].Page2[0].f2_14[0]", company.getCompanyOwner().fullName());
-        fill(fields, "topmostSubform[0].Page2[0].f2_15[0]", "Owner");
-        fill(fields, "topmostSubform[0].Page2[0].f2_16[0]", company.getCompanyPhone());
-
-        //    fill(fields, "topmostSubform[0].Page2[0].c2_2[0]", "78");
-    //    fill(fields, "topmostSubform[0].Page2[0].f2_17[0]", "79");
-      //  fill(fields, "topmostSubform[0].Page2[0].f2_18[0]", "80");
-      //  fill(fields, "topmostSubform[0].Page2[0].f2_19[0]", "81");
-     //   fill(fields, "topmostSubform[0].Page2[0].f2_20[0]", "82");
-     //   fill(fields, "topmostSubform[0].Page2[0].f2_21[0]", "83");
-     //   fill(fields, "topmostSubform[0].Page2[0].f2_22[0]", "84");
-     //   fill(fields, "topmostSubform[0].Page2[0].f2_23[0]", "85");
-        // fill(fields, "topmostSubform[0].Page2[0].f2_24[0]", "86");
-        //fill(fields, "topmostSubform[0].Page2[0].f2_25[0]", "87");
-        //fill(fields, "topmostSubform[0].Page3[0]", "88");
-        //fill(fields, "topmostSubform[0].Page3[0].EIN_ReadOrder[0]", "89");
+            String[] totalSplit = splitAmount(quarterlyFuta.get("17"));
+            fill(fields, "topmostSubform[0].Page2[0].f2_9[0]", totalSplit[0]);
+            fill(fields, "topmostSubform[0].Page2[0].f2_10[0]", totalSplit[1]);
 
 
-        fill(fields, "topmostSubform[0].Page3[0].EIN_ReadOrder[0].f1_1[0]", einParts1[0]);
-        fill(fields, "topmostSubform[0].Page3[0].EIN_ReadOrder[0].f1_2[0]", einParts1[1]);
+            //    fill(fields, "topmostSubform[0].Page2[0].c2_1[0]", "70"); // Part 6 checkBox "YES"
+            //    fill(fields, "topmostSubform[0].Page2[0].f2_11[0]", "Mykhailo Maidanskyi");
+            //    fill(fields, "topmostSubform[0].Page2[0].f2_12[0]", "+1-347-828-5790");
+            //    fill(fields, "topmostSubform[0].Page2[0].f2_13[0]", "1         2           3         4         5");
 
-        fill(fields, "topmostSubform[0].Page3[0].f3_1[0]", line14Split[0]);
-        fill(fields, "topmostSubform[0].Page3[0].f3_2[0]", line14Split[1]);
+            //  fill(fields, "topmostSubform[0].Page2[0].c2_1[1]", "74"); // Part 6 checkBox "NO"
 
-        fill(fields, "topmostSubform[0].Page3[0].f1_3[0]", company.getCompanyName());
+            fill(fields, "topmostSubform[0].Page2[0].f2_14[0]", company.getCompanyOwner().fullName());
+            fill(fields, "topmostSubform[0].Page2[0].f2_15[0]", "Owner");
+            fill(fields, "topmostSubform[0].Page2[0].f2_16[0]", company.getCompanyPhone());
 
-        fill(fields, "topmostSubform[0].Page3[0].f3_4[0]", company.getCompanyAddress());
-        fill(fields, "topmostSubform[0].Page3[0].f3_5[0]", company.getCompanyCity() + " " + company.getCompanyState() + " " + company.getCompanyZipCode());
-
-        form.flattenFields();
-        pdfDoc.close();
-
-        byte[] pdfBytes = baos.toByteArray();
-
-
-        String companyKeyPart = company.getCompanyName()
-                .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
-
-        String fileName = String.format("f940_%d_%d.pdf",
-                companyId,
-                year);
-
-        String key = String.format("%s/%d/940pdf/%s",
-                companyKeyPart,
-                companyId,
-                fileName
-        );
+            //    fill(fields, "topmostSubform[0].Page2[0].c2_2[0]", "78");
+            //    fill(fields, "topmostSubform[0].Page2[0].f2_17[0]", "79");
+            //  fill(fields, "topmostSubform[0].Page2[0].f2_18[0]", "80");
+            //  fill(fields, "topmostSubform[0].Page2[0].f2_19[0]", "81");
+            //   fill(fields, "topmostSubform[0].Page2[0].f2_20[0]", "82");
+            //   fill(fields, "topmostSubform[0].Page2[0].f2_21[0]", "83");
+            //   fill(fields, "topmostSubform[0].Page2[0].f2_22[0]", "84");
+            //   fill(fields, "topmostSubform[0].Page2[0].f2_23[0]", "85");
+            // fill(fields, "topmostSubform[0].Page2[0].f2_24[0]", "86");
+            //fill(fields, "topmostSubform[0].Page2[0].f2_25[0]", "87");
+            //fill(fields, "topmostSubform[0].Page3[0]", "88");
+            //fill(fields, "topmostSubform[0].Page3[0].EIN_ReadOrder[0]", "89");
 
 
-        amazonS3Service.uploadPdfToS3(pdfBytes, key);
+            fill(fields, "topmostSubform[0].Page3[0].EIN_ReadOrder[0].f1_1[0]", einParts1[0]);
+            fill(fields, "topmostSubform[0].Page3[0].EIN_ReadOrder[0].f1_2[0]", einParts1[1]);
 
-        return  pdfBytes;
+            fill(fields, "topmostSubform[0].Page3[0].f3_1[0]", line14Split[0]);
+            fill(fields, "topmostSubform[0].Page3[0].f3_2[0]", line14Split[1]);
+
+            fill(fields, "topmostSubform[0].Page3[0].f1_3[0]", company.getCompanyName());
+
+            fill(fields, "topmostSubform[0].Page3[0].f3_4[0]", company.getCompanyAddress());
+            fill(fields, "topmostSubform[0].Page3[0].f3_5[0]", company.getCompanyCity() + " " + company.getCompanyState() + " " + company.getCompanyZipCode());
+
+            form.flattenFields();
+            pdfDoc.close();
+
+            byte[] pdfBytes = baos.toByteArray();
+
+
+            String companyKeyPart = company.getCompanyName()
+                    .trim()
+                    .replaceAll("[^A-Za-z0-9]+", "_");
+
+            String fileName = String.format("f940_%d_%d.pdf",
+                    companyId,
+                    year);
+
+            String key = String.format("%s/%d/940pdf/%s",
+                    companyKeyPart,
+                    companyId,
+                    fileName
+            );
+
+            long st = System.currentTimeMillis();
+            amazonS3Service.uploadPdfToS3(pdfBytes, key);
+            long end = System.currentTimeMillis() - st;
+
+            metric.recordGenerated(FORM, true);
+            metric.recordS3UploadTime(FORM, true,  end);
+            metric.recordOperationTime(timer,"940_success");
+
+            return pdfBytes;
+        } catch (Exception e) {
+            metric.recordOperationTime(timer,"940_failed");
+            metric.recordGenerated(FORM, false);
+            metric.recordError("940_failed", e.getMessage(), e);
+            throw e;
+        }
     }
 
 

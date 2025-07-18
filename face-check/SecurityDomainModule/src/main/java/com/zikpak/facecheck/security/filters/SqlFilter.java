@@ -2,6 +2,7 @@ package com.zikpak.facecheck.security.filters;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
@@ -21,6 +22,8 @@ import java.util.regex.Pattern;
 @Component
 @Order(2)
 public class SqlFilter implements Filter {
+    private MeterRegistry meterRegistry;
+
 
     private static final Pattern[] SQL_PATTERNS = {
             Pattern.compile("(?i)(.*)(\\b)+(CREATE|DROP|ALTER|TRUNCATE)(\\b)+\\s.*"),
@@ -71,6 +74,7 @@ public class SqlFilter implements Filter {
                 }
                 request = new RequestWrapper(httpRequest, jsonBody);
             }
+                sendErrorResponseRecord(response);
 
             chain.doFilter(request, response);
         } catch (Exception e) {
@@ -176,6 +180,15 @@ public class SqlFilter implements Filter {
 
         return false;
     }
+
+    private void sendErrorResponseRecord(ServletResponse response) throws IOException {
+        // Добавь метрику
+        meterRegistry.counter("security.sql_injection_blocked").increment();
+
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"SQL injection detected\", \"status\": 400}");
+    }
+
 
     private String urlDecode(String value) {
         try {

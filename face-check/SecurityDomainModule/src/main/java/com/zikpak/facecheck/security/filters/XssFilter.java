@@ -1,6 +1,7 @@
 package com.zikpak.facecheck.security.filters;
 
 import com.zikpak.facecheck.security.filters.wrappers.XssRequestWrapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +19,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 @Order(1)
 public class XssFilter extends OncePerRequestFilter {
+    private MeterRegistry meterRegistry;
 
     private static final Pattern[] XSS_PATTERNS = {
             Pattern.compile("<script>(.*?)</script>", Pattern.CASE_INSENSITIVE),
@@ -41,6 +43,7 @@ public class XssFilter extends OncePerRequestFilter {
 
         response.setHeader("X-XSS-Protection", "1; mode=block");
         response.setHeader("X-Content-Type-Options", "nosniff");
+
 
         filterChain.doFilter(request, response);
 

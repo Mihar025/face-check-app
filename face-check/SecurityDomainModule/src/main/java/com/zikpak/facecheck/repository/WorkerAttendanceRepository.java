@@ -21,6 +21,12 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
     List<WorkerAttendance> findAllByWorkerIdAndCheckInTimeBetween(Integer workerId, LocalDateTime localDateTime, LocalDateTime localDateTime1);
 
 
+    List<WorkerAttendance> findAllByWorkerIdInAndCheckInTimeBetween(
+            List<Integer> workerIds,
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime);
+
+
 
     @Query("SELECT wa FROM WorkerAttendance wa " +
             "WHERE wa.worker = :worker " +
@@ -33,15 +39,41 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
             @Param("endOfDay") LocalDateTime endOfDay
     );
 
-    Optional<WorkerAttendance> findFirstByWorkerOrderByCheckInTimeDesc(User worker);
-    Optional<WorkerAttendance> findFirstByWorkerOrderByCheckOutTimeDesc(User worker);
-
     Optional<WorkerAttendance> findFirstByWorkerAndCheckOutTimeIsNotNullOrderByCheckOutTimeDesc(User worker);
 
     @Query("SELECT wa FROM WorkerAttendance wa WHERE wa.worker.id = :workerId " +
             "ORDER BY wa.checkInTime DESC LIMIT 1")
     Optional<WorkerAttendance> findLatestAttendanceByWorkerId(@Param("workerId") Integer workerId);
 
-}
+
+    Optional<WorkerAttendance> findTopByWorkerOrderByCheckInTimeDesc(User worker);
+
+
+    @Query("""
+    SELECT wa 
+    FROM WorkerAttendance wa 
+    JOIN FETCH wa.worker w 
+    JOIN FETCH w.company 
+    WHERE wa.checkInTime >= :startDateTime 
+    AND wa.checkInTime <= :endDateTime
+""")
+    List<WorkerAttendance> findAllByCheckInTimeBetween(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
+
+    @Query("""
+    SELECT wa 
+    FROM WorkerAttendance wa 
+    JOIN FETCH wa.worker w 
+    WHERE w.company.id = :companyId 
+    AND wa.checkInTime >= :startDateTime 
+    AND wa.checkInTime <= :endDateTime
+""")
+    List<WorkerAttendance> findAllByCompanyIdAndCheckInTimeBetween(
+            @Param("companyId") Integer companyId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );}
 
 

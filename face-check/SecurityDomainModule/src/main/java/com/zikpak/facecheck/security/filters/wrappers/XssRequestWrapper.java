@@ -1,5 +1,6 @@
 package com.zikpak.facecheck.security.filters.wrappers;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.apache.commons.text.StringEscapeUtils;
