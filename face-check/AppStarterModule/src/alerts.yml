@@ -1,0 +1,175 @@
+groups:
+  - name: critical_alerts
+    interval: 30s
+    rules:
+      # Алерт на высокое использование памяти
+      - alert: HighMemoryUsage
+        expr: jvm_memory_heap_percentage > 85
+        for: 5m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% (threshold 85%)"
+
+      # Алерт на недоступность базы данных
+      - alert: DatabaseDown
+        expr: database_health < 1
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Database is down"
+          description: "Database health check failed for more than 1 minute"
+
+      # Алерт на высокий процент ошибок
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold 5%)"
+
+      # Алерт на медленные запросы
+      - alert: SlowRequests
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Slow API responses detected"
+          description: "95th percentile response time is {{ $value }}s (threshold 3s)"
+
+      # Алерт на deadlock потоков
+      - alert: ThreadDeadlock
+        expr: jvm_threads_deadlocked > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Thread deadlock detected"
+          description: "{{ $value }} threads are deadlocked"
+
+      # Алерт на исчерпание пула соединений БД
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          (
+            hikaricp_connections_active / hikaricp_connections_max
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Database connection pool almost exhausted"
+          description: "Connection pool usage is {{ $value | humanizePercentage }}"
+
+  - name: business_alerts
+    interval: 60s
+    rules:
+      # Алерт на критические бизнес-ошибки
+      - alert: CriticalBusinessErrors
+        expr: increase(business_critical_errors_total[5m]) > 0
+        labels:
+          severity: critical
+          team: business
+        annotations:
+          summary: "Critical business error occurred"
+          description: "{{ $value }} critical errors in last 5 minutes"
+
+      # Алерт на сбои в обработке платежей
+      - alert: PayrollProcessingFailures
+        expr: |
+          (
+            sum(rate(pdf_generated_total{form="Paystubs",status="failed"}[15m]))
+            /
+            sum(rate(pdf_generated_total{form="Paystubs"}[15m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          team: payroll
+        annotations:
+          summary: "High payroll processing failure rate"
+          description: "Failure rate is {{ $value | humanizePercentage }}"
+
+      # Алерт на падение DAU
+      - alert: LowDailyActiveUsers
+        expr: |
+          (
+            business_kpi_dau < 10
+          ) and (
+            hour() >= 9 and hour() <= 18
+          )
+        for: 30m
+        labels:
+          severity: warning
+          team: business
+        annotations:
+          summary: "Low daily active users"
+          description: "Only {{ $value }} active users (expected > 10 during business hours)"
+
+  - name: security_alerts
+    interval: 30s
+    rules:
+      # Алерт на SQL injection попытки
+      - alert: SQLInjectionAttempts
+        expr: increase(security_sql_injection_blocked_total[5m]) > 5
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Multiple SQL injection attempts detected"
+          description: "{{ $value }} SQL injection attempts blocked in last 5 minutes"
+
+      # Алерт на множественные неудачные аутентификации
+      - alert: AuthenticationFailures
+        expr: |
+          sum(rate(spring_security_authentications_total{result="failure"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate: {{ $value | humanize }} per second"
+
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # Алерт на недоступность сервиса
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute"
+
+      # Алерт на высокую нагрузку CPU
+      - alert: HighCPUUsage
+        expr: process_cpu_usage > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
