@@ -3,6 +3,7 @@ package com.zikpak.facecheck.entity.employee;
 
 import com.zikpak.facecheck.entity.Company;
 import com.zikpak.facecheck.entity.User;
+import com.zikpak.facecheck.entity.WcRiskClass;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,9 +24,11 @@ public class WorkerPayroll {
     private Integer id;
 
     @ManyToOne
+    @JoinColumn(name = "worker_id")
     private User worker;
 
     @ManyToOne
+    @JoinColumn(name = "company_id")
     private Company company;
 
     private LocalDate periodStart;
@@ -55,7 +58,20 @@ public class WorkerPayroll {
     private BigDecimal healthInsuranceCost;
     private Boolean hasRetirementPlan;
 
+    @Column(nullable = true, precision = 12, scale = 2)
+    private BigDecimal nyUnemploymentWithholding;
 
     private BigDecimal netPay;
+
+    @Column(nullable = true)
+    private boolean employerTaxesCalculated = false;
+
+    @Column(name = "pay_stub_generated", nullable = true)
+    private Boolean payStubGenerated = false;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "wc_risk_code", nullable = true)
+    private WcRiskClass riskClass;
+
 }
 
