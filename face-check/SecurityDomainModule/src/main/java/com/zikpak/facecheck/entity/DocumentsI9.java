@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@Table(name = "documents_i9")
 @Entity
 public class DocumentsI9 {
     @Id
@@ -20,8 +21,8 @@ public class DocumentsI9 {
     private Integer id;
 
     private String documentTitle;
-    private String IssuingAuthority;
-    private String DocumentNumber;
+    private String issuingAuthority;
+    private String documentNumber;
     private LocalDate expirationDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
