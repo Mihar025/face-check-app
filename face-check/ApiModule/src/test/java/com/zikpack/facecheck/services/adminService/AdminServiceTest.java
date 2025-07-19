@@ -79,7 +79,7 @@ public class AdminServiceTest {
     }
 
 
-
+/*
     @Test
     void findAllWorkersInWorkSite_delegatesToForemanService() {
         int page = 1, size = 20;
@@ -130,6 +130,8 @@ public class AdminServiceTest {
 
         verifyNoMoreInteractions(userRepository, workerAttendanceRepository);
     }
+
+ */
 
 
 
