@@ -41,7 +41,10 @@ public class ForemanAndAdminService implements AdminAndForemanFunctionality {
 
     //todo uncoment tommorow and check test again!
     @Override
-    public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(int page, int size, Integer workSiteId, Authentication authentication){
+    public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(int page,
+                                                                         int size,
+                                                                         Integer workSiteId,
+                                                                         Authentication authentication){
         User user = ((User) authentication.getPrincipal());
 
         var foundedWorkSite = workerSiteRepository.findById(workSiteId)

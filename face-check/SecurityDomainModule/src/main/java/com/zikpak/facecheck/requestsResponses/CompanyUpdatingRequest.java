@@ -2,13 +2,13 @@ package com.zikpak.facecheck.requestsResponses;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CompanyUpdatingRequest {
 
     @NotNull(message = "This field is required, and cannot be empty!")
