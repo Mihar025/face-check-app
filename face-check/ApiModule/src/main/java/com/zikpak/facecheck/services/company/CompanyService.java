@@ -48,7 +48,6 @@ public class CompanyService implements CompanyServiceImpl {
     private final RoleRepository roleRepository;
 
 
-    @Transactional
     @Override
     public String companyName(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
@@ -56,7 +55,6 @@ public class CompanyService implements CompanyServiceImpl {
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
         return company.getCompanyName();
     }
-    @Transactional
     @Override
     public String companyAddress(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
@@ -64,7 +62,6 @@ public class CompanyService implements CompanyServiceImpl {
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
         return company.getCompanyAddress();
     }
-    @Transactional
     @Override
     public String companyPhone(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
@@ -72,7 +69,6 @@ public class CompanyService implements CompanyServiceImpl {
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
         return company.getCompanyPhone();
     }
-    @Transactional
     @Override
     public String companyEmail(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
@@ -80,6 +76,8 @@ public class CompanyService implements CompanyServiceImpl {
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
         return company.getCompanyEmail();
     }
+
+
     @Transactional
     @Override
     public void updateCompanyName(String name, Authentication authentication) {
@@ -93,7 +91,10 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("Company name cannot be empty");
         }
         company.setCompanyName(name);
+        companyRepository.save(company);
     }
+
+
     @Transactional
     @Override
     public void updateCompanyAddress(String address, Authentication authentication) {
@@ -107,8 +108,11 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("Company address cannot be empty");
         }
         company.setCompanyAddress(address);
+        companyRepository.save(company);
 
     }
+
+
     @Transactional
     @Override
     public void updateCompanyPhoneNumber(String phoneNumber, Authentication authentication) {
@@ -122,8 +126,11 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("Company phoneNumber cannot be empty");
         }
         company.setCompanyPhone(phoneNumber);
+        companyRepository.save(company);
 
     }
+
+
     @Transactional
     @Override
     public void updateCompanyEmail(String email, Authentication authentication) {
@@ -137,9 +144,8 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("Company email cannot be empty");
         }
         company.setCompanyEmail(email);
-
+        companyRepository.save(company);
     }
-
 
     public CompanyUpdatingResponse updateCompany(CompanyUpdatingRequest companyUpdatingRequest, Integer companyId, Authentication authentication) throws AccessDeniedException {
             User user = ((User) authentication.getPrincipal());
@@ -152,6 +158,9 @@ public class CompanyService implements CompanyServiceImpl {
                 var updatedCompany = updateCompanyCredentials(companyUpdatingRequest, foundedCompany);
                     return companyMapper.toCompanyUpdateResponse(updatedCompany);
         }
+
+
+
 
             public CompanyIncomePerMonthResponse setCompanyIncomePerMonth(
                     CompanyIncomePerMonthRequest request,
@@ -283,6 +292,8 @@ public class CompanyService implements CompanyServiceImpl {
                                     var employeeSalary = companyRepository.findEmployeeByCompanyAndUserIdWithBaseHourRate(foundedCompany.getId(), userId);
                             return employeeSalary;
                     }
+
+
 
                         public EmployeeSalaryResponse changeEmployeeBaseHourRate(Integer companyId,
                                                                                  Integer employeeId,
@@ -657,7 +668,7 @@ public class CompanyService implements CompanyServiceImpl {
             }
 
             var foundedEmployee = userRepository.findById(workerId)
-                    .orElseThrow(() -> new RuntimeException("Employee not found"));
+                    .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
 
                      if (!foundedEmployee.getCompany().getId().equals(user.getCompany().getId())) {
                             throw new AccessDeniedException("Something went wrong");
@@ -682,17 +693,21 @@ public class CompanyService implements CompanyServiceImpl {
             if(!user.isAdmin() && !user.isBusinessOwner()){
                 throw new AccessDeniedException("You do not have permission to delete this company");
             }
-            companyRepository.deleteById(companyId);
+            var company = companyRepository.findById(companyId).orElseThrow(
+                    () -> new EntityNotFoundException("Company not found")
+            );
+            companyRepository.deleteById(company.getId());
             }
 
 
         private Company updateCompanyCredentials(CompanyUpdatingRequest request, Company company){
             company.setCompanyName(request.getCompanyName());
             company.setCompanyAddress(request.getCompanyAddress());
+            company.setWorkersQuantity(request.getWorkersQuantity());
             company.setCompanyPhone(request.getCompanyPhone());
             company.setCompanyEmail(request.getCompanyEmail());
-            company.setWorkersQuantity(request.getWorkersQuantity());
             return companyRepository.save(company);
         }
 
 }
+

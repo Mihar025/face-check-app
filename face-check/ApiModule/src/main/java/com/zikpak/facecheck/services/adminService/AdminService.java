@@ -33,7 +33,10 @@ public class AdminService implements AdminAndForemanFunctionality {
 
 
     @Override
-    public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(int page, int size, Integer workSiteId, Authentication authentication){
+    public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(int page,
+                                                                         int size,
+                                                                         Integer workSiteId,
+                                                                         Authentication authentication){
         return foremanAndAdminService.findAllWorkersInWorkSite(page, size, workSiteId, authentication);
     }
 
