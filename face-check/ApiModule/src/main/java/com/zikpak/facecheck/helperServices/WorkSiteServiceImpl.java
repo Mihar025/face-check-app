@@ -60,7 +60,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
             metric.recordOperationTime(timer, "find_worksite_success");
 
             return workSiteMapper.toWorkSiteResponse(foundedWorkSite);
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordWorkSiteById("unknown", 0, false);
             metric.recordOperationTime(timer, "find_worksite_failed");
             metric.recordError("f_worksite_failed", e.getMessage(), e);
@@ -73,6 +73,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     public PageResponse<WorkSiteResponse> findAllWorkSites(Authentication authentication, int page, int size) {
         Timer.Sample timer = metric.startTimer();
         try {
+
             User user = (User) authentication.getPrincipal();
             Pageable pageable = PageRequest.of(page, size, Sort.by("siteName").descending());
             Page<WorkSite> workSites = workSiteRepository.findAllByCompanyId(user.getCompany().getId(), pageable);
@@ -94,7 +95,8 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     workSites.isFirst(),
                     workSites.isLast()
             );
-        } catch (Exception e){
+
+        } catch (Exception e) {
             metric.recordWorkSiteById("unknown", 0, false);
             metric.recordOperationTime(timer, "find_all_worksite_failed");
             metric.recordError("f_all_worksite_failed", e.getMessage(), e);
@@ -127,10 +129,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
             metric.recordOperationTime(timer, "create_new_work_success");
 
             return workSiteMapper.toWorkSiteResponse(savedWorkSite);
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordWorkSiteById("unknown", 0, false);
             metric.recordOperationTime(timer, "create_work_failed");
-            metric.recordError("f_create_work_success", e.getMessage(), e);
+            metric.recordError("f_create_work_failed", e.getMessage(), e);
             throw e;
         }
     }
@@ -161,7 +163,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     .selectedWorkSiteName(foundedWorkSite.getSiteName())
                     .workerId(user.getId())
                     .build();
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordWorkSiteById("unknown", 0, false);
             metric.recordOperationTime(timer, "select_work_failed");
             metric.recordError("f_select_work_success", e.getMessage(), e);
@@ -238,16 +240,18 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     .companyName(foundedWorker.getCompany().getCompanyName())
                     .newRadius(customRadius.getCustomRadius())
                     .build();
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordOperationTime(timer, "set_custom_radius__worker_failed");
             metric.recordWorkSiteById("unknown", 0, false);
-            metric.recordOperationTime(timer, "set_custom_radius_worker_failed");
             throw e;
         }
     }
 
+
     @Override
-    public SetNewCustomRadiusResponse setCustomRadiusForWorkSite(Authentication authentication, Integer workSiteId, SetNewCustomRadiusRequest customRadius) {
+    public SetNewCustomRadiusResponse setCustomRadiusForWorkSite(Authentication authentication,
+                                                                 Integer workSiteId,
+                                                                 SetNewCustomRadiusRequest customRadius) {
         Timer.Sample timer = metric.startTimer();
         try {
             checkIsUserHasAdminRoleAndBusinessOwner(authentication);
@@ -283,7 +287,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     .workSiteId(savedWorkSiteRadius.getId())
                     .customRadius(savedWorkSiteRadius.getAllowedRadius())
                     .build();
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordOperationTime(timer, "set_worksite_custom_radius_failed");
             metric.recordWorkSiteById("unknown", 0, false);
             metric.recordError("f_set_worksite_custom_radius_failed", e.getMessage(), e);
@@ -292,7 +296,9 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
-    public WorkSiteUpdateNameResponse updateWorkSiteName(Authentication authentication, Integer workSiteId, UpdateNameRequest request) {
+    public WorkSiteUpdateNameResponse updateWorkSiteName(Authentication authentication,
+                                                         Integer workSiteId,
+                                                         UpdateNameRequest request) {
         Timer.Sample timer = metric.startTimer();
         try {
             checkIsUserHasAdminRoleAndBusinessOwner(authentication);
@@ -306,7 +312,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
             metric.recordOperationTime(timer, "update_worksite_name_success");
             metric.recordWorkSiteById(foundedWorkSite.getSiteName(), foundedWorkSite.getId(), true);
             return workSiteMapper.toWorkSiteUpdateNameResponse(foundedWorkSite);
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordOperationTime(timer, "update_worksite_name_failed");
             metric.recordWorkSiteById("unknown", 0, false);
             throw e;
@@ -327,36 +333,36 @@ public class WorkSiteServiceImpl implements WorkSiteService {
             workSiteRepository.save(foundedWorkSite);
             metric.recordOperationTime(timer, "update_worksite_address_success");
             return workSiteMapper.toWorkSiteUpdateAddressResponse(foundedWorkSite);
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordOperationTime(timer, "update_worksite_address_failed");
             metric.recordError("update_worksite_address_failed", e.getMessage(), e);
             throw e;
         }
     }
 
+
     @Override
     public WorkSiteUpdateWorkingHoursResponse updateWorkingHours(Authentication authentication, Integer workSiteId, WorkSiteUpdateWorkingHoursRequest request) {
         Timer.Sample timer = metric.startTimer();
         try {
-
-
             checkIsUserHasAdminRoleAndBusinessOwner(authentication);
             var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
             if (!foundedWorkSite.getIsActive()) {
                 throw new IllegalStateException("Work site is not active");
             }
+
             foundedWorkSite.setWorkDayStart(request.getNewStart());
             foundedWorkSite.setWorkDayEnd(request.getNewEnd());
             workSiteRepository.save(foundedWorkSite);
             metric.recordOperationTime(timer, "update_worksite_workinghours_success");
             return workSiteMapper.toWorkSiteUpdateWorkingHoursResponse(foundedWorkSite);
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordOperationTime(timer, "update_worksite_workinghours_failed");
             metric.recordError("update_worksite_workinghours_failed", e.getMessage(), e);
             throw e;
-
         }
     }
+
 
     @Override
     public WorkSiteUpdateLocationResponse updateWorkSiteLocation(Authentication authentication, Integer workSiteId, WorkSiteUpdateLocationRequest request) {
@@ -367,9 +373,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
             if (!foundedWorkSite.getIsActive()) {
                 throw new IllegalStateException("Work site is not active");
             }
+
             foundedWorkSite.setLatitude(request.getNewLatitude());
             foundedWorkSite.setLongitude(request.getNewLongitude());
             foundedWorkSite.setAllowedRadius(request.getNewRadius());
+
             workSiteRepository.save(foundedWorkSite);
             metric.recordOperationTime(timer, "update_worksite_location_success");
             metric.recordWorkSiteLatLon(
@@ -381,7 +389,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     true
             );
             return workSiteMapper.toWorkSiteUpdateLocationResponse(foundedWorkSite);
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordOperationTime(timer, "update_worksite_location_failed");
             metric.recordError("update_worksite_location_failed", e.getMessage(), e);
             throw e;
@@ -390,24 +398,32 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     @Override
     public void setWorkSiteActiveOrNotActive(Authentication authentication, Integer workSiteId, UpdateStatusWorkSiteRequest updateStatusWorkSiteRequest) {
+        Timer.Sample timer = metric.startTimer();
+        try {
+            checkIsUserHasAdminRoleAndBusinessOwner(authentication);
 
-        checkIsUserHasAdminRoleAndBusinessOwner(authentication);
 
+            var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
 
-        var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
+            var active = updateStatusWorkSiteRequest.isActive();
+            if (foundedWorkSite.getIsActive() == updateStatusWorkSiteRequest.isActive()) {
+                throw new IllegalStateException(
+                        active
+                                ? "Work site is already active"
+                                : "Work site is already inactive"
+                );
+            }
 
-        var active = updateStatusWorkSiteRequest.isActive();
-        if (foundedWorkSite.getIsActive() == updateStatusWorkSiteRequest.isActive()) {
-            throw new IllegalStateException(
-                    active
-                            ? "Work site is already active"
-                            : "Work site is already inactive"
-            );
+            foundedWorkSite.setIsActive(updateStatusWorkSiteRequest.isActive());
+            workSiteRepository.save(foundedWorkSite);
+            log.info("Work site {} status changed to {}", workSiteId, active ? "active" : "inactive");
+            metric.recordOperationTime(timer, "set_worksite_active_not_success");
+
+        } catch (Exception e) {
+            metric.recordOperationTime(timer, "set_worksite_active_not_failed");
+            metric.recordError("set_worksite_active_not_failed", e.getMessage(), e);
+            throw e;
         }
-
-        foundedWorkSite.setIsActive(updateStatusWorkSiteRequest.isActive());
-        workSiteRepository.save(foundedWorkSite);
-        log.info("Work site {} status changed to {}", workSiteId, active ? "active" : "inactive");
     }
 
 
@@ -467,29 +483,39 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     @Override
     public boolean isWorkSiteActive(Integer workSiteId) {
-        var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
+        Timer.Sample timer = metric.startTimer();
+        try {
+            var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
 
-        if (!foundedWorkSite.getIsActive()) {
-            return false;
+            if (!foundedWorkSite.getIsActive()) {
+                return false;
+            }
+
+            LocalDate today = LocalDate.now();
+            Set<LocalDate> inactiveDays = foundedWorkSite.getInactiveDays();
+            if (inactiveDays != null && inactiveDays.contains(today)) {
+                return false;
+            }
+
+            if (today.getDayOfWeek() == DayOfWeek.SATURDAY) {
+                return false;
+            }
+            metric.recordOperationTime(timer, "is_work_site_active_success");
+            return true;
+        } catch (Exception e) {
+            metric.recordOperationTime(timer, "is_work_site_active_failed");
+            throw e;
         }
-
-        LocalDate today = LocalDate.now();
-        Set<LocalDate> inactiveDays = foundedWorkSite.getInactiveDays();
-        if (inactiveDays != null && inactiveDays.contains(today)) {
-            return false;
-        }
-
-        if (today.getDayOfWeek() == DayOfWeek.SATURDAY) {
-            return false;
-        }
-
-        return true;
     }
+
+
+
 
     @Override
     public IsWithinRadiusResponse isWithinRadius(Integer workSiteId, IsWithinRadiusRequest isWithinRadiusRequest) {
         Timer.Sample timer = metric.startTimer();
         try {
+
             var foundedWorkSite = findWorkSiteById(workSiteId);
 
             if (foundedWorkSite.getLatitude() == null || foundedWorkSite.getLongitude() == null ||
@@ -514,6 +540,8 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     foundedWorkSite.getLongitude(),
                     true
             );
+
+
 
             return IsWithinRadiusResponse.builder()
                     .worksiteId(foundedWorkSite.getWorkSiteId())
@@ -724,6 +752,33 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         );
     }
 
+    @Transactional(rollbackOn = Exception.class)
+    public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
+        var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+        var company = admin.getCompany();
+        var workSite = findWorkSiteBySpecialId(workSiteId);
+
+        for(User user: new HashSet<>(workSite.getUsers())){
+            workSite.removeUser(user);
+        }
+        company.removeWorkSite(workSite);
+        workSiteRepository.deleteById(workSite.getId());
+    }
+
+    public WorkSiteAllInformationResponse findWorkSiteAllInformationById(Authentication authentication, Integer workSiteId) {
+        checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+        var workSite = findWorkSiteBySpecialId(workSiteId);
+        return workSiteMapper.toWorkSiteAllInformationResponse(workSite);
+    }
+
+    public Integer countAllWorksitesRelatedToTheCompany(Authentication authentication) {
+        var admin = (User) authentication.getPrincipal();
+        var companyId  = admin.getCompany().getId();
+        var foundedWorksites = workSiteRepository.findAllByCompanyId(companyId);
+        return foundedWorksites.size();
+    }
+
+
     private User checkIsUserAuthenticatedAndFindHim(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         if(user.getId() == null) {
@@ -787,29 +842,5 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     }
 
-    @Transactional(rollbackOn = Exception.class)
-    public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
-         var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-         var company = admin.getCompany();
-         var workSite = findWorkSiteBySpecialId(workSiteId);
 
-         for(User user: new HashSet<>(workSite.getUsers())){
-             workSite.removeUser(user);
-         }
-         company.removeWorkSite(workSite);
-         workSiteRepository.deleteById(workSite.getId());
-    }
-
-    public WorkSiteAllInformationResponse findWorkSiteAllInformationById(Authentication authentication, Integer workSiteId) {
-        checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-        var workSite = findWorkSiteBySpecialId(workSiteId);
-        return workSiteMapper.toWorkSiteAllInformationResponse(workSite);
-    }
-
-    public Integer countAllWorksitesRelatedToTheCompany(Authentication authentication) {
-        var admin = (User) authentication.getPrincipal();
-        var companyId  = admin.getCompany().getId();
-        var foundedWorksites = workSiteRepository.findAllByCompanyId(companyId);
-        return foundedWorksites.size();
-    }
 }

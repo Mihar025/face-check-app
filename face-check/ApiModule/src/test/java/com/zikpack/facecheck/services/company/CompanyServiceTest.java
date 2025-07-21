@@ -1,4 +1,4 @@
-package com.zikpack.facecheck.services;
+package com.zikpack.facecheck.services.company;
 
 
 import com.zikpak.facecheck.entity.Company;
@@ -39,16 +39,7 @@ public class CompanyServiceTest {
     private  CompanyMapper companyMapper;
 
     @Mock
-    private  CompanyTaxCalculator companyTaxCalculator;
-
-    @Mock
     private  UserRepository userRepository;
-
-    @Mock
-    private  WorkerPayrollRepository workerPayrollRepository;
-
-    @Mock
-    private  RoleRepository roleRepository;
 
     @Mock
     private Authentication authentication;
