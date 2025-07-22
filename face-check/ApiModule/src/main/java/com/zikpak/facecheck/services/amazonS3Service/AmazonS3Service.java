@@ -44,7 +44,6 @@ public class AmazonS3Service {
 
         try {
 
-
             byte[] photoBytes = Base64.getDecoder().decode(base64Photo);
 
             String fileName = generateAttendancePhotoName(email, prefix);
@@ -184,7 +183,7 @@ public class AmazonS3Service {
 
 
 
-    private String generateAttendancePhotoName(String userEmail, String prefix) {
+    public String generateAttendancePhotoName(String userEmail, String prefix) {
         return String.format("%s-%s-%s.jpg",
                 prefix,
                 userEmail,
@@ -195,7 +194,7 @@ public class AmazonS3Service {
 
 
 
-    private String generatePhoto(String userEmail, String prefix) {
+    public String generatePhoto(String userEmail, String prefix) {
         return String.format("%s_%s_%s.jpg",
                 prefix,
                 userEmail,

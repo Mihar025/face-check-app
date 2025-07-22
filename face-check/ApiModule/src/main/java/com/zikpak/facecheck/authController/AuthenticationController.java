@@ -14,6 +14,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 
 
 @RestController
@@ -33,7 +34,7 @@ public class AuthenticationController {
 
 
     @PostMapping("/register/admin")
-    public ResponseEntity<?> registerAdmin(@RequestBody @Valid RegistrationAdminRequest request) throws MessagingException {
+    public ResponseEntity<?> registerAdmin(@RequestBody @Valid RegistrationAdminRequest request) throws MessagingException, IOException {
         authenticationService.registerAdmin(request);
         return ResponseEntity.accepted().build();
     }
