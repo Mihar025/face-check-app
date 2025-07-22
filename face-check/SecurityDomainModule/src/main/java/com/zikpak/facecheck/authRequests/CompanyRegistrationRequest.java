@@ -3,15 +3,15 @@ package com.zikpak.facecheck.authRequests;
 import com.zikpak.facecheck.entity.CompanyPaymentPosition;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CompanyRegistrationRequest {
 
     @NotNull(message = "Company name field is required")

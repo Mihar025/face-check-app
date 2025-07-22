@@ -97,6 +97,7 @@ public class AuthenticationService {
 
         user.setRoles(List.of(role));
         user.setCompany(company);
+
         userRepository.save(user);
         try {
             sendValidationEmail(user);
@@ -106,13 +107,17 @@ public class AuthenticationService {
         }
     }
 
-    public void registerAdmin(RegistrationAdminRequest request) throws MessagingException {
+    public void registerAdmin(RegistrationAdminRequest request) throws MessagingException,
+            IOException {
         Timer.Sample timer = metric.startTimer();
         try {
             authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
             var role = authenticationServiceImpl.findRoleAdmin();
             var user = userMapper.toAdmin(request);
             user.setRoles(List.of(role));
+
+            fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
+            fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
 
             userRepository.save(user);
             metric.recordOperationTime(timer, "register_admin_successfully");
@@ -162,6 +167,7 @@ public class AuthenticationService {
             var newCompany = authenticationServiceImpl.createNewCompany(companyRegistrationRequest);
             newCompany.setCompanyOwner(user);
             authenticationServiceImpl.setBusinessInformation(user, newCompany);
+            metric.recordOperationTime(timer, "register_company_successfully");
         } catch (Exception e){
             metric.recordError("register_failed", e.getMessage(), e);
             throw e;
@@ -169,7 +175,7 @@ public class AuthenticationService {
     }
 
 
-    public AuthenticationResponse authenticate(@Valid AuthenticationRequest request) {
+ public AuthenticationResponse authenticate(@Valid AuthenticationRequest request) {
         Timer.Sample timer = metric.startTimer();
         try {
             log.info("Attempting authentication for user: {}", request.getEmail());
