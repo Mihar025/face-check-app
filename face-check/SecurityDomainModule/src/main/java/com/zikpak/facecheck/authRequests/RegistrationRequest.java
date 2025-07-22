@@ -8,9 +8,7 @@ import com.zikpak.facecheck.entity.W4.PayFrequency;
 import com.zikpak.facecheck.requestsResponses.DependentsRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,6 +17,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class RegistrationRequest {
 
     @NotBlank(message = "Firstname cannot be empty or blank")
