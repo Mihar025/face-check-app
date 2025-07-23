@@ -187,13 +187,7 @@ public class SutaReportService {
                 .build();
     }
 
-    // ========================================
-    // PRIVATE HELPER METHODS
-    // ========================================
 
-    /**
-     * Основной расчет SUTA (адаптирован из FUTA логики)
-     */
     private SutaCalculationResult calculateSutaForPeriod(List<EmployerTaxRecord> taxRecords, Integer companyId, Integer year, LocalDate startDate) {
 
         if (taxRecords.isEmpty()) {
