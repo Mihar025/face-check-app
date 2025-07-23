@@ -50,7 +50,7 @@ public class FillFormW4 {
 
         Timer.Sample timer = metricsForPdfServices.startTimer();
         try {
-            InputStream src = getClass().getResourceAsStream("/forms/fw4.pdf");
+            InputStream src = getClass().getResourceAsStream("assets/forms/fw4.pdf");
             PdfReader reader = new PdfReader(src);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(baos);
