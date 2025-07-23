@@ -188,7 +188,6 @@ public class FillFormMTA305 {
 
 // 53-70. Line 1 and 2 Fields (Dollars and Cents)
 
-
             String[] grossParts = splitAmount(line1a);
             fill(fields, "dollars line 1", grossParts[0]);
             fill(fields, "cents line 1", grossParts[1]);
