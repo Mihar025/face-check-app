@@ -24,6 +24,5 @@ public class CompanyUpdatingRequest {
     @NotEmpty(message = "This field is required, and cannot be empty!")
     private String companyEmail;
     @NotNull(message = "This field is required, and cannot be empty!")
-    @NotEmpty(message = "This field is required, and cannot be empty!")
     private Integer workersQuantity;
 }
