@@ -17,6 +17,7 @@ import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
 import com.zikpak.facecheck.requestsResponses.worker.UpdateEmployeeDataRequest;
 import com.zikpak.facecheck.requestsResponses.worker.UpdatedEmployeeDataResponse;
+import com.zikpak.facecheck.taxesServices.pdfServices.W2OfficialPDFService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,6 +48,7 @@ public class CompanyService implements CompanyServiceImpl {
     private final UserRepository userRepository;
     private final WorkerPayrollRepository workerPayrollRepository;
     private final RoleRepository roleRepository;
+    private final W2OfficialPDFService w2OfficialPDFService;
 
 
     @Override
@@ -81,15 +84,18 @@ public class CompanyService implements CompanyServiceImpl {
     @Transactional
     @Override
     public void updateCompanyName(String name, Authentication authentication) {
+        if(name == null || name.isBlank()){
+            throw new IllegalArgumentException("Company name cannot be null or blank");
+        }
+
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+
         if(company.getCompanyName().equals(name)) {
             throw new AccessDeniedException("Company name already exists");
         }
-        else if(name.isEmpty()){
-            throw new AccessDeniedException("Company name cannot be empty");
-        }
+
         company.setCompanyName(name);
         companyRepository.save(company);
     }
@@ -98,15 +104,16 @@ public class CompanyService implements CompanyServiceImpl {
     @Transactional
     @Override
     public void updateCompanyAddress(String address, Authentication authentication) {
+        if(address == null || address.isBlank()){
+            throw new IllegalArgumentException("Company address cannot be null or blank");
+        }
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
         if(company.getCompanyAddress().equals(address)) {
             throw new AccessDeniedException("Company address already exists");
         }
-        else if(address.isEmpty()){
-            throw new AccessDeniedException("Company address cannot be empty");
-        }
+
         company.setCompanyAddress(address);
         companyRepository.save(company);
 
@@ -116,15 +123,17 @@ public class CompanyService implements CompanyServiceImpl {
     @Transactional
     @Override
     public void updateCompanyPhoneNumber(String phoneNumber, Authentication authentication) {
+        if(phoneNumber == null || phoneNumber.isBlank()){
+            throw new IllegalArgumentException("Company phone number cannot be null or blank");
+        }
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
+
         if(company.getCompanyPhone().equals(phoneNumber)) {
             throw new AccessDeniedException("Company phoneNumber already exists");
         }
-        else if(phoneNumber.isEmpty()){
-            throw new AccessDeniedException("Company phoneNumber cannot be empty");
-        }
+
         company.setCompanyPhone(phoneNumber);
         companyRepository.save(company);
 
@@ -134,20 +143,30 @@ public class CompanyService implements CompanyServiceImpl {
     @Transactional
     @Override
     public void updateCompanyEmail(String email, Authentication authentication) {
+        if(email == null || email.isBlank()){
+            throw new IllegalArgumentException("Company email cannot be null or blank");
+        }
+
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
         if(company.getCompanyEmail().equals(email)) {
             throw new AccessDeniedException("Company email already exists");
         }
-        else if(email.isEmpty()){
-            throw new AccessDeniedException("Company email cannot be empty");
-        }
+
         company.setCompanyEmail(email);
         companyRepository.save(company);
     }
 
     public CompanyUpdatingResponse updateCompany(CompanyUpdatingRequest companyUpdatingRequest, Integer companyId, Authentication authentication) throws AccessDeniedException {
+           if(companyUpdatingRequest.getCompanyName() == null
+           || companyUpdatingRequest.getCompanyAddress() == null
+           || companyUpdatingRequest.getCompanyPhone() == null
+           || companyUpdatingRequest.getCompanyEmail() == null
+           || companyUpdatingRequest.getWorkersQuantity() == null) {
+               throw new IllegalArgumentException("Company updating request cannot be null or blank");
+           }
+
             User user = ((User) authentication.getPrincipal());
 
             if(!user.isAdmin() && !user.isBusinessOwner()){
@@ -166,6 +185,9 @@ public class CompanyService implements CompanyServiceImpl {
                     CompanyIncomePerMonthRequest request,
                     Integer companyId,
                     Authentication authentication) throws AccessDeniedException {
+                if(request.getCompanyIncomePerMonth() == null){
+                    throw new IllegalArgumentException("Company income per month cannot be null");
+                }
 
                 var user = ((User) authentication.getPrincipal());
                 if(!user.isAdmin() && !user.isBusinessOwner()){
@@ -202,6 +224,10 @@ public class CompanyService implements CompanyServiceImpl {
                                                                               CompanyTaxCalculationRequest request,
                                                                               Authentication authentication)
                                                                               throws AccessDeniedException {
+                    if(request.getYear() == null || request.getMonth() == null){
+                        throw new IllegalArgumentException("Year or Month cannot be null try again!");
+                    }
+
                     var user = ((User) authentication.getPrincipal());
                     if(!user.isAdmin() && !user.isBusinessOwner()){
                         throw new AccessDeniedException("You do not have permission to update this company");
@@ -299,6 +325,9 @@ public class CompanyService implements CompanyServiceImpl {
                                                                                  Integer employeeId,
                                                                                  Authentication authentication,
                                                                                  EmployeeRaiseHourRateRequest raise) throws AccessDeniedException {
+                                        if(raise.getBaseHourlyRate() == null){
+                                            throw new IllegalArgumentException("Base hourly rate cannot be empty");
+                                        }
                                         User user = ((User) authentication.getPrincipal());
                                         if(!user.isAdmin() && !user.isBusinessOwner()){
                                             throw new AccessDeniedException("You do not have permission to update this company");
@@ -311,6 +340,10 @@ public class CompanyService implements CompanyServiceImpl {
                                                     throw new AccessDeniedException("This worker is not from your company");
                                                 }
                             WorkerPayroll currentPayroll;
+                                                    if(raise.getBaseHourlyRate().equals(user.getBaseHourlyRate())){
+                                                        throw new IllegalArgumentException("Base hourly rate cannot be the same as current hourly rate");
+                                                    }
+
                                                     if(foundedEmployee.getPayrolls().isEmpty()){
                                                         currentPayroll = new WorkerPayroll();
                                                         currentPayroll.setWorker(foundedEmployee);
@@ -676,8 +709,12 @@ public class CompanyService implements CompanyServiceImpl {
 
                      var company = foundedEmployee.getCompany();
                      company.setWorkersQuantity(company.getWorkersQuantity() - 1);
+                     try {
+                         w2OfficialPDFService.generateFilledPdf(foundedEmployee.getId(), company.getId(), LocalDate.now().getYear());
+                     } catch (IOException e) {
+                         e.printStackTrace();
+                     }
                      companyRepository.save(company);
-
                      userRepository.deleteById(foundedEmployee.getId());
     }
 
