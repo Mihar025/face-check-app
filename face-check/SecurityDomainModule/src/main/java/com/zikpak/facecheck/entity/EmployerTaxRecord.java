@@ -34,16 +34,16 @@ public class EmployerTaxRecord {
     private WorkerPayroll payStub;
 
 
-    private BigDecimal grossPay;
+    private BigDecimal grossPay  = BigDecimal.ZERO;
 
-    private BigDecimal socialSecurityTax;
-    private BigDecimal medicareTax;
-    private BigDecimal futaTax;
-    private BigDecimal sutaTax;
-    private BigDecimal federalWithholding;
+    private BigDecimal socialSecurityTax  = BigDecimal.ZERO;
+    private BigDecimal medicareTax  = BigDecimal.ZERO;
+    private BigDecimal futaTax  = BigDecimal.ZERO;
+    private BigDecimal sutaTax  = BigDecimal.ZERO;
+    private BigDecimal federalWithholding  = BigDecimal.ZERO;
 
 
-    private BigDecimal totalEmployerTax;
+    private BigDecimal totalEmployerTax  = BigDecimal.ZERO;
 
     private LocalDate periodStart;
     private LocalDate periodEnd;
@@ -53,17 +53,17 @@ public class EmployerTaxRecord {
     private LocalDate createdAt;
 
 
-    private BigDecimal socialSecurityTaxableWages;
+    private BigDecimal socialSecurityTaxableWages  = BigDecimal.ZERO;
 
-    private BigDecimal socialSecurityTips;
+    private BigDecimal socialSecurityTips  = BigDecimal.ZERO;
 
-    private BigDecimal medicareTaxableWages;
+    private BigDecimal medicareTaxableWages  = BigDecimal.ZERO;
 
-    private BigDecimal additionalMedicareWages;
+    private BigDecimal additionalMedicareWages  = BigDecimal.ZERO;
 
     private LocalDate paymentDate;
 
-    private BigDecimal futaTaxableWages;
+    private BigDecimal futaTaxableWages  = BigDecimal.ZERO;
 
-    private BigDecimal sutaTaxableWages;
+    private BigDecimal sutaTaxableWages = BigDecimal.ZERO;
 }

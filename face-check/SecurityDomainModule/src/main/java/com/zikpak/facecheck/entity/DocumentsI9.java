@@ -20,10 +20,10 @@ public class DocumentsI9 {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private String documentTitle;
-    private String issuingAuthority;
-    private String documentNumber;
-    private LocalDate expirationDate;
+    private String documentTitle = "";
+    private String issuingAuthority = "";
+    private String documentNumber = "";
+    private LocalDate expirationDate ;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

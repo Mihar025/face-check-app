@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class EmployeeRaiseHourRateRequest {
     @NotNull
     @DecimalMin(value = "0.0", inclusive = false, message = "Hourly rate must be greater than 0")
