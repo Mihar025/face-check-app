@@ -18,9 +18,9 @@ public class Dependents {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private String firstName;
+    private String firstName ="";
 
-    private String lastName;
+    private String lastName = "";
 
     private LocalDate birthDate;
 
