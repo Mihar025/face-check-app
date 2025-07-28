@@ -48,7 +48,7 @@ public class AuthenticationController {
 
     @PostMapping("/register/company")
     public ResponseEntity<Void> registerCompany(
-            @RequestBody CompanyRegistrationRequest request,
+            @Valid @RequestBody CompanyRegistrationRequest request,
             Authentication authentication
     ) throws MessagingException {
         authenticationService.registerCompany(request, authentication);
@@ -81,7 +81,7 @@ public class AuthenticationController {
     @PostMapping("/employees/{employeeId}/payment")
     public ResponseEntity<Void> setPaymentData(
             @PathVariable Integer employeeId,
-            @RequestBody PaymentRequest paymentRequest,
+            @Valid @RequestBody PaymentRequest paymentRequest,
             Authentication authentication
     ) {
         authenticationService.setPaymentDataForWorkerHoursRateAndOvertime(employeeId, paymentRequest, authentication);
@@ -116,7 +116,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/forgot-password/email")
-    public ResponseEntity<Void> sendResetCode(@RequestBody @Valid EmailRequest request)
+    public ResponseEntity<Void> sendResetCode(
+            @RequestBody @Valid EmailRequest request)
             throws MessagingException {
         authenticationService.sendPasswordResetCode(request.getEmail());
         return ResponseEntity.ok().build();
