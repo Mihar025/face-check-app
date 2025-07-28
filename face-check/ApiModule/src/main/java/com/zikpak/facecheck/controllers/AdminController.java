@@ -9,6 +9,7 @@ import com.zikpak.facecheck.services.ForemanAndAdminFunctional.ForemanAndAdminSe
 import com.zikpak.facecheck.requestsResponses.worker.UpdatePunchInForWorkerResponse;
 import com.zikpak.facecheck.services.adminService.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,7 +26,7 @@ public class AdminController {
     @PostMapping("/worker/{workerId}/punch-in")
     public ResponseEntity<ChangePunchInForWorkerResponse> changePunchInForWorker(
             @PathVariable Integer workerId,
-            @RequestBody ChangePunchInRequest request,
+            @Valid @RequestBody ChangePunchInRequest request,
             Authentication authentication) {
 
         return ResponseEntity.ok(
@@ -40,7 +41,7 @@ public class AdminController {
     @PostMapping("/worker/{workerId}/punch-out")
     public ResponseEntity<ChangePunchOutForWorkerResponse> changePunchOutForWorker(
             @PathVariable Integer workerId,
-            @RequestBody ChangePunchOutRequest request,
+            @Valid @RequestBody ChangePunchOutRequest request,
             Authentication authentication) {
 
         return ResponseEntity.ok(
