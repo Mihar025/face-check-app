@@ -26,61 +26,62 @@ public class Company {
     private Integer id;
 
     @Column(nullable = false)
-    private String companyName;
+    private String companyName = "";
 
     @Column(nullable = false)
-    private String companyAddress;
+    private String companyAddress = "";
 
     @Column(nullable = false)
-    private String companyPhone;
+    private String companyPhone = "";
     @Column(nullable = false)
-    private String companyEmail;
+    private String companyEmail = "";
 
-    private String companyStateIdNumber;
+    private String companyStateIdNumber = "";
 
 
   //  @Column(nullable = false)
-    private String companyCity;
+    private String companyCity = "";
 
   //  @Column(nullable = false)
-    private String companyState;
+    private String companyState = "" ;
 
    // @Column(nullable = false)
-    private String companyZipCode;
+    private String companyZipCode = "";
 
-  //  @Column(nullable = false, unique = true)
-    private String employerEIN;
+    @Column(name = "employer_ein", nullable = false, unique = true)
+    private String employerEIN = "";
 
-    private String specialTwoCharConditionCodeForMTA305;
-
-
-
-
-    private BigDecimal companyIncomePerMonth;
-
-    private BigDecimal costsForEmployeeSalariesPerMonth;
+    @Column(name = "special_two_char_condition_code_for_mta305", nullable = false)
+    private String specialTwoCharConditionCodeForMTA305 = "";
 
 
-    private BigDecimal regularPayPerMonthTotal;
-    private BigDecimal overtimePayPerMonthTotal;
-    private BigDecimal grossPayPerMonthTotal;
-    private BigDecimal totalSpendMoneyPerYear;
 
 
-    private BigDecimal companyInsurance;
-    private BigDecimal socialSecurityTaxForCompany;
-    private BigDecimal federalWithholdingForCompany;
-    private BigDecimal nyStateWithholdingForCompany;
-    private BigDecimal nyLocalWithholdingForCompany;
+    private BigDecimal companyIncomePerMonth = BigDecimal.ZERO;
+
+    private BigDecimal costsForEmployeeSalariesPerMonth = BigDecimal.ZERO;
+
+
+    private BigDecimal regularPayPerMonthTotal = BigDecimal.ZERO;
+    private BigDecimal overtimePayPerMonthTotal= BigDecimal.ZERO;
+    private BigDecimal grossPayPerMonthTotal= BigDecimal.ZERO;
+    private BigDecimal totalSpendMoneyPerYear= BigDecimal.ZERO;
+
+
+    private BigDecimal companyInsurance= BigDecimal.ZERO;
+    private BigDecimal socialSecurityTaxForCompany= BigDecimal.ZERO;
+    private BigDecimal federalWithholdingForCompany= BigDecimal.ZERO;
+    private BigDecimal nyStateWithholdingForCompany= BigDecimal.ZERO;
+    private BigDecimal nyLocalWithholdingForCompany= BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     private CompanyPaymentPosition companyPaymentPosition;
 
-    private BigDecimal irsDepositAmount;
+    private BigDecimal irsDepositAmount = BigDecimal.ZERO;
 
     private LocalDateTime whenDepositAmountWasMade;
 
-    private Integer workersQuantity;
+    private Integer workersQuantity = 0;
 
     private LocalDate firstBiweeklyDate;
 
@@ -99,34 +100,34 @@ public class Company {
 
     /** EMR (Experience Modifier Rate), напр. 1.25 */
     @Column(precision = 4, scale = 2, nullable = true)
-    private BigDecimal emr;
+    private BigDecimal emr = BigDecimal.ZERO;;
 
     @Column(name = "wc_policy_number", length = 50, nullable = true)
     private String wcPolicyNumber;
 
     @Column(name = "wc_insurance_carrier", length = 100, nullable = true)
-    private String wcInsuranceCarrier;
+    private String wcInsuranceCarrier = "";
 
     @Column(nullable = true)
-    private String fundingBankName;
+    private String fundingBankName = "";
 
     @Column(nullable = true)
-    private String fundingRoutingNumber;
+    private String fundingRoutingNumber = "";
 
     @Column(nullable = true)
-    private String fundingAccountNumber;
+    private String fundingAccountNumber = "";
 
     @Column(nullable = true)
-    private String returnMailingAddress;
+    private String returnMailingAddress = "";
 
     @Column(nullable = true)
-    private String defaultMemo;
+    private String defaultMemo = "";
 
     @Column(nullable = true)
-    private String signatureName;
+    private String signatureName = "";
 
     @Column(nullable = true)
-    private String signatureTitle;
+    private String signatureTitle = "";
 
 
     public void addWorkSite(WorkSite workSite) {
