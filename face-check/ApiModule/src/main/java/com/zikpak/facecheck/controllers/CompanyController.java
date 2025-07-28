@@ -8,10 +8,15 @@ import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
 import com.zikpak.facecheck.services.company.CompanyService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -22,12 +27,11 @@ import java.util.List;
 public class CompanyController {
 
     private final CompanyService companyService;
-    private final PayStubService payStubService;
 
 
     @PutMapping("/{companyId}")
     public ResponseEntity<CompanyUpdatingResponse> updateCompany(
-            @RequestBody CompanyUpdatingRequest request,
+            @Valid @RequestBody CompanyUpdatingRequest request,
             @PathVariable Integer companyId,
             Authentication authentication) {
         return ResponseEntity.ok(companyService.updateCompany(request, companyId, authentication));
@@ -37,7 +41,7 @@ public class CompanyController {
     //working
     @PutMapping("/{companyId}/income")
     public ResponseEntity<CompanyIncomePerMonthResponse> setCompanyIncomePerMonth(
-            @RequestBody CompanyIncomePerMonthRequest request,
+            @Valid @RequestBody CompanyIncomePerMonthRequest request,
             @PathVariable Integer companyId,
             Authentication authentication) {
         return ResponseEntity.ok(companyService.setCompanyIncomePerMonth(request, companyId, authentication));
@@ -85,7 +89,10 @@ public class CompanyController {
             @PathVariable Integer companyId,
             @PathVariable Integer employeeId,
             Authentication authentication) {
-        return ResponseEntity.ok(companyService.findTheLatestEmployeeBaseHourRate(companyId, employeeId, authentication));
+        return ResponseEntity.ok(companyService.findTheLatestEmployeeBaseHourRate(
+                companyId,
+                employeeId,
+                authentication));
     }
 
     //working
@@ -93,7 +100,7 @@ public class CompanyController {
     public ResponseEntity<EmployeeSalaryResponse> updateEmployeeRate(
             @PathVariable Integer companyId,
             @PathVariable Integer employeeId,
-            @RequestBody EmployeeRaiseHourRateRequest request,
+            @Valid @RequestBody EmployeeRaiseHourRateRequest request,
             Authentication authentication) {
         return ResponseEntity.ok(companyService.changeEmployeeBaseHourRate(companyId, employeeId, authentication, request));
     }
@@ -211,9 +218,10 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.companyEmail(authentication));
     }
 
+
     @PutMapping("/update-name")
     public ResponseEntity<Void> updateCompanyName(
-            @RequestBody String name,
+            @Valid @RequestBody String name,
             Authentication authentication) {
         companyService.updateCompanyName(name, authentication);
         return ResponseEntity.ok().build();
@@ -221,7 +229,7 @@ public class CompanyController {
 
     @PutMapping("/update-address")
     public ResponseEntity<Void> updateCompanyAddress(
-            @RequestBody String address,
+            @Valid @RequestBody String address,
             Authentication authentication) {
         companyService.updateCompanyAddress(address, authentication);
         return ResponseEntity.ok().build();
@@ -229,7 +237,7 @@ public class CompanyController {
 
     @PutMapping("/update-phone")
     public ResponseEntity<Void> updateCompanyPhone(
-            @RequestBody String phoneNumber,
+            @Valid @RequestBody String phoneNumber,
             Authentication authentication) {
         companyService.updateCompanyPhoneNumber(phoneNumber, authentication);
         return ResponseEntity.ok().build();
@@ -237,7 +245,7 @@ public class CompanyController {
 
     @PutMapping("/update-email")
     public ResponseEntity<Void> updateCompanyEmail(
-            @RequestBody String email,
+            @Valid @RequestBody String email,
             Authentication authentication) {
         companyService.updateCompanyEmail(email, authentication);
         return ResponseEntity.ok().build();
