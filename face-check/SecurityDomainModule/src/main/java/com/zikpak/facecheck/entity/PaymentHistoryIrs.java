@@ -25,7 +25,7 @@ public class PaymentHistoryIrs {
     @ManyToOne
     private Company company;
 
-    private BigDecimal amount;
+    private BigDecimal amount  = BigDecimal.ZERO;;
 
     private LocalDate paymentDate;
 
@@ -33,13 +33,13 @@ public class PaymentHistoryIrs {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    private Integer quarter;
+    private Integer quarter = 0;
 
-    private Integer year;
+    private Integer year = 0;
 
     @Enumerated(EnumType.STRING)
     private PaymentType paymentTypeEnum;
 
-    private String notes;
+    private String notes = "";
 
 }
