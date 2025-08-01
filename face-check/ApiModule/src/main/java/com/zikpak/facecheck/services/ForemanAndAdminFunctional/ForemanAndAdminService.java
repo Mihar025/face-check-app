@@ -76,7 +76,9 @@ public class ForemanAndAdminService implements AdminAndForemanFunctionality {
         );
     }
     @Transactional(rollbackOn = Exception.class)
-    public UpdatePunchInForWorkerResponse updateLatestPunchInForWorkerResponse(Authentication authentication, Integer workerId, LocalDateTime newPunchInTime) {
+    public UpdatePunchInForWorkerResponse updateLatestPunchInForWorkerResponse(Authentication authentication,
+                                                                               Integer workerId,
+                                                                               LocalDateTime newPunchInTime) {
         User user = ((User) authentication.getPrincipal());
 
         if (!user.getRoles().stream()
