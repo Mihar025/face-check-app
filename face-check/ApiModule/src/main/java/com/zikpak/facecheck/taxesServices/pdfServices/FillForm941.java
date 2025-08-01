@@ -18,6 +18,7 @@ import com.zikpak.facecheck.taxesServices.services.PaymentHistoryService;
 import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -61,12 +62,13 @@ public class FillForm941 {
             var company = companyRepository.findById(companyId)
                     .orElseThrow(() -> new EntityNotFoundException("Company Not Found"));
 
-
+/*
             System.out.println("==== Список полей формы ====");
             for (String fieldName : fields.keySet()) {
                 System.out.println(fieldName);
             }
 
+ */
 
             String ein1 = company.getEmployerEIN();
             String einParts1[] = ein1.split("-");
@@ -515,7 +517,7 @@ IRS требует, чтобы вы вёлись систематические 
     }
 
     // Правильный подсчет для Line 1
-    private int getEmployeeCountForLine1(Integer companyId, int year, int quarter) {
+    public int getEmployeeCountForLine1(Integer companyId, int year, int quarter) {
         // Определяем месяцы квартала
         int startMonth = (quarter - 1) * 3 + 1;
         Set<Integer> uniqueEmployees = new HashSet<>();
@@ -555,7 +557,7 @@ IRS требует, чтобы вы вёлись систематические 
         }
     }
 
-    private String spacedDigits(String value) {
+    public String spacedDigits(String value) {
         return value.chars()
                 .mapToObj(c -> (char) c + "        ") // 7 пробелов
                 .collect(Collectors.joining());
@@ -594,7 +596,7 @@ IRS требует, чтобы вы вёлись систематические 
 
 
 
-    private String[] splitAmount(BigDecimal amount) {
+    public  String[] splitAmount(BigDecimal amount) {
         if (amount == null) amount = BigDecimal.ZERO;
         BigDecimal scaled = amount.setScale(2, RoundingMode.HALF_UP);
         String[] parts = scaled.toPlainString().split("\\.");

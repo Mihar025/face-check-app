@@ -287,15 +287,11 @@ public class EmployerTaxScheduler {
 
         log.info("📄 W2FormScheduler запущен: генерируем W-2 за {} всем работникам", targetYear);
 
-        // Получаем всех пользователей, у которых есть компания (т.е. они работники)
         List<User> workers = userRepository.findAll().stream()
                 .filter(user -> user.getCompany() != null)
                 .filter(user -> !user.isBusinessOwner()) // исключаем владельцев бизнеса
                 .toList();
 
-        // ИЛИ можно создать специальный метод в репозитории:
-        // @Query("SELECT u FROM User u WHERE u.company IS NOT NULL AND u.isBusinessOwner = false")
-        // List<User> findAllWorkers();
 
         // Группируем по компаниям для отправки уведомлений
         Map<Company, List<User>> workersByCompany = new HashMap<>();
