@@ -29,13 +29,15 @@ import com.zikpak.facecheck.taxesServices.customReportsForCompanys.sutaCustomTax
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryDataService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryPdfService;
 import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryReportDTO;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.yearToDateReportTaxes.YearToDateCustomReportPdf;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.yearToDateReportTaxes.YearToDateCustomReportService;
+import com.zikpak.facecheck.taxesServices.customReportsForCompanys.yearToDateReportTaxes.YearToDateDTO;
 import com.zikpak.facecheck.taxesServices.efiles.csvReports.*;
 import com.zikpak.facecheck.taxesServices.efiles.xml.Form940ScheduleAXmlGenerator;
 import com.zikpak.facecheck.taxesServices.efiles.xml.Form940XmlGenerator;
 import com.zikpak.facecheck.taxesServices.efiles.xml.Form941ScheduleBXmlGenerator;
 import com.zikpak.facecheck.taxesServices.efiles.xml.Form941XmlGenerator;
-import com.zikpak.facecheck.taxesServices.pdfServices.FillForm940SA;
-import com.zikpak.facecheck.taxesServices.pdfServices.Form940PdfGeneratorService;
+import com.zikpak.facecheck.taxesServices.pdfServices.*;
 import com.zikpak.facecheck.taxesServices.scheduler.EmployerTaxScheduler;
 import com.zikpak.facecheck.taxesServices.services.EmployerTaxService;
 import com.zikpak.facecheck.taxesServices.services.PayStubService;
@@ -63,7 +65,6 @@ public class PayrollTestDataGenerator {
     private final UserTestServiceData userTestServiceData;
     private final WorkSiteTestService workSiteTestService;
     private final WorkAttendanceService workAttendanceService;
-    private final EmployerTaxScheduler employerTaxScheduler;
     private final EmployerTaxService employerTaxService;
 
     private final UserRepository userRepository;
@@ -72,19 +73,26 @@ public class PayrollTestDataGenerator {
     private final WorkerAttendanceRepository attendanceRepository;
     private final WorkerPayrollRepository payrollRepository;
     private final WorkerScheduleRepository scheduleRepository;
-    private final RoleRepository roleRepository;
 
-    // Основные сервисы
     private final PayStubService payStubService;
     private final WorkerPayRollService workerPayRollService;
 
-    // Отчетные сервисы
+
     private final PayrollSummaryDataService payrollSummaryDataService;
     private final PayrollSummaryReportService payrollSummaryReportService;
     private final HoursReportDataService hoursReportDataService;
     private final HoursReportPdfService hoursReportPdfService;
     private final TaxSummaryDataService taxSummaryDataService;
     private final TaxSummaryPdfService taxSummaryPdfService;
+    private final FutaReportService futaReportService;
+    private final FutaReportPdfService futaReportPdfService;
+    private final SutaReportService sutaReportService;
+    private final SutaReportPdfService sutaReportPdfService;
+
+    private final YearToDateCustomReportService yearToDateCustomReportService;
+    private final YearToDateCustomReportPdf yearToDateCustomReportPdf;
+
+
 
     // CSV сервисы
     private final HoursReportCsvService hoursReportCsvService;
@@ -95,17 +103,19 @@ public class PayrollTestDataGenerator {
     private final Form941XmlGenerator form941XmlGenerator;
     private final Form941ScheduleBXmlGenerator form941ScheduleBXmlGenerator;
     private final EFW2GeneratorService efw2GeneratorService;
-    private final Form940PdfGeneratorService form940PdfGeneratorService;
-    private final FillForm940SA fillForm940SA;
     private final Form940XmlGenerator form940XmlGenerator;
     private final Form940ScheduleAXmlGenerator form940ScheduleAXmlGenerator;
 
-    // FUTA/SUTA сервисы
-    private final FutaReportService futaReportService;
-    private final FutaReportPdfService futaReportPdfService;
-    private final SutaReportService sutaReportService;
-    private final SutaReportPdfService sutaReportPdfService;
-
+    // PDF генераторы
+    private final W2OfficialPDFService w2OfficialPDFService;
+    private final W3OfficialPDFServicer w3OfficialPDFServicer;
+    private final FillFormW4 fillFormW4;
+    private final FillFormI9 fillFormI9;
+    private final FillFormMTA305 fillFormMTA305;
+    private final FillForm941 fillForm941;
+    private final FillForm941ScheduleB fillForm941ScheduleB;
+    private final Form940PdfGeneratorService form940PdfGeneratorService;
+    private final FillForm940SA fillForm940SA;
     private final WcRiskServiceForPDF wcReportPdfGeneratorService;
 
 
@@ -212,8 +222,7 @@ public class PayrollTestDataGenerator {
 
         log.info("✅ Базовые данные созданы: 2 компании, 2 админа, 10 работников, 2 площадки");
     }
-
-    // ==================== ШАГ 2: СВЯЗЫВАНИЕ ====================
+        // ==================== ШАГ 2: СВЯЗЫВАНИЕ ====================
     private void linkWorkersToWorkSites() {
         List<WorkSite> allWorkSites = workSiteRepository.findAll();
         List<User> allWorkers = userRepository.findAll().stream()
@@ -591,12 +600,29 @@ public class PayrollTestDataGenerator {
                         sutaReportPdfService.generateSutaReportPdf(sutaData);
                     }
 
+
+                    YearToDateDTO yearToDateData = yearToDateCustomReportService.yearToDateReport(company.getId(), quarterStart, quarterEnd);
+                    yearToDateCustomReportPdf.generatePdf(yearToDateData);
+
+
                     // Form 941 XML (если есть админ)
                     User admin = findCompanyAdmin(company.getId());
                     if (admin != null) {
                         form941XmlGenerator.generateForm941Xml(admin.getId(), company.getId(), YEAR, quarter);
                         form941ScheduleBXmlGenerator.generateForm941ScheduleBXml(admin.getId(), company.getId(), YEAR, quarter);
                     }
+
+                    fillFormMTA305.generateFilledPdf(company.getId(), quarter, YEAR);
+                    log.info("MTA 305 Official Generated!");
+                    fillForm941.generateFilledPdf(company.getCompanyOwner().getId(), company.getId(), YEAR, quarter);
+                    log.info("941 Official Generated!");
+                    fillForm941ScheduleB.generateFilledPdf(company.getCompanyOwner().getId(), company.getId(), YEAR, quarter);
+                    log.info("941 SCHEWDULE B Official Generated!");
+
+
+
+
+
 
                 } catch (Exception e) {
                     log.error("Ошибка квартальных отчетов для компании {} за Q{}",
@@ -639,9 +665,23 @@ public class PayrollTestDataGenerator {
                         form940ScheduleAXmlGenerator.generateForm940ScheduleAXml(admin.getId(), company.getId(), YEAR);
                     }
                 }
+                List<User> users  = userRepository.findAllByCompanyId(company.getId());
 
+                for(User user : users){
+                    w2OfficialPDFService.generateFilledPdf(user.getId(), company.getId(), YEAR);
+                    log.info("W2 Official Generated!");
+                    fillFormW4.generateW4Pdf(user.getId(), company.getId());
+                    log.info("W4 Official Generated!");
+                    fillFormI9.generateFilledPdf(user.getId(), company.getId());
+                    log.info("I9 Official Generated!");
+
+                }
+                //W3
+                w3OfficialPDFServicer.generateFilledPdf(company.getId(), YEAR);
+                log.info("W3 Official Generated!");
                 // EFW2
                 efw2GeneratorService.generateEfw2File(company.getId(), YEAR);
+
 
                 log.info("✅ Годовые отчеты созданы для компании: {}", company.getCompanyName());
 
@@ -651,6 +691,15 @@ public class PayrollTestDataGenerator {
         }
 
         log.info("✅ Все годовые отчеты сгенерированы");
+    }
+
+    private boolean isDataAlreadyGenerated() {
+        // Проверяем по нескольким критериям
+        boolean hasCompanies = companyRepository.count() > 0;
+        boolean hasPayrolls = payrollRepository.count() > 0;
+        boolean hasAttendance = attendanceRepository.count() > 0;
+
+        return hasCompanies || hasPayrolls || hasAttendance;
     }
 
 }
