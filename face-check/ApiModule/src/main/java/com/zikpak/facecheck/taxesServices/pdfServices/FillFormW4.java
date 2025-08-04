@@ -9,6 +9,8 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.zikpak.facecheck.entity.Dependents;
+import com.zikpak.facecheck.entity.W4.FilingStatus;
+import com.zikpak.facecheck.entity.W4.PayFrequency;
 import com.zikpak.facecheck.metrics.MetricsForPdfServices;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.DependentRepository;
@@ -19,6 +21,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -50,7 +53,7 @@ public class FillFormW4 {
 
         Timer.Sample timer = metricsForPdfServices.startTimer();
         try {
-            InputStream src = getClass().getResourceAsStream("assets/forms/fw4.pdf");
+            InputStream src = getClass().getResourceAsStream("/assets/forms/fw4.pdf");
             PdfReader reader = new PdfReader(src);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(baos);
@@ -77,30 +80,50 @@ public class FillFormW4 {
             //  fill(fields, "topmostSubform[0]", "1");
             //   fill(fields, "topmostSubform[0].Page1[0]","2" );
             //    fill(fields, "topmostSubform[0].Page1[0].Step1a[0]", "3" );
+
+
+            String firstName = foundedWorker.getFirstName() != null ? foundedWorker.getFirstName() : "";
             if (foundedWorker.getMiddleInitial() == null) {
-                fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_01[0]", foundedWorker.getFirstName());
-            } else if (foundedWorker.getMiddleInitial() != null) {
-                fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_01[0]", foundedWorker.getFirstName() + " " + foundedWorker.getMiddleInitial());
+                fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_01[0]", firstName);
             } else {
-                throw new RuntimeException("Fields are empty contact with Facecheck Corporation!!");
+                fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_01[0]", firstName + " " + foundedWorker.getMiddleInitial());
             }
 
-            fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_02[0]", foundedWorker.getLastName());
-            fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_03[0]", foundedWorker.getHomeAddress());
-            fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_04[0]", foundedWorker.getCity() + " " + foundedWorker.getState() + " " + foundedWorker.getZipcode());
-            fill(fields, "topmostSubform[0].Page1[0].f1_05[0]", foundedWorker.getSSN_WORKER());
+
+            String lastName = foundedWorker.getLastName() != null ? foundedWorker.getLastName() : "";
+                fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_02[0]", lastName);
+
+            if(foundedWorker.getHomeAddress() != null && !foundedWorker.getHomeAddress().isEmpty()) {
+                fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_03[0]", foundedWorker.getHomeAddress());
+            }
+
+            String city = foundedWorker.getCity() != null ? foundedWorker.getCity() : "";
+            String state = foundedWorker.getState() != null ? foundedWorker.getState() : "";
+            String zipcode = foundedWorker.getZipcode() != null ? foundedWorker.getZipcode() : "";
+            String address = (city + " " + state + " " + zipcode).trim();
+            if(!address.isEmpty()) {
+                fill(fields, "topmostSubform[0].Page1[0].Step1a[0].f1_04[0]", address);
+            }
+
+                if(foundedWorker.getSSN_WORKER() != null && !foundedWorker.getSSN_WORKER().isBlank()) {
+                    fill(fields, "topmostSubform[0].Page1[0].f1_05[0]", foundedWorker.getSSN_WORKER());
+                }
             //Page 1 Three checkboxes!
             fill(fields, "topmostSubform[0].Page1[0].c1_1[0]", "Off"); // Single or Married filling separately
             fill(fields, "topmostSubform[0].Page1[0].c1_1[1]", "Off"); // Married filling jointly
             fill(fields, "topmostSubform[0].Page1[0].c1_1[2]", "Off"); // Head of house hold;!
 
             String exportValue = "On";
-            switch (foundedWorker.getFilingStatus()) {
-                case SINGLE, MARRIED_FILLING_SEPARATELY ->
-                        fill(fields, "topmostSubform[0].Page1[0].c1_1[0]", exportValue);
-                case MARRIED_FILLING_JOINTLY -> fill(fields, "topmostSubform[0].Page1[0].c1_1[1]", exportValue);
-                case HEAD_OF_HOUSEHOLD -> fill(fields, "topmostSubform[0].Page1[0].c1_1[2]", exportValue);
-            }
+            FilingStatus status = Optional.ofNullable(foundedWorker.getFilingStatus())
+                    .orElse(SINGLE);
+
+                switch (status) {
+                    case SINGLE, MARRIED_FILLING_SEPARATELY ->
+                            fill(fields, "topmostSubform[0].Page1[0].c1_1[0]", exportValue);
+                    case MARRIED_FILLING_JOINTLY -> fill(fields, "topmostSubform[0].Page1[0].c1_1[1]", exportValue);
+                    case HEAD_OF_HOUSEHOLD -> fill(fields, "topmostSubform[0].Page1[0].c1_1[2]", exportValue);
+                }
+
 
 
             // --- ШАГ 2: Multiple Jobs or Spouse Works ---
@@ -119,16 +142,22 @@ public class FillFormW4 {
 
 // --- ШАГ 3: Claim Dependent and Other Credits ---
 // (дети <17 по $2 000, прочие по $500)
-            BigDecimal childCredit = deps.stream()
-                    .filter(d -> Period.between(d.getBirthDate(), LocalDate.now()).getYears() < 17)
-                    .map(d -> new BigDecimal("2000"))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal childCredit = BigDecimal.ZERO;
+            BigDecimal otherCredit = BigDecimal.ZERO;
 
-            BigDecimal otherCredit = deps.stream()
-                    .filter(d -> Period.between(d.getBirthDate(), LocalDate.now()).getYears() >= 17)
-                    .map(d -> new BigDecimal("500"))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (deps != null && !deps.isEmpty()) {
+                childCredit = deps.stream()
+                        .filter(d -> d != null && d.getBirthDate() != null)  // защита от null
+                        .filter(d -> Period.between(d.getBirthDate(), LocalDate.now()).getYears() < 17)
+                        .map(d -> new BigDecimal("2000"))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                otherCredit = deps.stream()
+                        .filter(d -> d != null && d.getBirthDate() != null)  // защита от null
+                        .filter(d -> Period.between(d.getBirthDate(), LocalDate.now()).getYears() >= 17)
+                        .map(d -> new BigDecimal("500"))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+            }
             fill(fields, "topmostSubform[0].Page1[0].f1_06[0]", childCredit.toString());     // Step 3: qualifying children
             fill(fields, "topmostSubform[0].Page1[0].f1_07[0]", otherCredit.toString());     // Step 3: other dependents
             fill(fields, "topmostSubform[0].Page1[0].f1_09[0]",
@@ -149,17 +178,20 @@ public class FillFormW4 {
 // либо просто user.getExtraWithHoldings() (если вы хотите принудительно доп. удерживать)
             BigDecimal extra = Optional.ofNullable(foundedWorker.getMultipleJobsAdditionalWithholding())
                     .filter(mw -> !foundedWorker.getTwoJobsCheckBox())
-                    .orElse(foundedWorker.getExtraWithHoldings());
+                    .orElse(Optional.ofNullable(foundedWorker.getExtraWithHoldings()).orElse(BigDecimal.ZERO));
             fill(fields, "topmostSubform[0].Page1[0].f1_12[0]", extra.toString());
 
+            String companyName = foundedCompany.getCompanyName() != null ? foundedCompany.getCompanyName() : "";
+            String companyAddr = foundedCompany.getCompanyAddress() != null ? foundedCompany.getCompanyAddress() : "";
+            String companyInfo = companyName + "  " + companyAddr + " " + city + " " + state + " " + zipcode;
+            fill(fields, "topmostSubform[0].Page1[0].f1_13[0]", companyInfo);
 
-            fill(fields, "topmostSubform[0].Page1[0].f1_13[0]", foundedCompany.getCompanyName() + "  " +
-                    foundedCompany.getCompanyAddress() + " " + foundedWorker.getCity()
-                    + " " + foundedWorker.getState() + " " + foundedWorker.getZipcode());
 
+            String date = foundedWorker.getCreatedDate() != null ? foundedWorker.getCreatedDate().format(DATE_FMT) : "";
+            fill(fields, "topmostSubform[0].Page1[0].f1_14[0]", date);
 
-            fill(fields, "topmostSubform[0].Page1[0].f1_14[0]", foundedWorker.getCreatedDate().format(DATE_FMT));
-            fill(fields, "topmostSubform[0].Page1[0].f1_15[0]", foundedCompany.getEmployerEIN());
+            String EIN = foundedCompany.getEmployerEIN() != null ? foundedCompany.getEmployerEIN() : "";
+            fill(fields, "topmostSubform[0].Page1[0].f1_15[0]", EIN);
 
 
 // === Page 3: Multiple-Jobs Worksheet ===
@@ -184,11 +216,14 @@ public class FillFormW4 {
             fill(fields, "topmostSubform[0].Page3[0].f3_04[0]", sum2c.toString());
 
 // Line 3: количество выплат в году
-            int payPeriods = switch (foundedWorker.getPayFrequency()) {
+            PayFrequency payFreq = Optional.ofNullable(foundedWorker.getPayFrequency()).orElse(PayFrequency.WEEKLY);
+
+            int payPeriods = switch (payFreq) {
                 case WEEKLY -> 52;
                 case BIWEEKLY -> 26;
                 case MONTHLY -> 12;
             };
+
             fill(fields, "topmostSubform[0].Page3[0].f3_05[0]", String.valueOf(payPeriods));
 
 // Line 4: делим Line 1 (или 2c) на payPeriods
@@ -235,10 +270,10 @@ public class FillFormW4 {
 
             byte[] pdfBytes = baos.toByteArray();
 
-            String companyKeyPart = foundedCompany.getCompanyName()
+            String companyKeyPart = companyName
                     .trim()
                     .replaceAll("[^A-Za-z0-9]", "_");
-            String workerKeyPart = (foundedWorker.getFirstName() + "_" + foundedWorker.getLastName())
+            String workerKeyPart = (firstName + "_" + lastName )
                     .trim()
                     .replaceAll("[^A-Za-z0-9_]", "");
 
