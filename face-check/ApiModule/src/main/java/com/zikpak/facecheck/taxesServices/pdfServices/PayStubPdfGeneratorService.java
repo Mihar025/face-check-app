@@ -2,12 +2,13 @@ package com.zikpak.facecheck.taxesServices.pdfServices;
 
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
-import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.border.Border;
+import com.itextpdf.layout.border.SolidBorder;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
@@ -39,13 +40,15 @@ import static com.itextpdf.io.font.FontConstants.HELVETICA_BOLD;
 public class PayStubPdfGeneratorService {
     private final WorkerPayRollService workerPayRollService;
     private final MetricsForPdfServices metric;
+
     public byte[] generatePayStubPdf(PayStubDTO stub) {
         final String FORM = "Paystubs";
         metric.recordRequest(FORM);
 
         Timer.Sample timer = metric.startTimer();
         long ms1 = System.currentTimeMillis();
-        var yearToDateData = workerPayRollService.findAllYearToDateForWorker(stub.getWorkerId(), stub.getCompanyId(), stub.getYear());
+        var yearToDateData = workerPayRollService.findAllYearToDateForWorker(
+                stub.getWorkerId(), stub.getCompanyId(), stub.getYear());
         long end1 = System.currentTimeMillis() - ms1;
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -53,87 +56,107 @@ public class PayStubPdfGeneratorService {
             PdfDocument pdfDoc = new PdfDocument(writer);
             Document document = new Document(pdfDoc);
 
-            document.setMargins(25, 25, 35, 25);
+            // Компактные margins для экономии бумаги
+            document.setMargins(20, 20, 20, 20);
 
             PdfFont regularFont = PdfFontFactory.createFont(HELVETICA);
             PdfFont boldFont = PdfFontFactory.createFont(HELVETICA_BOLD);
 
-            // 0. "Powered by Facecheck" сверху
-            document.add(new Paragraph("Powered by Facecheck")
-                    .setFont(regularFont)
-                    .setFontSize(8)
-                    .setItalic()
-                    .setTextAlignment(TextAlignment.RIGHT)
-                    .setMarginBottom(10));
-
-            // 1. Header: логотип + две колонки (сотрудник / компания)
-            Table headerTable = new Table(UnitValue.createPercentArray(new float[]{1, 2, 2}))
+            // Header с логотипом и "Powered by"
+            Table headerTable = new Table(UnitValue.createPercentArray(new float[]{1, 4}))
                     .useAllAvailableWidth()
-                    .setMarginBottom(10);
+                    .setMarginBottom(8);
 
-            document.add(new Paragraph(String.format("Pay Period: %s to %s",
-                    stub.getPeriodStart().toString(),
-                    stub.getPeriodEnd().toString()))
-                    .setFont(boldFont)
-                    .setFontSize(10)
-                    .setMarginBottom(12)
-            );
-
-         //   String logoPath = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/logo.jpg";
-      //     ImageData logoData = ImageDataFactory.create(logoPath);
+            // Логотип
             InputStream logoStream = getClass().getResourceAsStream("/assets/logo.jpg");
             ImageData logoData = ImageDataFactory.create(logoStream.readAllBytes());
-
             Cell logoCell = new Cell()
-                    .add(new com.itextpdf.layout.element.Image(logoData).scaleToFit(60, 60))
-                    .setBorder(null);
+                    .add(new com.itextpdf.layout.element.Image(logoData).scaleToFit(40, 40))
+                    .setBorder(Border.NO_BORDER);
             headerTable.addCell(logoCell);
 
-            Cell employeeCell = new Cell().setBorder(null);
-            employeeCell.add(new Paragraph(stub.getEmployeeName()).setFont(boldFont).setFontSize(11));
-            employeeCell.add(new Paragraph("SSN: " + stub.getEmployeeSsn()).setFont(regularFont).setFontSize(9));
-            employeeCell.add(new Paragraph("Address: "
-                    + stub.getEmployeeAddress() + ", "
-                    + stub.getEmployeeCity() + ", "
-                    + stub.getEmployeeState() + " "
-                    + stub.getEmployeeZipCode())
-                    .setFont(regularFont).setFontSize(9));
-            employeeCell.add(new Paragraph("Phone: " + stub.getEmployeePhoneNumber())
-                    .setFont(regularFont).setFontSize(9));
-            headerTable.addCell(employeeCell);
-
-            Cell companyCell = new Cell().setBorder(null);
-            companyCell.add(new Paragraph(stub.getCompanyName()).setFont(boldFont).setFontSize(11));
-            companyCell.add(new Paragraph("Address: "
-                    + stub.getEmployerAddress() + ", "
-                    + stub.getCompanyCity() + ", "
-                    + stub.getCompanyState() + " "
-                    + stub.getCompanyZipCode())
-                    .setFont(regularFont).setFontSize(9));
-            companyCell.add(new Paragraph("Phone: " + stub.getCompanyPhoneNumber())
-                    .setFont(regularFont).setFontSize(9));
-            headerTable.addCell(companyCell);
+            // Powered by Facecheck
+            Cell poweredByCell = new Cell()
+                    .add(new Paragraph("Powered by Facecheck")
+                            .setFont(regularFont)
+                            .setFontSize(7)
+                            .setTextAlignment(TextAlignment.RIGHT))
+                    .setBorder(Border.NO_BORDER);
+            headerTable.addCell(poweredByCell);
 
             document.add(headerTable);
 
-            // 2. Таблица рабочих дней
+            // EARNINGS STATEMENT заголовок
+            document.add(new Paragraph("EARNINGS STATEMENT")
+                    .setFont(boldFont)
+                    .setFontSize(10)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(8));
+
+            // Информация о компании и сотруднике в две колонки
+            Table infoTable = new Table(UnitValue.createPercentArray(new float[]{1, 1}))
+                    .useAllAvailableWidth()
+                    .setMarginBottom(8);
+
+            // Левая колонка - Employer
+            Cell employerCell = new Cell().setBorder(Border.NO_BORDER);
+            employerCell.add(new Paragraph("EMPLOYER").setFont(boldFont).setFontSize(8).setMarginBottom(2));
+            employerCell.add(new Paragraph(stub.getCompanyName()).setFont(regularFont).setFontSize(8));
+            employerCell.add(new Paragraph(stub.getEmployerAddress()).setFont(regularFont).setFontSize(8));
+            employerCell.add(new Paragraph(stub.getCompanyCity() + ", " + stub.getCompanyState() + " " + stub.getCompanyZipCode())
+                    .setFont(regularFont).setFontSize(8));
+            employerCell.add(new Paragraph("Tel: " + stub.getCompanyPhoneNumber()).setFont(regularFont).setFontSize(8));
+            infoTable.addCell(employerCell);
+
+            // Правая колонка - Employee
+            Cell employeeCell = new Cell().setBorder(Border.NO_BORDER);
+            employeeCell.add(new Paragraph("EMPLOYEE").setFont(boldFont).setFontSize(8).setMarginBottom(2));
+            employeeCell.add(new Paragraph(stub.getEmployeeName()).setFont(regularFont).setFontSize(8));
+            employeeCell.add(new Paragraph("SSN: XXX-XX-" + stub.getEmployeeSsn().substring(stub.getEmployeeSsn().length() - 4))
+                    .setFont(regularFont).setFontSize(8));
+            employeeCell.add(new Paragraph(stub.getEmployeeAddress()).setFont(regularFont).setFontSize(8));
+            employeeCell.add(new Paragraph(stub.getEmployeeCity() + ", " + stub.getEmployeeState() + " " + stub.getEmployeeZipCode())
+                    .setFont(regularFont).setFontSize(8));
+            infoTable.addCell(employeeCell);
+
+            document.add(infoTable);
+
+            // Pay Period информация
+            document.add(new Paragraph("Pay Period: " + stub.getPeriodStart() + " to " + stub.getPeriodEnd())
+                    .setFont(boldFont)
+                    .setFontSize(8)
+                    .setMarginBottom(6));
+
+            // Тонкая линия-разделитель
+            addSeparatorLine(document);
+
+            // EARNINGS секция
+            document.add(new Paragraph("EARNINGS")
+                    .setFont(boldFont)
+                    .setFontSize(8)
+                    .setMarginTop(6)
+                    .setMarginBottom(4));
+
+            // Таблица рабочих дней - очень компактная
             Map<LocalDate, BigDecimal> hoursWorkedMap = stub.getHoursWorkedPerDate();
             Map<LocalDate, BigDecimal> grossPayMap = stub.getGrossPayPerDate();
             Map<LocalDate, DayOfWeek> dateToDayOfWeek = stub.getDateToDayOfWeek();
 
-
             if (hoursWorkedMap != null && grossPayMap != null) {
-                Table daysTable = new Table(UnitValue.createPercentArray(new float[]{1, 1, 1, 1, 1}))
+                Table earningsTable = new Table(UnitValue.createPercentArray(new float[]{1.5f, 1, 1, 1, 1}))
                         .useAllAvailableWidth()
-                        .setMarginBottom(12);
+                        .setMarginBottom(6);
 
-                daysTable.addHeaderCell(createHeaderCell("Day", 9));
-                daysTable.addHeaderCell(createHeaderCell("Date", 9));
-                daysTable.addHeaderCell(createHeaderCell("Hours", 9));
-                daysTable.addHeaderCell(createHeaderCell("Rate", 9));
-                daysTable.addHeaderCell(createHeaderCell("Gross", 9));
+                // Заголовки таблицы
+                earningsTable.addCell(createSimpleCell("Date", boldFont, 7, true));
+                earningsTable.addCell(createSimpleCell("Day", boldFont, 7, true));
+                earningsTable.addCell(createSimpleCell("Hours", boldFont, 7, true));
+                earningsTable.addCell(createSimpleCell("Rate", boldFont, 7, true));
+                earningsTable.addCell(createSimpleCell(" ", boldFont, 7, true));
 
-                // Проходим по отсортированным датам (TreeMap гарантирует порядок)
+                BigDecimal totalHours = BigDecimal.ZERO;
+                BigDecimal totalGross = BigDecimal.ZERO;
+
                 for (Map.Entry<LocalDate, BigDecimal> entry : hoursWorkedMap.entrySet()) {
                     LocalDate date = entry.getKey();
                     BigDecimal hoursWorked = entry.getValue();
@@ -142,289 +165,203 @@ public class PayStubPdfGeneratorService {
                         BigDecimal grossPay = grossPayMap.getOrDefault(date, BigDecimal.ZERO);
                         DayOfWeek dayOfWeek = dateToDayOfWeek.get(date);
 
-                        daysTable.addCell(createValueCell(
+                        earningsTable.addCell(createSimpleCell(date.toString(), regularFont, 7, false));
+                        earningsTable.addCell(createSimpleCell(
                                 dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
-                                regularFont, 9));
-                        daysTable.addCell(createValueCell(date.toString(), regularFont, 9));
-                        daysTable.addCell(createValueCell(hoursWorked.toString(), regularFont, 9));
-                        daysTable.addCell(createValueCell("$" + stub.getBaseHourlyRate(), regularFont, 9));
-                        daysTable.addCell(createValueCell("$" + grossPay.toString(), regularFont, 9));
+                                regularFont, 7, false));
+                        earningsTable.addCell(createSimpleCell(hoursWorked.toString(), regularFont, 7, false));
+                        earningsTable.addCell(createSimpleCell("$" + stub.getBaseHourlyRate(), regularFont, 7, false));
+                        earningsTable.addCell(createSimpleCell("$" + grossPay.toString(), regularFont, 7, false));
+
+                        totalHours = totalHours.add(hoursWorked);
+                        totalGross = totalGross.add(grossPay);
                     }
                 }
-                document.add(daysTable);
+
+                // Итоговая строка
+                earningsTable.addCell(createSimpleCell("TOTAL", boldFont, 7, true));
+                earningsTable.addCell(createSimpleCell("", regularFont, 7, false));
+                earningsTable.addCell(createSimpleCell(totalHours.toString(), boldFont, 7, true));
+                earningsTable.addCell(createSimpleCell("", regularFont, 7, false));
+                earningsTable.addCell(createSimpleCell("$" + totalGross.toString(), boldFont, 7, true));
+
+                document.add(earningsTable);
             }
 
+            // Линия-разделитель
+            addSeparatorLine(document);
 
-
-            // 3. Секция Insurance (если включено)
-            if (Boolean.TRUE.equals(stub.getUserActivatedInsurance())) {
-                Table insTable = new Table(UnitValue.createPercentArray(new float[]{3, 1}))
-                        .useAllAvailableWidth()
-                        .setMarginBottom(12);
-
-                Cell insHeader = new Cell(1, 2)
-                        .add(new Paragraph("INSURANCE DEDUCTIONS").setFont(boldFont).setFontSize(11))
-                        .setBackgroundColor(new com.itextpdf.kernel.color.DeviceRgb(240, 240, 240))
-                        .setTextAlignment(TextAlignment.CENTER)
-                        .setPadding(4);
-                insTable.addCell(insHeader);
-
-                insTable.addCell(createCompactCell("Insurance Deduction per Period:", boldFont, 9));
-                insTable.addCell(createCompactCell("$" + stub.getHealthInsuranceChargePeriod(), regularFont, 9));
-
-
-
-                document.add(insTable);
-            }
-
-            // 4. Итоговый блок TOTAL GROSS / TOTAL NET
-            Table highlightedTable = new Table(UnitValue.createPercentArray(new float[]{1, 1}))
-                    .useAllAvailableWidth()
-                    .setMarginBottom(12);
-
-            Cell grossPayLabelCell = createColorCell("TOTAL GROSS PAY:", boldFont, 12,
-                    new com.itextpdf.kernel.color.DeviceRgb(220, 220, 250), TextAlignment.LEFT);
-            Cell grossPayValueCell = createColorCell("$" + stub.getTotalGrossPay(), boldFont, 12,
-                    new com.itextpdf.kernel.color.DeviceRgb(220, 220, 250), TextAlignment.RIGHT);
-
-            Cell netPayLabelCell = createColorCell("TOTAL NET PAY:", boldFont, 12,
-                    new com.itextpdf.kernel.color.DeviceRgb(200, 240, 200), TextAlignment.LEFT);
-            Cell netPayValueCell = createColorCell("$" + stub.getNetPay(), boldFont, 12,
-                    new com.itextpdf.kernel.color.DeviceRgb(200, 240, 200), TextAlignment.RIGHT);
-
-            highlightedTable.addCell(grossPayLabelCell);
-            highlightedTable.addCell(grossPayValueCell);
-            highlightedTable.addCell(netPayLabelCell);
-            highlightedTable.addCell(netPayValueCell);
-
-            document.add(highlightedTable);
-
-            // 5. КРАСИВО РАЗДЕЛЕННАЯ СЕКЦИЯ НАЛОГОВ
-            // Главная таблица с заголовком
-            Table mainDeductionsTable = new Table(UnitValue.createPercentArray(new float[]{1}))
-                    .useAllAvailableWidth()
-                    .setMarginBottom(12);
-
-            // Заголовок для всей секции
-            Cell mainHeader = new Cell()
-                    .add(new Paragraph("DEDUCTIONS & YEAR-TO-DATE SUMMARY").setFont(boldFont).setFontSize(12))
-                    .setBackgroundColor(new com.itextpdf.kernel.color.DeviceRgb(70, 130, 180))
-                    .setFontColor(Color.WHITE)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setPadding(8);
-            mainDeductionsTable.addCell(mainHeader);
-            document.add(mainDeductionsTable);
-
-            // Таблица с двумя колонками для налогов
-            Table taxesTable = new Table(UnitValue.createPercentArray(new float[]{1, 1}))
-                    .useAllAvailableWidth()
-                    .setMarginBottom(12);
-
-            // ЛЕВАЯ КОЛОНКА - CURRENT PERIOD DEDUCTIONS
-            Cell currentPeriodHeader = new Cell()
-                    .add(new Paragraph("CURRENT PERIOD DEDUCTIONS").setFont(boldFont).setFontSize(10))
-                    .setBackgroundColor(new com.itextpdf.kernel.color.DeviceRgb(240, 248, 255))
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setPadding(6);
-
-            // ПРАВАЯ КОЛОНКА - YEAR TO DATE TOTALS
-            Cell ytdHeader = new Cell()
-                    .add(new Paragraph("YEAR-TO-DATE TOTALS").setFont(boldFont).setFontSize(10))
-                    .setBackgroundColor(new com.itextpdf.kernel.color.DeviceRgb(245, 255, 250))
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setPadding(6);
-
-            taxesTable.addCell(currentPeriodHeader);
-            taxesTable.addCell(ytdHeader);
-
-            // Создаем отдельные таблицы для каждой колонки
-            Table currentPeriodTable = new Table(UnitValue.createPercentArray(new float[]{2, 1}))
-                    .useAllAvailableWidth();
-
-            Table ytdTable = new Table(UnitValue.createPercentArray(new float[]{2, 1}))
-                    .useAllAvailableWidth();
-
-            // ЗАПОЛНЯЕМ ЛЕВУЮ КОЛОНКУ (Current Period)
-            currentPeriodTable.addCell(createStyledTaxCell("Total Hours:", boldFont, 9, false));
-            currentPeriodTable.addCell(createStyledTaxCell(String.format("%.2f", stub.getTotalHours()), regularFont, 9, false));
-
-            currentPeriodTable.addCell(createStyledTaxCell("Social Security Tax:", boldFont, 9, false));
-            currentPeriodTable.addCell(createStyledTaxCell("$" + formatAmount(stub.getSocialSecurityTax()), regularFont, 9, false));
-
-            currentPeriodTable.addCell(createStyledTaxCell("Medicare Tax:", boldFont, 9, false));
-            currentPeriodTable.addCell(createStyledTaxCell("$" + formatAmount(stub.getMedicareTax()), regularFont, 9, false));
-
-            currentPeriodTable.addCell(createStyledTaxCell("Federal Tax:", boldFont, 9, false));
-            currentPeriodTable.addCell(createStyledTaxCell("$" + formatAmount(stub.getFederalTax()), regularFont, 9, false));
-
-            currentPeriodTable.addCell(createStyledTaxCell("State Tax:", boldFont, 9, false));
-            currentPeriodTable.addCell(createStyledTaxCell("$" + formatAmount(stub.getStateTax()), regularFont, 9, false));
-
-            currentPeriodTable.addCell(createStyledTaxCell("Local Tax:", boldFont, 9, false));
-            currentPeriodTable.addCell(createStyledTaxCell("$" + formatAmount(stub.getLocalTax()), regularFont, 9, false));
-
-            // ЗАПОЛНЯЕМ ПРАВУЮ КОЛОНКУ (Year To Date)
-            ytdTable.addCell(createStyledTaxCell("YTD Social Security:", boldFont, 9, true));
-            ytdTable.addCell(createStyledTaxCell("$" + formatAmount(yearToDateData.getYearToDateSocialSecurityEmployee()), regularFont, 9, true));
-
-            ytdTable.addCell(createStyledTaxCell("YTD Medicare:", boldFont, 9, true));
-            ytdTable.addCell(createStyledTaxCell("$" + formatAmount(yearToDateData.getYearToDateMedicare()), regularFont, 9, true));
-
-            ytdTable.addCell(createStyledTaxCell("YTD Federal Tax:", boldFont, 9, true));
-            ytdTable.addCell(createStyledTaxCell("$" + formatAmount(yearToDateData.getYearToDateFederalWithholding()), regularFont, 9, true));
-
-            ytdTable.addCell(createStyledTaxCell("YTD State Tax:", boldFont, 9, true));
-            ytdTable.addCell(createStyledTaxCell("$" + formatAmount(yearToDateData.getYearToDateNyStateWithholding()), regularFont, 9, true));
-
-            ytdTable.addCell(createStyledTaxCell("YTD Local Tax:", boldFont, 9, true));
-            ytdTable.addCell(createStyledTaxCell("$" + formatAmount(yearToDateData.getYearToDateNyLocalWithholding()), regularFont, 9, true));
-
-            ytdTable.addCell(createStyledTaxCell("YTD Disability:", boldFont, 9, true));
-            ytdTable.addCell(createStyledTaxCell("$" + formatAmount(yearToDateData.getYearToDateNyDisabilityWithholding()), regularFont, 9, true));
-
-            ytdTable.addCell(createStyledTaxCell("YTD Family Leave:", boldFont, 9, true));
-            ytdTable.addCell(createStyledTaxCell("$" + formatAmount(yearToDateData.getYearToDateNyPaidFamilyLeave()), regularFont, 9, true));
-
-            // Добавляем таблицы в основную структуру
-            Cell currentPeriodCell = new Cell().add(currentPeriodTable).setBorder(null).setPadding(5);
-            Cell ytdCell = new Cell().add(ytdTable).setBorder(null).setPadding(5);
-
-            taxesTable.addCell(currentPeriodCell);
-            taxesTable.addCell(ytdCell);
-
-            document.add(taxesTable);
-
-            // 6. ИТОГОВАЯ СЕКЦИЯ YTD GROSS & NET
-            Table ytdSummaryTable = new Table(UnitValue.createPercentArray(new float[]{1, 1}))
-                    .useAllAvailableWidth()
-                    .setMarginBottom(12);
-
-            Cell ytdGrossLabelCell = createColorCell("YEAR-TO-DATE GROSS PAY:", boldFont, 11,
-                    new com.itextpdf.kernel.color.DeviceRgb(255, 248, 220), TextAlignment.LEFT);
-            Cell ytdGrossValueCell = createColorCell("$" + formatAmount(yearToDateData.getYearToDateGrossPay()), boldFont, 11,
-                    new com.itextpdf.kernel.color.DeviceRgb(255, 248, 220), TextAlignment.RIGHT);
-
-            Cell ytdNetLabelCell = createColorCell("YEAR-TO-DATE NET PAY:", boldFont, 11,
-                    new com.itextpdf.kernel.color.DeviceRgb(240, 255, 240), TextAlignment.LEFT);
-            Cell ytdNetValueCell = createColorCell("$" + formatAmount(yearToDateData.getYearToDateNetPay()), boldFont, 11,
-                    new com.itextpdf.kernel.color.DeviceRgb(240, 255, 240), TextAlignment.RIGHT);
-
-            ytdSummaryTable.addCell(ytdGrossLabelCell);
-            ytdSummaryTable.addCell(ytdGrossValueCell);
-            ytdSummaryTable.addCell(ytdNetLabelCell);
-            ytdSummaryTable.addCell(ytdNetValueCell);
-
-            document.add(ytdSummaryTable);
-
-            // 7. Секция Sick Leave
-            Table sickTable = new Table(UnitValue.createPercentArray(new float[]{3, 1}))
-                    .useAllAvailableWidth()
-                    .setMarginBottom(12);
-
-            Cell sickHeader = new Cell(1, 2)
-                    .add(new Paragraph("SICK LEAVE SUMMARY").setFont(boldFont).setFontSize(11))
-                    .setBackgroundColor(new com.itextpdf.kernel.color.DeviceRgb(240, 240, 240))
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setPadding(4);
-            sickTable.addCell(sickHeader);
-
-            sickTable.addCell(createCompactCell("Sick Leave Accrued (hrs):", boldFont, 9));
-            sickTable.addCell(createCompactCell(stub.getSickLeaveAccrued().toString(), regularFont, 9));
-
-            sickTable.addCell(createCompactCell("Sick Leave Used (hrs):", boldFont, 9));
-            sickTable.addCell(createCompactCell(stub.getSickLeaveUsed().toString(), regularFont, 9));
-
-            sickTable.addCell(createCompactCell("Sick Leave Remaining (hrs):", boldFont, 9));
-            sickTable.addCell(createCompactCell(stub.getSickLeaveRemaining().toString(), regularFont, 9));
-
-            document.add(sickTable);
-
-            // 8. Футер
-            document.add(new Paragraph("This document is an official payroll record.")
-                    .setFont(regularFont)
+            // DEDUCTIONS секция
+            document.add(new Paragraph("DEDUCTIONS")
+                    .setFont(boldFont)
                     .setFontSize(8)
-                    .setItalic()
-                    .setTextAlignment(TextAlignment.CENTER));
+                    .setMarginTop(6)
+                    .setMarginBottom(4));
 
-            document.add(new Paragraph("Generated by Face-Check Corporation " + LocalDate.now().toString())
+            Table deductionsTable = new Table(UnitValue.createPercentArray(new float[]{2, 1, 1}))
+                    .useAllAvailableWidth()
+                    .setMarginBottom(6);
+
+            // Заголовки
+            deductionsTable.addCell(createSimpleCell("Description", boldFont, 7, true));
+            deductionsTable.addCell(createSimpleCell("Current", boldFont, 7, true));
+            deductionsTable.addCell(createSimpleCell("YTD", boldFont, 7, true));
+
+            // Federal Tax
+            deductionsTable.addCell(createSimpleCell("Federal Income Tax", regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(stub.getFederalTax()), regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(yearToDateData.getYearToDateFederalWithholding()), regularFont, 7, false));
+
+            // Social Security
+            deductionsTable.addCell(createSimpleCell("Social Security Tax", regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(stub.getSocialSecurityTax()), regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(yearToDateData.getYearToDateSocialSecurityEmployee()), regularFont, 7, false));
+
+            // Medicare
+            deductionsTable.addCell(createSimpleCell("Medicare Tax", regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(stub.getMedicareTax()), regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(yearToDateData.getYearToDateMedicare()), regularFont, 7, false));
+
+            // State Tax
+            deductionsTable.addCell(createSimpleCell("State Income Tax", regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(stub.getStateTax()), regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(yearToDateData.getYearToDateNyStateWithholding()), regularFont, 7, false));
+
+            // Local Tax
+            deductionsTable.addCell(createSimpleCell("Local Tax", regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(stub.getLocalTax()), regularFont, 7, false));
+            deductionsTable.addCell(createSimpleCell("$" + formatAmount(yearToDateData.getYearToDateNyLocalWithholding()), regularFont, 7, false));
+
+            // Insurance если активно
+            if (Boolean.TRUE.equals(stub.getUserActivatedInsurance())) {
+                deductionsTable.addCell(createSimpleCell("Health Insurance", regularFont, 7, false));
+                deductionsTable.addCell(createSimpleCell("$" + formatAmount(stub.getHealthInsuranceChargePeriod()), regularFont, 7, false));
+                deductionsTable.addCell(createSimpleCell("-", regularFont, 7, false));
+            }
+
+            document.add(deductionsTable);
+
+            // Линия-разделитель
+            addSeparatorLine(document);
+
+            // SUMMARY секция
+            document.add(new Paragraph("PAY SUMMARY")
+                    .setFont(boldFont)
+                    .setFontSize(8)
+                    .setMarginTop(6)
+                    .setMarginBottom(4));
+
+            Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{2, 1, 1}))
+                    .useAllAvailableWidth()
+                    .setMarginBottom(6);
+
+            // Gross Pay
+            summaryTable.addCell(createSimpleCell("Gross Pay", boldFont, 8, false));
+            summaryTable.addCell(createSimpleCell("$" + formatAmount(stub.getTotalGrossPay()), boldFont, 8, false));
+            summaryTable.addCell(createSimpleCell("$" + formatAmount(yearToDateData.getYearToDateGrossPay()), boldFont, 8, false));
+
+            // Total Deductions
+            BigDecimal totalDeductions = stub.getTotalGrossPay().subtract(stub.getNetPay());
+            BigDecimal ytdDeductions = yearToDateData.getYearToDateGrossPay().subtract(yearToDateData.getYearToDateNetPay());
+
+            summaryTable.addCell(createSimpleCell("Total Deductions", regularFont, 8, false));
+            summaryTable.addCell(createSimpleCell("$" + formatAmount(totalDeductions), regularFont, 8, false));
+            summaryTable.addCell(createSimpleCell("$" + formatAmount(ytdDeductions), regularFont, 8, false));
+
+            // Net Pay - с верхней границей для выделения
+            Cell netPayLabel = createSimpleCell("NET PAY", boldFont, 8, false);
+            netPayLabel.setBorderTop(new SolidBorder(0.5f));
+            summaryTable.addCell(netPayLabel);
+
+            Cell netPayCurrent = createSimpleCell("$" + formatAmount(stub.getNetPay()), boldFont, 8, false);
+            netPayCurrent.setBorderTop(new SolidBorder(0.5f));
+            summaryTable.addCell(netPayCurrent);
+
+            Cell netPayYTD = createSimpleCell("$" + formatAmount(yearToDateData.getYearToDateNetPay()), boldFont, 8, false);
+            netPayYTD.setBorderTop(new SolidBorder(0.5f));
+            summaryTable.addCell(netPayYTD);
+
+            document.add(summaryTable);
+
+            // Sick Leave информация
+            if (stub.getSickLeaveRemaining() != null) {
+                addSeparatorLine(document);
+
+                Table sickLeaveTable = new Table(UnitValue.createPercentArray(new float[]{1, 1, 1}))
+                        .useAllAvailableWidth()
+                        .setMarginBottom(8);
+
+                sickLeaveTable.addCell(createSimpleCell("Sick Leave Accrued: " + stub.getSickLeaveAccrued() + " hrs",
+                        regularFont, 7, false));
+                sickLeaveTable.addCell(createSimpleCell("Used: " + stub.getSickLeaveUsed() + " hrs",
+                        regularFont, 7, false));
+                sickLeaveTable.addCell(createSimpleCell("Balance: " + stub.getSickLeaveRemaining() + " hrs",
+                        regularFont, 7, false));
+
+                document.add(sickLeaveTable);
+            }
+
+            // Footer
+            document.add(new Paragraph("This is an official payroll record. Please retain for your records.")
                     .setFont(regularFont)
-                    .setFontSize(7)
-                    .setItalic()
+                    .setFontSize(6)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginTop(10));
+
+            document.add(new Paragraph("Generated by Face-Check Corporation • " + LocalDate.now())
+                    .setFont(regularFont)
+                    .setFontSize(6)
                     .setTextAlignment(TextAlignment.CENTER));
 
             document.close();
 
-
-
             metric.recordGenerated(FORM, true);
-            metric.recordS3UploadTime(FORM, true,  end1);
-            metric.recordOperationTime(timer,"paystubs_success");
+            metric.recordS3UploadTime(FORM, true, end1);
+            metric.recordOperationTime(timer, "paystubs_success");
 
             return baos.toByteArray();
 
         } catch (Exception e) {
-            metric.recordOperationTime(timer,"pasystubs_failed");
+            metric.recordOperationTime(timer, "paystubs_failed");
             metric.recordGenerated(FORM, false);
             metric.recordError("paystubs_failed", e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    // Вспомогательные методы для создания ячеек
-    private Cell createHeaderCell(String text, float fontSize) {
-        return new Cell()
-                .add(new Paragraph(text)
-                        .setFontSize(fontSize)
-                        .setBold()
-                        .setTextAlignment(TextAlignment.CENTER))
-                .setPadding(4)
-                .setBackgroundColor(new com.itextpdf.kernel.color.DeviceRgb(230, 230, 230));
-    }
-
-    private Cell createColorCell(String text, PdfFont font, float fontSize,
-                                 com.itextpdf.kernel.color.Color backgroundColor,
-                                 TextAlignment alignment) {
+    // Простая ячейка без украшательств
+    private Cell createSimpleCell(String text, PdfFont font, float fontSize, boolean isHeader) {
         if (text == null) text = "";
-        return new Cell()
+        Cell cell = new Cell()
                 .add(new Paragraph(text).setFont(font).setFontSize(fontSize))
-                .setTextAlignment(alignment)
-                .setBackgroundColor(backgroundColor)
-                .setPadding(5);
+                .setPadding(2)
+                .setBorder(Border.NO_BORDER);
+
+        // Только для заголовков таблицы добавляем нижнюю границу
+        if (isHeader) {
+            cell.setBorderBottom(new SolidBorder(0.5f));
+        }
+
+        return cell;
     }
 
-    private Cell createCompactCell(String text, PdfFont font, float fontSize) {
-        if (text == null) text = "";
-        return new Cell()
-                .add(new Paragraph(text).setFont(font).setFontSize(fontSize))
-                .setTextAlignment(TextAlignment.LEFT)
-                .setPadding(3);
+    // Добавление тонкой линии-разделителя
+    private void addSeparatorLine(Document document) {
+        Table line = new Table(UnitValue.createPercentArray(new float[]{1}))
+                .useAllAvailableWidth()
+                .setMarginTop(2)
+                .setMarginBottom(2);
+
+        Cell lineCell = new Cell()
+                .setBorder(Border.NO_BORDER)
+                .setBorderTop(new SolidBorder(0.5f))
+                .setHeight(1);
+
+        line.addCell(lineCell);
+        document.add(line);
     }
 
-    private Cell createValueCell(String text, PdfFont font, float fontSize) {
-        if (text == null) text = "";
-        return new Cell()
-                .add(new Paragraph(text).setFont(font).setFontSize(fontSize))
-                .setTextAlignment(TextAlignment.LEFT)
-                .setPadding(4);
-    }
-
-    // НОВЫЕ методы для стилизованных налоговых ячеек
-    private Cell createStyledTaxCell(String text, PdfFont font, float fontSize, boolean isYTD) {
-        if (text == null) text = "";
-
-        com.itextpdf.kernel.color.Color backgroundColor = isYTD ?
-                new com.itextpdf.kernel.color.DeviceRgb(248, 255, 248) :  // Светло-зеленый для YTD
-                new com.itextpdf.kernel.color.DeviceRgb(248, 248, 255);   // Светло-голубой для current
-
-        return new Cell()
-                .add(new Paragraph(text).setFont(font).setFontSize(fontSize))
-                .setTextAlignment(TextAlignment.LEFT)
-                .setBackgroundColor(backgroundColor)
-                .setPadding(4);
-              //  .setBorder(new com.itextpdf.kernel.color.DeviceRgb(220, 220, 220));
-    }
-
-    // Метод для форматирования сумм
+    // Форматирование сумм
     private String formatAmount(BigDecimal amount) {
         if (amount == null) return "0.00";
         return String.format("%.2f", amount);
