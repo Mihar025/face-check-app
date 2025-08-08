@@ -34,6 +34,7 @@ import java.util.Map;
 import static com.itextpdf.io.font.FontConstants.HELVETICA;
 import static com.itextpdf.io.font.FontConstants.HELVETICA_BOLD;
 
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -127,10 +128,8 @@ public class PayStubPdfGeneratorService {
                     .setFontSize(8)
                     .setMarginBottom(6));
 
-            // Тонкая линия-разделитель
             addSeparatorLine(document);
 
-            // EARNINGS секция
             document.add(new Paragraph("EARNINGS")
                     .setFont(boldFont)
                     .setFontSize(8)
@@ -143,7 +142,7 @@ public class PayStubPdfGeneratorService {
             Map<LocalDate, DayOfWeek> dateToDayOfWeek = stub.getDateToDayOfWeek();
 
             if (hoursWorkedMap != null && grossPayMap != null) {
-                Table earningsTable = new Table(UnitValue.createPercentArray(new float[]{1.5f, 1, 1, 1, 1}))
+                Table earningsTable = new Table(UnitValue.createPercentArray(new float[]{1.5f, 1, 1, 1}))
                         .useAllAvailableWidth()
                         .setMarginBottom(6);
 
@@ -152,12 +151,12 @@ public class PayStubPdfGeneratorService {
                 earningsTable.addCell(createSimpleCell("Day", boldFont, 7, true));
                 earningsTable.addCell(createSimpleCell("Hours", boldFont, 7, true));
                 earningsTable.addCell(createSimpleCell("Rate", boldFont, 7, true));
-                earningsTable.addCell(createSimpleCell(" ", boldFont, 7, true));
+             //  earningsTable.addCell(createSimpleCell("Amount", boldFont, 7, true));
 
                 BigDecimal totalHours = BigDecimal.ZERO;
                 BigDecimal totalGross = BigDecimal.ZERO;
 
-                for (Map.Entry<LocalDate, BigDecimal> entry : hoursWorkedMap.entrySet()) {
+                   for (Map.Entry<LocalDate, BigDecimal> entry : hoursWorkedMap.entrySet()) {
                     LocalDate date = entry.getKey();
                     BigDecimal hoursWorked = entry.getValue();
 
@@ -171,19 +170,20 @@ public class PayStubPdfGeneratorService {
                                 regularFont, 7, false));
                         earningsTable.addCell(createSimpleCell(hoursWorked.toString(), regularFont, 7, false));
                         earningsTable.addCell(createSimpleCell("$" + stub.getBaseHourlyRate(), regularFont, 7, false));
-                        earningsTable.addCell(createSimpleCell("$" + grossPay.toString(), regularFont, 7, false));
+                     //   earningsTable.addCell(createSimpleCell("$" + grossPay.toString(), regularFont, 7, false));
 
                         totalHours = totalHours.add(hoursWorked);
+
                         totalGross = totalGross.add(grossPay);
                     }
                 }
 
-                // Итоговая строка
+
                 earningsTable.addCell(createSimpleCell("TOTAL", boldFont, 7, true));
                 earningsTable.addCell(createSimpleCell("", regularFont, 7, false));
                 earningsTable.addCell(createSimpleCell(totalHours.toString(), boldFont, 7, true));
                 earningsTable.addCell(createSimpleCell("", regularFont, 7, false));
-                earningsTable.addCell(createSimpleCell("$" + totalGross.toString(), boldFont, 7, true));
+                earningsTable.addCell(createSimpleCell("$" + stub.getTotalGrossPay(), boldFont, 7, true));
 
                 document.add(earningsTable);
             }
