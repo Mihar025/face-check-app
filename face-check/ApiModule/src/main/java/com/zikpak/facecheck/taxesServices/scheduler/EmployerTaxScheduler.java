@@ -95,7 +95,7 @@ public class EmployerTaxScheduler {
 
     private final FillFormMTA305 fillFormMTA305;
 
-
+/*
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье в 4:00 утра
     public void calculateWeeklyEmployerTaxes() {
         log.info("🧮 Scheduler запущен: начинаем расчёт налогов для всех payroll'ов");
@@ -131,7 +131,7 @@ public class EmployerTaxScheduler {
     }
 
 
-/*
+
 
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье
     public void generatePayStubs() {
@@ -168,7 +168,7 @@ public class EmployerTaxScheduler {
         log.info("🏁 Scheduler: генерация Paystubs завершена");
     }
 
- */
+
 
 
  // 1) Еженедельные – только для компаний с WEEKLY
@@ -681,7 +681,7 @@ public class EmployerTaxScheduler {
                         "Обработано компаний: {}, успешно: {}, с ошибками: {}",
                 completedQuarter, currentYear, allCompanies.size(), successCount, errorCount);
     }
-
+*/
 // =============================================================================
 // 📅 MONTHLY CSV REPORTS
 // =============================================================================
@@ -1320,6 +1320,8 @@ public class EmployerTaxScheduler {
      * Генерирует квартальные FUTA отчеты
      * Запускается 15 числа каждого квартального месяца (янв, апр, июль, окт) в 8:00
      */
+
+    /*
     @Scheduled(cron = "0 0 8 15 1,4,7,10 *", zone = "America/New_York")
     public void generateQuarterlyFutaReports() {
         log.info("📋 Quarterly FUTA Report Scheduler запущен: генерируем quarterly FUTA reports");
@@ -1405,6 +1407,7 @@ public class EmployerTaxScheduler {
      * Генерирует годовые FUTA отчеты
      * Запускается 15 января в 9:00 утра (дедлайн для Form 940)
      */
+    /*
     @Scheduled(cron = "0 0 9 15 1 *", zone = "America/New_York")
     public void generateAnnualFutaReports() {
         log.info("📄 Annual FUTA Report Scheduler запущен: генерируем annual FUTA reports за прошлый год");
@@ -1464,10 +1467,12 @@ public class EmployerTaxScheduler {
                 previousYear, allCompanies.size(), successCount, skipCount, errorCount);
     }
 
+     */
+
 // =============================================================================
 // 📋 QUARTERLY FUTA COMPLIANCE CHECK
 // =============================================================================
-
+/*
     @Scheduled(cron = "0 0 6 * * MON", zone = "America/New_York")
     public void checkQuarterlyFutaCompliance() {
         log.info("⚠️ FUTA Compliance Check Scheduler запущен: проверяем compliance и дедлайны");
@@ -1555,15 +1560,14 @@ public class EmployerTaxScheduler {
 
         log.info("🏁 FUTA Compliance Check завершен");
     }
+
+ */
 // =============================================================================
 // 📋 FUTA YEAR-END PREPARATION
 // =============================================================================
 
-    /**
-     * Подготавливает данные к концу года (проверяет все квартальные отчеты)
-     * Запускается 15 декабря в 10:00 утра
-     */
 
+     /*
     @Scheduled(cron = "0 0 10 15 12 *", zone = "America/New_York")
     public void prepareFutaYearEndReports() {
         log.info("📋 FUTA Year-End Preparation Scheduler запущен: подготавливаем данные к концу года");
@@ -1673,10 +1677,8 @@ public class EmployerTaxScheduler {
 
 
 
-    /**
-     * Генерирует квартальные SUTA отчеты
-     * Запускается 20 числа каждого квартального месяца в 9:00 (после FUTA)
-     */
+
+
     @Scheduled(cron = "0 0 9 20 1,4,7,10 *", zone = "America/New_York")
     public void generateQuarterlySutaReports() {
         log.info("📋 Quarterly SUTA Report Scheduler запущен: генерируем quarterly SUTA reports");
@@ -1760,10 +1762,7 @@ public class EmployerTaxScheduler {
                         "NY компании: {}, успешно: {}, пропущено: {}, с ошибками: {}, не-NY компании: {}",
                 completedQuarter, currentYear, totalNyCompanies, successCount, skipCount, errorCount, notNyCompanies);
     }
-    /**
-     * Генерирует годовые SUTA отчеты
-     * Запускается 15 января в 10:00 утра (после FUTA, дедлайн для NYS-45)
-     */
+
     @Scheduled(cron = "0 0 10 15 1 *", zone = "America/New_York")
     public void generateAnnualSutaReports() {
         log.info("📄 Annual SUTA Report Scheduler запущен: генерируем annual SUTA reports за прошлый год");
@@ -1822,14 +1821,7 @@ public class EmployerTaxScheduler {
         log.info("🏁 Annual SUTA Report Scheduler завершил работу за {} год", previousYear);
     }
 
-    // =============================================================================
-// 📋 QUARTERLY MTA-305 REPORTS (NYC MCTMT)
-// =============================================================================
 
-    /**
-     * Генерирует квартальные MTA-305 формы для NYC MCTMT
-     * Запускается 25 числа каждого квартального месяца в 11:00 (после SUTA)
-     */
     @Scheduled(cron = "0 0 11 25 1,4,7,10 *", zone = "America/New_York")
     public void generateQuarterlyMTA305Forms() {
         log.info("📋 Quarterly MTA-305 Scheduler запущен: генерируем quarterly MTA-305 forms");
@@ -1949,7 +1941,7 @@ public class EmployerTaxScheduler {
         log.info("🏁 Генерация W-3 Official Forms завершена за {} год.", targetYear);
     }
 
-
+*/
 
     private boolean isNYCCompany(Company company) {
         String city = company.getCompanyCity();
