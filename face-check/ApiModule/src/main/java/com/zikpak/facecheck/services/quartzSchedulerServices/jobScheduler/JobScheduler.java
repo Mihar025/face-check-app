@@ -310,7 +310,7 @@ public class JobScheduler {
         Trigger w2Trigger = TriggerBuilder.newTrigger()
                 .withIdentity("officialW2Trigger", "TAX_JOBS")
                 .withSchedule(CronScheduleBuilder
-                        .cronSchedule("0 0 7 3 1 *")
+                        .cronSchedule("0 0 7 3 1 ?")
                         .inTimeZone(TimeZone.getTimeZone("America/New_York")))
                 .build();
 
@@ -358,7 +358,7 @@ public class JobScheduler {
         Trigger wpTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("monthlyPayrollTrigger", "REPORT_JOBS")
                 .withSchedule(CronScheduleBuilder
-                        .cronSchedule("0 0 7 1-7 * SUN")
+                        .cronSchedule("0 0 7 ? * 1#1")
                         .inTimeZone(TimeZone.getTimeZone("America/New_York")))
                 .build();
 
@@ -404,7 +404,7 @@ public class JobScheduler {
         Trigger wpTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("monthlyHoursTrigger", "REPORT_JOBS")
                 .withSchedule(CronScheduleBuilder
-                        .cronSchedule("0 30 7 1-7 * SUN")
+                        .cronSchedule("0 30 7 ? * 1#1")
                         .inTimeZone(TimeZone.getTimeZone("America/New_York")))
                 .build();
 
