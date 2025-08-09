@@ -25,7 +25,7 @@ public class Role {
     private Integer id;
 
     @Column(unique = true)
-    private String name;
+    private String name ="";
 
     @ManyToMany(mappedBy = "roles")
     @JsonIgnore
