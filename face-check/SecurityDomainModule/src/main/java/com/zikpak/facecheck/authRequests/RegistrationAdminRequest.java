@@ -30,6 +30,7 @@ public class RegistrationAdminRequest {
     @NotBlank(message = "Home Address cannot be empty or blank")
     private String homeAddress;
 
+    @NotNull(message = "This field cannot be null")
     private LocalDate dateOfBirth;
 
     @NotBlank(message = "Apartment cannot be empty or blank")
@@ -41,6 +42,7 @@ public class RegistrationAdminRequest {
     @NotBlank(message = "Phonenumber is required!")
     private String phoneNumber;
 
+    @NotNull(message = "This field is required!")
     private String SSN_WORKER;
 
     @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$", message = "Email is not formatted well!")
@@ -55,7 +57,6 @@ public class RegistrationAdminRequest {
     @NotBlank(message = "Password is mandatory!")
     @Size(min = 6, message = "Password should be minimum 4 characters")
     private String password;
-
 
     @NotNull(message = "Filling status is required")
     private FilingStatus filingStatus;

@@ -70,14 +70,11 @@ public class RegistrationRequest {
     @NotNull(message = "Filling status is required")
     private FilingStatus filingStatus;
 
-    @NotNull(message = "Number of Child is required")
     private Integer dependents;
 
-    @NotNull
     @Size(max = 10)
     private List<@Valid DependentsRequest> dependentsList;
 
-    @NotNull(message = "Extra withholding is required")
     private BigDecimal extraWithHoldings;
 
     @NotNull(message = " is person live in NYC required")
@@ -99,36 +96,35 @@ public class RegistrationRequest {
     private String zipcode;
 
     // === W-4 Step 2: Multiple Jobs or Spouse Works ===
-    @NotNull(message = "Укажите, есть ли у вас несколько работ или работает ли супруг(а)")
+    @NotNull(message = "Do you have few jobs? Or your spouse is working?")
     private Boolean multipleJobsOrSpouseWorks;
 
-    @NotNull(message = "Укажите, отмечен ли чекбокс “две работы” (Step 2(c))")
+    @NotNull(message = "Two jobs? (Step 2(c))")
     private Boolean twoJobsCheckBox;
 
-    @DecimalMin(value = "0.00", message = "Дополнительное удержание должно быть неотрицательным")
+    @DecimalMin(value = "0.00", message = "Additional withholding cannot be negative")
     private BigDecimal multipleJobsAdditionalWithholding;
 
     // === W-4 Step 3: Dependents & Other Credits ===
-    @Min(value = 0, message = "Количество детей до 17 лет не может быть отрицательным")
+    @Min(value = 0, message = "Quantity of children before  17 years cannot be negative")
     private Integer dependentsUnder17;
 
-    @Min(value = 0, message = "Количество прочих dependents не может быть отрицательным")
+    @Min(value = 0, message = "Quantity of other dependents cannot be negative")
     private Integer otherDependents;
 
-    @DecimalMin(value = "0.00", message = "Сумма кредитов не может быть отрицательной")
+    @DecimalMin(value = "0.00", message = "Total Dependents credit cannot be negative")
     private BigDecimal totalDependentsCredit;
 
     // === W-4 Step 4: Other Adjustments ===
-    @DecimalMin(value = "0.00", message = "Other income не может быть отрицательным")
+    @DecimalMin(value = "0.00", message = "Other income cannot be negative")
     private BigDecimal otherIncome;
 
-    @DecimalMin(value = "0.00", message = "Deductions должно быть неотрицательным")
+    @DecimalMin(value = "0.00", message = "Deductions cannot be negative")
     private BigDecimal deductions;
 
-// (extraWithHoldings у вас уже есть — не дублируем)
 
     // === W-4 Step 5: Exemption ===
-    @NotNull(message = "Укажите, освобождены ли вы от удержания (Step 5)")
+    @NotNull(message = "Are you free from withholding? (Step 5)")
     private Boolean exemptFromWithholding;
 
     private BigDecimal multipleJobsWorksheetLine2a;
@@ -136,27 +132,34 @@ public class RegistrationRequest {
     private BigDecimal estimatedItemizedDeductions;
     private BigDecimal adjustmentsSchedule1;
 
+    @NotNull(message = "This field is required!")
     private String wcRiskClassCode;
 
-    @NotNull(message = "Укажите гражданство")
+    @NotNull(message = "Are you citizen of the USA")
     private Boolean isCitizen;
-    @NotNull(message = "Укажите статус non-citizen national")
+    @NotNull(message = "Are non-citizen national")
     private Boolean isNonCitizenNationalOfTheUS;
-    @NotNull(message = "Укажите статус permanent resident")
+    @NotNull(message = "Are permanent resident")
     private Boolean isPermanentResident;
-    @NotNull(message = "Укажите, non-citizen ли вы")
+    @NotNull(message = "Are, non-citizen you")
     private Boolean isANonCitizen;
 
     private Boolean isRehired;
+
     private LocalDate dateWhenRehired;
+
     private LocalDate workAuthorizationExpiryDate;
+
     private String uscisNumber;
+
     private String formI94AdmissionNumber;
+
     private String passportNumber;
+
     private String passportCountryOfIssuance;
 
     @Valid
-    @Size(max = 3, message = "Можно загрузить до 3 документов")
+    @Size(max = 3, message = "Could Load 3 Documents")
     private List<I9DocumentRequest> i9Documents;
 
 
