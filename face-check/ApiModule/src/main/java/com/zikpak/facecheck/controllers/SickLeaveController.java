@@ -4,6 +4,7 @@ package com.zikpak.facecheck.controllers;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.services.workAttendanceService.WorkAttendanceService;
 import com.zikpak.facecheck.taxesServices.services.sickDayService.SickLeaveService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -36,7 +37,7 @@ public class SickLeaveController {
     @PostMapping("/use")
     public ResponseEntity<?> useSickLeave(
             Authentication authentication,
-            @RequestBody Map<String, Object> body,
+             @RequestBody Map<String, Object> body,
             @RequestParam("sickDate") LocalDate sickDate
     ) {
         User user = (User) authentication.getPrincipal();
