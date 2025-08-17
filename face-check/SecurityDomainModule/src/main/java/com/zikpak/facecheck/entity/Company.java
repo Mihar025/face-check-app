@@ -77,6 +77,7 @@ public class Company {
     @Enumerated(EnumType.STRING)
     private CompanyPaymentPosition companyPaymentPosition;
 
+    @Column(name = "irs_deposited_amount")
     private BigDecimal irsDepositAmount = BigDecimal.ZERO;
 
     private LocalDateTime whenDepositAmountWasMade;

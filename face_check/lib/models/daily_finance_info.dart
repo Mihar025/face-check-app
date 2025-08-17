@@ -2,11 +2,13 @@ class DailyFinanceInfo {
   final DateTime date;
   final double hoursWorked;
   final double grossPay;
+  final double netPay;
 
   DailyFinanceInfo({
     required this.date,
     required this.hoursWorked,
     required this.grossPay,
+    required this.netPay
   });
 
   factory DailyFinanceInfo.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class DailyFinanceInfo {
       date: DateTime.parse(json['date']),
       hoursWorked: json['hoursWorked']?.toDouble() ?? 0.0,
       grossPay: json['grossPay']?.toDouble() ?? 0.0,
+      netPay: json['netPay']?.toDouble() ?? 0.0,
     );
   }
 }
