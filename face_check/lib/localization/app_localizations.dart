@@ -70,6 +70,7 @@ class AppLocalizations {
       'updateImage': 'Update Image',
       'fullName': 'Full Name',
       'address': 'Address',
+      'contactInformation' :'Contact Information',
       //Punch Screen
       'selectWorkSite': 'Select Work Site',
       'searchWorkSites': 'Search WorkSite',
@@ -154,7 +155,9 @@ class AppLocalizations {
       "worksiteEmployees.enterTime": "Enter time",
       "worksiteEmployees.todayDate": "Today's date will be used automatically",
       "worksiteEmployees.ready": "Done",
-      "worksiteEmployees.enterValidTime": "Please enter a valid time"
+      "worksiteEmployees.enterValidTime": "Please enter a valid time",
+      'weeklyProgress' : 'Weekly Progress'
+
     },
 
     'es': {
@@ -281,6 +284,8 @@ class AppLocalizations {
       "employee.searchHint": "Buscar sitios de trabajo...",
       "employee.error": "Error al cargar sitios de trabajo",
       "employee.retry": "Reintentar",
+      'contactInformation' :'Información del contacto',
+
 
       // Worksite Employees Screen
       "worksiteEmployees.title": "Empleados",
@@ -306,7 +311,9 @@ class AppLocalizations {
       "worksiteEmployees.enterTime": "Introducir hora",
       "worksiteEmployees.todayDate": "La fecha de hoy se utilizará automáticamente",
       "worksiteEmployees.ready": "Listo",
-      "worksiteEmployees.enterValidTime": "Por favor, ingrese una hora válida"
+      "worksiteEmployees.enterValidTime": "Por favor, ingrese una hora válida",
+      'weeklyProgress' : 'Progreso semanal'
+
     },
 
     'ru': {
@@ -463,8 +470,12 @@ class AppLocalizations {
       "worksiteEmployees.enterTime": "Введите время",
       "worksiteEmployees.todayDate": "Сегодняшняя дата будет использована автоматически",
       "worksiteEmployees.ready": "Готово",
-      "worksiteEmployees.enterValidTime": "Пожалуйста, введите корректное время"
-    }
+      "worksiteEmployees.enterValidTime": "Пожалуйста, введите корректное время",
+
+      'contactInformation' :'Контактная Информация',
+       'weeklyProgress' : 'Прогрес за неделю'
+
+}
   };
 
   String get(String key) {
