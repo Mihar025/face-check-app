@@ -89,6 +89,7 @@ public class CompanyService implements CompanyServiceImpl {
         }
 
         User admin = (User) authentication.getPrincipal();
+
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
 
@@ -159,17 +160,12 @@ public class CompanyService implements CompanyServiceImpl {
     }
 
     public CompanyUpdatingResponse updateCompany(CompanyUpdatingRequest companyUpdatingRequest, Integer companyId, Authentication authentication) throws AccessDeniedException {
-           if(companyUpdatingRequest.getCompanyName() == null
-           || companyUpdatingRequest.getCompanyAddress() == null
-           || companyUpdatingRequest.getCompanyPhone() == null
-           || companyUpdatingRequest.getCompanyEmail() == null
-           || companyUpdatingRequest.getWorkersQuantity() == null) {
-               throw new IllegalArgumentException("Company updating request cannot be null or blank");
-           }
 
             User user = ((User) authentication.getPrincipal());
+            boolean appOwner = user.getRoles().stream()
+                    .anyMatch(role -> "AppOwner".equals(role.getName()));
 
-            if(!user.isAdmin() && !user.isBusinessOwner()){
+            if(!user.isAdmin() && !user.isBusinessOwner() && !appOwner){
                 throw new AccessDeniedException("You do not have permission to update this company");
             }
                 var foundedCompany = companyRepository.findById(companyId)
@@ -329,6 +325,7 @@ public class CompanyService implements CompanyServiceImpl {
                                             throw new IllegalArgumentException("Base hourly rate cannot be empty");
                                         }
                                         User user = ((User) authentication.getPrincipal());
+
                                         if(!user.isAdmin() && !user.isBusinessOwner()){
                                             throw new AccessDeniedException("You do not have permission to update this company");
                                         }
@@ -376,47 +373,15 @@ public class CompanyService implements CompanyServiceImpl {
                                             )   ;
 
                         }
-                                @Transactional(rollbackOn = Exception.class)
-                        public UpdatedEmployeeDataResponse updateEmployeeData(Integer employeeId, UpdateEmployeeDataRequest request, Authentication authentication) throws AccessDeniedException {
-                                User user = ((User) authentication.getPrincipal());
-                                if(!user.isAdmin() && !user.isBusinessOwner()){
-                                    throw new AccessDeniedException("You do not have permission to update this company");
-                                }
 
-                                    var foundedWorker = userRepository.findById(employeeId)
-                                            .orElseThrow(() -> new RuntimeException("Employee not found"));
-                                        if(!foundedWorker.getId().equals(employeeId)){
-                                            throw new AccessDeniedException("Something went wrong");
-                                        }
-                                            else {
-                                                if(!request.getFirstName().isEmpty()) {
-                                                    foundedWorker.setFirstName(request.getFirstName());
-                                                }
-                                                    if(!request.getLastName().isEmpty()) {
-                                                        foundedWorker.setLastName(request.getLastName());
-                                                    }
-                                                        if(!request.getEmail().isEmpty()) {
-                                                        foundedWorker.setEmail(request.getEmail());
-                                                    }
-                                                            if(!request.getPassword().isEmpty()) {
-                                                                foundedWorker.setPassword(request.getPassword());
-                                                            }
-                                                     userRepository.save(foundedWorker);
-                                        }
-
-                                        return    UpdatedEmployeeDataResponse.builder()
-                                                .workerId(foundedWorker.getId())
-                                                .firstName(foundedWorker.getFirstName())
-                                                .lastName(foundedWorker.getLastName())
-                                                .email(foundedWorker.getEmail())
-                                                .build();
-
-                        }
 
                         public RelatedUserInCompanyResponse findEmployeeInCertainCompany(Integer workerId, Integer companyId, Authentication authentication) throws AccessDeniedException {
 
                             User user = ((User) authentication.getPrincipal());
-                            if(!user.isAdmin() || !user.isBusinessOwner()){
+                            boolean appOwner = user.getRoles().stream()
+                                    .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+                            if(!user.isAdmin() && !user.isBusinessOwner() && !appOwner){
                                 throw new AccessDeniedException("You do not have permission to update this company");
                             }
                                     if(!user.getCompany().getId().equals(companyId)){
@@ -438,7 +403,11 @@ public class CompanyService implements CompanyServiceImpl {
             Authentication authentication) {
 
         User user = ((User) authentication.getPrincipal());
-        if (!user.isAdmin() && !user.getCompany().getId().equals(companyId)) {
+
+        boolean appOwner = user.getRoles().stream()
+                .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+        if (!user.isAdmin() && !user.getCompany().getId().equals(companyId) && !appOwner) {
             log.warn("Unauthorized access attempt by user: {}", user.getEmail());
             throw new AccessDeniedException("You do not have permission to view company employees");
         }

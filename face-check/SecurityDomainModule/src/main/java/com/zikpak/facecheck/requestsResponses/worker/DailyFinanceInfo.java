@@ -16,4 +16,5 @@ public class DailyFinanceInfo {
     private LocalDate date;
     private Double hoursWorked;
     private BigDecimal grossPay;
+    private BigDecimal netPay;
 }
