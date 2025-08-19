@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -187,25 +188,31 @@ public class FillForm941ScheduleB {
 
             byte[] pdfBytes = baos.toByteArray();
 
-
+// Генерируем правильный S3 ключ
             String companyKeyPart = company.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String fileName = String.format("f941sb_%d_%d_%d.pdf",
-                    companyId, year, quarter);
+// Дата подачи формы (сегодня)
+            String filingDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
 
-            String key = String.format("%s/%d/941sbform/941Pdf/%d/%d/%s",
-                    companyKeyPart,
-                    companyId,
-                    year,
-                    quarter,
-                    fileName
+            String key = String.format("%s_%d/forms/941-schedule-b/%d/Q%d/form_941_schedule_b_%d_Q%d_filed_%s.pdf",
+                    companyKeyPart,         // "facecheck_corp"
+                    companyId,              // "_123"
+                    year,                   // "/2024"
+                    quarter,                // "/Q1"
+                    year,                   // "2024"
+                    quarter,                // "_Q1"
+                    filingDate              // "_20240415"
             );
+
+// Результат: facecheck_corp_123/forms/941-schedule-b/2024/Q1/form_941_schedule_b_2024_Q1_filed_20240415.pdf
 
             long start = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
             long end = System.currentTimeMillis() - start;
+
 
             metric.recordGenerated(FORM, true);
             metric.recordS3UploadTime(FORM, true,  end);
