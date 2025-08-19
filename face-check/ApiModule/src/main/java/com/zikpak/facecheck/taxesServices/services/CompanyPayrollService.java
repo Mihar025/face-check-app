@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -99,16 +100,23 @@ public class CompanyPayrollService {
 
             String companyKeyPart = company.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]", "_");
-            String fileName = String.format(
-                    "%s/%d/w3-summary/%d/w3_%d.pdf",
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
+
+            String generatedDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+            String key = String.format(
+                    "%s_%d/reports/w3-summary/%d/w3_summary_%d_generated_%s.pdf",
                     companyKeyPart,
                     company.getId(),
                     year,
-                    companyId
+                    year,
+                    generatedDate
             );
 
-            amazonS3Service.uploadPdfToS3(pdfContent, fileName);
+
+            amazonS3Service.uploadPdfToS3(pdfContent, key);
+            log.info("✅ W3 Summary uploaded to S3: {}", key);
 
             return pdfContent;
         } catch (Exception e) {
