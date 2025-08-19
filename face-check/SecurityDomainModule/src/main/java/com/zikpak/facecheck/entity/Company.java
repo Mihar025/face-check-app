@@ -25,27 +25,32 @@ public class Company {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "company_name")
     private String companyName = "";
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "company_address")
     private String companyAddress = "";
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "company_phone")
     private String companyPhone = "";
-    @Column(nullable = false)
+
+    @Column(nullable = false, name = "company_email")
     private String companyEmail = "";
 
+    @Column(name = "company_state_id_number")
     private String companyStateIdNumber = "";
 
 
   //  @Column(nullable = false)
+    @Column(name = "company_city")
     private String companyCity = "";
 
   //  @Column(nullable = false)
+    @Column(name = "company_state")
     private String companyState = "" ;
 
    // @Column(nullable = false)
+    @Column(name = "company_zip_code")
     private String companyZipCode = "";
 
     @Column(name = "employer_ein", nullable = false, unique = true)
@@ -56,34 +61,53 @@ public class Company {
 
 
 
-
+    @Column(name = "company_income_per_month")
     private BigDecimal companyIncomePerMonth = BigDecimal.ZERO;
 
+    @Column(name = "costs_for_employee_salaries_per_month")
     private BigDecimal costsForEmployeeSalariesPerMonth = BigDecimal.ZERO;
 
-
+    @Column(name = "regular_pay_per_month_total")
     private BigDecimal regularPayPerMonthTotal = BigDecimal.ZERO;
+
+    @Column(name = "overtime_pay_per_month_total")
     private BigDecimal overtimePayPerMonthTotal= BigDecimal.ZERO;
+
+    @Column(name = "gross_pay_per_month_total")
     private BigDecimal grossPayPerMonthTotal= BigDecimal.ZERO;
+
+    @Column(name = "total_spend_money_per_year")
     private BigDecimal totalSpendMoneyPerYear= BigDecimal.ZERO;
 
-
+    @Column(name = "company_insurance")
     private BigDecimal companyInsurance= BigDecimal.ZERO;
+
+    @Column(name = "social_security_tax_for_company")
     private BigDecimal socialSecurityTaxForCompany= BigDecimal.ZERO;
+
+    @Column(name = "federal_withholding_for_company")
     private BigDecimal federalWithholdingForCompany= BigDecimal.ZERO;
+
+    @Column(name = "ny_state_withholding_for_company")
     private BigDecimal nyStateWithholdingForCompany= BigDecimal.ZERO;
+
+    @Column(name = "ny_local_withholding_for_company")
     private BigDecimal nyLocalWithholdingForCompany= BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "company_payment_position")
     private CompanyPaymentPosition companyPaymentPosition;
 
     @Column(name = "irs_deposited_amount")
     private BigDecimal irsDepositAmount = BigDecimal.ZERO;
 
+    @Column(name = "when_deposit_amount_was_made")
     private LocalDateTime whenDepositAmountWasMade;
 
+    @Column(name = "workers_quantity")
     private Integer workersQuantity = 0;
 
+    @Column(name = "first_biweekly_date")
     private LocalDate firstBiweeklyDate;
 
 
@@ -100,7 +124,7 @@ public class Company {
     private User companyOwner;
 
     /** EMR (Experience Modifier Rate), напр. 1.25 */
-    @Column(precision = 4, scale = 2, nullable = true)
+    @Column(precision = 4, scale = 2, nullable = true, name = "emr")
     private BigDecimal emr = BigDecimal.ZERO;;
 
     @Column(name = "wc_policy_number", length = 50, nullable = true)
@@ -109,25 +133,25 @@ public class Company {
     @Column(name = "wc_insurance_carrier", length = 100, nullable = true)
     private String wcInsuranceCarrier = "";
 
-    @Column(nullable = true)
+    @Column(nullable = true, name = "funding_bank_name")
     private String fundingBankName = "";
 
-    @Column(nullable = true)
+    @Column(nullable = true, name = "funding_routing_number")
     private String fundingRoutingNumber = "";
 
-    @Column(nullable = true)
+    @Column(nullable = true, name = "funding_account_number")
     private String fundingAccountNumber = "";
 
-    @Column(nullable = true)
+    @Column(nullable = true, name = "return_mailing_address")
     private String returnMailingAddress = "";
 
-    @Column(nullable = true)
+    @Column(nullable = true, name = "default_memo")
     private String defaultMemo = "";
 
-    @Column(nullable = true)
+    @Column(nullable = true, name = "signature_name")
     private String signatureName = "";
 
-    @Column(nullable = true)
+    @Column(nullable = true, name = "signature_title")
     private String signatureTitle = "";
 
 
