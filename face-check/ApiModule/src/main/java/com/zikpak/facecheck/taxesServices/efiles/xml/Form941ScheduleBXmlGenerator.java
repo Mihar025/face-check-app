@@ -228,13 +228,22 @@ public class Form941ScheduleBXmlGenerator {
     }
 
     private void uploadXmlToS3(Object company, Integer companyId, int year, int quarter, String xmlContent) {
-        String companyKeyPart = ((com.zikpak.facecheck.entity.Company)company).getCompanyName()
+        String companyKeyPart = ((com.zikpak.facecheck.entity.Company) company).getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        String fileName = String.format("f941sb_%d_%d_%d.xml", companyId, year, quarter);
-        String key = String.format("%s/%d/941sbform/941Xml/%d/%d/%s",
-                companyKeyPart, companyId, year, quarter, fileName);
+        String generatedDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        String key = String.format("%s_%d/forms/941-schedule-b/%d/q%d/xml/form_941_schedule_b_%d_q%d_%s.xml",
+                companyKeyPart,
+                companyId,
+                year,
+                quarter,
+                year,
+                quarter,
+                generatedDate
+        );
 
         amazonS3Service.uploadPdfToS3(xmlContent.getBytes(), key);
     }
