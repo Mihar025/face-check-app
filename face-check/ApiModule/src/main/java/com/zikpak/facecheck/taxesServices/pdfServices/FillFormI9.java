@@ -274,26 +274,22 @@ public class FillFormI9 {
 
             byte[] pdfBytes = baos.toByteArray();
 
+// Генерируем правильный S3 ключ
             String companyKeyPart = company.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String workerKeyPart = String.format("%s_%s",
-                    user.getFirstName().trim().replaceAll("\\s+", "_"),
-                    user.getLastName().trim().replaceAll("\\s+", "_"));
-
-// 2. Имя файла (можете скорректировать по своему вкусу)
-            String fileName = String.format("I9_%d_%s_%s.pdf",
-                    companyId,
-                    user.getFirstName().toLowerCase(),
-                    user.getLastName().toLowerCase());
-
-// 3. Собираем полный ключ
-            String key = String.format("%s/%d/I9Form/%s/%s",
+            String key = String.format("%s_%d/employees/%s_%s_%d/forms/i9/i9_%s_%s_%s.pdf",
                     companyKeyPart,
                     companyId,
-                    workerKeyPart,
-                    fileName);
+                    user.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    user.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    userId,
+                    LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE),
+                    user.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    user.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_")
+            );
 
             long ms = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
