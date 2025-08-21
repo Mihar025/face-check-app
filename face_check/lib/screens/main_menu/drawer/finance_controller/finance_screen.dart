@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../../models/daily_finance_info.dart';
 import '../../../../models/finance_info_response.dart';
 import '../../../../services/pdf_service.dart';
 import '../../../../services/ApiService.dart';
@@ -14,68 +16,127 @@ class FinanceScreen extends StatefulWidget {
   State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProviderStateMixin {
+class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateMixin {
   late ApiService _apiService;
-  DateTime currentWeekStart = DateTime.now();
-  FinanceInfoResponse? financeInfo;
-  bool isLoading = false;
   late AnimationController _animationController;
+  late AnimationController _slideController;
+
+  // ValueNotifiers для оптимизации перерисовок
+  late final ValueNotifier<DateTime> _currentWeekStart;
+  late final ValueNotifier<FinanceInfoResponse?> _financeInfo;
+  late final ValueNotifier<bool> _isLoading;
+
+  // Кэшированные значения MediaQuery
+  late Size _screenSize;
+  late bool _isSmallScreen;
+
+  // Константы для производительности
+  static const double _smallScreenThreshold = 360.0;
+  static const Color _primaryColor = Color(0xFF2D3748);
+  static const Color _backgroundColor = Color(0xFFF7FAFC);
+  static const Color _errorColor = Color(0xFFE53E3E);
+  static const Color _successColor = Color(0xFF48BB78);
 
   @override
   void initState() {
     super.initState();
     _apiService = ApiService.instance;
+
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    currentWeekStart = DateTime.now().subtract(
-      Duration(days: DateTime.now().weekday),
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
     );
+
+    // Инициализация ValueNotifiers
+    _currentWeekStart = ValueNotifier<DateTime>(
+      DateTime.now().subtract(
+        Duration(days: DateTime.now().weekday),
+      ),
+    );
+    _financeInfo = ValueNotifier<FinanceInfoResponse?>(null);
+    _isLoading = ValueNotifier<bool>(false);
+
     fetchFinanceInfo();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateScreenMetrics();
+  }
+
+  void _updateScreenMetrics() {
+    _screenSize = MediaQuery.of(context).size;
+    _isSmallScreen = _screenSize.width < _smallScreenThreshold;
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _slideController.dispose();
+    _currentWeekStart.dispose();
+    _financeInfo.dispose();
+    _isLoading.dispose();
     super.dispose();
   }
 
   Future<void> fetchFinanceInfo() async {
-    setState(() => isLoading = true);
+    _isLoading.value = true;
     try {
-      final response = await _apiService.getFinanceInfo(currentWeekStart);
-      setState(() => financeInfo = response);
+      final response = await _apiService.getFinanceInfo(_currentWeekStart.value);
+      if (!mounted) return;
+
+      _financeInfo.value = response;
       _animationController.forward(from: 0.0);
+      _slideController.forward(from: 0.0);
     } catch (e) {
       if (mounted) {
         final l10n = context.read<LocalizationProvider>().localizations;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.get('finance.errorLoadingData')}: $e'),
-            backgroundColor: Colors.red.shade400,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
+        _showModernSnackBar(
+          '${l10n.get('finance.errorLoadingData')}: $e',
+          isError: true,
         );
       }
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        _isLoading.value = false;
+      }
     }
   }
 
-  void changeWeek(int days) {
-    setState(() {
-      currentWeekStart = currentWeekStart.add(Duration(days: days));
-    });
-    fetchFinanceInfo();
+  void _showModernSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? _errorColor : _successColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(20),
+        elevation: 8,
+      ),
+    );
   }
 
-  String formatDate(DateTime date) {
-    final weekDay = DateFormat('EEE').format(date);
-    final dateStr = DateFormat('MM/dd').format(date);
-    return '$weekDay\n$dateStr';
+  void changeWeek(int days) {
+    HapticFeedback.lightImpact();
+    _currentWeekStart.value = _currentWeekStart.value.add(Duration(days: days));
+    fetchFinanceInfo();
   }
 
   String formatMoney(double amount) {
@@ -83,47 +144,80 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
   }
 
   double calculateTaxes() {
-    if (financeInfo == null) return 0.0;
-    return financeInfo!.totalGrossPay - financeInfo!.totalNetPay;
+    final info = _financeInfo.value;
+    if (info == null) return 0.0;
+    return info.totalGrossPay - info.totalNetPay;
   }
 
   Future<void> _downloadFinanceReport() async {
-    if (financeInfo != null) {
+    final info = _financeInfo.value;
+    if (info != null) {
       final l10n = context.read<LocalizationProvider>().localizations;
+      HapticFeedback.mediumImpact();
 
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          content: Row(
-            children: [
-              const CircularProgressIndicator(color: Colors.blue),
-              const SizedBox(width: 24),
-              Text(l10n.get('finance.downloadPdfReport')),
-            ],
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: _primaryColor,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  l10n.get('finance.downloadPdfReport'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
 
       try {
-        await FinancePdfService.generateFinanceReport(financeInfo!);
+        await FinancePdfService.generateFinanceReport(info);
+        if (!mounted) return;
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.get('finance.reportDownloadedSuccessfully')),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        _showModernSnackBar(
+          l10n.get('finance.reportDownloadedSuccessfully'),
+          isError: false,
         );
       } catch (e) {
+        if (!mounted) return;
         Navigator.of(context).pop();
-        print('Error saving PDF: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.get('finance.errorDownloadingReport')}: $e'),
-            backgroundColor: Colors.red.shade400,
-            behavior: SnackBarBehavior.floating,
-          ),
+        _showModernSnackBar(
+          '${l10n.get('finance.errorDownloadingReport')}: $e',
+          isError: true,
         );
       }
     }
@@ -131,430 +225,475 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    _updateScreenMetrics();
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
-    String periodText = '${DateFormat('MM/dd/yy').format(currentWeekStart)} - ${DateFormat('MM/dd/yy').format(currentWeekStart.add(const Duration(days: 6)))}';
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-            size: isSmallScreen ? 20 : 24,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          l10n.get('finance.title'),
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: isSmallScreen ? 20 : 22,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.download,
-              color: Colors.white,
-              size: isSmallScreen ? 20 : 24,
-            ),
-            tooltip: l10n.get('finance.downloadTooltip'),
-            onPressed: _downloadFinanceReport,
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.share,
-              color: Colors.white,
-              size: isSmallScreen ? 20 : 24,
-            ),
-            tooltip: l10n.get('finance.shareTooltip'),
-            onPressed: () {
-              if (financeInfo != null) {
-                Share.share(
-                  '${l10n.get('finance.shareTitle')} (${periodText}):\n'
-                      '${l10n.get('finance.totalHours')}: ${financeInfo?.totalHoursWorked.toStringAsFixed(1) ?? "0.0"}\n'
-                      '${l10n.get('finance.totalGrossPay')}: ${formatMoney(financeInfo?.totalGrossPay ?? 0.0)}\n'
-                      '${l10n.get('finance.totalNetPay')}: ${formatMoney(financeInfo?.totalNetPay ?? 0.0)}\n'
-                      '${l10n.get('finance.totalTaxes')}: ${formatMoney(calculateTaxes())}',
-                );
-              }
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 12.0 : 16.0,
-                vertical: isSmallScreen ? 10.0 : 12.0
-            ),
-            color: Colors.blue.shade50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton.icon(
-                  onPressed: () => changeWeek(-7),
-                  icon: Icon(
-                      Icons.arrow_back_ios,
-                      size: isSmallScreen ? 14 : 16,
-                      color: Colors.blue
-                  ),
-                  label: Text(
-                    l10n.get('finance.previous'),
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w500,
-                      fontSize: isSmallScreen ? 12 : 14,
-                    ),
-                  ),
-                ),
-                Column(
-                  children: [
-                    Text(
-                      l10n.get('finance.weekPeriod'),
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 10 : 12,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                    SizedBox(height: isSmallScreen ? 2 : 4),
-                    Text(
-                      periodText,
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 12 : 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-                TextButton.icon(
-                  onPressed: () => changeWeek(7),
-                  label: Text(
-                    l10n.get('finance.next'),
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w500,
-                      fontSize: isSmallScreen ? 12 : 14,
-                    ),
-                  ),
-                  icon: Icon(
-                      Icons.arrow_forward_ios,
-                      size: isSmallScreen ? 14 : 16,
-                      color: Colors.blue
-                  ),
-                ),
-              ],
-            ),
-          ),
+      backgroundColor: _backgroundColor,
+      body: ValueListenableBuilder<DateTime>(
+        valueListenable: _currentWeekStart,
+        builder: (context, currentWeekStart, _) {
+          String periodText = '${DateFormat('MM/dd/yy').format(currentWeekStart)} - '
+              '${DateFormat('MM/dd/yy').format(currentWeekStart.add(const Duration(days: 6)))}';
 
-          if (!isLoading && financeInfo != null)
-            Padding(
-              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-              child: Container(
-                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildSummaryItem(
-                      l10n.get('finance.hours'),
-                      '${financeInfo?.totalHoursWorked.toStringAsFixed(1) ?? "0.0"}',
-                      Icons.access_time_rounded,
-                      isSmallScreen,
-                    ),
-                    _buildSummaryItem(
-                      l10n.get('finance.gross'),
-                      formatMoney(financeInfo?.totalGrossPay ?? 0.0),
-                      Icons.trending_up,
-                      isSmallScreen,
-                    ),
-                    _buildSummaryItem(
-                      l10n.get('finance.net'),
-                      formatMoney(financeInfo?.totalNetPay ?? 0.0),
-                      Icons.account_balance_wallet,
-                      isSmallScreen,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          Expanded(
-            child: isLoading
-                ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.blue,
-              ),
-            )
-                : Container(
-              margin: EdgeInsets.fromLTRB(
-                  isSmallScreen ? 12 : 16,
-                  0,
-                  isSmallScreen ? 12 : 16,
-                  isSmallScreen ? 12 : 16
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                children: [
-                  // Table Header
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 8.0 : 12.0,
-                      vertical: isSmallScreen ? 10.0 : 12.0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: isSmallScreen ? 80 : 100,
-                          child: Text(
-                            l10n.get('finance.day'),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue,
-                              fontSize: isSmallScreen ? 12 : 14,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: isSmallScreen ? 6 : 8),
-                        Expanded(
-                          child: Text(
-                            l10n.get('finance.hours'),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue,
-                              fontSize: isSmallScreen ? 12 : 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            l10n.get('finance.gross'),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue,
-                              fontSize: isSmallScreen ? 12 : 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            l10n.get('finance.net'),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue,
-                              fontSize: isSmallScreen ? 12 : 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Daily Info
-                  Expanded(
-                    child: financeInfo?.dailyInfo.isEmpty ?? true
-                        ? Center(
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Minimalist App Bar
+              SliverAppBar(
+                expandedHeight: 140,
+                floating: false,
+                pinned: true,
+                elevation: 0,
+                backgroundColor: Colors.white,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    color: Colors.white,
+                    child: SafeArea(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.event_busy,
-                            size: isSmallScreen ? 32 : 40,
-                            color: Colors.grey.shade400,
-                          ),
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-                          Text(
-                            l10n.get('finance.noDataForPeriod'),
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 14 : 16,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 6 : 8),
-                          TextButton(
-                            onPressed: fetchFinanceInfo,
-                            child: Text(
-                              l10n.get('finance.refresh'),
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 13 : 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                        : ListView.builder(
-                      itemCount: (financeInfo?.dailyInfo.length ?? 0) + 1,
-                      itemBuilder: (context, index) {
-                        if (index == financeInfo!.dailyInfo.length) {
-                          return Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen ? 12.0 : 16.0,
-                              vertical: isSmallScreen ? 10.0 : 12.0,
-                            ),
-                            color: Colors.grey.shade50,
+                          // Top Actions Row
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios_new,
+                                    color: _primaryColor,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                                Row(
+                                  children: [
+                                    _buildActionButton(
+                                      Icons.download_rounded,
+                                      _downloadFinanceReport,
+                                      l10n.get('finance.downloadTooltip'),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildActionButton(
+                                      Icons.share_rounded,
+                                          () {
+                                        HapticFeedback.lightImpact();
+                                        final info = _financeInfo.value;
+                                        if (info != null) {
+                                          Share.share(
+                                            '${l10n.get('finance.shareTitle')} ($periodText):\n'
+                                                '${l10n.get('finance.totalHours')}: ${info.totalHoursWorked.toStringAsFixed(1)}\n'
+                                                '${l10n.get('finance.totalGrossPay')}: ${formatMoney(info.totalGrossPay)}\n'
+                                                '${l10n.get('finance.totalNetPay')}: ${formatMoney(info.totalNetPay)}\n'
+                                                '${l10n.get('finance.totalTaxes')}: ${formatMoney(calculateTaxes())}',
+                                          );
+                                        }
+                                      },
+                                      l10n.get('finance.shareTooltip'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Centered Title and Date
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
                                 Text(
-                                  '${l10n.get('finance.totals')}:',
-                                  style: TextStyle(
+                                  l10n.get('finance.title'),
+                                  style: const TextStyle(
+                                    color: _primaryColor,
+                                    fontSize: 32,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: isSmallScreen ? 12 : 14,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
+                                const SizedBox(height: 8),
                                 Text(
-                                  '${financeInfo?.totalHoursWorked.toStringAsFixed(1) ?? "0.0"}',
+                                  periodText,
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: isSmallScreen ? 12 : 14,
-                                  ),
-                                ),
-                                Text(
-                                  formatMoney(financeInfo?.totalGrossPay ?? 0.0),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: isSmallScreen ? 12 : 14,
-                                  ),
-                                ),
-                                Text(
-                                  formatMoney(financeInfo?.totalNetPay ?? 0.0),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: isSmallScreen ? 12 : 14,
+                                    color: Colors.grey[600],
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        }
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
 
-                        final daily = financeInfo!.dailyInfo[index];
-                        return SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0.05, 0),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: _animationController,
-                            curve: Interval(
-                              index * 0.1,
-                              0.5 + index * 0.1,
-                              curve: Curves.easeOut,
-                            ),
-                          )),
+              // Week Navigation
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.all(16),
+                  child: _buildWeekNavigation(l10n, _isSmallScreen, currentWeekStart),
+                ),
+              ),
+
+              // Summary Cards with ValueListenableBuilder
+              ValueListenableBuilder<bool>(
+                valueListenable: _isLoading,
+                builder: (context, isLoading, _) {
+                  return ValueListenableBuilder<FinanceInfoResponse?>(
+                    valueListenable: _financeInfo,
+                    builder: (context, financeInfo, _) {
+                      if (!isLoading && financeInfo != null) {
+                        return SliverToBoxAdapter(
                           child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen ? 8.0 : 12.0,
-                              vertical: isSmallScreen ? 10.0 : 12.0,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.grey.shade200,
-                                  width: 0.5,
-                                ),
-                              ),
-                              color: index % 2 == 0
-                                  ? Colors.white
-                                  : Colors.grey.shade50,
-                            ),
-                            child: Row(
+                            height: 180,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
                               children: [
-                                SizedBox(
-                                  width: isSmallScreen ? 80 : 100,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                _buildModernSummaryCard(
+                                  l10n.get('finance.hours'),
+                                  '${financeInfo.totalHoursWorked.toStringAsFixed(1)}',
+                                  Icons.schedule_rounded,
+                                  const [Color(0xFF4A5568), _primaryColor],
+                                  0,
+                                ),
+                                _buildModernSummaryCard(
+                                  l10n.get('finance.gross'),
+                                  formatMoney(financeInfo.totalGrossPay),
+                                  Icons.trending_up_rounded,
+                                  const [Color(0xFF48BB78), Color(0xFF38A169)],
+                                  1,
+                                ),
+                                _buildModernSummaryCard(
+                                  l10n.get('finance.net'),
+                                  formatMoney(financeInfo.totalNetPay),
+                                  Icons.account_balance_wallet_rounded,
+                                  const [Color(0xFF4299E1), Color(0xFF3182CE)],
+                                  2,
+                                ),
+                                _buildModernSummaryCard(
+                                  l10n.get('finance.totalTaxes'),
+                                  formatMoney(calculateTaxes()),
+                                  Icons.receipt_long_rounded,
+                                  const [Color(0xFFED8936), Color(0xFFDD6B20)],
+                                  3,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    },
+                  );
+                },
+              ),
+
+              // Daily Breakdown Title
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Daily Breakdown',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Content with ValueListenableBuilders
+              ValueListenableBuilder<bool>(
+                valueListenable: _isLoading,
+                builder: (context, isLoading, _) {
+                  if (isLoading) {
+                    return SliverFillRemaining(
+                      child: Center(
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: _primaryColor,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _primaryColor.withOpacity(0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ValueListenableBuilder<FinanceInfoResponse?>(
+                    valueListenable: _financeInfo,
+                    builder: (context, financeInfo, _) {
+                      if (financeInfo?.dailyInfo.isEmpty ?? true) {
+                        return SliverFillRemaining(
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.grey.shade300,
+                                        Colors.grey.shade400,
+                                      ],
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.event_busy_rounded,
+                                    size: 50,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Text(
+                                  l10n.get('finance.noDataForPeriod'),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    fetchFinanceInfo();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        DateFormat('EEE')
-                                            .format(daily.date)
-                                            .toUpperCase(),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.blue.shade700,
-                                          fontSize: isSmallScreen ? 12 : 14,
-                                        ),
-                                      ),
-                                      SizedBox(height: isSmallScreen ? 1 : 2),
-                                      Text(
-                                        DateFormat('MM/dd').format(daily.date),
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: isSmallScreen ? 10 : 12,
-                                        ),
-                                      ),
+                                      Icon(Icons.refresh_rounded),
+                                      SizedBox(width: 8),
+                                      Text('Refresh'),
                                     ],
-                                  ),
-                                ),
-                                SizedBox(width: isSmallScreen ? 6 : 8),
-                                Expanded(
-                                  child: Text(
-                                    daily.hoursWorked.toStringAsFixed(1),
-                                    style: TextStyle(
-                                      color: daily.hoursWorked > 0
-                                          ? Colors.black87
-                                          : Colors.grey,
-                                      fontSize: isSmallScreen ? 12 : 14,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    formatMoney(daily.grossPay),
-                                    style: TextStyle(
-                                      color: daily.grossPay > 0
-                                          ? Colors.black87
-                                          : Colors.grey,
-                                      fontSize: isSmallScreen ? 12 : 14,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    formatMoney(financeInfo?.totalNetPay ?? 0.0),
-                                    style: TextStyle(
-                                      color: daily.grossPay > 0
-                                          ? Colors.black87
-                                          : Colors.grey,
-                                      fontSize: isSmallScreen ? 12 : 14,
-                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         );
-                      },
+                      }
+
+                      return SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                            if (index == financeInfo!.dailyInfo.length) {
+                              return _buildTotalRow(l10n, financeInfo);
+                            }
+
+                            final daily = financeInfo.dailyInfo[index];
+                            return _buildDailyCard(daily, index);
+                          },
+                          childCount: financeInfo!.dailyInfo.length + 1,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+
+              // Bottom Padding
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 100),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, VoidCallback onPressed, String tooltip) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Tooltip(
+          message: tooltip,
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.grey[300]!,
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: _primaryColor,
+              size: 22,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeekNavigation(dynamic l10n, bool isSmallScreen, DateTime currentWeekStart) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Previous Week Button
+          Expanded(
+            flex: 2,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: () => changeWeek(-7),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: _primaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.chevron_left_rounded,
+                        color: _primaryColor,
+                        size: 22,
+                      ),
+                      Text(
+                        l10n.get('finance.previous'),
+                        style: const TextStyle(
+                          color: _primaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Current Period Display
+          Expanded(
+            flex: 3,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: [
+                  Text(
+                    l10n.get('finance.weekPeriod').toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    DateFormat('MMM d').format(currentWeekStart),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryColor,
+                    ),
+                  ),
+                  Text(
+                    'to ${DateFormat('MMM d, yyyy').format(currentWeekStart.add(const Duration(days: 6)))}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade700,
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          // Next Week Button
+          Expanded(
+            flex: 2,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: () => changeWeek(7),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: _primaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        l10n.get('finance.next'),
+                        style: const TextStyle(
+                          color: _primaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: _primaryColor,
+                        size: 22,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -563,29 +702,333 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, IconData icon, bool isSmallScreen) {
+  Widget _buildModernSummaryCard(
+      String label,
+      String value,
+      IconData icon,
+      List<Color> gradientColors,
+      int index,
+      ) {
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors.first.withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => HapticFeedback.lightImpact(),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDailyCard(DailyFinanceInfo daily, int index) {
+    final bool hasData = daily.hoursWorked > 0;
+
+    return FadeTransition(
+      opacity: Tween<double>(
+        begin: 0,
+        end: 1,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(
+            index * 0.05,
+            0.3 + index * 0.05,
+            curve: Curves.easeOut,
+          ),
+        ),
+      ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: hasData
+              ? [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ]
+              : [],
+          border: Border.all(
+            color: hasData ? Colors.transparent : Colors.grey.shade200,
+            width: 1,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: hasData ? () => HapticFeedback.lightImpact() : null,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Date Badge - Updated design
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: hasData
+                          ? _primaryColor
+                          : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DateFormat('EEE').format(daily.date).toUpperCase(),
+                          style: TextStyle(
+                            color: hasData ? Colors.white : Colors.grey.shade500,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          DateFormat('dd').format(daily.date),
+                          style: TextStyle(
+                            color: hasData ? Colors.white : Colors.grey.shade500,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Data
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildDataItem(
+                          Icons.schedule,
+                          '${daily.hoursWorked.toStringAsFixed(1)}h',
+                          hasData,
+                        ),
+                        _buildDataItem(
+                          Icons.attach_money,
+                          formatMoney(daily.grossPay),
+                          hasData,
+                        ),
+                        _buildDataItem(
+                          Icons.account_balance_wallet,
+                          formatMoney(daily.netPay),
+                          hasData,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDataItem(IconData icon, String value, bool hasData) {
     return Column(
       children: [
         Icon(
-            icon,
-            color: Colors.blue.shade600,
-            size: isSmallScreen ? 18 : 20
+          icon,
+          size: 16,
+          color: hasData ? _primaryColor : Colors.grey.shade400,
         ),
-        SizedBox(height: isSmallScreen ? 6 : 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: isSmallScreen ? 10 : 12,
-          ),
-        ),
-        SizedBox(height: isSmallScreen ? 3 : 4),
+        const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontSize: isSmallScreen ? 14 : 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.blue.shade800,
+            fontSize: 14,
+            fontWeight: hasData ? FontWeight.w600 : FontWeight.normal,
+            color: hasData ? Colors.grey.shade800 : Colors.grey.shade400,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTotalRow(dynamic l10n, FinanceInfoResponse financeInfo) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            _primaryColor,
+            Color(0xFF4A5568),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryColor.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.assessment_rounded,
+                  color: Colors.white.withOpacity(0.9),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.get('finance.totals').toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTotalItem(
+                  Icons.schedule_rounded,
+                  '${financeInfo.totalHoursWorked.toStringAsFixed(1)}',
+                  'hours',
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.white.withOpacity(0.2),
+                ),
+                _buildTotalItem(
+                  Icons.trending_up_rounded,
+                  formatMoney(financeInfo.totalGrossPay),
+                  'gross',
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.white.withOpacity(0.2),
+                ),
+                _buildTotalItem(
+                  Icons.account_balance_wallet_rounded,
+                  formatMoney(financeInfo.totalNetPay),
+                  'net',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTotalItem(IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 11,
+            letterSpacing: 0.5,
           ),
         ),
       ],
