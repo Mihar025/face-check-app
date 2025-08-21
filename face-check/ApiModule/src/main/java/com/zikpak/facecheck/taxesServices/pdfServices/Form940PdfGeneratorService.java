@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -286,24 +287,29 @@ topmostSubform[0].Page1[0].Header[0].EntityArea[0]
 
             byte[] pdfBytes = baos.toByteArray();
 
-
+// Генерируем правильный S3 ключ
             String companyKeyPart = company.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String fileName = String.format("f940_%d_%d.pdf",
-                    companyId,
-                    year);
+// Дата подачи формы (сегодня)
+            String filingDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
 
-            String key = String.format("%s/%d/940pdf/%s",
+            String key = String.format("%s_%d/forms/940/%d/form_940_%d_filed_%s.pdf",
                     companyKeyPart,
                     companyId,
-                    fileName
+                    year,
+                    year,
+                    filingDate
             );
+
 
             long st = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
             long end = System.currentTimeMillis() - st;
+
+            log.info("✅ Form 940 uploaded to S3: {}", key);
 
             metric.recordGenerated(FORM, true);
             metric.recordS3UploadTime(FORM, true,  end);

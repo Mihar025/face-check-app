@@ -156,15 +156,27 @@ public class Form940ScheduleAXmlGenerator {
     }
 
     private void uploadXmlToS3(Object company, Integer companyId, int year, String xmlContent) {
+        // Генерируем правильный S3 ключ
         String companyKeyPart = ((com.zikpak.facecheck.entity.Company) company).getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        String fileName = String.format("f940sa_%d_%d.xml", companyId, year);
-        String key = String.format("%s/%d/940saform/940saXml/%d/%s",
-                companyKeyPart, companyId, year, fileName);
+        // Дата генерации файла
+        String generatedDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        // XML файлы идут в подпапку xml рядом с PDF
+        String key = String.format("%s_%d/forms/940-schedule-a/%d/xml/form_940_schedule_a_%d_%s.xml",
+                companyKeyPart,
+                companyId,
+                year,
+                year,
+                generatedDate
+        );
+
 
         amazonS3Service.uploadPdfToS3(xmlContent.getBytes(), key);
+
         log.info("✅ Form 940 Schedule A XML uploaded to S3: {}", key);
     }
 
