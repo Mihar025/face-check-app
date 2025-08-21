@@ -270,14 +270,22 @@ public class FillFormW4 {
 
             byte[] pdfBytes = baos.toByteArray();
 
-            String companyKeyPart = companyName
+// Генерируем правильный S3 ключ
+            String companyKeyPart = foundedCompany.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]", "_");
-            String workerKeyPart = (firstName + "_" + lastName )
-                    .trim()
-                    .replaceAll("[^A-Za-z0-9_]", "");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String key = String.format("%s/W4/%s.pdf", companyKeyPart, workerKeyPart);
+            String key = String.format("%s_%d/employees/%s_%s_%d/forms/w4/w4_%s_%s_%s.pdf",
+                    companyKeyPart,
+                    companyId,
+                    foundedWorker.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    foundedWorker.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    userId,
+                    LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE),
+                    foundedWorker.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    foundedWorker.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_")
+            );
 
             long ms = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
