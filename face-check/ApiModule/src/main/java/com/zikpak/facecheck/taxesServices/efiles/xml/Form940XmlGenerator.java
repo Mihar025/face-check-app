@@ -442,15 +442,23 @@ public class Form940XmlGenerator {
     }
 
     private void uploadXmlToS3(Object company, Integer companyId, int year, String xmlContent) {
-        String companyKeyPart = ((com.zikpak.facecheck.entity.Company)company).getCompanyName()
+        String companyKeyPart = ((com.zikpak.facecheck.entity.Company) company).getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        String fileName = String.format("f940_%d_%d.xml", companyId, year);
-        String key = String.format("%s/%d/940form/940Xml/%d/%s",
-                companyKeyPart, companyId, year, fileName);
+        String generatedDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        String key = String.format("%s_%d/forms/940/%d/xml/form_940_%d_%s.xml",
+                companyKeyPart,
+                companyId,
+                year,
+                year,
+                generatedDate
+        );
 
         amazonS3Service.uploadPdfToS3(xmlContent.getBytes(), key);
+
         log.info("✅ Form 940 XML uploaded to S3: {}", key);
     }
 
