@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -189,18 +191,25 @@ public class FillForm940SA {
      * Загрузка в S3
      */
     private void uploadToS3(Object company, Integer companyId, int year, byte[] pdfBytes) {
+
         String companyKeyPart = ((com.zikpak.facecheck.entity.Company)company).getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        String fileName = String.format("f940SA_%d_%d.pdf", companyId, year);
-        String key = String.format("%s/%d/940SApdf/%s", companyKeyPart, companyId, fileName);
+        String filingDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        String key = String.format("%s_%d/forms/940-schedule-a/%d/form_940_schedule_a_%d_filed_%s.pdf",
+                companyKeyPart,
+                companyId,
+                year,
+                year,
+                filingDate
+        );
 
         amazonS3Service.uploadPdfToS3(pdfBytes, key);
         log.info("✅ Form 940 Schedule A uploaded to S3: {}", key);
     }
-
-    // Helper methods
     private void fill(Map<String, PdfFormField> fields, String name, String value) {
         PdfFormField field = fields.get(name);
         if (field == null) {
