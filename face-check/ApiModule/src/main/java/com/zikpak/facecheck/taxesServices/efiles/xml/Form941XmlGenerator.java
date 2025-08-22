@@ -601,13 +601,22 @@ public class Form941XmlGenerator {
     }
 
     private void uploadXmlToS3(Object company, Integer companyId, int year, int quarter, String xmlContent) {
-        String companyKeyPart = ((com.zikpak.facecheck.entity.Company)company).getCompanyName()
+        String companyKeyPart = ((com.zikpak.facecheck.entity.Company) company).getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        String fileName = String.format("f941_%d_%d_%d.xml", companyId, year, quarter);
-        String key = String.format("%s/%d/941form/941Xml/%d/%d/%s",
-                companyKeyPart, companyId, year, quarter, fileName);
+        String generatedDate = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        String key = String.format("%s_%d/forms/941/%d/q%d/xml/form_941_%d_q%d_%s.xml",
+                companyKeyPart,
+                companyId,
+                year,
+                quarter,
+                year,
+                quarter,
+                generatedDate
+        );
 
         amazonS3Service.uploadPdfToS3(xmlContent.getBytes(), key);
     }
