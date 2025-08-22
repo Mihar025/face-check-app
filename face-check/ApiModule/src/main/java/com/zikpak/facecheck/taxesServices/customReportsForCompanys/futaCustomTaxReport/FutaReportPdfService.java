@@ -447,28 +447,41 @@ public class FutaReportPdfService {
     }
 
     private void uploadToS3(byte[] pdfBytes, FutaReportDTO reportData) {
+        // Генерируем правильный S3 ключ
         String companyKeyPart = reportData.getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
+        String periodPart;
         String fileName;
+
         if ("Quarterly".equals(reportData.getReportType())) {
-            fileName = String.format("futaReport_Q%d_%d_%d.pdf",
-                    reportData.getQuarter(), reportData.getTaxYear(), reportData.getCompanyId());
+            periodPart = String.format("Q%d", reportData.getQuarter());
+            fileName = String.format("futa_report_%d_Q%d_%s.pdf",
+                    reportData.getTaxYear(),
+                    reportData.getQuarter(),
+                    LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
         } else {
-            fileName = String.format("futaReport_Annual_%d_%d.pdf",
-                    reportData.getTaxYear(), reportData.getCompanyId());
+            periodPart = "annual";
+            fileName = String.format("futa_report_%d_annual_%s.pdf",
+                    reportData.getTaxYear(),
+                    LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
         }
 
-        String key = String.format("%s/%d/futaReports/%s",
+        String key = String.format("%s_%d/reports/futa/%d/%s/%s",
                 companyKeyPart,
                 reportData.getCompanyId(),
-                fileName);
+                reportData.getTaxYear(),
+                periodPart,
+                fileName
+        );
+
+
 
         amazonS3Service.uploadPdfToS3(pdfBytes, key);
         log.info("FUTA report uploaded to S3: {}", key);
     }
-
     // Helper methods
     private Cell createInfoCell(String text, PdfFont font) {
         if (text == null) text = "";
