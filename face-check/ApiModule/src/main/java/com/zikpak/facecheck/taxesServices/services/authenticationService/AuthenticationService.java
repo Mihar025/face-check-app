@@ -134,6 +134,32 @@ public class AuthenticationService {
     }
 
 
+
+    public void registerAppOwner(RegistrationAdminRequest request) throws MessagingException,
+            IOException {
+        Timer.Sample timer = metric.startTimer();
+        try {
+            authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
+            var role = authenticationServiceImpl.findRoleAppOwner();
+            var user = userMapper.toAdmin(request);
+            user.setRoles(List.of(role));
+
+            userRepository.save(user);
+            metric.recordOperationTime(timer, "register_admin_successfully");
+            try {
+                sendValidationEmail(user);
+            } catch (MessagingException e) {
+                log.error("Failed to send validation email", user.getEmail(), e);
+                throw e;
+            }
+        } catch (Exception e){
+            metric.recordError("register_admin_failed", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+
+
     @Transactional(rollbackOn = Exception.class)
     public void setPaymentDataForWorkerHoursRateAndOvertime(Integer employeeId,
                                                             PaymentRequest paymentRequest,
@@ -160,7 +186,12 @@ public class AuthenticationService {
         Timer.Sample timer = metric.startTimer();
         try {
             User user = ((User) authentication.getPrincipal());
-            if (!user.isAdmin()) {
+
+            boolean isAppOwner = user.getRoles().stream()
+                    .anyMatch(role -> "AppOwner".equals(role.getName()));
+            boolean isAdmin = user.isAdmin();
+
+            if (!isAdmin && !isAppOwner) {
                 throw new AccessDeniedException("You dont have permission for this operation");
             }
 
@@ -381,7 +412,7 @@ public class AuthenticationService {
             latestToken.setExpiresAt(LocalDateTime.now());
             tokenRepository.save(latestToken);
             metric.recordOperationTime(timer, "reset_password_success");
-        } catch (Exception e){
+        } catch (Exception e) {
             metric.recordOperationTime(timer, "reset_password_failed");
             metric.recordError("reset_password_failed", e.getMessage(), e);
         }

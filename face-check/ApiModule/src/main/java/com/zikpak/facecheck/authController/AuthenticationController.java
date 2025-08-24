@@ -39,6 +39,12 @@ public class AuthenticationController {
         return ResponseEntity.accepted().build();
     }
 
+    @PostMapping("/register/app-owner")
+    public ResponseEntity<?> registerAppowner(@RequestBody @Valid RegistrationAdminRequest request) throws MessagingException, IOException {
+        authenticationService.registerAppOwner(request);
+        return ResponseEntity.accepted().build();
+    }
+
 
     @PostMapping("/register/foreman")
     public ResponseEntity<?> registerForeman(@RequestBody @Valid RegistrationRequest request) throws MessagingException {
