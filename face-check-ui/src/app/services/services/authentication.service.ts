@@ -19,6 +19,8 @@ import { register } from '../fn/authentication/register';
 import { Register$Params } from '../fn/authentication/register';
 import { registerAdmin } from '../fn/authentication/register-admin';
 import { RegisterAdmin$Params } from '../fn/authentication/register-admin';
+import { registerAppowner } from '../fn/authentication/register-appowner';
+import { RegisterAppowner$Params } from '../fn/authentication/register-appowner';
 import { registerCompany } from '../fn/authentication/register-company';
 import { RegisterCompany$Params } from '../fn/authentication/register-company';
 import { registerForeman } from '../fn/authentication/register-foreman';
@@ -201,6 +203,35 @@ export class AuthenticationService extends BaseService {
   registerCompany(params: RegisterCompany$Params, context?: HttpContext): Observable<void> {
     return this.registerCompany$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `registerAppowner()` */
+  static readonly RegisterAppownerPath = '/auth/register/app-owner';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `registerAppowner()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  registerAppowner$Response(params: RegisterAppowner$Params, context?: HttpContext): Observable<StrictHttpResponse<{
+}>> {
+    return registerAppowner(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `registerAppowner$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  registerAppowner(params: RegisterAppowner$Params, context?: HttpContext): Observable<{
+}> {
+    return this.registerAppowner$Response(params, context).pipe(
+      map((r: StrictHttpResponse<{
+}>): {
+} => r.body)
     );
   }
 
