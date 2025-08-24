@@ -55,7 +55,13 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.findCompanyIncomePerMonth(companyId, authentication));
     }
 
-
+    @GetMapping("/employee-in-certain-company/{workerId}/{companyId}/")
+    public ResponseEntity<RelatedUserInCompanyResponse> findCertainEmployeeInCompany(
+            @PathVariable(name = "workerId") Integer workerId,
+            @PathVariable(name = "companyId") Integer companyId,
+            Authentication authentication) {
+        return ResponseEntity.ok(companyService.findEmployeeInCertainCompany(workerId, companyId, authentication));
+    }
 
 
     //working
