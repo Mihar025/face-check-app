@@ -20,9 +20,16 @@ public class DocumentsI9 {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "document_title")
     private String documentTitle = "";
+
+    @Column(name = "issuing_authority")
     private String issuingAuthority = "";
+
+    @Column(name = "document_number")
     private String documentNumber = "";
+
+    @Column(name = "expiration_date")
     private LocalDate expirationDate ;
 
     @ManyToOne(fetch = FetchType.LAZY)
