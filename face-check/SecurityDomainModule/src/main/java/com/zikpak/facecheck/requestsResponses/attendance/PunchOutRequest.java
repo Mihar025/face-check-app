@@ -23,11 +23,11 @@ public class PunchOutRequest {
     private String photoBase64;
 
     @NotNull(message = "This field is required!")
-    @PositiveOrZero(message = "This field cannot be negative")
+  //  @PositiveOrZero(message = "This field cannot be negative")
     private Double latitude;
 
     @NotNull(message = "This field is required!")
-    @PositiveOrZero(message = "This field cannot be negative")
+ //   @PositiveOrZero(message = "This field cannot be negative")
     private Double longitude;
 
 }
