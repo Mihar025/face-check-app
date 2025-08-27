@@ -26,69 +26,108 @@ class PunchButtons extends StatelessWidget {
 
     return Container(
       color: backgroundColor ?? theme.scaffoldBackgroundColor,
-      padding: EdgeInsets.only(bottom: isSmallScreen ? 16 : 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 20 : 24,
+        vertical: isSmallScreen ? 16 : 20,
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildPunchButton(
-            onTap: onPunchIn,
-            color: Colors.green,
-            icon: Icons.login,
-            label: l10n.get('punchIn'),
-            isSmallScreen: isSmallScreen,
+          Expanded(
+            child: _buildPunchButton(
+              context: context,
+              onTap: onPunchIn,
+              color: Colors.green,
+              icon: Icons.login_rounded,
+              label: l10n.get('punchIn'),
+              isSmallScreen: isSmallScreen,
+              theme: theme,
+            ),
           ),
-          SizedBox(width: isSmallScreen ? 12 : 20),
-          _buildPunchButton(
-            onTap: onPunchOut,
-            color: Colors.blue,
-            icon: Icons.logout,
-            label: l10n.get('punchOut'),
-            isSmallScreen: isSmallScreen,
+          SizedBox(width: isSmallScreen ? 12 : 16),
+          Expanded(
+            child: _buildPunchButton(
+              context: context,
+              onTap: onPunchOut,
+              color: Colors.blue,
+              icon: Icons.logout_rounded,
+              label: l10n.get('punchOut'),
+              isSmallScreen: isSmallScreen,
+              theme: theme,
+            ),
           ),
         ],
       ),
     );
   }
-
   Widget _buildPunchButton({
+    required BuildContext context,
     required VoidCallback? onTap,
     required Color color,
     required IconData icon,
     required String label,
     required bool isSmallScreen,
+    required ThemeData theme,
   }) {
+    final isDisabled = onTap == null;
+
     return Material(
-      color: buttonColor ?? Colors.transparent,
-      borderRadius: BorderRadius.circular(isSmallScreen ? 22 : 25),
+      color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(isSmallScreen ? 22 : 25),
-        child: Container(
-          width: isSmallScreen ? 65 : 75,
-          height: isSmallScreen ? 65 : 75,
+        onTap: isDisabled ? null : onTap,
+        borderRadius: BorderRadius.circular(14), // было 16
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: isSmallScreen ? 46 : 52, // было 56 / 64 → меньше
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.withOpacity(0.2),
+            color: isDisabled
+                ? (theme.brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.grey[200])
+                : (buttonColor ?? (theme.brightness == Brightness.dark
+                ? color.withOpacity(0.15)
+                : color.withOpacity(0.1))),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: color,
-              width: isSmallScreen ? 1.5 : 2,
+              color: isDisabled
+                  ? Colors.grey.withOpacity(0.3)
+                  : color.withOpacity(0.3),
+              width: 1.5,
             ),
+            boxShadow: isDisabled
+                ? null
+                : [
+              BoxShadow(
+                color: color.withOpacity(0.15),
+                blurRadius: 6, // было 8
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          child: Column(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: isSmallScreen ? 20 : 24,
+              Container(
+                padding: EdgeInsets.all(isSmallScreen ? 6 : 8), // было 8 / 10
+                decoration: BoxDecoration(
+                  color: isDisabled
+                      ? Colors.grey.withOpacity(0.1)
+                      : color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: isDisabled ? Colors.grey : color,
+                  size: isSmallScreen ? 16 : 20, // было 20 / 24
+                ),
               ),
-              SizedBox(height: isSmallScreen ? 2 : 4),
+              SizedBox(width: isSmallScreen ? 8 : 10), // было 10 / 12
               Text(
-                label,
+                label.toUpperCase(),
                 style: TextStyle(
-                  color: color,
-                  fontSize: isSmallScreen ? 10 : 12,
-                  fontWeight: FontWeight.bold,
+                  color: isDisabled ? Colors.grey : color,
+                  fontSize: isSmallScreen ? 11 : 13, // было 13 / 15
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1,
                 ),
               ),
             ],
