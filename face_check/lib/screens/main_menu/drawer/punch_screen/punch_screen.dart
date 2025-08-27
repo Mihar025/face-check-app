@@ -3,6 +3,7 @@ import 'package:face_check/screens/main_menu/drawer/punch_screen/work_site_dialo
 import 'package:face_check/screens/main_menu/drawer/punch_screen/work_site_selector.dart';
 import 'package:face_check/screens/main_menu/drawer/punch_screen/work_site_service.dart';
 import 'package:face_check/screens/main_menu/main_menu_punch_screen/punch_success_dialo.dart';
+import 'package:face_check/services/location_tracking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -13,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:face_check/services/time_service.dart';
 
 import '../../../../../api_client/model/work_site_response.dart';
 import '../../../../../api_client/api/worker_attendance_controller_api.dart';
@@ -30,39 +33,137 @@ class PunchScreen extends StatefulWidget {
   State<PunchScreen> createState() => _PunchScreenState();
 }
 
-class _PunchScreenState extends State<PunchScreen> {
+class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
+  // Services
   late final Dio dio;
   late final LocationService locationService;
   late final WorkSiteService workSiteService;
   late final WorkerAttendanceControllerApi attendanceApi;
+  late final TimeService timeService;
+  late final LocationTrackingService _locationTrackingService;
   final ImagePicker _imagePicker = ImagePicker();
 
+  // ValueNotifiers для оптимизации
+  late final ValueNotifier<bool> _isLoading;
+  late final ValueNotifier<bool> _hasPunchIn;
+  late final ValueNotifier<Position?> _currentPosition;
+  late final ValueNotifier<WorkSiteResponse?> _selectedWorkSite;
+  late final ValueNotifier<List<WorkSiteResponse>> _workSites;
+  late final ValueNotifier<bool> _isTrackingActive;
+  late final ValueNotifier<int?> _currentUserId;
+
+  // Google Maps Controller
   GoogleMapController? mapController;
-  Position? currentPosition;
-  WorkSiteResponse? selectedWorkSite;
-  bool isLoading = false;
-  bool hasPunchIn = false;
-  List<WorkSiteResponse> workSites = [];
+
+  // Кэшированные значения
+  late Size _screenSize;
+  late bool _isSmallScreen;
+  late ThemeData _theme;
+
+  // Константы
+  static final tz.Location _ny = tz.getLocation('America/New_York');
+  static const double _smallScreenThreshold = 360.0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Инициализация ValueNotifiers
+    _isLoading = ValueNotifier<bool>(false);
+    _hasPunchIn = ValueNotifier<bool>(false);
+    _currentPosition = ValueNotifier<Position?>(null);
+    _selectedWorkSite = ValueNotifier<WorkSiteResponse?>(null);
+    _workSites = ValueNotifier<List<WorkSiteResponse>>([]);
+    _isTrackingActive = ValueNotifier<bool>(false);
+    _currentUserId = ValueNotifier<int?>(null);
+
     _initializeDependencies();
   }
 
-  void _initializeDependencies() {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateCachedValues();
+  }
+
+  void _updateCachedValues() {
+    _screenSize = MediaQuery.of(context).size;
+    _isSmallScreen = _screenSize.width < _smallScreenThreshold;
+    _theme = Theme.of(context);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _isLoading.dispose();
+    _hasPunchIn.dispose();
+    _currentPosition.dispose();
+    _selectedWorkSite.dispose();
+    _workSites.dispose();
+    _isTrackingActive.dispose();
+    _currentUserId.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      timeService.sync().then((_) => _checkTodayPunchStatus());
+    }
+  }
+
+  void _initializeDependencies() async {
     _initializeDio();
+    timeService = TimeService(dio);
     locationService = LocationService();
     workSiteService = WorkSiteService(dio);
     attendanceApi = WorkerAttendanceControllerApi(dio, serializers);
+    _locationTrackingService = LocationTrackingService(dio);
 
-    Future.wait([
+    await _fetchAndSaveUserId();
+
+    await Future.wait([
+      timeService.sync(),
       _getCurrentLocation(),
       _loadWorkSites(),
       _checkTodayPunchStatus(),
-    ]).then((_) {
-      if (mounted) setState(() {});
-    });
+      _checkTrackingStatus(),
+    ]);
+  }
+
+  Future<void> _fetchAndSaveUserId() async {
+    try {
+      print('📱 Fetching user ID from server...');
+
+      final response = await dio.get('user/find-user-id');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final userId = response.data['userId'];
+
+        if (userId != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('user_id', userId);
+          _currentUserId.value = userId;
+          print('✅ User ID successfully fetched and saved: $userId');
+        }
+      }
+    } catch (e) {
+      print('❌ Error fetching user ID: $e');
+
+      final prefs = await SharedPreferences.getInstance();
+      final savedUserId = prefs.getInt('user_id');
+
+      if (savedUserId != null && savedUserId != 0) {
+        _currentUserId.value = savedUserId;
+        print('📦 Using cached user ID: $savedUserId');
+      }
+    }
+  }
+
+  Future<void> _checkTrackingStatus() async {
+    final isActive = await _locationTrackingService.isTrackingActive();
+    _isTrackingActive.value = isActive;
   }
 
   void _initializeDio() {
@@ -87,92 +188,78 @@ class _PunchScreenState extends State<PunchScreen> {
     ));
   }
 
-  Future<void> _checkTodayPunchStatus() async {
-    try {
-      final DateTime now = DateTime.now();
-      final String today = DateFormat('yyyy-MM-dd').format(now);
-
-      final prefs = await SharedPreferences.getInstance();
-      final String lastPunchInDate = prefs.getString('lastPunchInDate') ?? '';
-      final String lastPunchOutDate = prefs.getString('lastPunchOutDate') ?? '';
-
-      print('Today: $today');
-      print('Last Punch In: $lastPunchInDate');
-      print('Last Punch Out: $lastPunchOutDate');
-
-      String lastPunchInDateOnly = lastPunchInDate.isNotEmpty ? lastPunchInDate.split(' ')[0] : '';
-      String lastPunchOutDateOnly = lastPunchOutDate.isNotEmpty ? lastPunchOutDate.split(' ')[0] : '';
-
-      bool lastPunchInWasToday = lastPunchInDateOnly == today;
-      bool lastPunchOutWasToday = lastPunchOutDateOnly == today;
-
-      DateTime? lastPunchInDateTime = lastPunchInDate.isNotEmpty ? DateTime.tryParse(lastPunchInDate) : null;
-      DateTime? lastPunchOutDateTime = lastPunchOutDate.isNotEmpty ? DateTime.tryParse(lastPunchOutDate) : null;
-
-      if (lastPunchInWasToday && lastPunchOutWasToday) {
-        if (lastPunchOutDateTime != null &&
-            lastPunchInDateTime != null &&
-            lastPunchOutDateTime.isAfter(lastPunchInDateTime)) {
-          setState(() {
-            hasPunchIn = false;
-          });
-        } else {
-          setState(() {
-            hasPunchIn = true;
-          });
-        }
-      } else if (lastPunchInWasToday) {
-        setState(() {
-          hasPunchIn = true;
-        });
-      } else {
-        setState(() {
-          hasPunchIn = false;
-        });
-      }
-
-      if (lastPunchInDate.isEmpty && lastPunchOutDate.isEmpty) {
-        await _checkPunchInStatus();
-      }
-    } catch (e) {
-      print('Error checking punch status: $e');
-      await _checkPunchInStatus();
-    }
+  bool _isSameDayNY(DateTime aUtc, DateTime bUtc) {
+    final aNy = tz.TZDateTime.from(aUtc.toUtc(), _ny);
+    final bNy = tz.TZDateTime.from(bUtc.toUtc(), _ny);
+    return aNy.year == bNy.year && aNy.month == bNy.month && aNy.day == bNy.day;
   }
 
-  Future<void> _checkPunchInStatus() async {
+  Future<void> _checkTodayPunchStatus() async {
     try {
-      final lastPunch = await ApiService.instance.getLastPunchTime();
-      if (mounted) {
-        setState(() {
-          hasPunchIn = lastPunch.time != '--:--';
-        });
+      final prefs = await SharedPreferences.getInstance();
+
+      // Сначала проверяем флаг быстрой проверки
+      final bool? quickFlag = prefs.getBool('isPunchedInToday');
+
+      final String? inStr = prefs.getString('lastPunchInDate');
+      final String? outStr = prefs.getString('lastPunchOutDate');
+
+      final DateTime nowUtc = timeService.nowUtc();
+
+      // Если нет сохраненных данных, считаем что не было punch in
+      if ((inStr == null || inStr.isEmpty) && (outStr == null || outStr.isEmpty)) {
+        _hasPunchIn.value = false;
+        await prefs.setBool('isPunchedInToday', false);
+        return;
       }
+
+      final DateTime? inUtc = (inStr != null && inStr.isNotEmpty)
+          ? DateTime.tryParse(inStr)?.toUtc()
+          : null;
+      final DateTime? outUtc = (outStr != null && outStr.isNotEmpty)
+          ? DateTime.tryParse(outStr)?.toUtc()
+          : null;
+
+      // Проверяем только события сегодняшнего дня
+      final bool inToday = (inUtc != null) && _isSameDayNY(inUtc, nowUtc);
+      final bool outToday = (outUtc != null) && _isSameDayNY(outUtc, nowUtc);
+
+      bool isPunchedIn = false;
+
+      if (inToday && outToday) {
+        // Оба события сегодня - проверяем последовательность
+        isPunchedIn = inUtc.isAfter(outUtc);
+      } else if (inToday && !outToday) {
+        // Только punch in сегодня
+        isPunchedIn = true;
+      } else {
+        // Нет punch in сегодня
+        isPunchedIn = false;
+      }
+
+      _hasPunchIn.value = isPunchedIn;
+      await prefs.setBool('isPunchedInToday', isPunchedIn);
+
     } catch (e) {
-      print('Error checking punch in status: $e');
+      print('Error checking punch status: $e');
+      _hasPunchIn.value = false;
     }
   }
 
   Future<void> _loadWorkSites() async {
-    if (!mounted) return;
-    setState(() => isLoading = true);
+    _isLoading.value = true;
 
     try {
       final sites = await workSiteService.loadWorkSites();
-      if (!mounted) return;
+      _workSites.value = sites;
 
-      setState(() {
-        workSites = sites;
-        if (sites.isNotEmpty && selectedWorkSite == null) {
-          selectedWorkSite = sites.first;
-        }
-        isLoading = false;
-      });
+      if (sites.isNotEmpty && _selectedWorkSite.value == null) {
+        _selectedWorkSite.value = sites.first;
+      }
     } catch (e) {
-      if (!mounted) return;
-
-      setState(() => isLoading = false);
       _showErrorSnackBar('Failed to load work sites: $e');
+    } finally {
+      _isLoading.value = false;
     }
   }
 
@@ -190,37 +277,27 @@ class _PunchScreenState extends State<PunchScreen> {
 
   Future<void> _getCurrentLocation() async {
     final position = await locationService.getCurrentLocation();
-    if (mounted && position != null) {
-      setState(() => currentPosition = position);
+    if (position != null) {
+      _currentPosition.value = position;
     }
   }
 
   Future<void> _showWorkSiteDialog() async {
-    final theme = Theme.of(context);
-
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => Theme(
-        data: theme,
+        data: _theme,
         child: WorkSiteDialog(
-          workSites: workSites,
-          isLoading: isLoading,
+          workSites: _workSites.value,
+          isLoading: _isLoading.value,
           onRefresh: _loadWorkSites,
           onSelect: (site) async {
             try {
               await workSiteService.selectWorkSite(site.workSiteId ?? 0);
-
-              if (!mounted) return;
-
-              setState(() {
-                selectedWorkSite = site;
-              });
-
+              _selectedWorkSite.value = site;
               Navigator.of(dialogContext).pop();
             } catch (e) {
-              if (!mounted) return;
-
               Navigator.of(dialogContext).pop();
               _showErrorSnackBar('Failed to select work site: $e');
             }
@@ -238,7 +315,7 @@ class _PunchScreenState extends State<PunchScreen> {
       );
 
       if (image != null) {
-               final File imageFile = File(image.path);
+        final File imageFile = File(image.path);
         final bytes = await imageFile.readAsBytes();
         return base64Encode(bytes);
       }
@@ -250,7 +327,8 @@ class _PunchScreenState extends State<PunchScreen> {
   }
 
   String _getCurrentFormattedTime() {
-    return DateFormat('HH:mm:ss').format(DateTime.now());
+    final nyNow = tz.TZDateTime.from(timeService.nowUtc(), _ny);
+    return DateFormat('HH:mm:ss').format(nyNow);
   }
 
   void _showSuccessDialog(bool isPunchIn, String time) {
@@ -268,206 +346,394 @@ class _PunchScreenState extends State<PunchScreen> {
   }
 
   Future<void> _handlePunchIn() async {
-    if (selectedWorkSite == null || currentPosition == null) {
+    if (_selectedWorkSite.value == null || _currentPosition.value == null) {
       _showErrorSnackBar('Please select work site and enable location');
       return;
     }
 
     final String? photoBase64 = await _captureImage();
-    if (photoBase64 == null) {
-      return;
-    }
+    if (photoBase64 == null) return;
 
     try {
-      setState(() => isLoading = true);
+      _isLoading.value = true;
 
       final Map<String, dynamic> requestData = {
-        'workSiteId': selectedWorkSite?.workSiteId,
+        'workSiteId': _selectedWorkSite.value?.workSiteId,
         'photoBase64': photoBase64,
-        'latitude': currentPosition?.latitude,
-        'longitude': currentPosition?.longitude
+        'latitude': _currentPosition.value?.latitude,
+        'longitude': _currentPosition.value?.longitude
       };
 
-      final response = await dio.post(
-        '/attendance/punch-in',
-        data: requestData,
-      );
+      final response = await dio.post('attendance/punch-in', data: requestData);
 
       if (!mounted) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final now = DateTime.now().toString();
-      prefs.setString('lastPunchInDate', now);
-      print('Saved Punch In: $now');
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getInt('user_id') ?? _currentUserId.value ?? 0;
 
-      setState(() {
-        isLoading = false;
-        if (response.statusCode == 200) {
-          hasPunchIn = true;
+        print('🚀 Starting location tracking for user ID: $userId');
+        await _locationTrackingService.startTracking(userId);
 
-          final currentTime = _getCurrentFormattedTime();
+        final nowUtcIso = timeService.nowUtc().toIso8601String();
+        await prefs.setString('lastPunchInDate', nowUtcIso);
+        await prefs.setBool('isPunchedInToday', true);
 
-          _showSuccessDialog(true, currentTime);
+        _hasPunchIn.value = true;
+        _isTrackingActive.value = true;
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Successfully punched in!'),
-              backgroundColor: Colors.green,
+        final currentTime = _getCurrentFormattedTime();
+        _showSuccessDialog(true, currentTime);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Punched in! Location tracking started'),
+              ],
             ),
-          );
-        } else {
-          _showErrorSnackBar('Failed to punch in');
-        }
-      });
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
-      setState(() => isLoading = false);
       _showErrorSnackBar('Failed to punch in: $e');
+    } finally {
+      _isLoading.value = false;
     }
   }
 
   Future<void> _handlePunchOut() async {
-    if (selectedWorkSite == null || currentPosition == null) {
+    if (_selectedWorkSite.value == null || _currentPosition.value == null) {
       _showErrorSnackBar('Please select work site and enable location');
       return;
     }
 
     final String? photoBase64 = await _captureImage();
-    if (photoBase64 == null) {
-      return;
-    }
+    if (photoBase64 == null) return;
 
     try {
-      setState(() => isLoading = true);
+      _isLoading.value = true;
 
       final Map<String, dynamic> requestData = {
-        'workSiteId': selectedWorkSite?.workSiteId,
+        'workSiteId': _selectedWorkSite.value?.workSiteId,
         'photoBase64': photoBase64,
-        'latitude': currentPosition?.latitude,
-        'longitude': currentPosition?.longitude
+        'latitude': _currentPosition.value?.latitude,
+        'longitude': _currentPosition.value?.longitude
       };
 
-      final response = await dio.post(
-        '/attendance/punch-out',
-        data: requestData,
-      );
+      final response = await dio.post('attendance/punch-out', data: requestData);
 
       if (!mounted) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final now = DateTime.now().toString();
-      prefs.setString('lastPunchOutDate', now);
-      print('Saved Punch Out: $now');
+      if (response.statusCode == 200) {
+        print('🛑 Stopping location tracking for user ID: ${_currentUserId.value}');
+        await _locationTrackingService.stopTracking();
 
-      setState(() {
-        isLoading = false;
-        if (response.statusCode == 200) {
-          hasPunchIn = false;
+        final prefs = await SharedPreferences.getInstance();
+        final nowUtcIso = timeService.nowUtc().toIso8601String();
+        await prefs.setString('lastPunchOutDate', nowUtcIso);
+        await prefs.setBool('isPunchedInToday', false);
 
-          final currentTime = _getCurrentFormattedTime();
+        _hasPunchIn.value = false;
+        _isTrackingActive.value = false;
 
-          _showSuccessDialog(false, currentTime);
+        final currentTime = _getCurrentFormattedTime();
+        _showSuccessDialog(false, currentTime);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Successfully punched out!'),
-              backgroundColor: Colors.green,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.stop_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Punched out! Stopped tracking for user: ${_currentUserId.value}'),
+              ],
             ),
-          );
-        } else {
-          _showErrorSnackBar('Failed to punch out');
-        }
-      });
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
-      setState(() => isLoading = false);
       _showErrorSnackBar('Failed to punch out: $e');
+    } finally {
+      _isLoading.value = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    _updateCachedValues();
     final l10n = context.read<LocalizationProvider>().localizations;
 
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: _theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: _theme.scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           l10n.get('punch'),
           style: TextStyle(
-            color: theme.textTheme.titleLarge?.color,
-            fontSize: isSmallScreen ? 18 : 20,
-            fontWeight: FontWeight.bold,
+            color: _theme.textTheme.titleLarge?.color,
+            fontSize: _isSmallScreen ? 20 : 22,
+            fontWeight: FontWeight.w600,
           ),
         ),
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: theme.iconTheme.color,
-            size: isSmallScreen ? 22 : 24,
+          icon: Container(
+            padding: EdgeInsets.all(_isSmallScreen ? 6 : 8),
+            decoration: BoxDecoration(
+              color: _theme.brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: _theme.iconTheme.color,
+              size: _isSmallScreen ? 18 : 20,
+            ),
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Stack(
         children: [
-          Container(
-            color: theme.scaffoldBackgroundColor,
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: isSmallScreen ? 16 : 20),
-                ClockDisplay(
-                  textColor: theme.textTheme.bodyLarge?.color ?? Colors.white,
-                  isSmallScreen: isSmallScreen,
-                ),
-                SizedBox(height: isSmallScreen ? 16 : 20),
-                MapContainer(
-                  currentPosition: currentPosition,
-                  onMapCreated: (controller) => mapController = controller,
-                ),
-                SizedBox(height: isSmallScreen ? 16 : 20),
+                // Clock Display - ДОБАВЛЕНО
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
-                  child: WorkSiteSelectorButton(
-                    selectedWorkSite: selectedWorkSite,
-                    onTap: _showWorkSiteDialog,
-                    backgroundColor: theme.brightness == Brightness.dark
-                        ? Colors.grey[900]
-                        : Colors.grey[100],
-                    textColor: theme.textTheme.bodyLarge?.color,
-                    isSmallScreen: isSmallScreen,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _isSmallScreen ? 16 : 20,
+                    vertical: _isSmallScreen ? 12 : 16,
+                  ),
+                  child: ClockDisplay(
+                    textColor: _theme.textTheme.bodyLarge?.color,
+                    isSmallScreen: _isSmallScreen,
+                    timeStream: timeService.nyTicker(),
                   ),
                 ),
-                SizedBox(height: isSmallScreen ? 16 : 20),
+
+                // Map Container - ДОБАВЛЕНО
+                ValueListenableBuilder<Position?>(
+                  valueListenable: _currentPosition,
+                  builder: (context, position, _) {
+                    return MapContainer(
+                      currentPosition: position,
+                      onMapCreated: (controller) => mapController = controller,
+                    );
+                  },
+                ),
+
+                SizedBox(height: _isSmallScreen ? 12 : 16),
+
+                // Tracking Indicator
+                ValueListenableBuilder<bool>(
+                  valueListenable: _isTrackingActive,
+                  builder: (context, isActive, _) {
+                    if (!isActive) return const SizedBox.shrink();
+
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: _isSmallScreen ? 16 : 20,
+                        vertical: 8,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: Colors.green,
+                                size: 20,
+                              ),
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 1.0, end: 1.5),
+                                duration: const Duration(seconds: 1),
+                                builder: (context, value, child) {
+                                  return Container(
+                                    width: 30 * value,
+                                    height: 30 * value,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.green.withOpacity(0.5 / value),
+                                        width: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                onEnd: () {
+                                  if (mounted && _isTrackingActive.value) {
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+
+                // Work Site Selector
+                Container(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: _isSmallScreen ? 16 : 20,
+                    vertical: _isSmallScreen ? 8 : 12,
+                  ),
+                  child: ValueListenableBuilder<WorkSiteResponse?>(
+                    valueListenable: _selectedWorkSite,
+                    builder: (context, workSite, _) {
+                      return WorkSiteSelectorButton(
+                        selectedWorkSite: workSite,
+                        onTap: _showWorkSiteDialog,
+                        backgroundColor: _theme.brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.white,
+                        textColor: _theme.textTheme.bodyLarge?.color,
+                        isSmallScreen: _isSmallScreen,
+                      );
+                    },
+                  ),
+                ),
+
+                // Status Indicator
+                ValueListenableBuilder<bool>(
+                  valueListenable: _hasPunchIn,
+                  builder: (context, hasPunchIn, _) {
+                    if (!hasPunchIn) return const SizedBox.shrink();
+
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: _isSmallScreen ? 16 : 20,
+                        vertical: _isSmallScreen ? 8 : 12,
+                      ),
+                      padding: EdgeInsets.all(_isSmallScreen ? 12 : 16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.green,
+                            size: _isSmallScreen ? 20 : 24,
+                          ),
+                          SizedBox(width: _isSmallScreen ? 8 : 12),
+                          Text(
+                            'You are currently punched in',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: _isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+
+                SizedBox(height: _isSmallScreen ? 80 : 100),
               ],
             ),
           ),
-          if (isLoading)
-            Container(
-              color: Colors.black54,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: theme.brightness == Brightness.dark ? Colors.white : Colors.blue,
+
+          // Loading Overlay
+          ValueListenableBuilder<bool>(
+            valueListenable: _isLoading,
+            builder: (context, isLoading, _) {
+              if (!isLoading) return const SizedBox.shrink();
+
+              return Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.all(_isSmallScreen ? 20 : 24),
+                    decoration: BoxDecoration(
+                      color: _theme.scaffoldBackgroundColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(
+                          color: Colors.blue,
+                          strokeWidth: 3,
+                        ),
+                        SizedBox(height: _isSmallScreen ? 12 : 16),
+                        Text(
+                          'Processing...',
+                          style: TextStyle(
+                            color: _theme.textTheme.bodyMedium?.color,
+                            fontSize: _isSmallScreen ? 14 : 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
-      bottomNavigationBar: PunchButtons(
-        onPunchIn: isLoading ? null : _handlePunchIn,
-        onPunchOut: isLoading ? null : _handlePunchOut,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        buttonColor: theme.brightness == Brightness.dark
-            ? Colors.grey[900]
-            : Colors.grey[100],
-        textColor: theme.textTheme.bodyLarge?.color,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: _theme.scaffoldBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _isLoading,
+          builder: (context, isLoading, _) {
+            return PunchButtons(
+              onPunchIn: isLoading ? null : _handlePunchIn,
+              onPunchOut: isLoading ? null : _handlePunchOut,
+              backgroundColor: _theme.scaffoldBackgroundColor,
+              buttonColor: _theme.brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.white,
+              textColor: _theme.textTheme.bodyLarge?.color,
+            );
+          },
+        ),
       ),
     );
   }
