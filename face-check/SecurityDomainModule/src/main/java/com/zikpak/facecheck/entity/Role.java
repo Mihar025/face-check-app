@@ -24,7 +24,7 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(unique = true)
+    @Column(unique = true, name = "name")
     private String name ="";
 
     @ManyToMany(mappedBy = "roles")
@@ -32,11 +32,11 @@ public class Role {
     private List<User> users;
 
     @CreatedDate
-    @Column(updatable = false, nullable = false)
+    @Column(updatable = false, nullable = false, name = "created_date")
     private LocalDateTime createdDate;
 
     @LastModifiedDate
-    @Column(insertable = false)
+    @Column(insertable = false, name = "last_modified_date")
     private LocalDateTime lastModifiedDate;
 
 
