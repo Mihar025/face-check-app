@@ -25,6 +25,8 @@ public class RelatedUserInCompanyResponse {
 
     private BigDecimal baseHourlyRate;
 
+    private String photoUrl;
+
     private boolean enabled;
 
 
