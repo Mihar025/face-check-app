@@ -76,21 +76,50 @@ public class HoursReportPdfService {
 
             byte[] pdfBytes = baos.toByteArray();
 
-            // ✅ S3 key для Hours Report (как payroll, но hoursReport)
             String companyKeyPart = reportData.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String fileName = String.format("hoursReport_%d_%d.pdf",
-                    companyId,
-                    reportData.getPeriodStart().getYear()
-            );
+            String periodPart;
+            String fileName;
 
-            String key = String.format("%s/%d/hoursReport/%s",
+            if (reportData.getReportType().equals("Monthly")) {
+                periodPart = String.format("monthly/%02d", reportData.getPeriodStart().getMonthValue());
+                fileName = String.format("hours_report_%d_%02d_%s.pdf",
+                        reportData.getPeriodStart().getYear(),
+                        reportData.getPeriodStart().getMonthValue(),
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            else if (reportData.getReportType().equals("Quarterly")) {
+                int quarter = (reportData.getPeriodStart().getMonthValue() - 1) / 3 + 1;
+                periodPart = String.format("Q%d", quarter);
+                fileName = String.format("hours_report_%d_Q%d_%s.pdf",
+                        reportData.getPeriodStart().getYear(),
+                        quarter,
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            else if (reportData.getReportType().equals("Weekly")) {
+                periodPart = "weekly";
+                fileName = String.format("hours_report_%s_to_%s.pdf",
+                        reportData.getPeriodStart().format(DateTimeFormatter.BASIC_ISO_DATE),
+                        reportData.getPeriodEnd().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            else {
+                periodPart = "custom";
+                fileName = String.format("hours_report_%s_to_%s.pdf",
+                        reportData.getPeriodStart().format(DateTimeFormatter.BASIC_ISO_DATE),
+                        reportData.getPeriodEnd().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+
+            String key = String.format("%s_%d/reports/hours/%d/%s/%s",
                     companyKeyPart,
                     companyId,
+                    reportData.getPeriodStart().getYear(),
+                    periodPart,
                     fileName
             );
+
             long ms = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
             long end = System.currentTimeMillis() - ms;

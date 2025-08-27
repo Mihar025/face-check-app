@@ -117,17 +117,45 @@ public class HoursReportCsvService {
         try {
             String companyKeyPart = reportData.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String fileName = String.format("hoursReport_%d_%d.csv",
-                    companyId,
-                    reportData.getPeriodStart().getYear()
-            );
+            // Определяем период
+            String periodPart;
+            String fileName;
 
-            String key = String.format("%s/%d/hoursReport/csv/%s",
-                    companyKeyPart,
-                    companyId,
-                    fileName
+            // Если это месячный отчет
+            if (reportData.getReportType().equals("Monthly")) {
+                periodPart = String.format("monthly/%02d", reportData.getPeriodStart().getMonthValue());
+                fileName = String.format("hours_report_%d_%02d_%s.csv",
+                        reportData.getPeriodStart().getYear(),
+                        reportData.getPeriodStart().getMonthValue(),
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            // Если это квартальный отчет
+            else if (reportData.getReportType().equals("Quarterly")) {
+                int quarter = (reportData.getPeriodStart().getMonthValue() - 1) / 3 + 1;
+                periodPart = String.format("Q%d", quarter);
+                fileName = String.format("hours_report_%d_Q%d_%s.csv",
+                        reportData.getPeriodStart().getYear(),
+                        quarter,
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            // Custom период
+            else {
+                periodPart = "custom";
+                fileName = String.format("hours_report_%s_to_%s.csv",
+                        reportData.getPeriodStart().format(DateTimeFormatter.BASIC_ISO_DATE),
+                        reportData.getPeriodEnd().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+
+            // CSV файлы идут в подпапку csv рядом с PDF
+            String key = String.format("%s_%d/reports/hours/%d/%s/csv/%s",
+                    companyKeyPart,                        // "facecheck_corp"
+                    companyId,                              // "_123"
+                    reportData.getPeriodStart().getYear(),  // "/2024"
+                    periodPart,                             // "/Q1" или "/monthly/03"
+                    fileName                                // "hours_report_2024_Q1_20240415.csv"
             );
 
             amazonS3Service.uploadPdfToS3(csvBytes, key);
