@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../api_client/api/authentication_api.dart';
 import '../../../providers/localization_provider.dart';
@@ -15,6 +16,12 @@ import '../../../services/ApiService.dart';
 import '../components/custom_drawer.dart';
 import '../components/face_check_button.dart';
 import '../components/time_circle.dart';
+
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+
+import 'package:dio/dio.dart';
+import 'package:face_check/services/time_service.dart';
 
 class MainMenuScreen extends StatefulWidget {
   final AuthenticationApi authenticationApi;
@@ -41,144 +48,288 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(80);
 
   @override
   State<CustomAppBar> createState() => _CustomAppBarState();
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
-  int _notificationCount = 0;
+  // ValueNotifier для оптимизации
+  late final ValueNotifier<int> _notificationCount;
 
   @override
   void initState() {
     super.initState();
+    _notificationCount = ValueNotifier<int>(0);
     _loadNotifications();
+  }
+
+  @override
+  void dispose() {
+    _notificationCount.dispose();
+    super.dispose();
   }
 
   Future<void> _loadNotifications() async {
     final notifications = await FlutterLocalNotificationsPlugin()
         .pendingNotificationRequests();
-    setState(() {
-      _notificationCount = notifications.length;
-    });
+    _notificationCount.value = notifications.length;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = context.watch<LocalizationProvider>().localizations;
+    final isDark = theme.brightness == Brightness.dark;
 
-     final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
-    return AppBar(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      elevation: 0,
-      toolbarHeight: isSmallScreen ? 120 : 140,
-      leading: Padding(
-        padding: EdgeInsets.only(top: isSmallScreen ? 12 : 16),
-        child: IconButton(
-          icon: Icon(
-            Icons.menu,
-            color: theme.iconTheme.color,
-            size: isSmallScreen ? 22 : 24,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          onPressed: widget.onMenuPressed,
-        ),
+        ],
       ),
-      centerTitle: true,
-      title: SizedBox(
-        height: isSmallScreen ? 50 : 60,
-        child: Image.asset(
-          'assets/images/logo.jpg',
-          fit: BoxFit.contain,
-        ),
-      ),
-      actions: [
-        Padding(
-          padding: EdgeInsets.only(top: isSmallScreen ? 12 : 16),
-          child: Stack(
+      child: SafeArea(
+        child: Container(
+          height: 80,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.notifications_none,
-                  color: theme.iconTheme.color,
-                  size: isSmallScreen ? 22 : 24,
+              // Menu Button
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                onPressed: () => Navigator.pushNamed(context, '/notifications')
-                    .then((_) => _loadNotifications()),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    color: theme.iconTheme.color,
+                    size: 26,
+                  ),
+                  onPressed: widget.onMenuPressed,
+                ),
               ),
-              if (_notificationCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: BoxConstraints(
-                      minWidth: isSmallScreen ? 16 : 20,
-                      minHeight: isSmallScreen ? 16 : 20,
-                    ),
-                    child: Text(
-                      _notificationCount.toString(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 10 : 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+
+              // Logo
+              Container(
+                height: 55,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
+                child: Image.asset(
+                  'assets/images/logo.jpg',
+                  fit: BoxFit.contain,
+                ),
+              ),
+
+              // Notification Button с ValueListenableBuilder
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Stack(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.notifications_outlined,
+                        color: theme.iconTheme.color,
+                        size: 26,
+                      ),
+                      onPressed: () => Navigator.pushNamed(context, '/notifications')
+                          .then((_) => _loadNotifications()),
+                    ),
+                    ValueListenableBuilder<int>(
+                      valueListenable: _notificationCount,
+                      builder: (context, count, _) {
+                        if (count == 0) return const SizedBox.shrink();
+
+                        return Positioned(
+                          right: 6,
+                          top: 6,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade500,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withOpacity(0.3),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Text(
+                              count > 9 ? '9+' : count.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String _currentDate = '';
-  String _currentTime = '';
-  String _lastPunchDate = 'DD/MM/YYYY';
-  String _lastPunchTime = '--:--';
-  late Timer _timer;
-  double _workedHours = 0.0;
 
-  void _updateTime() {
-    final now = DateTime.now();
-    setState(() {
-      _currentDate = DateTimeFormatter.formateDate(now);
-      _currentTime = DateTimeFormatter.formatTime(now);
-    });
+  // ValueNotifiers для оптимизации перерисовок
+  late final ValueNotifier<String> _currentDate;
+  late final ValueNotifier<String> _currentTime;
+  late final ValueNotifier<String> _lastPunchDate;
+  late final ValueNotifier<String> _lastPunchTime;
+  late final ValueNotifier<double> _workedHours;
+  late final ValueNotifier<String> _currentPeriod;
+
+  late final TimeService _timeService;
+  StreamSubscription<tz.TZDateTime>? _nySub;
+
+  // Кэшированные значения
+  late ThemeData _theme;
+  late bool _isDark;
+
+  // Константы для производительности
+  static const EdgeInsets _standardPadding = EdgeInsets.symmetric(horizontal: 16);
+  static const EdgeInsets _bottomPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 16);
+
+  @override
+  void initState() {
+    super.initState();
+    tzdata.initializeTimeZones();
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
+    // Инициализация ValueNotifiers
+    _currentDate = ValueNotifier<String>('');
+    _currentTime = ValueNotifier<String>('');
+    _lastPunchDate = ValueNotifier<String>('DD/MM/YYYY');
+    _lastPunchTime = ValueNotifier<String>('--:--');
+    _workedHours = ValueNotifier<double>(0.0);
+    _currentPeriod = ValueNotifier<String>('');
+
+    final dio = Dio(BaseOptions(
+      baseUrl: 'http://192.168.1.194:8088/api/v1/',
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 30),
+    ));
+
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token = await ApiService.instance.getAuthToken();
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+      onError: (e, handler) => handler.next(e),
+    ));
+
+    _timeService = TimeService(dio);
+    _bootstrapTimeAndData();
   }
 
-  String _getCurrentPeriod() {
-    final now = DateTime.now();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateCachedValues();
+  }
 
-    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
+  void _updateCachedValues() {
+    _theme = Theme.of(context);
+    _isDark = _theme.brightness == Brightness.dark;
+  }
 
+  Future<void> _bootstrapTimeAndData() async {
+    await _timeService.sync();
+
+    _nySub = _timeService.nyTicker().listen((nyNow) {
+      _currentDate.value = DateFormat('MMM dd').format(nyNow);
+      _currentTime.value = DateFormat('HH:mm').format(nyNow);
+      _updateCurrentPeriod(nyNow);
+    });
+
+    _loadLastPunchTime();
+    _loadWorkedHours();
+  }
+
+  void _updateCurrentPeriod(tz.TZDateTime nyNow) {
+    final startOfWeek = nyNow.subtract(Duration(days: nyNow.weekday % 7));
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-    final startFormatted = '${startOfWeek.day.toString().padLeft(2, '0')}/${startOfWeek.month.toString().padLeft(2, '0')}/${startOfWeek.year}';
-    final endFormatted = '${endOfWeek.day.toString().padLeft(2, '0')}/${endOfWeek.month.toString().padLeft(2, '0')}/${endOfWeek.year}';
+    String fmt(tz.TZDateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
-    return '$startFormatted - $endFormatted';
+    _currentPeriod.value = '${fmt(startOfWeek)} - ${fmt(endOfWeek)}';
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values);
+    _nySub?.cancel();
+
+    // Dispose ValueNotifiers
+    _currentDate.dispose();
+    _currentTime.dispose();
+    _lastPunchDate.dispose();
+    _lastPunchTime.dispose();
+    _workedHours.dispose();
+    _currentPeriod.dispose();
+
+    super.dispose();
   }
 
   Future<void> _loadLastPunchTime() async {
     try {
       final punchInfo = await ApiService.instance.getLastPunchTime();
-      print("Received punch info - date: ${punchInfo.date}, time: ${punchInfo.time}");
-      setState(() {
-        _lastPunchDate = punchInfo.date;
-        _lastPunchTime = punchInfo.time;
-      });
+      _lastPunchDate.value = punchInfo.date;
+      _lastPunchTime.value = punchInfo.time;
     } catch (e) {
       print('Error loading last punch time: $e');
     }
@@ -187,9 +338,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Future<void> _loadWorkedHours() async {
     try {
       final hours = await ApiService.instance.getTotalWorkedHoursPerWeek();
-      setState(() {
-        _workedHours = hours;
-      });
+      _workedHours.value = hours;
     } catch (e) {
       print('Error loading worked hours: $e');
     }
@@ -200,261 +349,430 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
-    _updateTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
-    _loadLastPunchTime();
-    _loadWorkedHours();
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: SystemUiOverlay.values);
-    _timer.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    _updateCachedValues();
     final l10n = context.watch<LocalizationProvider>().localizations;
-
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        systemNavigationBarColor: theme.scaffoldBackgroundColor,
-        statusBarIconBrightness:
-        theme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
-        systemNavigationBarIconBrightness:
-        theme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: _theme.scaffoldBackgroundColor,
+        statusBarIconBrightness: _isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness: _isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
         key: _scaffoldKey,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: CustomAppBar(
-          currentDate: _currentDate,
-          currentTime: _currentTime,
-          onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        backgroundColor: _theme.scaffoldBackgroundColor,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: ValueListenableBuilder<String>(
+            valueListenable: _currentDate,
+            builder: (context, date, _) {
+              return ValueListenableBuilder<String>(
+                valueListenable: _currentTime,
+                builder: (context, time, _) {
+                  return CustomAppBar(
+                    currentDate: date,
+                    currentTime: time,
+                    onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                  );
+                },
+              );
+            },
+          ),
         ),
         drawer: const CustomDrawer(),
         body: Column(
           children: [
+            // Info Bar
             Container(
-              height: 1,
-              width: double.infinity,
-              color: Colors.grey[600],
-            ),
-            Container(
-              height: isSmallScreen ? 50 : 60,
-              child: Stack(
-                children: [
-                  Row(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: _isDark
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  height: 70,
+                  child: Row(
                     children: [
+                      // Weather Section
                       Expanded(
-                        flex: 1,
-                        child: Center(
-                          child: WeatherWidget(),
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: isSmallScreen ? 30 : 40,
-                        color: Colors.grey[600],
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Center(
-                          child: Text(
-                            DateFormat('MMM dd').format(DateTime.now()),
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 16 : 18,
-                              color: theme.textTheme.bodyLarge?.color,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.location_on_outlined,
+                                size: 16,
+                                color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                              ),
+                              const SizedBox(height: 4),
+                               WeatherWidget(),
+                            ],
                           ),
                         ),
                       ),
+
+                      // Vertical Divider
                       Container(
                         width: 1,
-                        height: isSmallScreen ? 30 : 40,
-                        color: Colors.grey[600],
+                        height: 40,
+                        color: _isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.2),
                       ),
+
+                      // Date Section с ValueListenableBuilder
                       Expanded(
-                        flex: 1,
-                        child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(left: isSmallScreen ? 15 : 20),
-                            child: Text(
-                              _currentTime,
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 16 : 18,
-                                color: theme.textTheme.bodyLarge?.color,
-                                fontWeight: FontWeight.w500,
-                              ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 20,
+                              color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                             ),
+                            const SizedBox(height: 6),
+                            ValueListenableBuilder<String>(
+                              valueListenable: _currentDate,
+                              builder: (context, date, _) {
+                                return Text(
+                                  date,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: _theme.textTheme.bodyLarge?.color,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Vertical Divider
+                      Container(
+                        width: 1,
+                        height: 40,
+                        color: _isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.2),
+                      ),
+
+                      // Time Section с ValueListenableBuilder
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 20,
+                              color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                            ),
+                            const SizedBox(height: 6),
+                            ValueListenableBuilder<String>(
+                              valueListenable: _currentTime,
+                              builder: (context, time, _) {
+                                return Text(
+                                  time,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: _theme.textTheme.bodyLarge?.color,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Main Content Area
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: _standardPadding,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+
+                      // Title
+                      Text(
+                        l10n.get('weeklyProgress'),
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: _theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Time Circle с ValueListenableBuilder
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.1),
+                              blurRadius: 30,
+                              spreadRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: ValueListenableBuilder<double>(
+                          valueListenable: _workedHours,
+                          builder: (context, hours, _) {
+                            return TimeCircle(
+                              time: _formatHoursToTimeString(hours),
+                              workedHours: hours,
+                            );
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // Period Card с ValueListenableBuilder
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.blue.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: _isDark
+                                ? Colors.white.withOpacity(0.1)
+                                : Colors.blue.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.date_range_rounded,
+                              size: 18,
+                              color: Colors.blue.shade400,
+                            ),
+                            const SizedBox(width: 8),
+                            ValueListenableBuilder<String>(
+                              valueListenable: _currentPeriod,
+                              builder: (context, period, _) {
+                                return Text(
+                                  period,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: _theme.textTheme.bodyLarge?.color,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // View Details Button
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ViewDetailsScreen(
+                                  workedHours: _workedHours.value,
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade600,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                l10n.get('viewDetails'),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Bottom Section с ValueListenableBuilders
+            Container(
+              decoration: BoxDecoration(
+                color: _isDark
+                    ? Colors.white.withOpacity(0.03)
+                    : Colors.grey.withOpacity(0.05),
+                boxShadow: [
+                  BoxShadow(
+                    color: _isDark
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Container(
+                  padding: _bottomPadding,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Last Punch Info Card
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: _isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.history_rounded,
+                                    size: 18,
+                                    color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    l10n.get('lastPunch'),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              ValueListenableBuilder<String>(
+                                valueListenable: _lastPunchDate,
+                                builder: (context, date, _) {
+                                  return Text(
+                                    date,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _theme.textTheme.bodyLarge?.color,
+                                    ),
+                                  );
+                                },
+                              ),
+                              ValueListenableBuilder<String>(
+                                valueListenable: _lastPunchTime,
+                                builder: (context, time, _) {
+                                  return Text(
+                                    time,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue.shade600,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 16),
+
+                      // Face Check Button
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.3),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: Transform.scale(
+                          scale: 1.1,
+                          child: FaceCheckButton(
+                            onPressed: _navigateToPunch,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 1,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height -
-                        (isSmallScreen ? 75 : 90) -
-                        (isSmallScreen ? 50 : 60) -
-                        (kToolbarHeight + (isSmallScreen ? 12 : 16) * 2),
-                  ),
-                  child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        top: 20,
-                        bottom: 30,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '',
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 20 : 24,
-                              color: theme.textTheme.bodyLarge?.color,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 15 : 20),
-                          Transform.scale(
-                            scale: isSmallScreen ? 0.85 : 1.0,
-                            child: TimeCircle(
-                              time: _formatHoursToTimeString(_workedHours),
-                              workedHours: _workedHours,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 30 : 40),
-                          Text(
-                            _getCurrentPeriod(),
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 14 : 16,
-                              color: theme.textTheme.bodyLarge?.color,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 20 : 30),
-                          Container(
-                            height: isSmallScreen ? 28 : 30,
-                            width: isSmallScreen ? 110 : 120,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ViewDetailsScreen(workedHours: _workedHours),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue[600],
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                padding: EdgeInsets.zero,
-                              ),
-                              child: Text(
-                                l10n.get('viewDetails'),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 12 : 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
-              ),
-            ),
-            Container(
-              height: 1,
-              width: double.infinity,
-              color: Colors.grey[600],
-            ),
-            SizedBox(
-              height: isSmallScreen ? 75 : 90,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(left: isSmallScreen ? 20 : 40),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            l10n.get('lastPunch'),
-                            style: TextStyle(
-                              color: theme.textTheme.bodyLarge?.color,
-                              fontSize: isSmallScreen ? 16 : 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            _lastPunchDate,
-                            style: TextStyle(
-                              color: theme.textTheme.bodyLarge?.color,
-                              fontSize: isSmallScreen ? 16 : 18,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          Text(
-                            _lastPunchTime,
-                            style: TextStyle(
-                              color: theme.textTheme.bodyLarge?.color,
-                              fontSize: isSmallScreen ? 16 : 18,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(right: isSmallScreen ? 15 : 20),
-                    child: Transform.scale(
-                      scale: isSmallScreen ? 1.0 : 1.2,
-                      child: FaceCheckButton(
-                        onPressed: _navigateToPunch,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
