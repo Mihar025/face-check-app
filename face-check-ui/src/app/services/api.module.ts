@@ -6,14 +6,27 @@ import { NgModule, ModuleWithProviders, SkipSelf, Optional } from '@angular/core
 import { HttpClient } from '@angular/common/http';
 import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
+import { WcRiskClassControllerService } from './services/wc-risk-class-controller.service';
 import { UserServiceControllerService } from './services/user-service-controller.service';
+import { ControllerWithNewMethodsService } from './services/controller-with-new-methods.service';
 import { CompanyControllerService } from './services/company-controller.service';
 import { AuthenticationService } from './services/authentication.service';
 import { AdminControllerService } from './services/admin-controller.service';
 import { WorkSiteControllerService } from './services/work-site-controller.service';
+import { TestDataGeneratorControllerService } from './services/test-data-generator-controller.service';
+import { SickLeaveControllerService } from './services/sick-leave-controller.service';
 import { WorkScheduleControllerService } from './services/work-schedule-controller.service';
+import { ContactSalesControllerService } from './services/contact-sales-controller.service';
+import { PrivacyAndTermsControllerService } from './services/privacy-and-terms-controller.service';
+import { PaymentHistoryIrsControllerService } from './services/payment-history-irs-controller.service';
+import { NotificationControllerService } from './services/notification-controller.service';
+import { TrackLocationControllerService } from './services/track-location-controller.service';
 import { FileControllerService } from './services/file-controller.service';
 import { WorkerAttendanceControllerService } from './services/worker-attendance-controller.service';
+import { YearToDateCustomReportControllerService } from './services/year-to-date-custom-report-controller.service';
+import { W2ControllerService } from './services/w-2-controller.service';
+import { TaxesControllerService } from './services/taxes-controller.service';
+import { EFilesControllerService } from './services/e-files-controller.service';
 
 /**
  * Module that provides all services and configuration.
@@ -23,14 +36,27 @@ import { WorkerAttendanceControllerService } from './services/worker-attendance-
   exports: [],
   declarations: [],
   providers: [
+    WcRiskClassControllerService,
     UserServiceControllerService,
+    ControllerWithNewMethodsService,
     CompanyControllerService,
     AuthenticationService,
     AdminControllerService,
     WorkSiteControllerService,
+    TestDataGeneratorControllerService,
+    SickLeaveControllerService,
     WorkScheduleControllerService,
+    ContactSalesControllerService,
+    PrivacyAndTermsControllerService,
+    PaymentHistoryIrsControllerService,
+    NotificationControllerService,
+    TrackLocationControllerService,
     FileControllerService,
     WorkerAttendanceControllerService,
+    YearToDateCustomReportControllerService,
+    W2ControllerService,
+    TaxesControllerService,
+    EFilesControllerService,
     ApiConfiguration
   ],
 })
