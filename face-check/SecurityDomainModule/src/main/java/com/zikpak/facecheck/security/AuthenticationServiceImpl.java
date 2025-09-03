@@ -55,6 +55,10 @@ public class AuthenticationServiceImpl implements AuthenticationServiceRegAuth {
                 .orElseThrow(() -> new RuntimeException("ADMIN Role Not Found and Initialize"));
     }
 
+    public Role findRoleAppOwner(){
+        return roleRepository.findByName("AppOwner")
+                .orElseThrow(() -> new RuntimeException("AppOwner Role Not Found and Initialize"));
+    }
     @Override
     @Transactional(rollbackOn = Exception.class)
     public Company findCompanyByName(String companyName) {
