@@ -7,6 +7,7 @@ import com.zikpak.facecheck.entity.User;
 
 import com.zikpak.facecheck.mapper.UserMapper;
 import com.zikpak.facecheck.metrics.MetricsAuthenticationService;
+import com.zikpak.facecheck.repository.NotificationRepository;
 import com.zikpak.facecheck.repository.TokenRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerPayrollRepository;
@@ -17,6 +18,8 @@ import com.zikpak.facecheck.security.EmailTemplateName;
 import com.zikpak.facecheck.security.JwtService;
 import com.zikpak.facecheck.taxesServices.pdfServices.FillFormI9;
 import com.zikpak.facecheck.taxesServices.pdfServices.FillFormW4;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationRequest;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationService;
 import io.micrometer.core.instrument.Timer;
 import jakarta.mail.MessagingException;
 
@@ -60,6 +63,7 @@ public class AuthenticationService {
     private final FillFormI9 fillFormI9;
     private final FillFormW4 fillFormW4;
     private final MetricsAuthenticationService metric;
+    private final NotificationService notificationService;
 
 
     @Transactional
@@ -74,9 +78,16 @@ public class AuthenticationService {
             user.setRoles(List.of(role));
             user.setCompany(company);
 
+            userRepository.save(user);
+
             fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
             fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
-            userRepository.save(user);
+
+            NotificationRequest notification = NotificationRequest.builder()
+                    .message(user.getFirstName() + " " + user.getLastName() + " was successfully registered")
+                    .build();
+
+            notificationService.createNotification(company.getId(),notification);
             metric.recordOperationTime(timer, "register_successfully");
             try {
                 sendValidationEmail(user);
@@ -112,15 +123,19 @@ public class AuthenticationService {
         Timer.Sample timer = metric.startTimer();
         try {
             authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
+
             var role = authenticationServiceImpl.findRoleAdmin();
             var user = userMapper.toAdmin(request);
+
             user.setRoles(List.of(role));
+
+            userRepository.save(user);
 
             fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
             fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
 
-            userRepository.save(user);
             metric.recordOperationTime(timer, "register_admin_successfully");
+
             try {
                 sendValidationEmail(user);
             } catch (MessagingException e) {
@@ -198,6 +213,13 @@ public class AuthenticationService {
             var newCompany = authenticationServiceImpl.createNewCompany(companyRegistrationRequest);
             newCompany.setCompanyOwner(user);
             authenticationServiceImpl.setBusinessInformation(user, newCompany);
+
+            NotificationRequest notification = NotificationRequest.builder()
+                    .message("Comapny: " + newCompany.getCompanyName() + " was successfully registered")
+                    .build();
+
+            notificationService.createNotification(newCompany.getId(),notification);
+
             metric.recordOperationTime(timer, "register_company_successfully");
         } catch (Exception e){
             metric.recordError("register_failed", e.getMessage(), e);
