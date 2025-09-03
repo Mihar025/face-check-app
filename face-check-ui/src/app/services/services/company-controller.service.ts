@@ -16,6 +16,8 @@ import { CalculateTaxes$Params } from '../fn/company-controller/calculate-taxes'
 import { CompanyIncomePerMonthResponse } from '../models/company-income-per-month-response';
 import { CompanyTaxCalculationResponse } from '../models/company-tax-calculation-response';
 import { CompanyUpdatingResponse } from '../models/company-updating-response';
+import { count } from '../fn/company-controller/count';
+import { Count$Params } from '../fn/company-controller/count';
 import { deleteCompany } from '../fn/company-controller/delete-company';
 import { DeleteCompany$Params } from '../fn/company-controller/delete-company';
 import { demoteFromAdminToForeman } from '../fn/company-controller/demote-from-admin-to-foreman';
@@ -23,6 +25,8 @@ import { DemoteFromAdminToForeman$Params } from '../fn/company-controller/demote
 import { demoteFromForemanToUser } from '../fn/company-controller/demote-from-foreman-to-user';
 import { DemoteFromForemanToUser$Params } from '../fn/company-controller/demote-from-foreman-to-user';
 import { EmployeeSalaryResponse } from '../models/employee-salary-response';
+import { findCertainEmployeeInCompany } from '../fn/company-controller/find-certain-employee-in-company';
+import { FindCertainEmployeeInCompany$Params } from '../fn/company-controller/find-certain-employee-in-company';
 import { findCompanyIncomePerMonth } from '../fn/company-controller/find-company-income-per-month';
 import { FindCompanyIncomePerMonth$Params } from '../fn/company-controller/find-company-income-per-month';
 import { fireEmployee } from '../fn/company-controller/fire-employee';
@@ -37,6 +41,8 @@ import { getCompanyAddress } from '../fn/company-controller/get-company-address'
 import { GetCompanyAddress$Params } from '../fn/company-controller/get-company-address';
 import { getCompanyEmail } from '../fn/company-controller/get-company-email';
 import { GetCompanyEmail$Params } from '../fn/company-controller/get-company-email';
+import { getCompanyId } from '../fn/company-controller/get-company-id';
+import { GetCompanyId$Params } from '../fn/company-controller/get-company-id';
 import { getCompanyName } from '../fn/company-controller/get-company-name';
 import { GetCompanyName$Params } from '../fn/company-controller/get-company-name';
 import { getCompanyPhone } from '../fn/company-controller/get-company-phone';
@@ -54,18 +60,23 @@ import { promoteToAdmin } from '../fn/company-controller/promote-to-admin';
 import { PromoteToAdmin$Params } from '../fn/company-controller/promote-to-admin';
 import { promoteToForeman } from '../fn/company-controller/promote-to-foreman';
 import { PromoteToForeman$Params } from '../fn/company-controller/promote-to-foreman';
+import { RelatedUserInCompanyResponse } from '../models/related-user-in-company-response';
 import { setCompanyIncomePerMonth } from '../fn/company-controller/set-company-income-per-month';
 import { SetCompanyIncomePerMonth$Params } from '../fn/company-controller/set-company-income-per-month';
 import { updateCompany } from '../fn/company-controller/update-company';
 import { UpdateCompany$Params } from '../fn/company-controller/update-company';
 import { updateCompanyAddress } from '../fn/company-controller/update-company-address';
 import { UpdateCompanyAddress$Params } from '../fn/company-controller/update-company-address';
+import { UpdateCompanyAddressResponse } from '../models/update-company-address-response';
 import { updateCompanyEmail } from '../fn/company-controller/update-company-email';
 import { UpdateCompanyEmail$Params } from '../fn/company-controller/update-company-email';
+import { UpdateCompanyEmailResponse } from '../models/update-company-email-response';
 import { updateCompanyName } from '../fn/company-controller/update-company-name';
 import { UpdateCompanyName$Params } from '../fn/company-controller/update-company-name';
+import { UpdateCompanyNameResponse } from '../models/update-company-name-response';
 import { updateCompanyPhone } from '../fn/company-controller/update-company-phone';
 import { UpdateCompanyPhone$Params } from '../fn/company-controller/update-company-phone';
+import { UpdateCompanyPhoneNumberResponse } from '../models/update-company-phone-number-response';
 import { updateEmployeeRate } from '../fn/company-controller/update-employee-rate';
 import { UpdateEmployeeRate$Params } from '../fn/company-controller/update-employee-rate';
 
@@ -234,7 +245,7 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyPhone$Response(params: UpdateCompanyPhone$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  updateCompanyPhone$Response(params: UpdateCompanyPhone$Params, context?: HttpContext): Observable<StrictHttpResponse<UpdateCompanyPhoneNumberResponse>> {
     return updateCompanyPhone(this.http, this.rootUrl, params, context);
   }
 
@@ -244,9 +255,9 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyPhone(params: UpdateCompanyPhone$Params, context?: HttpContext): Observable<void> {
+  updateCompanyPhone(params: UpdateCompanyPhone$Params, context?: HttpContext): Observable<UpdateCompanyPhoneNumberResponse> {
     return this.updateCompanyPhone$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UpdateCompanyPhoneNumberResponse>): UpdateCompanyPhoneNumberResponse => r.body)
     );
   }
 
@@ -259,7 +270,7 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyName$Response(params: UpdateCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  updateCompanyName$Response(params: UpdateCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<UpdateCompanyNameResponse>> {
     return updateCompanyName(this.http, this.rootUrl, params, context);
   }
 
@@ -269,9 +280,9 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyName(params: UpdateCompanyName$Params, context?: HttpContext): Observable<void> {
+  updateCompanyName(params: UpdateCompanyName$Params, context?: HttpContext): Observable<UpdateCompanyNameResponse> {
     return this.updateCompanyName$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UpdateCompanyNameResponse>): UpdateCompanyNameResponse => r.body)
     );
   }
 
@@ -284,7 +295,7 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyEmail$Response(params: UpdateCompanyEmail$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  updateCompanyEmail$Response(params: UpdateCompanyEmail$Params, context?: HttpContext): Observable<StrictHttpResponse<UpdateCompanyEmailResponse>> {
     return updateCompanyEmail(this.http, this.rootUrl, params, context);
   }
 
@@ -294,9 +305,9 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyEmail(params: UpdateCompanyEmail$Params, context?: HttpContext): Observable<void> {
+  updateCompanyEmail(params: UpdateCompanyEmail$Params, context?: HttpContext): Observable<UpdateCompanyEmailResponse> {
     return this.updateCompanyEmail$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UpdateCompanyEmailResponse>): UpdateCompanyEmailResponse => r.body)
     );
   }
 
@@ -309,7 +320,7 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyAddress$Response(params: UpdateCompanyAddress$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  updateCompanyAddress$Response(params: UpdateCompanyAddress$Params, context?: HttpContext): Observable<StrictHttpResponse<UpdateCompanyAddressResponse>> {
     return updateCompanyAddress(this.http, this.rootUrl, params, context);
   }
 
@@ -319,9 +330,9 @@ export class CompanyControllerService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateCompanyAddress(params: UpdateCompanyAddress$Params, context?: HttpContext): Observable<void> {
+  updateCompanyAddress(params: UpdateCompanyAddress$Params, context?: HttpContext): Observable<UpdateCompanyAddressResponse> {
     return this.updateCompanyAddress$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UpdateCompanyAddressResponse>): UpdateCompanyAddressResponse => r.body)
     );
   }
 
@@ -525,6 +536,31 @@ export class CompanyControllerService extends BaseService {
     );
   }
 
+  /** Path part for operation `count()` */
+  static readonly CountPath = '/company/{companyId}/employees/count';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `count()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  count$Response(params: Count$Params, context?: HttpContext): Observable<StrictHttpResponse<string>> {
+    return count(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `count$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  count(params: Count$Params, context?: HttpContext): Observable<string> {
+    return this.count$Response(params, context).pipe(
+      map((r: StrictHttpResponse<string>): string => r.body)
+    );
+  }
+
   /** Path part for operation `getAdminEmployees()` */
   static readonly GetAdminEmployeesPath = '/company/{companyId}/employees/admins';
 
@@ -625,6 +661,31 @@ export class CompanyControllerService extends BaseService {
     );
   }
 
+  /** Path part for operation `getCompanyId()` */
+  static readonly GetCompanyIdPath = '/company/get-company-id';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getCompanyId()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyId$Response(params?: GetCompanyId$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getCompanyId(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getCompanyId$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getCompanyId(params?: GetCompanyId$Params, context?: HttpContext): Observable<number> {
+    return this.getCompanyId$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
   /** Path part for operation `getAllEmployeeRates()` */
   static readonly GetAllEmployeeRatesPath = '/company/employee-rates';
 
@@ -647,6 +708,31 @@ export class CompanyControllerService extends BaseService {
   getAllEmployeeRates(params?: GetAllEmployeeRates$Params, context?: HttpContext): Observable<Array<EmployeeSalaryResponse>> {
     return this.getAllEmployeeRates$Response(params, context).pipe(
       map((r: StrictHttpResponse<Array<EmployeeSalaryResponse>>): Array<EmployeeSalaryResponse> => r.body)
+    );
+  }
+
+  /** Path part for operation `findCertainEmployeeInCompany()` */
+  static readonly FindCertainEmployeeInCompanyPath = '/company/employee-in-certain-company/{workerId}/{companyId}/';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findCertainEmployeeInCompany()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findCertainEmployeeInCompany$Response(params: FindCertainEmployeeInCompany$Params, context?: HttpContext): Observable<StrictHttpResponse<RelatedUserInCompanyResponse>> {
+    return findCertainEmployeeInCompany(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findCertainEmployeeInCompany$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findCertainEmployeeInCompany(params: FindCertainEmployeeInCompany$Params, context?: HttpContext): Observable<RelatedUserInCompanyResponse> {
+    return this.findCertainEmployeeInCompany$Response(params, context).pipe(
+      map((r: StrictHttpResponse<RelatedUserInCompanyResponse>): RelatedUserInCompanyResponse => r.body)
     );
   }
 

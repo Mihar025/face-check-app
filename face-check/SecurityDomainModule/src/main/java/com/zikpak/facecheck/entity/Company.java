@@ -154,6 +154,9 @@ public class Company {
     @Column(nullable = true, name = "signature_title")
     private String signatureTitle = "";
 
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Notification> notifications = new ArrayList<>();
+
 
     public void addWorkSite(WorkSite workSite) {
         workSites.add(workSite);
