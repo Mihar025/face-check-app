@@ -4,8 +4,8 @@
 
 import { LocalTime } from '../models/local-time';
 export interface ChangePunchInRequest {
-  dateWhenWorkerDidntMakePunchIn?: string;
-  newPunchInDate?: string;
-  newPunchInTime?: LocalTime;
-  workerId?: number;
+  dateWhenWorkerDidntMakePunchIn: string;
+  newPunchInDate: string;
+  newPunchInTime: LocalTime;
+  workerId: number;
 }
