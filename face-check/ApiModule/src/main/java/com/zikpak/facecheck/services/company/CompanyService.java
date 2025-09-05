@@ -52,115 +52,144 @@ public class CompanyService implements CompanyServiceImpl {
 
 
 
-
+    public Integer findCompanyId(Authentication authentication) {
+        User admin = (User) authentication.getPrincipal();
+        Company company  =  companyRepository.findById(admin.getCompany().getId()).orElseThrow(EntityNotFoundException::new);
+         return company.getId();
+    }
 
     @Override
     public String companyName(Authentication authentication) {
-        User admin = (User) authentication.getPrincipal();
-        var company = companyRepository.findById(admin.getCompany().getId())
-                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
-        return company.getCompanyName();
+        try {
+            log.info("=== companyName method called ===");
+            log.info("Authentication: {}", authentication);
+            log.info("Authentication class: {}", authentication != null ? authentication.getClass() : "null");
+            log.info("Principal: {}", authentication != null ? authentication.getPrincipal() : "null");
+            log.info("Principal class: {}", authentication != null && authentication.getPrincipal() != null ?
+                    authentication.getPrincipal().getClass() : "null");
+
+            if (authentication == null) {
+                log.error("Authentication is null");
+                return "";
+            }
+
+            User admin = (User) authentication.getPrincipal();
+            log.info("User email: {}", admin.getEmail());
+            log.info("User company: {}", admin.getCompany());
+
+            if (admin.getCompany() == null) {
+                log.error("User has no company associated");
+                return "";
+            }
+
+            Integer companyId = admin.getCompany().getId();
+            log.info("Company ID: {}", companyId);
+
+            Company company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+
+            String companyName = company.getCompanyName() != null ? company.getCompanyName() : "";
+            log.info("Returning company name: {}", companyName);
+
+            return companyName;
+
+        } catch (Exception e) {
+            log.error("Error in companyName method", e);
+            throw e;
+        }
     }
+
     @Override
     public String companyAddress(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
-        return company.getCompanyAddress();
+        return company.getCompanyAddress() != null ? company.getCompanyAddress() : "";
     }
+
     @Override
     public String companyPhone(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
-        return company.getCompanyPhone();
+        // Если phone - это String
+        return company.getCompanyPhone() != null ? company.getCompanyPhone() : "";
+        // Если phone - это число (Long/Integer)
+        // return company.getCompanyPhone() != null ? String.valueOf(company.getCompanyPhone()) : "";
     }
+
     @Override
     public String companyEmail(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
-        return company.getCompanyEmail();
+        return company.getCompanyEmail() != null ? company.getCompanyEmail() : "";
     }
 
 
     @Transactional
-    @Override
-    public void updateCompanyName(String name, Authentication authentication) {
-        if(name == null || name.isBlank()){
-            throw new IllegalArgumentException("Company name cannot be null or blank");
-        }
-
+    public UpdateCompanyNameResponse updateCompanyName(UpdateCompanyNameRequest request, Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
 
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
 
-        if(company.getCompanyName().equals(name)) {
-            throw new AccessDeniedException("Company name already exists");
-        }
-
-        company.setCompanyName(name);
+        company.setCompanyName(request.getCompanyName());
         companyRepository.save(company);
+        return  UpdateCompanyNameResponse.builder()
+                .companyName(company.getCompanyName())
+                .build();
     }
 
 
     @Transactional
-    @Override
-    public void updateCompanyAddress(String address, Authentication authentication) {
-        if(address == null || address.isBlank()){
-            throw new IllegalArgumentException("Company address cannot be null or blank");
-        }
+    public UpdateCompanyAddressResponse updateCompanyAddress(UpdateCompanyAddressRequest request, Authentication authentication) {
+
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
-        if(company.getCompanyAddress().equals(address)) {
-            throw new AccessDeniedException("Company address already exists");
-        }
 
-        company.setCompanyAddress(address);
+        company.setCompanyAddress(request.getCompanyAddress());
         companyRepository.save(company);
-
+        return UpdateCompanyAddressResponse.builder()
+                .companyAddress(company.getCompanyAddress())
+                .build();
     }
 
 
     @Transactional
-    @Override
-    public void updateCompanyPhoneNumber(String phoneNumber, Authentication authentication) {
-        if(phoneNumber == null || phoneNumber.isBlank()){
-            throw new IllegalArgumentException("Company phone number cannot be null or blank");
-        }
+    public UpdateCompanyPhoneNumberResponse updateCompanyPhoneNumber(UpdateCompanyPhoneNumberRequest request, Authentication authentication) {
+
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
 
-        if(company.getCompanyPhone().equals(phoneNumber)) {
-            throw new AccessDeniedException("Company phoneNumber already exists");
-        }
-
-        company.setCompanyPhone(phoneNumber);
+        company.setCompanyPhone(request.getPhoneNumber());
         companyRepository.save(company);
+        return UpdateCompanyPhoneNumberResponse.builder()
+                .phoneNumber(company.getCompanyPhone())
+                .build();
 
     }
 
 
     @Transactional
-    @Override
-    public void updateCompanyEmail(String email, Authentication authentication) {
-        if(email == null || email.isBlank()){
-            throw new IllegalArgumentException("Company email cannot be null or blank");
-        }
-
+    public UpdateCompanyEmailResponse updateCompanyEmail(UpdateCompanyEmailRequest request, Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + admin.getCompany().getId() + " not found"));
-        if(company.getCompanyEmail().equals(email)) {
-            throw new AccessDeniedException("Company email already exists");
-        }
 
-        company.setCompanyEmail(email);
+
+        company.setCompanyEmail(request.getEmail());
         companyRepository.save(company);
+        return UpdateCompanyEmailResponse.builder()
+                .email(company.getCompanyEmail())
+                .build();
     }
+
+
+
+
 
     public CompanyUpdatingResponse updateCompany(CompanyUpdatingRequest companyUpdatingRequest, Integer companyId, Authentication authentication) throws AccessDeniedException {
 
@@ -433,6 +462,26 @@ public class CompanyService implements CompanyServiceImpl {
                 users.isLast()
         );
     }
+
+
+
+    public long findWorkersQuantityInCertainCompany(Integer companyId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+
+        boolean appOwner = user.getRoles().stream()
+                .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+        if (!user.isAdmin() && !user.getCompany().getId().equals(companyId) && !appOwner) {
+            log.warn("Unauthorized access attempt by user: {}", user.getEmail());
+            throw new AccessDeniedException("You do not have permission to view company employees");
+        }
+
+        return userRepository.countEmployeesInCompany(companyId);
+    }
+
+
+
+
 
 
     public PageResponse<RelatedUserInCompanyResponse> findAllEmployeesWhoseRoleAreUser(int page, int size, Integer companyId, Authentication authentication) {

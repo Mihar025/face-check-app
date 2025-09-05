@@ -80,6 +80,7 @@ public class CompanyMapper {
                 .email(foundedEmployee.getEmail())
                 .baseHourlyRate(baseHourlyRate)
                 .enabled(foundedEmployee.isEnabled())
+                .photoUrl(foundedEmployee.getPhotoUrl())
                 .build();
     }
     public Company createNewCompany(CompanyRegistrationRequest companyRegistrationRequest) {
