@@ -4,7 +4,25 @@
 
 export interface CompanyRegistrationRequest {
   companyAddress: string;
+  companyCity: string;
   companyEmail: string;
   companyName: string;
+  companyPaymentPosition: 'WEEKLY' | 'BIWEEKLY';
   companyPhone: string;
+  companyState: string;
+  companyStateIdNumber: string;
+  companyZipCode: string;
+  defaultMemo: string;
+  employerEIN: string;
+  experienceModRate: number;
+  fundingAccountNumber: string;
+  fundingBankName: string;
+  fundingRoutingNumber: string;
+  returnMailingAddress: string;
+  signatureName: string;
+  signatureTitle: string;
+  socialSecurityTaxForCompany: number;
+  specialTwoCharConditionCodeForMTA305: string;
+  wcInsuranceCarrier: string;
+  wcPolicyNumber: string;
 }

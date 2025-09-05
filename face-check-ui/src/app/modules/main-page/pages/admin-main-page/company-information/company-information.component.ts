@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import {AuthService} from "../../../additionalServices/auth-service";
 import {UserServiceControllerService} from "../../../../../services/services/user-service-controller.service";
 import {CompanyControllerService} from "../../../../../services/services/company-controller.service";
-import { map, catchError, of } from 'rxjs';
+import {map, catchError, of, switchMap} from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 
@@ -18,6 +18,9 @@ export class CompanyInformationComponent implements OnInit {
   companyPhone: string = '';
   companyAddress: string = '';
   userPhotoUrl: string = '';
+  employeesCount: number = 0;
+  companyId: number | null = null;
+
 
 
   constructor(
@@ -50,6 +53,8 @@ export class CompanyInformationComponent implements OnInit {
     this.loadCompanyPhone();
     this.loadCompanyAddress();
     this.getUserPhoto();
+    this.loadCompanyIdAndEmployees();
+
   }
 
   logout(): void {
@@ -72,75 +77,55 @@ export class CompanyInformationComponent implements OnInit {
 
 
   loadCompanyName(): void {
-    this.companyService.getCompanyName().pipe(
-      map((response: any) => {
-        if (typeof response === 'string') {
-          return response;
-        }
-        return '';
-      }),
-      catchError((error: any) => {
-        if (error instanceof HttpErrorResponse && error.status === 200) {
-          return of(error.error.text || '');
-        }
+    this.userService.findWorkerCompanyName().subscribe(
+      response => {
+        this.companyName = response.companyName || '';
+      },
+      error => {
         console.error('Error loading company name:', error);
-        return of('');
-      })
-    ).subscribe(name => {
-      this.companyName = String(name);
-    });
+        this.companyName = 'Не удалось загрузить';
+      }
+    );
   }
 
   loadCompanyEmail(): void {
-    this.companyService.getCompanyEmail().pipe(
-      map((response: any)=>{
-        if(typeof response === 'string'){
-          return response;
-        }
-        return '';
-      }),
-      catchError((error: any) => {
-        if(error instanceof HttpErrorResponse && error.status === 200){
-          return of(error.error.text || '');
-        }
-        return of('');
-      })
-    ).subscribe(email => {
-      this.companyEmail = String(email);
-    })
+    this.userService.findWorkerCompanyEmail().subscribe(
+      response => {
+        this.companyEmail = response.email || '';
+      },
+      error => {
+        console.error('Error loading email:', error);
+        this.companyName = 'Не удалось загрузить';
+      }
+    );
   }
 
   loadCompanyPhone(): void {
-    this.companyService.getCompanyPhone().subscribe(
-      phone => {
-        if (phone) {
-          this.companyPhone =String(phone);
-        }
+    this.userService.findWorkerCompanyPhoneNumber().subscribe(
+      response => {
+        this.companyPhone = response.phoneNumber || '';
       },
       error => {
-        console.error('Error loading company phone:', error);
+        console.error('Error loading phoneNumber:', error);
+        this.companyName = 'Не удалось загрузить';
       }
     );
   }
 
   loadCompanyAddress(): void {
-    this.companyService.getCompanyAddress().pipe(
-      map((response: any)=>{
-        if(typeof response === 'string'){
-          return response;
-        }
-        return '';
-      }),
-      catchError((error: any) => {
-        if(error instanceof HttpErrorResponse && error.status === 200){
-          return of(error.error.text || '');
-        }
-        return of('');
-      })
-    ).subscribe(address => {
-      this.companyAddress = String(address);
-    })
+    this.userService.findWorkerCompanyAddress().subscribe(
+      response => {
+        this.companyAddress = response.companyAddress || '';
+      },
+      error => {
+        console.error('Error loading companyAddress:', error);
+        this.companyName = 'Не удалось загрузить';
+      }
+    );
   }
+
+
+
 
   getUserPhoto(): void {
     this.userService.findWorkerFullContactInformation().subscribe(
@@ -155,6 +140,26 @@ export class CompanyInformationComponent implements OnInit {
     );
   }
 
+  loadCompanyIdAndEmployees(): void {
+    this.companyService.getCompanyId()
+      .pipe(
+        // сервер отдаёт JSON-число; getCompanyId уже парсит его в number
+        catchError(err => {
+          console.error('Error loading companyId:', err);
+          return of(0); // без companyId покажем 0 сотрудников
+        }),
+        switchMap((id: number) => {
+          this.companyId = id;
+          return this.companyService.count({ companyId: id }); // text/plain
+        }),
+        map((v: string) => Number(v) || 0),
+        catchError(err => {
+          console.error('Error loading employees count:', err);
+          return of(0);
+        })
+      )
+      .subscribe(n => this.employeesCount = n);
+  }
 
 
 }
