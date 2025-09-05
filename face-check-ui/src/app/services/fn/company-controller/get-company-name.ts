@@ -18,7 +18,7 @@ export function getCompanyName(http: HttpClient, rootUrl: string, params?: GetCo
   }
 
   return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
+    rb.build({ responseType: 'text', accept: 'text/plain', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
