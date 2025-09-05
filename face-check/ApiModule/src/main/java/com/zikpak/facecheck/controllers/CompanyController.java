@@ -1,17 +1,20 @@
 package com.zikpak.facecheck.controllers;
 
 
+import com.zikpak.facecheck.services.company.*;
 import com.zikpak.facecheck.taxesServices.services.PayStubService;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingRequest;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingResponse;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
-import com.zikpak.facecheck.services.company.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -27,6 +30,11 @@ import java.util.List;
 public class CompanyController {
 
     private final CompanyService companyService;
+
+    @GetMapping(value = "/{companyId}/employees/count", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> count(@PathVariable Integer companyId, Authentication auth) {
+        return ResponseEntity.ok(String.valueOf(companyService.findWorkersQuantityInCertainCompany(companyId, auth)));
+    }
 
 
     @PutMapping("/{companyId}")
@@ -78,6 +86,12 @@ public class CompanyController {
     public ResponseEntity<BigDecimal> getTotalSalaries(
             Authentication authentication) {
         return ResponseEntity.ok(companyService.countSalariesInTotalForAllEmployeePerMonth(authentication));
+    }
+
+    @GetMapping("/get-company-id")
+    public ResponseEntity<Integer> getCompanyId(
+            Authentication authentication) {
+        return ResponseEntity.ok(companyService.findCompanyId(authentication));
     }
 
 
@@ -204,54 +218,57 @@ public class CompanyController {
 
 
 
-    @GetMapping("/name")
-    public ResponseEntity<String> getCompanyName(Authentication authentication) {
+    @GetMapping(value = "/name", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> getCompanyName() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(companyService.companyName(authentication));
     }
 
-    @GetMapping("/address")
-    public ResponseEntity<String> getCompanyAddress(Authentication authentication) {
+    @GetMapping(value = "/address", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> getCompanyAddress() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(companyService.companyAddress(authentication));
     }
 
-    @GetMapping("/phone")
-    public ResponseEntity<String> getCompanyPhone(Authentication authentication) {
+    @GetMapping(value = "/phone", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> getCompanyPhone() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(companyService.companyPhone(authentication));
     }
 
-    @GetMapping("/email")
-    public ResponseEntity<String> getCompanyEmail(Authentication authentication) {
+    @GetMapping(value = "/email", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> getCompanyEmail() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(companyService.companyEmail(authentication));
     }
 
-
     @PutMapping("/update-name")
-    public ResponseEntity<Void> updateCompanyName(
-            @Valid @RequestBody String name,
+    public ResponseEntity<UpdateCompanyNameResponse> updateCompanyName(
+            @Valid @RequestBody UpdateCompanyNameRequest name,
             Authentication authentication) {
         companyService.updateCompanyName(name, authentication);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/update-address")
-    public ResponseEntity<Void> updateCompanyAddress(
-            @Valid @RequestBody String address,
+    public ResponseEntity<UpdateCompanyAddressResponse> updateCompanyAddress(
+            @Valid @RequestBody UpdateCompanyAddressRequest address,
             Authentication authentication) {
         companyService.updateCompanyAddress(address, authentication);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/update-phone")
-    public ResponseEntity<Void> updateCompanyPhone(
-            @Valid @RequestBody String phoneNumber,
+    public ResponseEntity<UpdateCompanyPhoneNumberResponse> updateCompanyPhone(
+            @Valid @RequestBody UpdateCompanyPhoneNumberRequest phoneNumber,
             Authentication authentication) {
         companyService.updateCompanyPhoneNumber(phoneNumber, authentication);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/update-email")
-    public ResponseEntity<Void> updateCompanyEmail(
-            @Valid @RequestBody String email,
+    public ResponseEntity<UpdateCompanyEmailResponse> updateCompanyEmail(
+            @Valid @RequestBody UpdateCompanyEmailRequest email,
             Authentication authentication) {
         companyService.updateCompanyEmail(email, authentication);
         return ResponseEntity.ok().build();
