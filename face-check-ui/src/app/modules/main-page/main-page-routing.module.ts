@@ -15,6 +15,15 @@ import {ManageEmployeesComponent} from "./pages/admin-main-page/manage-employees
 import {
   VerificationForEmployeeComponent
 } from "./pages/admin-main-page/verification-for-employee/verification-for-employee.component";
+import {ForgotPasswordComponent} from "./authentication/forgot-password/forgot-password.component";
+import {PrivacyPolicyComponent} from "./pages/privacy-policy/privacy-policy.component";
+import {TermsOfServiceComponent} from "./pages/terms-of-service/terms-of-service.component";
+import {ScheduleConsultationComponent} from "./pages/schedule-consultation/schedule-consultation.component";
+import {ViewDemoComponent} from "./pages/view-demo/view-demo.component";
+import {RefundPolicyComponent} from "./pages/refund-policy/refund-policy.component";
+import {FinancePageComponent} from "./pages/admin-main-page/finance-page/finance-page.component";
+import {LocTrackComponent} from "./pages/admin-main-page/loc-track/loc-track.component";
+import {EmployeeAttendanceComponent} from "./pages/admin-main-page/employee-attendance/employee-attendance.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -25,6 +34,10 @@ const routes: Routes = [
   {
     path: 'sign-up',
     component: RegisterComponent
+  },
+  {
+    path: 'forgot-password',
+    component: ForgotPasswordComponent
   },
   {
     path: 'verification/admin',
@@ -57,6 +70,27 @@ const routes: Routes = [
     component: PricingComponent
   },
   {
+    path: 'privacy-policy',
+    component: PrivacyPolicyComponent
+  },
+  {
+    path: 'terms-of-service',
+    component: TermsOfServiceComponent
+  },
+  {
+    path: 'schedule-consultation',
+    component: ScheduleConsultationComponent
+  },
+  {
+    path: 'view-demo',
+    component: ViewDemoComponent
+  },
+  {
+    path: 'refund-policy',
+    component: RefundPolicyComponent
+  },
+
+  {
     path: 'main-page/admin',
     component: AdminPageComponent
   },
@@ -85,7 +119,18 @@ const routes: Routes = [
     path: 'main-page/admin/settings',
     component: SettingsComponent
   },
-
+  {
+    path: 'main-page/admin/finance',
+    component: FinancePageComponent
+  },
+  {
+    path: 'main-page/admin/location-tracking',
+    component: LocTrackComponent
+  },
+  {
+    path: 'main-page/admin/employee-attendance',
+    component: EmployeeAttendanceComponent
+  },
 
   {
     path: '',

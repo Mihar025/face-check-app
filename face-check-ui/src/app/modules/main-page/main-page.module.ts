@@ -17,6 +17,16 @@ import { ManageWorksitesComponent } from './pages/admin-main-page/manage-worksit
 import { SettingsComponent } from './pages/admin-main-page/settings/settings.component';
 import { ManageEmployeesComponent } from './pages/admin-main-page/manage-employees/manage-employees.component';
 import { VerificationForEmployeeComponent } from './pages/admin-main-page/verification-for-employee/verification-for-employee.component';
+import {SharedModule} from "../shared/shared.module";
+import { ForgotPasswordComponent } from './authentication/forgot-password/forgot-password.component';
+import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy.component';
+import { TermsOfServiceComponent } from './pages/terms-of-service/terms-of-service.component';
+import { ScheduleConsultationComponent } from './pages/schedule-consultation/schedule-consultation.component';
+import { ViewDemoComponent } from './pages/view-demo/view-demo.component';
+import { RefundPolicyComponent } from './pages/refund-policy/refund-policy.component';
+import { FinancePageComponent } from './pages/admin-main-page/finance-page/finance-page.component';
+import { LocTrackComponent } from './pages/admin-main-page/loc-track/loc-track.component';
+import { EmployeeAttendanceComponent } from './pages/admin-main-page/employee-attendance/employee-attendance.component';
 
 
 @NgModule({
@@ -33,7 +43,17 @@ import { VerificationForEmployeeComponent } from './pages/admin-main-page/verifi
       ManageWorksitesComponent,
       SettingsComponent,
       ManageEmployeesComponent,
-      VerificationForEmployeeComponent
+      VerificationForEmployeeComponent,
+      ForgotPasswordComponent,
+      PrivacyPolicyComponent,
+      TermsOfServiceComponent,
+      ScheduleConsultationComponent,
+      ViewDemoComponent,
+      RefundPolicyComponent,
+      FinancePageComponent,
+      LocTrackComponent,
+      EmployeeAttendanceComponent
+
   ],
   imports: [
     CommonModule,
@@ -41,6 +61,8 @@ import { VerificationForEmployeeComponent } from './pages/admin-main-page/verifi
     ReactiveFormsModule,
     CodeInputModule,
     FormsModule,
+    SharedModule
+
   ]
 })
 export class MainPageModule { }
