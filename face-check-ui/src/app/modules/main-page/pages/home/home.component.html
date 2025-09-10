@@ -2,19 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <title>Document</title>
-
+  <title>Facecheck - Workforce Time & Calculation Platform</title>
 </head>
 <body>
 
+<!-- Animated Background -->
+<div class="animated-bg">
+  <div class="gradient-bg"></div>
+  <div class="floating-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+</div>
+
+<!-- Navigation -->
 <nav class="navbar">
   <div class="navbar-container">
     <div class="logo-container">
@@ -24,195 +33,258 @@
       <a (click)="navigateToFaceCheck()" class="brand-name">facecheck</a>
     </div>
     <div class="nav-links">
-      <a (click)="navigateToPricing()" class="nav-link">Pricing</a>
+      <a (click)="navigateToPricing()" class="nav-link active">Pricing</a>
       <a (click)="navigateToAboutUs()" class="nav-link">About Us</a>
+      <a (click)="navigateToViewDemo()" class="nav-link">Demo</a>
     </div>
     <a (click)="navigateToSignIn()" class="sign-in-button">Sign In</a>
   </div>
-
 </nav>
 
-<div class="back-ground-top">
-  <div class="content-wrapper">
-    <div class="heading-container">
-      <h1>Get your payroll<span class="line-break"></span> done, <span class="orange-text">faster</span> than<span class="line-break"></span> usual</h1>
 
-      <div class="subtext-container">
-        <p class="subtext-line">Master your payroll, access instant financial insights, track productivity</p>
-        <p class="subtext-line">Unleash your team's potential — all in one powerful platform.</p>
-        <p class="subtext-line">Transform your business today!</p>
-        <button class="blue-button">Learn More</button>
-        <p class="subtext-log">Already using Facecheck? <a  (click)="navigateToSignIn()" class="sign-in-link">Sign In</a></p>
+
+
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="badge-container">
+        <span class="security-badge animated-fade-in">
+          <i class="fas fa-certificate"></i> IRS Compliant Calculations
+        </span>
+      </div>
+
+      <h1 class="hero-title animated-slide-up">
+        Automated Workforce <br>
+        <span class="gradient-text">Time Tracking</span> & <br>
+        <span class="gradient-text">Calculation</span> Platform
+      </h1>
+
+      <p class="hero-subtitle animated-slide-up-delay">
+        Streamline employee time data collection and generate accurate calculations
+        based on current federal and state tax regulations.
+      </p>
+
+      <div class="disclaimer-box animated-fade-in-delay">
+        <i class="fas fa-info-circle"></i>
+        <p>Our platform assists with calculations based on publicly available IRS tax tables and rates.
+          Always consult with a qualified tax professional for final verification.</p>
+      </div>
+
+      <div class="cta-buttons animated-scale-in">
+        <button class="btn-primary" (click)="navigateToViewDemo()">
+          <i class="fas fa-play-circle"></i> View Demo
+        </button>
+      </div>
+
+      <div class="trust-indicators">
+        <span><i class="fas fa-lock"></i> 256-bit Encryption</span>
+        <span><i class="fas fa-check-circle"></i> GDPR Ready</span>
       </div>
     </div>
 
-    <div class="image-container">
-      <img src="2.jpg" alt="Payroll Dashboard"/>
-    </div>
-  </div>
-</div>
-
-<div class="business-section">
-  <div class="business-badge">
-    100+ BUSINESSES TRUST IN FACECHECK
-  </div>
-</div>
-
-<div class="upper-text">
-  <h3>Everything in one platform! Make payrolls and time management easier with <span class="highlight-text">FACECHECK</span></h3>
-</div>
-
-<div class="features-container">
-  <div class="features-wrapper">
-    <div class="feature-card">
-      <img src="office2.avif" alt="Time Management" class="feature-image">
-      <p class="feature-badge time">Time Management</p>
-      <h2 class="feature-title">Save 15+ Hours Monthly With Automated Time Tracking</h2>
-      <p class="feature-description">Eliminate manual timesheets and boost team productivity with our smart AI-powered time management solution.</p>
-      <button class="feature-button material-symbols-rounded">arrow_forward</button>
-    </div>
-
-    <div class="feature-card">
-      <img src="office3.avif" alt="Payroll System" class="feature-image">
-      <p class="feature-badge payroll">Payroll System</p>
-      <h2 class="feature-title">Error-Free Payroll In Just One Click</h2>
-      <p class="feature-description">Reduce processing time by 80% and ensure perfect accuracy. Automatic tax calculations, deductions and compliance.</p>
-      <button class="feature-button material-symbols-rounded">arrow_forward</button>
-    </div>
-
-    <div class="feature-card">
-      <img src="office4.avif" alt="Productivity & Finance" class="feature-image">
-      <p class="feature-badge productivity">Insights & Analytics</p>
-      <h2 class="feature-title">Real-Time Financial Dashboards That Drive Growth</h2>
-      <p class="feature-description">Transform raw data into actionable insights. Track productivity metrics and financial KPIs in one intuitive dashboard.</p>
-      <button class="feature-button material-symbols-rounded">arrow_forward</button>
-    </div>
-  </div>
-</div>
-
-<div class="powerful-solution-section">
-  <div class="powerful-solution-badge">
-    FACECHECK IS THE MOST POWERFUL SOLUTION FOR YOUR BUSINESS!
-  </div>
-  <p class="and-thats-why">And that's why:</p>
-
-  <div class="benefits-container">
-    <div class="benefits-row">
-      <div class="benefit-item">
-        <i class="fa-solid fa-coins benefit-icon"></i>
-        <p class="benefit-text">Advanced Financial Calculations</p>
-      </div>
-      <div class="benefit-item">
-        <i class="fa-solid fa-clock benefit-icon"></i>
-        <p class="benefit-text">Effortless Time Management</p>
-      </div>
-      <div class="benefit-item">
-        <i class="fa-solid fa-chart-line benefit-icon"></i>
-        <p class="benefit-text">Real-time Performance Analytics</p>
-      </div>
-    </div>
-
-    <div class="benefits-row">
-      <div class="benefit-item">
-        <i class="fa-solid fa-users benefit-icon"></i>
-        <p class="benefit-text">Seamless Business Integration</p>
-      </div>
-      <div class="benefit-item">
-        <i class="fa-solid fa-wand-magic-sparkles benefit-icon"></i>
-        <p class="benefit-text">Super-Simple User Interface</p>
-      </div>
-      <div class="benefit-item">
-        <i class="fa-solid fa-rocket benefit-icon"></i>
-        <p class="benefit-text">Enhanced Team Productivity</p>
+    <div class="hero-visual animated-float">
+      <div class="dashboard-preview">
+        <img src="dashboard-preview.png" alt="Dashboard Preview" class="dashboard-img">
+        <div class="floating-card card-1">
+          <i class="fas fa-clock"></i>
+          <span>Real-time Tracking</span>
+        </div>
+        <div class="floating-card card-2">
+          <i class="fas fa-chart-line"></i>
+          <span>Instant Reports</span>
+        </div>
+        <div class="floating-card card-3">
+          <i class="fas fa-file-invoice"></i>
+          <span>Tax Calculations</span>
+        </div>
       </div>
     </div>
   </div>
+</section>
 
-  <div class="join-section">
-    <h3 class="join-heading">Join <span class="highlight-text">FACECHECK</span> today and unlock unlimited potential for your business</h3>
-    <a href="#" class="join-button">View Price List</a>
+<!-- Features Section -->
+<section class="features-section">
+  <div class="section-header">
+    <span class="section-badge">CORE FUNCTIONALITY</span>
+    <h2 class="section-title">How Our Platform Works</h2>
+    <p class="section-subtitle">Simple integration, accurate calculations, compliant results</p>
   </div>
-</div>
 
+  <div class="features-grid">
+    <div class="feature-card animated-on-scroll">
+      <div class="feature-icon-wrapper">
+        <div class="icon-bg"></div>
+        <i class="fas fa-user-clock feature-icon"></i>
+      </div>
+      <h3>Time Data Collection</h3>
+      <p>Employees submit hours worked, overtime, and time-off requests through our secure portal</p>
+      <ul class="feature-list">
+        <li><i class="fas fa-check"></i> Digital timesheets</li>
+        <li><i class="fas fa-check"></i> Mobile clock-in/out</li>
+        <li><i class="fas fa-check"></i> Automated reminders</li>
+      </ul>
+    </div>
+
+    <div class="feature-card animated-on-scroll">
+      <div class="feature-icon-wrapper">
+        <div class="icon-bg"></div>
+        <i class="fas fa-calculator feature-icon"></i>
+      </div>
+      <h3>Automated Calculations</h3>
+      <p>Our system processes data using current IRS guidelines and state-specific requirements</p>
+      <ul class="feature-list">
+        <li><i class="fas fa-check"></i> Federal tax withholdings</li>
+        <li><i class="fas fa-check"></i> State & local taxes</li>
+        <li><i class="fas fa-check"></i> Deductions & benefits</li>
+      </ul>
+    </div>
+
+    <div class="feature-card animated-on-scroll">
+      <div class="feature-icon-wrapper">
+        <div class="icon-bg"></div>
+        <i class="fas fa-file-alt feature-icon"></i>
+      </div>
+      <h3>Report Generation</h3>
+      <p>Receive detailed breakdowns and summaries for review and approval</p>
+      <ul class="feature-list">
+        <li><i class="fas fa-check"></i> Detailed pay stubs</li>
+        <li><i class="fas fa-check"></i> Tax summaries</li>
+        <li><i class="fas fa-check"></i> Export capabilities</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Compliance Section -->
+<section class="compliance-section">
+  <div class="compliance-container">
+    <div class="compliance-content">
+      <h2 class="compliance-title">
+        <i class="fas fa-balance-scale"></i>
+        Compliance & Accuracy Statement
+      </h2>
+
+      <div class="compliance-grid">
+        <div class="compliance-card">
+          <h4>Tax Table Updates</h4>
+          <p>We regularly update our calculation engine with the latest IRS Publication 15 (Circular E) guidelines and state tax tables.</p>
+        </div>
+
+        <div class="compliance-card">
+          <h4>Calculation Transparency</h4>
+          <p>All calculations show detailed breakdowns including gross pay, deductions, and net pay with clear formulas used.</p>
+        </div>
+
+        <div class="compliance-card">
+          <h4>Professional Review</h4>
+          <p>We recommend all calculations be reviewed by your accounting department or tax professional before final processing.</p>
+        </div>
+
+        <div class="compliance-card">
+          <h4>Audit Trail</h4>
+          <p>Complete record of all calculations, changes, and approvals maintained for compliance and audit purposes.</p>
+        </div>
+      </div>
+
+      <div class="legal-disclaimer">
+        <strong>Important Notice:</strong> This software provides calculation assistance based on current tax tables and regulations.
+        Users are responsible for verifying all calculations and ensuring compliance with applicable laws.
+        We recommend consulting with qualified tax professionals for final verification.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Security Section -->
+<section class="security-section">
+  <div class="security-container">
+    <h2 class="section-title">Enterprise-Grade Security</h2>
+
+    <div class="security-features">
+      <div class="security-item">
+        <div class="security-icon">
+          <i class="fas fa-fingerprint"></i>
+        </div>
+        <p>Multi-factor authentication</p>
+      </div>
+
+      <div class="security-item">
+        <div class="security-icon">
+          <i class="fas fa-database"></i>
+        </div>
+        <h4>Encrypted Storage</h4>
+        <p>AES-256 encryption for all sensitive data</p>
+      </div>
+
+      <div class="security-item">
+        <div class="security-icon">
+          <i class="fas fa-history"></i>
+        </div>
+        <h4>Audit Logging</h4>
+        <p>Complete activity tracking and reporting</p>
+      </div>
+
+      <div class="security-item">
+        <div class="security-icon">
+          <i class="fas fa-cloud"></i>
+        </div>
+        <h4>Secure Cloud</h4>
+        <p>AWS infrastructure with 99.9% uptime SLA</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="cta-container">
+    <h2>Ready to Streamline Your Workforce Calculations?</h2>
+    <p>Join businesses that trust our platform for accurate time tracking and calculations</p>
+
+    <div class="cta-buttons">
+      <button class="btn-cta-primary" (click)="navigateToPricing()">
+        Start Free Trial
+        <i class="fas fa-arrow-right"></i>
+      </button>
+      <button class="btn-cta-secondary" (click)="navigateToScheduleConsultation()">
+        Schedule Consultation
+        <i class="fas fa-calendar"></i>
+      </button>
+    </div>
+
+    <p class="cta-note">
+      <i class="fas fa-info-circle"></i>
+      No credit card required • 30-day trial • Full support included
+    </p>
+  </div>
+</section>
+
+<!-- Footer -->
 <footer class="footer">
   <div class="footer-container">
     <div class="footer-top">
-      <div class="footer-column company-info">
+      <div class="footer-brand">
         <div class="footer-logo">
-          <img src="logo.jpg" alt="Facecheck Logo" class="footer-logo-img">
-          <span class="footer-brand">facecheck</span>
+          <img src="logo.jpg" alt="Facecheck">
+          <span>facecheck</span>
         </div>
-        <p class="company-description">
-          Innovative solution for workforce management, payroll processing, and business optimization.
-        </p>
-        <div class="social-links">
-          <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
-        </div>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Company</h3>
-        <ul class="footer-links">
-          <li><a href="#">About Us</a></li>
-          <li><a href="#">Our Team</a></li>
-          <li><a href="#">Careers</a></li>
-          <li><a href="#">Partners</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Products</h3>
-        <ul class="footer-links">
-          <li><a href="#">Time Tracking</a></li>
-          <li><a href="#">Payroll System</a></li>
-          <li><a href="#">Business Analytics</a></li>
-          <li><a href="#">Mobile App</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Support</h3>
-        <ul class="footer-links">
-          <li><a href="#">Help Center</a></li>
-          <li><a href="#">Contact Us</a></li>
-          <li><a href="#">FAQ</a></li>
-          <li><a href="#">Documentation</a></li>
-        </ul>
+        <p>Professional workforce time tracking and calculation platform</p>
       </div>
     </div>
 
-    <div class="footer-divider"></div>
-
     <div class="footer-bottom">
-      <p class="copyright">© 2025 Facecheck. All rights reserved.</p>
-      <div class="legal-links">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Legal Information</a>
+      <p>&copy; 2025 Facecheck. All rights reserved.</p>
+      <div class="footer-legal">
+        <a (click)="navigateToPrivacy()"> Privacy Policy</a>
+        <a (click)="navigateToTerms()">Terms of Use</a>
+        <a (click)="navigateToRefundPolicy()">Refund Policy</a>
+
       </div>
     </div>
   </div>
 </footer>
 
-
 </body>
-<script>
-  function handleScroll() {
-    const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 50) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
-    }
-  }
-
-  window.addEventListener('scroll', handleScroll);
-
-  document.addEventListener('DOMContentLoaded', function() {
-    handleScroll();
-  });
-</script>
 </html>
