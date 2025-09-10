@@ -20,35 +20,35 @@ public class LocationRecord {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "latitude")
     private double latitude;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "longitude")
     private double longitude;
 
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp;
 
-    // Точность GPS в метрах
-    private Float accuracy;
+    @Column(name = "accuracy")
+    private Double accuracy;
 
-    // Скорость движения (м/с)
-    private Float speed;
+    @Column(name = "speed")
+    private Double speed;
 
-    // Направление движения (0-360 градусов)
-    private Float bearing;
+    @Column(name = "bearing")
+    private Double bearing;
 
-    // Высота над уровнем моря
+    @Column(name = "altitude")
     private Double altitude;
 
-    // Источник геолокации (GPS, NETWORK, FUSED)
     @Enumerated(EnumType.STRING)
+    @Column(name = "provider")
     private LocationProvider provider;
 
-    // Уровень заряда батареи при записи
+    @Column(name = "battery_level")
     private Integer batteryLevel;
 
-    // Для оптимизации - расстояние от предыдущей точки
+    @Column(name = "distance_from_previous")
     private Double distanceFromPrevious;
 
 }
