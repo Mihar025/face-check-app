@@ -23,7 +23,7 @@ public class LocationService {
 
 
     @Transactional
-    public LocationRecord saveLocation(Integer userId, LocationUpdateDto dto) {
+    public LocationRecordDto saveLocation(Integer userId, LocationUpdateDto dto) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -39,8 +39,6 @@ public class LocationService {
                 .batteryLevel(dto.getBatteryLevel())
                 .build();
 
-
-        // Вычисляем расстояние от предыдущей точки
         Optional<LocationRecord> lastRecord = locationRecordRepository
                 .findTopByUserOrderByTimestampDesc(user);
 
@@ -54,11 +52,12 @@ public class LocationService {
             record.setDistanceFromPrevious(distance);
         }
 
-        return locationRecordRepository.save(record);
+        LocationRecord savedRecord = locationRecordRepository.save(record);
+        return toDto(savedRecord);
     }
 
-    public List<LocationRecord> saveBatchLocations(Integer userId, List<LocationUpdateDto> locations) {
 
+    public List<LocationRecordDto> saveBatchLocations(Integer userId, List<LocationUpdateDto> locations) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -79,6 +78,7 @@ public class LocationService {
                     .altitude(dto.getAltitude())
                     .batteryLevel(dto.getBatteryLevel())
                     .build();
+
             if(previousRecord != null){
                 double distance = calculateDistance(
                         previousRecord.getLatitude(),
@@ -92,55 +92,42 @@ public class LocationService {
             records.add(record);
             previousRecord = record;
         }
-        return locationRecordRepository.saveAll(records);
+
+        List<LocationRecord> savedRecords = locationRecordRepository.saveAll(records);
+
+        // Возвращаем DTO
+        return savedRecords.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
 
-
-    public LocationRecord getLastLocation(Integer userId) {
+    public LocationRecordDto getLastLocation(Integer userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return locationRecordRepository.findTopByUserOrderByTimestampDesc(user)
+        LocationRecord record = locationRecordRepository.findTopByUserOrderByTimestampDesc(user)
                 .orElseThrow(() -> new EntityNotFoundException("No Location data found"));
+
+        return toDto(record);
     }
 
 
-    public List<LocationRecord> getLocationHistory(Integer userId, LocalDate date) {
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        ZonedDateTime startOfDay = date.atStartOfDay(ZoneId.systemDefault());
-        ZonedDateTime endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault());
 
-        return locationRecordRepository.findByUserAndTimestampBetweenOrderByTimestampAsc(
-                user,
-                startOfDay.toInstant(),
-                endOfDay.toInstant()
-        );
+    public List<LocationRecordDto> getLocationHistory(Integer userId, LocalDate date) {
+        System.out.println("Searching for user: " + userId + ", date: " + date);
+
+        List<LocationRecord> records = locationRecordRepository.findByUserAndDate(userId, date);
+
+        System.out.println("Found records: " + records.size());
+
+        return records.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
 
-    public LocationStatistics getDailyStatistics(Integer userId, LocalDate date){
-        List<LocationRecord>records = getLocationHistory(userId, date);
-         if(records.isEmpty()){
-             return LocationStatistics.empty();
-         }
-
-         double totalDistance = calculateTotalDistance(records);
-         Duration timeAtWork = calculateTimeAtWork(records);
-         double averageSpeed = calculateAverageSpeed(records);
-
-         return LocationStatistics.builder()
-                 .date(date)
-                 .totalDistance(totalDistance)
-                 .timeAtWork(timeAtWork)
-                 .averageSpeed(averageSpeed)
-                 .pointsCount(records.size())
-                 .firstLocation(records.get(0))
-                 .lastLocation(records.get(records.size() - 1))
-                 .build();
-    }
 
     private double calculateTotalDistance(List<LocationRecord> records) {
         return records.stream()
@@ -200,6 +187,26 @@ public class LocationService {
         }
 
         return totalDuration;
+    }
+
+
+
+    private LocationRecordDto toDto(LocationRecord record) {
+        return LocationRecordDto.builder()
+                .id(record.getId())
+                .userId(record.getUser().getId())
+                .userFirstName(record.getUser().getFirstName())
+                .userLastName(record.getUser().getLastName())
+                .latitude(record.getLatitude())
+                .longitude(record.getLongitude())
+                .timestamp(record.getTimestamp())
+                .accuracy(record.getAccuracy())
+                .speed(record.getSpeed())
+                .bearing(record.getBearing())
+                .altitude(record.getAltitude())
+                .batteryLevel(record.getBatteryLevel())
+                .distanceFromPrevious(record.getDistanceFromPrevious())
+                .build();
     }
 
 
