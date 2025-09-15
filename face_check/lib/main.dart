@@ -12,14 +12,24 @@ import 'package:face_check/screens/main_menu/notification/notification_screen.da
 import 'package:face_check/screens/main_menu/notification/notification_service.dart';
 import 'package:face_check/screens/theme/theme_provider.dart';
 import 'package:face_check/providers/localization_provider.dart';
+import 'package:face_check/services/location_tracking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+
+  WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
+
+
+
+  LocationTrackingService.initializeBackgroundService();
 
   runApp(
     MultiProvider(
@@ -89,7 +99,7 @@ class _MyAppState extends State<MyApp> {
             '/notifications': (context) => const NotificationScreen(),
             '/profile': (context) => const ProfileScreen(),
             '/settings': (context) => const SettingsScreen(),
-            '/drawer/punch': (context) => const PunchScreen(),
+           '/drawer/punch': (context) => const PunchScreen(),
             '/punch': (context) => const Mainmenupunchscreen(),
             '/finance': (context) => const FinanceScreen(),
             'forgot-password':(context) => ForgotPasswordScreen(),
