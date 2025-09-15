@@ -37,6 +37,8 @@ import {PromoteToAdmin$Params} from "../../../../../services/fn/company-controll
 import {
   DemoteFromAdminToForeman$Params
 } from "../../../../../services/fn/company-controller/demote-from-admin-to-foreman";
+import {DependentsRequest} from "../../../../../services/models/dependents-request";
+import {I9DocumentRequest} from "../../../../../services/models/i-9-document-request";
 
 @Component({
   selector: 'app-manage-employees',
@@ -96,6 +98,52 @@ export class ManageEmployeesComponent implements OnInit {
   password: string = '';
   phoneNumber: string = '';
   ssn_WORKER?: string = '';
+  // Обязательные поля (которых у вас еще нет)
+  apt: string = '';
+  city: string = '';
+  state: string = '';
+  zipcode: string = '';
+  employmentType: 'W2' | 'CONTRACTOR_1099' = 'W2';
+  payFrequency: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' = 'BIWEEKLY';
+  wcRiskClassCode: string = '';
+  filingStatus: 'SINGLE' | 'HEAD_OF_HOUSEHOLD' | 'MARRIED_FILLING_SEPARATELY' | 'MARRIED_FILLING_JOINTLY' = 'SINGLE';
+  exemptFromWithholding: boolean = false;
+  multipleJobsOrSpouseWorks: boolean = false;
+  twoJobsCheckBox: boolean = false;
+  livesInNYC: boolean = false;
+  isCitizen: boolean = false;
+  isNonCitizenNationalOfTheUS: boolean = false;
+  isPermanentResident: boolean = false;
+  isANonCitizen: boolean = false;
+  middleInitial?: string;
+  extraWithHoldings?: number;
+  dependents?: number;
+  dependentsList?: Array<DependentsRequest>;
+  dependentsUnder17?: number;
+  otherDependents?: number;
+  totalDependentsCredit?: number;
+  isRehired?: boolean;
+  dateWhenRehired?: string;
+  enrolledInHealthPlan?: boolean;
+  monthlyHealthPremium?: number;
+  coverageStartDate?: string;
+  adjustmentsSchedule1?: number;
+  deductions?: number;
+  estimatedItemizedDeductions?: number;
+  otherIncome?: number;
+  multipleJobsWorksheetLine2a?: number;
+  multipleJobsWorksheetLine2b?: number;
+  multipleJobsAdditionalWithholding?: number;
+  uscisNumber?: string;
+  formI94AdmissionNumber?: string;
+  passportNumber?: string;
+  passportCountryOfIssuance?: string;
+  workAuthorizationExpiryDate?: string;
+  i9Documents?: Array<I9DocumentRequest>;
+
+
+
+
   userPhotoUrl: string = '';
   activeTimeTab: 'updatePunchIn' | 'changeNewPunchIn' | 'changeNewPunchOut' = 'updatePunchIn';
 
@@ -346,18 +394,67 @@ export class ManageEmployeesComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
+    if (!this.gender) {
+      this.errorMessage = 'Please select gender';
+      this.loading = false;
+      return;
+    }
+
     const data: RegistrationRequest = {
-      companyAddress: this.companyAddress,
-      companyName: this.companyName2,
-      dateOfBirth: this.dateOfBirth,
-      email: this.email,
       firstName: this.firstName,
-      gender: this.gender || 'MALE',
-      homeAddress: this.homeAddress,
       lastName: this.lastName,
+      email: this.email,
       password: this.password,
       phoneNumber: this.phoneNumber,
-      ssn_WORKER: this.ssn_WORKER
+      homeAddress: this.homeAddress,
+      apt: this.apt,
+      city: this.city,
+      state: this.state,
+      zipcode: this.zipcode,
+      dateOfBirth: this.dateOfBirth || '',
+      gender: this.gender,
+      companyAddress: this.companyAddress,
+      companyName: this.companyName2,
+      employmentType: this.employmentType,
+      payFrequency: this.payFrequency,
+      wcRiskClassCode: this.wcRiskClassCode,
+      filingStatus: this.filingStatus,
+      exemptFromWithholding: this.exemptFromWithholding,
+      multipleJobsOrSpouseWorks: this.multipleJobsOrSpouseWorks,
+      twoJobsCheckBox: this.twoJobsCheckBox,
+      livesInNYC: this.livesInNYC,
+      isCitizen: this.isCitizen,
+      isNonCitizenNationalOfTheUS: this.isNonCitizenNationalOfTheUS,
+      isPermanentResident: this.isPermanentResident,
+      isANonCitizen: this.isANonCitizen,
+
+      // ВСЕ ОПЦИОНАЛЬНЫЕ ПОЛЯ (добавляются только если существуют)
+      ...(this.ssn_WORKER && { ssn_WORKER: this.ssn_WORKER }),
+      ...(this.middleInitial && { middleInitial: this.middleInitial }),
+      ...(this.extraWithHoldings !== undefined && { extraWithHoldings: this.extraWithHoldings }),
+      ...(this.dependents !== undefined && { dependents: this.dependents }),
+      ...(this.dependentsList && this.dependentsList.length > 0 && { dependentsList: this.dependentsList }),
+      ...(this.dependentsUnder17 !== undefined && { dependentsUnder17: this.dependentsUnder17 }),
+      ...(this.otherDependents !== undefined && { otherDependents: this.otherDependents }),
+      ...(this.totalDependentsCredit !== undefined && { totalDependentsCredit: this.totalDependentsCredit }),
+      ...(this.isRehired !== undefined && { isRehired: this.isRehired }),
+      ...(this.dateWhenRehired && { dateWhenRehired: this.dateWhenRehired }),
+      ...(this.enrolledInHealthPlan !== undefined && { enrolledInHealthPlan: this.enrolledInHealthPlan }),
+      ...(this.monthlyHealthPremium !== undefined && { monthlyHealthPremium: this.monthlyHealthPremium }),
+      ...(this.coverageStartDate && { coverageStartDate: this.coverageStartDate }),
+      ...(this.adjustmentsSchedule1 !== undefined && { adjustmentsSchedule1: this.adjustmentsSchedule1 }),
+      ...(this.deductions !== undefined && { deductions: this.deductions }),
+      ...(this.estimatedItemizedDeductions !== undefined && { estimatedItemizedDeductions: this.estimatedItemizedDeductions }),
+      ...(this.otherIncome !== undefined && { otherIncome: this.otherIncome }),
+      ...(this.multipleJobsWorksheetLine2a !== undefined && { multipleJobsWorksheetLine2a: this.multipleJobsWorksheetLine2a }),
+      ...(this.multipleJobsWorksheetLine2b !== undefined && { multipleJobsWorksheetLine2b: this.multipleJobsWorksheetLine2b }),
+      ...(this.multipleJobsAdditionalWithholding !== undefined && { multipleJobsAdditionalWithholding: this.multipleJobsAdditionalWithholding }),
+      ...(this.uscisNumber && { uscisNumber: this.uscisNumber }),
+      ...(this.formI94AdmissionNumber && { formI94AdmissionNumber: this.formI94AdmissionNumber }),
+      ...(this.passportNumber && { passportNumber: this.passportNumber }),
+      ...(this.passportCountryOfIssuance && { passportCountryOfIssuance: this.passportCountryOfIssuance }),
+      ...(this.workAuthorizationExpiryDate && { workAuthorizationExpiryDate: this.workAuthorizationExpiryDate }),
+      ...(this.i9Documents && this.i9Documents.length > 0 && { i9Documents: this.i9Documents })
     };
 
     const params: Register$Params = {
@@ -651,5 +748,14 @@ export class ManageEmployeesComponent implements OnInit {
         this.loading = false;
       }
     );
+  }
+
+  handleImageError(event: any): void {
+    // Устанавливаем дефолтное изображение при ошибке
+    event.target.style.display = 'none';
+    const placeholder = event.target.parentElement.querySelector('.worker-photo-placeholder');
+    if (placeholder) {
+      placeholder.style.display = 'flex';
+    }
   }
 }
