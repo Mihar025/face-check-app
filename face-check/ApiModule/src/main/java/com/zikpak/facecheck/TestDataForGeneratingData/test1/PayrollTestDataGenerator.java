@@ -45,6 +45,7 @@ import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcReportPdfGene
 import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcRiskServiceForPDF;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,7 +93,8 @@ public class PayrollTestDataGenerator {
     private final YearToDateCustomReportService yearToDateCustomReportService;
     private final YearToDateCustomReportPdf yearToDateCustomReportPdf;
 
-    
+
+
     // CSV сервисы
     private final HoursReportCsvService hoursReportCsvService;
     private final PayrollSummaryReportCsvService payrollSummaryReportCsvService;
@@ -138,35 +140,35 @@ public class PayrollTestDataGenerator {
 
             // 3. Генерируем посещаемость за весь год
             log.info("=== ШАГ 3: ГЕНЕРАЦИЯ ПОСЕЩАЕМОСТИ ЗА ВЕСЬ ГОД ===");
-            generateYearlyAttendance();
+           // generateYearlyAttendance();
 
             // 4. Рассчитываем employer taxes для всех payrolls
             log.info("=== ШАГ 4: РАСЧЕТ EMPLOYER TAXES ===");
-            calculateAllEmployerTaxes();
+           // calculateAllEmployerTaxes();
 
             // 5. Генерируем PayStubs для всех payrolls
             log.info("=== ШАГ 5: ГЕНЕРАЦИЯ PAYSTUBS ===");
-            generateAllPayStubs();
+           // generateAllPayStubs();
 
             // 6. Генерируем W-2 формы
             log.info("=== ШАГ 6: ГЕНЕРАЦИЯ W-2 ФОРМ ===");
-            generateAllW2Forms();
+           // generateAllW2Forms();
 
             // 7. Генерируем недельные отчеты
             log.info("=== ШАГ 7: ГЕНЕРАЦИЯ НЕДЕЛЬНЫХ ОТЧЕТОВ ===");
-            generateAllWeeklyReports();
+           // generateAllWeeklyReports();
 
             // 8. Генерируем месячные отчеты
             log.info("=== ШАГ 8: ГЕНЕРАЦИЯ МЕСЯЧНЫХ ОТЧЕТОВ ===");
-            generateAllMonthlyReports();
+           // generateAllMonthlyReports();
 
             // 9. Генерируем квартальные отчеты
             log.info("=== ШАГ 9: ГЕНЕРАЦИЯ КВАРТАЛЬНЫХ ОТЧЕТОВ ===");
-            generateAllQuarterlyReports();
+          //  generateAllQuarterlyReports();
 
             // 10. Генерируем годовые отчеты
             log.info("=== ШАГ 10: ГЕНЕРАЦИЯ ГОДОВЫХ ОТЧЕТОВ ===");
-            generateAllAnnualReports();
+         //   generateAllAnnualReports();
 
             log.info("✅✅✅ ГЕНЕРАЦИЯ ЗАВЕРШЕНА УСПЕШНО! ВСЕ ДАННЫЕ И ОТЧЕТЫ СОЗДАНЫ! ✅✅✅");
 
@@ -177,111 +179,50 @@ public class PayrollTestDataGenerator {
     }
 
     // ==================== ШАГ 1: БАЗОВЫЕ ДАННЫЕ ====================
-        private void setupBaseData() {
-            log.info("📋 Проверяем и создаем компании, админов и работников...");
+    private void setupBaseData() {
+        log.info("📋 Создаем компании, админов и работников...");
 
-            // Проверяем, не созданы ли уже данные
-            if (isBaseDataAlreadyExists()) {
-                log.info("⚠️ Базовые данные уже существуют, пропускаем создание");
-                return;
-            }
+        // Админы
+        var admin1 = userTestServiceData.createAdmin1();
+        var admin2 = userTestServiceData.createAdmin2();
 
-            // Создаем админов (предполагаем, что методы возвращают уже сохраненные сущности)
-            var admin1 = userTestServiceData.createAdmin1();
-            var admin2 = userTestServiceData.createAdmin2();
+        // Компании
+        var company1 = testServiceForCompany.createCompany1();
+        var company2 = testServiceForCompany.createCompany2();
 
-            // Создаем компании (предполагаем, что методы возвращают уже сохраненные сущности)
-            var company1 = testServiceForCompany.createCompany1();
-            var company2 = testServiceForCompany.createCompany2();
+        company1.setCompanyOwner(admin1);
+        company2.setCompanyOwner(admin2);
 
-            // Связываем админов и компании
-            company1.setCompanyOwner(admin1);
-            company2.setCompanyOwner(admin2);
+        admin1.setCompany(company1);
+        admin1.setOwnedCompany(company1);
+        admin2.setCompany(company2);
+        admin2.setOwnedCompany(company2);
 
-            admin1.setCompany(company1);
-            admin1.setOwnedCompany(company1);
-            admin2.setCompany(company2);
-            admin2.setOwnedCompany(company2);
+        userRepository.save(admin1);
+        userRepository.save(admin2);
+        companyRepository.save(company1);
+        companyRepository.save(company2);
 
-            // Обновляем существующие сущности (не создаем новые!)
-            admin1 = userRepository.save(admin1);
-            admin2 = userRepository.save(admin2);
-            company1 = companyRepository.save(company1);
-            company2 = companyRepository.save(company2);
+        // Работники для компании 1
+        userTestServiceData.createWorker1ForCompany1(company1.getId());
+        userTestServiceData.createWorker2ForCompany1(company1.getId());
+        userTestServiceData.createWorker3ForCompany1(company1.getId());
+        userTestServiceData.createWorker4ForCompany1(company1.getId());
+        userTestServiceData.createWorker5ForCompany1(company1.getId());
 
-            // Создаем работников для компании 1
-            createWorkersForCompanyIfNotExists(company1.getId(), 1);
+        // Работники для компании 2
+        userTestServiceData.createWorker1ForCompany2(company2.getId());
+        userTestServiceData.createWorke2ForCompany2(company2.getId());
+        userTestServiceData.createWorker3ForCompany2(company2.getId());
+        userTestServiceData.createWorker4ForCompany2(company2.getId());
+        userTestServiceData.createWorker5ForCompany2(company2.getId());
 
-            // Создаем работников для компании 2
-            createWorkersForCompanyIfNotExists(company2.getId(), 2);
+        // Рабочие площадки
+        workSiteTestService.createWorkSiteForCompany1(company1.getId());
+        workSiteTestService.createWorkSiteForCompany2(company2.getId());
 
-            // Создаем рабочие площадки
-            createWorkSiteIfNotExists(company1.getId(), 1);
-            createWorkSiteIfNotExists(company2.getId(), 2);
-
-            log.info("✅ Базовые данные созданы: 2 компании, 2 админа, 10 работников, 2 площадки");
-        }
-
-    private boolean isBaseDataAlreadyExists() {
-        long companiesCount = companyRepository.count();
-        long usersCount = userRepository.count();
-
-        if (companiesCount > 0 || usersCount > 0) {
-            log.info("Найдено компаний: {}, пользователей: {}", companiesCount, usersCount);
-            return true;
-        }
-        return false;
+        log.info("✅ Базовые данные созданы: 2 компании, 2 админа, 10 работников, 2 площадки");
     }
-
-    // Создание работников с проверкой
-    private void createWorkersForCompanyIfNotExists(Integer companyId, int companyNumber) {
-        // Проверяем, есть ли уже работники для этой компании
-        List<User> existingWorkers = userRepository.findAllByCompanyId(companyId).stream()
-                .filter(u -> u.isUser() && !u.isBusinessOwner())
-                .toList();
-
-        if (!existingWorkers.isEmpty()) {
-            log.info("Работники для компании {} уже существуют: {} человек", companyId, existingWorkers.size());
-            return;
-        }
-
-        // Создаем работников в зависимости от номера компании
-        if (companyNumber == 1) {
-            userTestServiceData.createWorker1ForCompany1(companyId);
-            userTestServiceData.createWorker2ForCompany1(companyId);
-            userTestServiceData.createWorker3ForCompany1(companyId);
-            userTestServiceData.createWorker4ForCompany1(companyId);
-            userTestServiceData.createWorker5ForCompany1(companyId);
-        } else if (companyNumber == 2) {
-            userTestServiceData.createWorker1ForCompany2(companyId);
-            userTestServiceData.createWorke2ForCompany2(companyId);
-            userTestServiceData.createWorker3ForCompany2(companyId);
-            userTestServiceData.createWorker4ForCompany2(companyId);
-            userTestServiceData.createWorker5ForCompany2(companyId);
-        }
-    }
-
-    // Создание рабочей площадки с проверкой
-    private void createWorkSiteIfNotExists(Integer companyId, int companyNumber) {
-        // Проверяем, есть ли уже площадка для этой компании
-        List<WorkSite> existingSites = workSiteRepository.findAll().stream()
-                .filter(ws -> ws.getCompany().getId().equals(companyId))
-                .toList();
-
-        if (!existingSites.isEmpty()) {
-            log.info("Рабочая площадка для компании {} уже существует", companyId);
-            return;
-        }
-
-        // Создаем площадку в зависимости от номера компании
-        if (companyNumber == 1) {
-            workSiteTestService.createWorkSiteForCompany1(companyId);
-        } else if (companyNumber == 2) {
-            workSiteTestService.createWorkSiteForCompany2(companyId);
-        }
-    }
-
-
 
     // ==================== ШАГ 2: СВЯЗЫВАНИЕ ====================
     private void linkWorkersToWorkSites() {
@@ -752,15 +693,6 @@ public class PayrollTestDataGenerator {
         }
 
         log.info("✅ Все годовые отчеты сгенерированы");
-    }
-
-    private boolean isDataAlreadyGenerated() {
-        // Проверяем по нескольким критериям
-        boolean hasCompanies = companyRepository.count() > 0;
-        boolean hasPayrolls = payrollRepository.count() > 0;
-        boolean hasAttendance = attendanceRepository.count() > 0;
-
-        return hasCompanies || hasPayrolls || hasAttendance;
     }
 
 }
