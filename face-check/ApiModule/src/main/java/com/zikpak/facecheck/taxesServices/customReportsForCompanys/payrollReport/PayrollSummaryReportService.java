@@ -71,18 +71,42 @@ public class PayrollSummaryReportService {
 
             byte[] pdfByte = baos.toByteArray();
 
+// Генерируем правильный S3 ключ
             String companyKeyPart = reportData.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String fileName = String.format("payrollReport_%d_%d.pdf",
-                    reportData.getCompanyId(),
-                    reportData.getPeriodStart().getYear()
-            );
+            String periodPart;
+            String fileName;
 
-            String key = String.format("%s/%d/payrollReport_/%s",
+            if (reportData.getReportType().equals("Monthly")) {
+                periodPart = String.format("monthly/%02d", reportData.getPeriodStart().getMonthValue());
+                fileName = String.format("payroll_report_%d_%02d_%s.pdf",
+                        reportData.getPeriodStart().getYear(),
+                        reportData.getPeriodStart().getMonthValue(),
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            else if (reportData.getReportType().equals("Quarterly")) {
+                int quarter = (reportData.getPeriodStart().getMonthValue() - 1) / 3 + 1;
+                periodPart = String.format("Q%d", quarter);
+                fileName = String.format("payroll_report_%d_Q%d_%s.pdf",
+                        reportData.getPeriodStart().getYear(),
+                        quarter,
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+            else {
+                periodPart = "custom";
+                fileName = String.format("payroll_report_%s_to_%s.pdf",
+                        reportData.getPeriodStart().format(DateTimeFormatter.BASIC_ISO_DATE),
+                        reportData.getPeriodEnd().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+
+            String key = String.format("%s_%d/reports/payroll/%d/%s/%s",
                     companyKeyPart,
                     reportData.getCompanyId(),
+                    reportData.getPeriodStart().getYear(),
+                    periodPart,
                     fileName
             );
             long ms = System.currentTimeMillis();
