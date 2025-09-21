@@ -7,38 +7,212 @@
       <div class="brand-name">Facecheck</div>
     </div>
 
-    <div class="form-container">
+    <div class="form-container form-container-large">
       <h2 class="form-title">Company Registration</h2>
 
       <div *ngIf="errorMessage" class="error-notification">{{ errorMessage }}</div>
+      <div *ngIf="successMessage" class="success-notification">{{ successMessage }}</div>
 
       <form *ngIf="isAuthenticated" class="login-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <input type="text" id="companyName" formControlName="companyName" placeholder="Company Name">
-          <div *ngIf="registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched" class="error-message">
-            Company name is required
+
+        <!-- ОСНОВНАЯ ИНФОРМАЦИЯ О КОМПАНИИ -->
+        <div class="section-title">Company Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="companyName" formControlName="companyName" placeholder="Company Name *">
+            <div *ngIf="registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched" class="error-message">
+              Company name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="email" id="companyEmail" formControlName="companyEmail" placeholder="Company Email *">
+            <div *ngIf="registerForm.get('companyEmail')?.invalid && registerForm.get('companyEmail')?.touched" class="error-message">
+              <span *ngIf="registerForm.get('companyEmail')?.hasError('required')">Company email is required</span>
+              <span *ngIf="registerForm.get('companyEmail')?.hasError('email')">Please enter a valid email</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="tel" id="companyPhone" formControlName="companyPhone" placeholder="Company Phone *">
+            <div *ngIf="registerForm.get('companyPhone')?.invalid && registerForm.get('companyPhone')?.touched" class="error-message">
+              Company phone is required
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <input type="text" id="companyAddress" formControlName="companyAddress" placeholder="Company Address">
-          <div *ngIf="registerForm.get('companyAddress')?.invalid && registerForm.get('companyAddress')?.touched" class="error-message">
-            Company address is required
+        <!-- АДРЕС КОМПАНИИ -->
+        <div class="section-title">Company Address</div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <input type="text" id="companyAddress" formControlName="companyAddress" placeholder="Company Address *">
+            <div *ngIf="registerForm.get('companyAddress')?.invalid && registerForm.get('companyAddress')?.touched" class="error-message">
+              Company address is required
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <input type="tel" id="companyPhone" formControlName="companyPhone" placeholder="Company Phone">
-          <div *ngIf="registerForm.get('companyPhone')?.invalid && registerForm.get('companyPhone')?.touched" class="error-message">
-            Company phone is required
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="companyCity" formControlName="companyCity" placeholder="City *">
+            <div *ngIf="registerForm.get('companyCity')?.invalid && registerForm.get('companyCity')?.touched" class="error-message">
+              City is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <select id="companyState" formControlName="companyState" class="form-select">
+              <option value="NY">New York</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="companyZipCode" formControlName="companyZipCode" placeholder="Zip Code *" maxlength="5">
+            <div *ngIf="registerForm.get('companyZipCode')?.invalid && registerForm.get('companyZipCode')?.touched" class="error-message">
+              <span *ngIf="registerForm.get('companyZipCode')?.hasError('required')">Zip code is required</span>
+              <span *ngIf="registerForm.get('companyZipCode')?.hasError('pattern')">Zip code must be 5 digits</span>
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <input type="email" id="companyEmail" formControlName="companyEmail" placeholder="Company Email">
-          <div *ngIf="registerForm.get('companyEmail')?.invalid && registerForm.get('companyEmail')?.touched" class="error-message">
-            <span *ngIf="registerForm.get('companyEmail')?.hasError('required')">Company email is required</span>
-            <span *ngIf="registerForm.get('companyEmail')?.hasError('email')">Please enter a valid email</span>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <input type="text" id="returnMailingAddress" formControlName="returnMailingAddress" placeholder="Return Mailing Address *">
+            <div *ngIf="registerForm.get('returnMailingAddress')?.invalid && registerForm.get('returnMailingAddress')?.touched" class="error-message">
+              Return mailing address is required
+            </div>
+          </div>
+        </div>
+
+        <!-- НАЛОГОВАЯ ИНФОРМАЦИЯ -->
+        <div class="section-title">Tax Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="employerEIN" formControlName="employerEIN" placeholder="Employer EIN *">
+            <div *ngIf="registerForm.get('employerEIN')?.invalid && registerForm.get('employerEIN')?.touched" class="error-message">
+              Employer EIN is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="companyStateIdNumber" formControlName="companyStateIdNumber" placeholder="State ID Number *">
+            <div *ngIf="registerForm.get('companyStateIdNumber')?.invalid && registerForm.get('companyStateIdNumber')?.touched" class="error-message">
+              State ID number is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="number" id="socialSecurityTaxForCompany" formControlName="socialSecurityTaxForCompany"
+                   placeholder="Social Security Tax Rate *" step="0.01" min="0">
+            <div *ngIf="registerForm.get('socialSecurityTaxForCompany')?.invalid && registerForm.get('socialSecurityTaxForCompany')?.touched" class="error-message">
+              Social security tax rate is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="specialTwoCharConditionCodeForMTA305" formControlName="specialTwoCharConditionCodeForMTA305"
+                   placeholder="MTA-305 Condition Code *" maxlength="2">
+            <div *ngIf="registerForm.get('specialTwoCharConditionCodeForMTA305')?.invalid && registerForm.get('specialTwoCharConditionCodeForMTA305')?.touched" class="error-message">
+              MTA-305 condition code is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Payment Frequency *</label>
+            <select id="companyPaymentPosition" formControlName="companyPaymentPosition" class="form-select">
+              <option value="WEEKLY">Weekly</option>
+              <option value="BIWEEKLY">Bi-Weekly</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="defaultMemo" formControlName="defaultMemo" placeholder="Default Memo *">
+            <div *ngIf="registerForm.get('defaultMemo')?.invalid && registerForm.get('defaultMemo')?.touched" class="error-message">
+              Default memo is required
+            </div>
+          </div>
+        </div>
+
+        <!-- БАНКОВСКАЯ ИНФОРМАЦИЯ -->
+        <div class="section-title">Banking Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="fundingBankName" formControlName="fundingBankName" placeholder="Bank Name *">
+            <div *ngIf="registerForm.get('fundingBankName')?.invalid && registerForm.get('fundingBankName')?.touched" class="error-message">
+              Bank name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="fundingAccountNumber" formControlName="fundingAccountNumber" placeholder="Account Number *">
+            <div *ngIf="registerForm.get('fundingAccountNumber')?.invalid && registerForm.get('fundingAccountNumber')?.touched" class="error-message">
+              Account number is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="fundingRoutingNumber" formControlName="fundingRoutingNumber"
+                   placeholder="Routing Number *" maxlength="9">
+            <div *ngIf="registerForm.get('fundingRoutingNumber')?.invalid && registerForm.get('fundingRoutingNumber')?.touched" class="error-message">
+              <span *ngIf="registerForm.get('fundingRoutingNumber')?.hasError('required')">Routing number is required</span>
+              <span *ngIf="registerForm.get('fundingRoutingNumber')?.hasError('pattern')">Routing number must be 9 digits</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- СТРАХОВАНИЕ WORKERS' COMPENSATION -->
+        <div class="section-title">Workers' Compensation Insurance</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="wcInsuranceCarrier" formControlName="wcInsuranceCarrier"
+                   placeholder="Insurance Carrier *">
+            <div *ngIf="registerForm.get('wcInsuranceCarrier')?.invalid && registerForm.get('wcInsuranceCarrier')?.touched" class="error-message">
+              Insurance carrier is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="wcPolicyNumber" formControlName="wcPolicyNumber"
+                   placeholder="Policy Number *">
+            <div *ngIf="registerForm.get('wcPolicyNumber')?.invalid && registerForm.get('wcPolicyNumber')?.touched" class="error-message">
+              Policy number is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="number" id="experienceModRate" formControlName="experienceModRate"
+                   placeholder="Experience Mod Rate *" step="0.01" min="0">
+            <div *ngIf="registerForm.get('experienceModRate')?.invalid && registerForm.get('experienceModRate')?.touched" class="error-message">
+              Experience mod rate is required
+            </div>
+          </div>
+        </div>
+
+        <!-- ПОДПИСЬ -->
+        <div class="section-title">Authorized Signature</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="signatureName" formControlName="signatureName"
+                   placeholder="Authorized Signatory Name *">
+            <div *ngIf="registerForm.get('signatureName')?.invalid && registerForm.get('signatureName')?.touched" class="error-message">
+              Signatory name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="signatureTitle" formControlName="signatureTitle"
+                   placeholder="Signatory Title *">
+            <div *ngIf="registerForm.get('signatureTitle')?.invalid && registerForm.get('signatureTitle')?.touched" class="error-message">
+              Signatory title is required
+            </div>
           </div>
         </div>
 
