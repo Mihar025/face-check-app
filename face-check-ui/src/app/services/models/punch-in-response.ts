@@ -4,6 +4,7 @@
 
 export interface PunchInResponse {
   checkInLatitude?: number;
+  checkInLocation?: string;
   checkInLongitude?: number;
   checkInPhotoUrl?: string;
   checkInTime?: string;
