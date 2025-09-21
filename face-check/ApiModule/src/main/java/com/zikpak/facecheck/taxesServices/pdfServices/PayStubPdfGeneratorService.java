@@ -17,6 +17,8 @@ import com.itextpdf.layout.property.UnitValue;
 import com.zikpak.facecheck.helperServices.WorkerPayRollService;
 import com.zikpak.facecheck.metrics.MetricsForPdfServices;
 import com.zikpak.facecheck.requestsResponses.PayStubDTO;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationRequest;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationService;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +43,7 @@ import static com.itextpdf.io.font.FontConstants.HELVETICA_BOLD;
 public class PayStubPdfGeneratorService {
     private final WorkerPayRollService workerPayRollService;
     private final MetricsForPdfServices metric;
+    private final NotificationService notificationService;
 
     public byte[] generatePayStubPdf(PayStubDTO stub) {
         final String FORM = "Paystubs";
@@ -318,6 +321,14 @@ public class PayStubPdfGeneratorService {
             metric.recordGenerated(FORM, true);
             metric.recordS3UploadTime(FORM, true, end1);
             metric.recordOperationTime(timer, "paystubs_success");
+
+
+            NotificationRequest notification = NotificationRequest.builder()
+                    .message("Paystub for worker: " +stub.getEmployeeName() + " "+
+                            " was successfully generated")
+                    .build();
+
+            notificationService.createNotification(stub.getCompanyId(), notification);
 
             return baos.toByteArray();
 
