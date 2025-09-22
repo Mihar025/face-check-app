@@ -5,6 +5,7 @@
 export interface PunchOutResponse {
   checkInTime?: string;
   checkOutLatitude?: number;
+  checkOutLocation?: string;
   checkOutLongitude?: number;
   checkOutPhotoUrl?: string;
   checkOutTime?: string;
