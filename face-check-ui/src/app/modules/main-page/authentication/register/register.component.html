@@ -11,84 +11,354 @@
       <h2 class="form-title">Admin Registration</h2>
 
       <form class="login-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <input type="text" id="firstName" formControlName="firstName" placeholder="First Name">
-          <div *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched" class="error-message">
-            First name is required
-          </div>
-        </div>
 
-        <div class="form-group">
-          <input type="text" id="lastName" formControlName="lastName" placeholder="Last Name">
-          <div *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched" class="error-message">
-            Last name is required
-          </div>
-        </div>
+        <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+        <div class="section-title">Personal Information</div>
 
-        <div class="form-group">
-          <input type="email" id="email" formControlName="email" placeholder="Email">
-          <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-message">
-            <span *ngIf="registerForm.get('email')?.hasError('required')">Email is required</span>
-            <span *ngIf="registerForm.get('email')?.hasError('email')">Please enter a valid email</span>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <input type="password" id="password" formControlName="password" placeholder="Password">
-          <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-message">
-            <span *ngIf="registerForm.get('password')?.hasError('required')">Password is required</span>
-            <span *ngIf="registerForm.get('password')?.hasError('minlength')">Password must be at least 6 characters</span>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <input type="text" id="phoneNumber" formControlName="phoneNumber" placeholder="Phone Number">
-          <div *ngIf="registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched" class="error-message">
-            Phone number is required
-          </div>
-        </div>
-
-        <div class="form-group">
-          <input type="text" id="homeAddress" formControlName="homeAddress" placeholder="Home Address">
-          <div *ngIf="registerForm.get('homeAddress')?.invalid && registerForm.get('homeAddress')?.touched" class="error-message">
-            Home address is required
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="date-label">Date of Birth:</label>
-          <input type="date" id="dateOfBirth" formControlName="dateOfBirth" lang="en-US">
-          <div *ngIf="registerForm.get('dateOfBirth')?.invalid && registerForm.get('dateOfBirth')?.touched" class="error-message">
-            Date of birth is required
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="gender-label">Gender:</label>
-          <div class="radio-group">
-            <div class="radio-option">
-              <input type="radio" id="male" formControlName="gender" value="MALE">
-              <label for="male" class="radio-label">Male</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="female" formControlName="gender" value="FEMALE">
-              <label for="female" class="radio-label">Female</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="other" formControlName="gender" value="OTHER">
-              <label for="other" class="radio-label">Other</label>
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="firstName" formControlName="firstName" placeholder="First Name *">
+            <div *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched" class="error-message">
+              First name is required
             </div>
           </div>
-          <div *ngIf="registerForm.get('gender')?.invalid && registerForm.get('gender')?.touched" class="error-message">
-            Gender is required
+
+          <div class="form-group">
+            <input type="text" id="lastName" formControlName="lastName" placeholder="Last Name *">
+            <div *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched" class="error-message">
+              Last name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="middleInitial" formControlName="middleInitial" placeholder="Middle Initial">
           </div>
         </div>
 
-        <div class="form-group">
-          <input type="text" id="ssn_WORKER" formControlName="ssn_WORKER" placeholder="SSN (XXX-XX-XXXX)">
-          <div *ngIf="registerForm.get('ssn_WORKER')?.invalid && registerForm.get('ssn_WORKER')?.touched" class="error-message">
-            <span *ngIf="registerForm.get('ssn_WORKER')?.hasError('required')">SSN is required</span>
-            <span *ngIf="registerForm.get('ssn_WORKER')?.hasError('pattern')">SSN must be in format XXX-XX-XXXX</span>
+        <div class="form-row">
+          <div class="form-group">
+            <input type="email" id="email" formControlName="email" placeholder="Email *">
+            <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-message">
+              <span *ngIf="registerForm.get('email')?.hasError('required')">Email is required</span>
+              <span *ngIf="registerForm.get('email')?.hasError('email')">Please enter a valid email</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="password" id="password" formControlName="password" placeholder="Password *">
+            <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-message">
+              <span *ngIf="registerForm.get('password')?.hasError('required')">Password is required</span>
+              <span *ngIf="registerForm.get('password')?.hasError('minlength')">Password must be at least 6 characters</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="phoneNumber" formControlName="phoneNumber" placeholder="Phone Number *">
+            <div *ngIf="registerForm.get('phoneNumber')?.invalid && registerForm.get('phoneNumber')?.touched" class="error-message">
+              Phone number is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="date-label">Date of Birth *</label>
+            <input type="date" id="dateOfBirth" formControlName="dateOfBirth" lang="en-US">
+            <div *ngIf="registerForm.get('dateOfBirth')?.invalid && registerForm.get('dateOfBirth')?.touched" class="error-message">
+              Date of birth is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Gender *</label>
+            <select formControlName="gender" class="form-select">
+              <option value="">Select Gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <div *ngIf="registerForm.get('gender')?.invalid && registerForm.get('gender')?.touched" class="error-message">
+              Gender is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="ssn_WORKER" formControlName="ssn_WORKER" placeholder="SSN (XXX-XX-XXXX)">
+            <div *ngIf="registerForm.get('ssn_WORKER')?.invalid && registerForm.get('ssn_WORKER')?.touched" class="error-message">
+              <span *ngIf="registerForm.get('ssn_WORKER')?.hasError('pattern')">SSN must be in format XXX-XX-XXXX</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- АДРЕС -->
+        <div class="section-title">Address Information</div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <input type="text" id="homeAddress" formControlName="homeAddress" placeholder="Home Address *">
+            <div *ngIf="registerForm.get('homeAddress')?.invalid && registerForm.get('homeAddress')?.touched" class="error-message">
+              Home address is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="apt" formControlName="apt" placeholder="Apt/Unit *">
+            <div *ngIf="registerForm.get('apt')?.invalid && registerForm.get('apt')?.touched" class="error-message">
+              Apartment is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="city" formControlName="city" placeholder="City *">
+            <div *ngIf="registerForm.get('city')?.invalid && registerForm.get('city')?.touched" class="error-message">
+              City is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <select formControlName="state" class="form-select">
+              <option value="NY">New York</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="zipcode" formControlName="zipcode" placeholder="Zipcode *">
+            <div *ngIf="registerForm.get('zipcode')?.invalid && registerForm.get('zipcode')?.touched" class="error-message">
+              Valid zipcode is required
+            </div>
+          </div>
+        </div>
+
+        <!-- ИНФОРМАЦИЯ О ТРУДОУСТРОЙСТВЕ -->
+        <div class="section-title">Employment Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Employment Type *</label>
+            <select formControlName="employmentType" class="form-select">
+              <option value="W2">W2 Employee</option>
+              <option value="CONTRACTOR_1099">1099 Contractor</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Pay Frequency *</label>
+            <select formControlName="payFrequency" class="form-select">
+              <option value="WEEKLY">Weekly</option>
+              <option value="BIWEEKLY">Bi-Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <input type="text" id="wcRiskClassCode" formControlName="wcRiskClassCode" placeholder="WC Risk Class Code">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="isRehired"> Is Rehired Employee?
+            </label>
+          </div>
+
+          <div class="form-group" *ngIf="registerForm.get('isRehired')?.value">
+            <label>Date When Rehired</label>
+            <input type="date" formControlName="dateWhenRehired">
+          </div>
+        </div>
+
+        <!-- НАЛОГОВАЯ ИНФОРМАЦИЯ -->
+        <div class="section-title">Tax Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Filing Status *</label>
+            <select formControlName="filingStatus" class="form-select">
+              <option value="SINGLE">Single</option>
+              <option value="MARRIED_FILLING_JOINTLY">Married Filing Jointly</option>
+              <option value="MARRIED_FILLING_SEPARATELY">Married Filing Separately</option>
+              <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="exemptFromWithholding"> Exempt from Withholding
+            </label>
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="extraWithHoldings" placeholder="Extra Withholdings ($) *" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="multipleJobsOrSpouseWorks"> Multiple Jobs or Spouse Works
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="twoJobsCheckBox"> Two Jobs Total
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="livesInNYC"> Lives in NYC
+            </label>
+          </div>
+        </div>
+
+        <!-- ЗАВИСИМЫЕ ЛИЦА -->
+        <div class="section-title">Dependents Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="number" formControlName="dependents" placeholder="Number of Dependents *" min="0">
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="dependentsUnder17" placeholder="Dependents Under 17" min="0">
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="otherDependents" placeholder="Other Dependents" min="0">
+          </div>
+        </div>
+
+        <!-- Динамическое добавление зависимых лиц -->
+        <div class="dependents-list" *ngIf="registerForm.get('dependents')?.value > 0">
+          <button type="button" class="btn-add" (click)="addDependent()">+ Add Dependent</button>
+
+          <div *ngFor="let dependent of dependentsList; let i = index" class="dependent-item">
+            <h4>Dependent {{i + 1}}</h4>
+            <div class="form-row">
+              <input type="text" [(ngModel)]="dependent.firstName" [ngModelOptions]="{standalone: true}" placeholder="First Name">
+              <input type="text" [(ngModel)]="dependent.lastName" [ngModelOptions]="{standalone: true}" placeholder="Last Name">
+              <input type="date" [(ngModel)]="dependent.birthDate" [ngModelOptions]="{standalone: true}" placeholder="Birth Date">
+              <button type="button" class="btn-remove" (click)="removeDependent(i)">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ДОПОЛНИТЕЛЬНЫЕ НАЛОГОВЫЕ ПОЛЯ -->
+        <div class="section-title">Additional Tax Information (Optional)</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="number" formControlName="adjustmentsSchedule1" placeholder="Adjustments Schedule 1" min="0">
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="deductions" placeholder="Deductions" min="0">
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="estimatedItemizedDeductions" placeholder="Est. Itemized Deductions" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="number" formControlName="otherIncome" placeholder="Other Income" min="0">
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="totalDependentsCredit" placeholder="Total Dependents Credit" min="0">
+          </div>
+        </div>
+
+        <!-- МЕДИЦИНСКОЕ СТРАХОВАНИЕ -->
+        <div class="section-title">Health Insurance (Optional)</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="enrolledInHealthPlan"> Enrolled in Health Plan
+            </label>
+          </div>
+
+          <div class="form-group" *ngIf="registerForm.get('enrolledInHealthPlan')?.value">
+            <input type="number" formControlName="monthlyHealthPremium" placeholder="Monthly Premium ($)" min="0">
+          </div>
+
+          <div class="form-group" *ngIf="registerForm.get('enrolledInHealthPlan')?.value">
+            <label>Coverage Start Date</label>
+            <input type="date" formControlName="coverageStartDate">
+          </div>
+        </div>
+
+        <!-- СТАТУС ГРАЖДАНСТВА -->
+        <div class="section-title">Citizenship Status</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="isCitizen"> US Citizen
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="isPermanentResident"> Permanent Resident
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="isNonCitizenNationalOfTheUS"> Non-Citizen National of US
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" formControlName="isANonCitizen"> Non-Citizen
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="!registerForm.get('isCitizen')?.value">
+          <div class="form-group">
+            <input type="text" formControlName="uscisNumber" placeholder="USCIS Number">
+          </div>
+
+          <div class="form-group">
+            <input type="text" formControlName="formI94AdmissionNumber" placeholder="I-94 Admission Number">
+          </div>
+
+          <div class="form-group">
+            <input type="text" formControlName="passportNumber" placeholder="Passport Number">
+          </div>
+
+          <div class="form-group">
+            <input type="text" formControlName="passportCountryOfIssuance" placeholder="Passport Country">
+          </div>
+
+          <div class="form-group">
+            <label>Work Authorization Expiry</label>
+            <input type="date" formControlName="workAuthorizationExpiryDate">
+          </div>
+        </div>
+
+        <!-- I-9 ДОКУМЕНТЫ -->
+        <div class="section-title">I-9 Documents (Optional)</div>
+
+        <button type="button" class="btn-add" (click)="addI9Document()">+ Add I-9 Document</button>
+
+        <div *ngFor="let doc of i9Documents; let i = index" class="i9-document-item">
+          <h4>Document {{i + 1}}</h4>
+          <div class="form-row">
+            <input type="text" [(ngModel)]="doc.documentTitle" [ngModelOptions]="{standalone: true}" placeholder="Document Title">
+            <input type="text" [(ngModel)]="doc.documentNumber" [ngModelOptions]="{standalone: true}" placeholder="Document Number">
+            <input type="text" [(ngModel)]="doc.issuingAuthority" [ngModelOptions]="{standalone: true}" placeholder="Issuing Authority">
+            <input type="date" [(ngModel)]="doc.expirationDate" [ngModelOptions]="{standalone: true}" placeholder="Expiration Date">
+            <button type="button" class="btn-remove" (click)="removeI9Document(i)">Remove</button>
           </div>
         </div>
 
@@ -102,15 +372,86 @@
 
       <div class="form-footer">
         <p class="signup-text">Already have an account? <a routerLink="/sign-in" class="signup-link">Sign In</a></p>
-
-        <div class="social-login">
-          <p class="social-login-text">Or sign up with</p>
-          <button class="google-btn">
-            <i class="fab fa-google"></i>
-            <span>Google</span>
-          </button>
-        </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 20px 0 10px 0;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 5px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .form-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .form-group.full-width {
+    flex: 1 0 100%;
+  }
+
+  .form-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+  }
+
+  .btn-add {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+
+  .btn-remove {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .dependent-item, .i9-document-item {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+</style>
