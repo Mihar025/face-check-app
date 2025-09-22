@@ -9,5 +9,6 @@ export interface RelatedUserInCompanyResponse {
   enabled?: boolean;
   firstName?: string;
   lastName?: string;
+  photoUrl?: string;
   workerId?: number;
 }
