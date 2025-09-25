@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 body {
-  font-family: 'Montserrat', sans-serif;
-  background-color: #f8f9fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #fafbfc;
   margin: 0;
   padding: 0;
 }
@@ -11,27 +13,33 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: 20px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f3f4f6 100%);
 }
 
 .sign-in-content {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   width: 100%;
-  max-width: 500px;
-  padding: 30px;
+  max-width: 440px;
+  padding: 48px 40px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .logo-text-container {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  justify-content: center;
+  margin-bottom: 40px;
 }
 
 .logo-container {
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
+  width: 45px;
+  height: 45px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo-img {
@@ -42,128 +50,174 @@ body {
 
 .brand-name {
   font-weight: 700;
-  font-size: 22px;
-  color: #333;
+  font-size: 26px;
+  color: #1a1a1a;
+  letter-spacing: -0.5px;
 }
 
 .form-container {
-  padding: 10px 0;
+  padding: 0;
 }
 
 .form-title {
-  margin-bottom: 25px;
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
+  margin-bottom: 32px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
   text-align: center;
+  letter-spacing: -0.5px;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   position: relative;
 }
 
 input {
   width: 100%;
-  padding: 12px 15px;
-  font-size: 14px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 14px 16px;
+  font-size: 15px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
   box-sizing: border-box;
   font-family: 'Inter', sans-serif;
+  background-color: #fafbfc;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+input:hover {
+  border-color: #d1d5db;
+  background-color: #ffffff;
 }
 
 input:focus {
   outline: none;
-  border-color: #4a90e2;
+  border-color: #3b82f6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .error-message {
-  color: #e74c3c;
-  font-size: 12px;
-  margin-top: 5px;
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 8px;
+  font-weight: 500;
+  display: block;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .error-notification {
-  background-color: #ffebee;
-  color: #e53935;
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 15px;
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
   font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+}
+
+.error-notification::before {
+  content: "⚠";
+  margin-right: 8px;
+  font-size: 16px;
 }
 
 .sign-in-btn {
   width: 100%;
-  padding: 12px;
-  background-color: #4a90e2;
+  padding: 14px 20px;
+  background-color: #3b82f6;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.3s;
+  transition: all 0.2s ease;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
+  letter-spacing: -0.2px;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
 }
 
 .sign-in-btn:hover {
-  background-color: #357bd8;
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+.sign-in-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
 }
 
 .sign-in-btn:disabled {
-  background-color: #b0c4de;
+  background-color: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .form-footer {
-  margin-top: 25px;
+  margin-top: 32px;
   text-align: center;
 }
 
 .signup-text {
-  color: #666;
-  font-size: 14px;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .signup-link {
-  color: #4a90e2;
+  color: #3b82f6;
   text-decoration: none;
   font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.signup-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
 }
 
 .social-login {
-  margin-top: 20px;
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .social-login-text {
-  color: #666;
+  color: #6b7280;
   font-size: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
   text-align: center;
-  position: relative;
-}
-
-.social-login-text:before,
-.social-login-text:after {
-  content: "";
-  display: inline-block;
-  width: 80px;
-  height: 1px;
-  background: #ddd;
-  position: absolute;
-  top: 50%;
-}
-
-.social-login-text:before {
-  left: 0;
-}
-
-.social-login-text:after {
-  right: 0;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .google-btn {
@@ -171,20 +225,78 @@ input:focus {
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 10px;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 14px 20px;
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  gap: 12px;
 }
 
 .google-btn:hover {
-  background-color: #f5f5f5;
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.google-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .google-btn i {
-  color: #ea4335;
-  margin-right: 10px;
-  font-size: 18px;
+  font-size: 20px;
+}
+
+.google-btn span {
+  letter-spacing: -0.2px;
+}
+
+// Дополнительные улучшения для мобильных устройств
+@media (max-width: 480px) {
+  .sign-in-content {
+    padding: 32px 24px;
+    border-radius: 16px;
+  }
+
+  .form-title {
+    font-size: 24px;
+  }
+
+  .brand-name {
+    font-size: 22px;
+  }
+
+  input {
+    font-size: 16px; // Предотвращает зум на iOS
+  }
+}
+
+// Анимация для спиннера
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Фокус стили для доступности
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  outline-offset: 4px;
 }
