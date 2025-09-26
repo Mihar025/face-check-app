@@ -68,24 +68,19 @@ public class SecurityConfig {
         return http.build();
     }
 
- */
-@Bean
+ */@Bean
 public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
-            .cors(cors -> {
-                CorsConfigurationSource source = request -> {
-                    CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-                    config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(Arrays.asList("*"));
-                    config.setAllowCredentials(true);
-                    return config;
-                };
-                cors.configurationSource(source);
-            })
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorizeRequests ->
-                    authorizeRequests.anyRequest().permitAll()
+                    authorizeRequests
+                            .requestMatchers("/actuator/**").permitAll()
+                            .requestMatchers("/api/v1/actuator/**").permitAll()
+                            .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                            .requestMatchers("/company/**").authenticated()  // Требуем аутентификацию для /company
+                            .requestMatchers("/user/**").authenticated()     // И для /user
+                            .anyRequest().authenticated()
             )
             .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -95,4 +90,17 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
 
     return http.build();
 }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
