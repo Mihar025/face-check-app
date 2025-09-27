@@ -6,6 +6,9 @@ import { RegisterCompany$Params } from "../../../services/fn/authentication/regi
 import { RegisterAdmin$Params } from "../../../services/fn/authentication/register-admin";
 import { VerifyCode$Params } from "../../../services/fn/authentication/verify-code";
 import {HttpHeaders} from "@angular/common/http";
+import {RegistrationAdminRequest} from "../../../services/models/registration-admin-request";
+import {I9DocumentRequest} from "../../../services/models/i-9-document-request";
+import {DependentsRequest} from "../../../services/models/dependents-request";
 
 @Injectable({
   providedIn: 'root'
@@ -104,16 +107,57 @@ export class AuthService {
   isUserAuthenticated(): boolean {
     return !!localStorage.getItem('auth_token');
   }
-  registerCompany(companyName: string,
+
+
+
+  registerCompany(
                   companyAddress: string,
+                  companyCity: string,
+                  CompanyEmail: string,
+                  companyName: string,
                   CompanyPhone: string,
-                  CompanyEmail: string): Observable<any> {
+                  companyPaymentPosition: 'WEEKLY' | 'BIWEEKLY',
+                  companyState: string,
+                  companyStateIdNumber: string,
+                  companyZipCode: string,
+                  defaultMemo: string,
+                  employerEIN: string,
+                  experienceModRate: number,
+                  fundingAccountNumber: string,
+                  fundingBankName: string,
+                  fundingRoutingNumber: string,
+                  returnMailingAddress: string,
+                  signatureName: string,
+                  signatureTitle: string,
+                  socialSecurityTaxForCompany: number,
+                  specialTwoCharConditionCodeForMTA305: string,
+                  wcInsuranceCarrier: string,
+                  wcPolicyNumber: string,
+  ): Observable<any> {
     const params: RegisterCompany$Params = {
       body: {
-        companyName: companyName,
         companyAddress: companyAddress,
+        companyCity: companyCity,
+        companyEmail: CompanyEmail,
+        companyName: companyName,
+        companyPaymentPosition: companyPaymentPosition,
         companyPhone: CompanyPhone,
-        companyEmail: CompanyEmail
+        companyState: companyState,
+        companyStateIdNumber: companyStateIdNumber,
+        companyZipCode: companyZipCode,
+        defaultMemo: defaultMemo,
+        employerEIN: employerEIN,
+        experienceModRate: experienceModRate,
+        fundingAccountNumber: fundingAccountNumber,
+        fundingBankName: fundingBankName,
+        fundingRoutingNumber: fundingRoutingNumber,
+        returnMailingAddress: returnMailingAddress,
+        signatureName: signatureName,
+        signatureTitle: signatureTitle,
+        socialSecurityTaxForCompany: socialSecurityTaxForCompany,
+        specialTwoCharConditionCodeForMTA305: specialTwoCharConditionCodeForMTA305,
+        wcInsuranceCarrier: wcInsuranceCarrier,
+        wcPolicyNumber: wcPolicyNumber,
       }
     };
 
@@ -143,32 +187,138 @@ export class AuthService {
     );
   }
 
-  registerAdmin(
+
+  registerAdminExtended(
+    // Основная информация
     firstName: string,
     lastName: string,
+    middleInitial: string | undefined,
     email: string,
     password: string,
     phoneNumber: string,
+
+    // Адрес
     homeAddress: string,
+    apt: string,
+    city: string,
+    state: string,
+    zipcode: string,
+
+    // Персональная информация
     dateOfBirth: string,
     gender: 'MALE' | 'FEMALE' | 'OTHER',
-    ssn_WORKER: string
+    ssn_WORKER: string | undefined,
+
+    // Информация о трудоустройстве
+    employmentType: 'W2' | 'CONTRACTOR_1099',
+    payFrequency: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY',
+    wcRiskClassCode: string | undefined,
+    isRehired: boolean | undefined,
+    dateWhenRehired: string | undefined,
+
+    // Налоговая информация
+    filingStatus: 'SINGLE' | 'HEAD_OF_HOUSEHOLD' | 'MARRIED_FILLING_SEPARATELY' | 'MARRIED_FILLING_JOINTLY',
+    exemptFromWithholding: boolean,
+    extraWithHoldings: number,
+    multipleJobsOrSpouseWorks: boolean,
+    twoJobsCheckBox: boolean,
+    livesInNYC: boolean,
+
+    // Зависимые лица
+    dependents: number,
+    dependentsList: Array<DependentsRequest>,
+    dependentsUnder17: number | undefined,
+    otherDependents: number | undefined,
+    totalDependentsCredit: number | undefined,
+
+    // Дополнительные налоговые поля
+    multipleJobsWorksheetLine2a: number | undefined,
+    multipleJobsWorksheetLine2b: number | undefined,
+    multipleJobsAdditionalWithholding: number | undefined,
+    adjustmentsSchedule1: number | undefined,
+    deductions: number | undefined,
+    estimatedItemizedDeductions: number | undefined,
+    otherIncome: number | undefined,
+
+    // Медицинское страхование
+    enrolledInHealthPlan: boolean | undefined,
+    monthlyHealthPremium: number | undefined,
+    coverageStartDate: string | undefined,
+
+    // Статус гражданства и документы I-9
+    isCitizen: boolean | undefined,
+    isNonCitizenNationalOfTheUS: boolean | undefined,
+    isPermanentResident: boolean | undefined,
+    isANonCitizen: boolean | undefined,
+    uscisNumber: string | undefined,
+    formI94AdmissionNumber: string | undefined,
+    passportNumber: string | undefined,
+    passportCountryOfIssuance: string | undefined,
+    workAuthorizationExpiryDate: string | undefined,
+    i9Documents: Array<I9DocumentRequest> | undefined
   ): Observable<any> {
-    const params: RegisterAdmin$Params = {
-      body: {
-        firstName,
-        lastName,
-        email,
-        password,
-        phoneNumber,
-        homeAddress,
-        dateOfBirth,
-        gender,
-        ssn_WORKER
-      }
+
+    const registrationData: RegistrationAdminRequest = {
+      // Обязательные поля
+      firstName,
+      lastName,
+      email,
+      password,
+      phoneNumber,
+      homeAddress,
+      apt,
+      city,
+      state,
+      zipcode,
+      dateOfBirth,
+      gender,
+      employmentType,
+      payFrequency,
+      filingStatus,
+      exemptFromWithholding,
+      extraWithHoldings,
+      multipleJobsOrSpouseWorks,
+      twoJobsCheckBox,
+      livesInNYC,
+      dependents,
+      dependentsList,
+
+      // Опциональные поля
+      ...(middleInitial && { middleInitial }),
+      ...(ssn_WORKER && { ssn_WORKER }),
+      ...(wcRiskClassCode && { wcRiskClassCode }),
+      ...(isRehired !== undefined && { isRehired }),
+      ...(dateWhenRehired && { dateWhenRehired }),
+      ...(dependentsUnder17 !== undefined && { dependentsUnder17 }),
+      ...(otherDependents !== undefined && { otherDependents }),
+      ...(totalDependentsCredit !== undefined && { totalDependentsCredit }),
+      ...(multipleJobsWorksheetLine2a !== undefined && { multipleJobsWorksheetLine2a }),
+      ...(multipleJobsWorksheetLine2b !== undefined && { multipleJobsWorksheetLine2b }),
+      ...(multipleJobsAdditionalWithholding !== undefined && { multipleJobsAdditionalWithholding }),
+      ...(adjustmentsSchedule1 !== undefined && { adjustmentsSchedule1 }),
+      ...(deductions !== undefined && { deductions }),
+      ...(estimatedItemizedDeductions !== undefined && { estimatedItemizedDeductions }),
+      ...(otherIncome !== undefined && { otherIncome }),
+      ...(enrolledInHealthPlan !== undefined && { enrolledInHealthPlan }),
+      ...(monthlyHealthPremium !== undefined && { monthlyHealthPremium }),
+      ...(coverageStartDate && { coverageStartDate }),
+      ...(isCitizen !== undefined && { isCitizen }),
+      ...(isNonCitizenNationalOfTheUS !== undefined && { isNonCitizenNationalOfTheUS }),
+      ...(isPermanentResident !== undefined && { isPermanentResident }),
+      ...(isANonCitizen !== undefined && { isANonCitizen }),
+      ...(uscisNumber && { uscisNumber }),
+      ...(formI94AdmissionNumber && { formI94AdmissionNumber }),
+      ...(passportNumber && { passportNumber }),
+      ...(passportCountryOfIssuance && { passportCountryOfIssuance }),
+      ...(workAuthorizationExpiryDate && { workAuthorizationExpiryDate }),
+      ...(i9Documents && { i9Documents })
     };
 
-    console.log('Registering admin:', params);
+    const params: RegisterAdmin$Params = {
+      body: registrationData
+    };
+
+    console.log('Registering admin with extended data:', params);
 
     return this.apiAuthService.registerAdmin(params).pipe(
       tap((response: any) => {
@@ -185,6 +335,5 @@ export class AuthService {
       })
     );
   }
-
 
 }
