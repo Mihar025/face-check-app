@@ -1,55 +1,190 @@
 <div class="admin-layout">
-  <div class="sidebar">
-    <div class="admin-profile">
-      <div class="avatar-container">
-        <img [src]="userPhotoUrl" alt="Admin Avatar" class="admin-avatar">
-      </div>
-      <div class="admin-info">
-        <h3 class="admin-name">{{ userName }}</h3>
-        <p class="admin-company">{{ companyName }}</p>
-      </div>
-    </div>
-
-    <nav class="sidebar-menu">
-      <ul>
-        <li><a routerLink="/main-page/admin" routerLinkActive="active">Main Page</a></li>
-        <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
-        <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
-        <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
-        <li><a routerLink="/main-page/admin/finance" routerLinkActive="active">Manage Finance</a></li>
-        <li><a routerLink="/main-page/admin/settings" routerLinkActive="active">Settings</a></li>
-        <li><a (click)="logout()" class="logout-link">Logout</a></li>
-      </ul>
-    </nav>
-  </div>
+  <app-admin-sidebar
+    [userName]="userName"
+    [companyName]="companyName"
+    [userPhotoUrl]="userPhotoUrl">
+  </app-admin-sidebar>
 
   <div class="main-content">
     <div class="top-logo-container">
       <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
     </div>
+
     <div class="admin-container">
-      <h1>Admin Dashboard</h1>
-
-      <div class="dashboard-cards">
-        <div class="card">
-          <h3>Employees</h3>
-          <p class="card-number">{{ totalEmployees }}</p>
+      <!-- Welcome Section -->
+      <div class="welcome-section">
+        <div class="welcome-text">
+          <h1>Welcome back, {{ userName }}!</h1>
+          <p>{{ companyName ? 'Here\'s your dashboard overview for ' + companyName : 'Please register your company to get started' }}</p>
         </div>
-
-        <div class="card">
-          <h3>Worksites</h3>
-          <p class="card-number">{{ totalWorksites }}</p>
+        <div class="date-display">
+          <i class="fas fa-calendar"></i>
+          {{ currentDate | date:'fullDate' }}
         </div>
       </div>
 
-      <div class="action-buttons">
-        <button class="action-btn register-company-btn" routerLink="/registration/company">
-          <i class="fas fa-building"></i> Register New Company
-        </button>
+      <!-- Show this section ONLY if company exists -->
+      <ng-container *ngIf="hasCompany">
+        <!-- Quick Actions Section -->
+        <div class="quick-actions-section">
+          <div class="section-title">
+            <h2>Quick Actions</h2>
+            <p>Access your most used features</p>
+          </div>
 
-        <button class="action-btn" routerLink="/register/admin">
-          <i class="fas fa-user-plus"></i> Add New Admin
-        </button>
+          <div class="actions-grid">
+            <button class="action-tile employees-tile" routerLink="/main-page/admin/manage-employees">
+              <div class="tile-icon">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div class="tile-content">
+                <span class="tile-title">Add Employee</span>
+                <span class="tile-desc">Register new team member</span>
+              </div>
+              <div class="tile-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </button>
+
+            <button class="action-tile worksites-tile" routerLink="/main-page/admin/manage-worksites">
+              <div class="tile-icon">
+                <i class="fas fa-map-marked-alt"></i>
+              </div>
+              <div class="tile-content">
+                <span class="tile-title">Manage Worksites</span>
+                <span class="tile-desc">Control work locations</span>
+              </div>
+              <div class="tile-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </button>
+
+            <button class="action-tile tracking-tile" routerLink="/main-page/admin/location-tracking">
+              <div class="tile-icon">
+                <i class="fas fa-route"></i>
+              </div>
+              <div class="tile-content">
+                <span class="tile-title">Track Locations</span>
+                <span class="tile-desc">Real-time monitoring</span>
+              </div>
+              <div class="tile-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </button>
+
+            <button class="action-tile settings-tile" routerLink="/main-page/admin/settings">
+              <div class="tile-icon">
+                <i class="fas fa-cog"></i>
+              </div>
+              <div class="tile-content">
+                <span class="tile-title">Settings</span>
+                <span class="tile-desc">System configuration</span>
+              </div>
+              <div class="tile-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </button>
+
+            <button class="action-tile reports-tile" routerLink="/main-page/admin/finance">
+              <div class="tile-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="tile-content">
+                <span class="tile-title">View Reports</span>
+                <span class="tile-desc">Financial analytics</span>
+              </div>
+              <div class="tile-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </button>
+
+            <button class="action-tile company-tile" routerLink="/main-page/admin/company-information">
+              <div class="tile-icon">
+                <i class="fas fa-building"></i>
+              </div>
+              <div class="tile-content">
+                <span class="tile-title">Company Info</span>
+                <span class="tile-desc">Organization details</span>
+              </div>
+              <div class="tile-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Activity - NOW WITH REAL NOTIFICATIONS -->
+        <div class="activity-section">
+          <div class="section-header">
+            <h2>Recent Activity</h2>
+            <span class="view-all" (click)="refreshNotifications()">
+              <i class="fas fa-sync-alt" [class.fa-spin]="isLoadingNotifications"></i>
+              {{ isLoadingNotifications ? 'Loading...' : 'Refresh' }}
+            </span>
+          </div>
+
+          <!-- Loading State -->
+          <div *ngIf="isLoadingNotifications" class="loading-state">
+            <div class="activity-item">
+              <div class="activity-icon update">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+              <div class="activity-content">
+                <p>Loading notifications...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real Notifications -->
+          <div *ngIf="!isLoadingNotifications" class="activity-list">
+            <!-- Show real notifications if available -->
+            <div *ngFor="let notification of notifications; trackBy: trackNotification"
+                 class="activity-item">
+              <div class="activity-icon" [ngClass]="getNotificationClass(notification)">
+                <i [ngClass]="getNotificationIcon(notification)"></i>
+              </div>
+              <div class="activity-content">
+                <p [innerHTML]="notification.message"></p>
+                <span class="time">{{ getNotificationTime(notification) }}</span>
+              </div>
+              <!-- Optional delete button -->
+              <div class="notification-actions" *ngIf="notification.notificationId">
+                <button class="delete-btn" (click)="deleteNotification(notification.notificationId!)"
+                        title="Delete notification">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Empty state if no notifications -->
+            <div *ngIf="notifications.length === 0" class="empty-state">
+              <div class="activity-item">
+                <div class="activity-icon update">
+                  <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="activity-content">
+                  <p>No recent activity today</p>
+                  <span class="time">Check back later for updates</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Show ONLY when NO company exists - First time setup -->
+      <div *ngIf="!hasCompany" class="first-time-setup">
+        <div class="setup-card">
+          <div class="setup-icon">
+            <i class="fas fa-rocket"></i>
+          </div>
+          <h2>Welcome to FaceCheck!</h2>
+          <p>To get started, you need to register your company first.</p>
+          <button class="setup-btn" routerLink="/registration/company">
+            <i class="fas fa-building"></i>
+            <span>Register Your Company</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
