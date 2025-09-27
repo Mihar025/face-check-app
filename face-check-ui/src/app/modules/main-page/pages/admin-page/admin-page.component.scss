@@ -623,3 +623,157 @@ $border-radius-sm: 12px;
     color: $primary-dark;
   }
 }
+
+// ADD THESE STYLES TO YOUR EXISTING admin-page.component.scss FILE
+
+// First time setup styles
+.first-time-setup {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+
+  .setup-card {
+    background: $white;
+    border-radius: $border-radius;
+    padding: 60px;
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+    @include shadow-lg;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, $primary-subtle, transparent);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .setup-icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 30px;
+      background: linear-gradient(135deg, $primary-color, $primary-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      @include shadow-md;
+
+      i {
+        font-size: 48px;
+        color: $white;
+        animation: bounce 2s ease-in-out infinite;
+      }
+    }
+
+    h2 {
+      font-size: 32px;
+      font-weight: 800;
+      color: $neutral-900;
+      margin: 0 0 16px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    p {
+      font-size: 18px;
+      color: $neutral-500;
+      margin: 0 0 40px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .setup-btn {
+      padding: 20px 40px;
+      background: linear-gradient(135deg, $primary-color, $primary-dark);
+      color: $white;
+      border: none;
+      border-radius: $border-radius-sm;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+      @include smooth-transition;
+      @include shadow-md;
+
+      i {
+        font-size: 20px;
+      }
+
+      &:hover {
+        transform: translateY(-4px);
+        @include shadow-lg;
+        background: linear-gradient(135deg, $primary-light, $primary-color);
+      }
+
+      &:active {
+        transform: translateY(-2px);
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+// Responsive adjustments for first-time setup
+@media (max-width: 768px) {
+  .first-time-setup {
+    .setup-card {
+      padding: 40px 20px;
+
+      .setup-icon {
+        width: 80px;
+        height: 80px;
+
+        i {
+          font-size: 32px;
+        }
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      p {
+        font-size: 16px;
+      }
+
+      .setup-btn {
+        padding: 16px 32px;
+        font-size: 16px;
+      }
+    }
+  }
+}
