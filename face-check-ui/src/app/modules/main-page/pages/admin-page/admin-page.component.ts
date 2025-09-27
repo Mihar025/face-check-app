@@ -14,7 +14,7 @@ import { PageResponseNotificationResponse } from "../../../../services/models/pa
 export class AdminPageComponent implements OnInit {
   // User data - from your original code
   userName: string = 'John Doe';
-  companyName: string = 'FaceCheck Inc.';
+  companyName: string = '';
   totalEmployees: number = 0;
   totalWorksites: number = 0;
   userPhotoUrl: string = '';
@@ -26,6 +26,9 @@ export class AdminPageComponent implements OnInit {
   notifications: NotificationResponse[] = [];
   isLoadingNotifications: boolean = false;
   companyId: number = 0;
+
+  // NEW PROPERTY: Track if user has a company
+  hasCompany: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -53,13 +56,35 @@ export class AdminPageComponent implements OnInit {
 
     // Load your existing data
     this.loadUserFullName();
-    this.loadCompanyName();
-    this.loadTotalEmployees();
-    this.loadTotalWorksites();
+    this.checkIfCompanyExists(); // NEW: Check if company exists
     this.getUserPhoto();
+  }
 
-    // Load company ID and then notifications
-    this.initializeNotifications();
+  // NEW METHOD: Check if admin has a company
+  checkIfCompanyExists(): void {
+    // First try to load company ID
+    this.userService.findWorkerCompanyIdByAuthentication().subscribe(
+      response => {
+        if (response && response.companyId && response.companyId > 0) {
+          this.companyId = response.companyId;
+          this.hasCompany = true;
+
+          // Only load company-related data if company exists
+          this.loadCompanyName();
+          this.loadTotalEmployees();
+          this.loadTotalWorksites();
+          this.loadTodaysNotifications();
+        } else {
+          this.hasCompany = false;
+          this.companyName = '';
+        }
+      },
+      error => {
+        console.error('Error checking company existence:', error);
+        // Fallback - try to load company name to double-check
+        this.loadCompanyName();
+      }
+    );
   }
 
   // Your existing methods - unchanged
@@ -83,19 +108,34 @@ export class AdminPageComponent implements OnInit {
   loadCompanyName(): void {
     this.userService.findWorkerCompanyName().subscribe(
       response => {
-        if (response && response.companyName) {
+        if (response && response.companyName && response.companyName.trim() !== '') {
           this.companyName = response.companyName;
-          // After getting company name, you might need to get companyId here
-          // this.getCompanyId();
+          this.hasCompany = true;
+
+          // If we found company name but don't have ID yet, load it
+          if (!this.companyId) {
+            this.loadAdminsCompanyId().then(id => {
+              if (id > 0) {
+                this.companyId = id;
+                this.loadTodaysNotifications();
+              }
+            });
+          }
+        } else {
+          this.hasCompany = false;
+          this.companyName = '';
         }
       },
       error => {
         console.error('Error loading company name:', error);
+        this.hasCompany = false;
       }
     );
   }
 
   loadTotalEmployees(): void {
+    if (!this.hasCompany) return;
+
     this.adminService.getTotalEmployeesCount().subscribe(
       count => {
         this.totalEmployees = count;
@@ -107,6 +147,8 @@ export class AdminPageComponent implements OnInit {
   }
 
   loadTotalWorksites(): void {
+    if (!this.hasCompany) return;
+
     this.adminService.getTotalWorksitesCount().subscribe(
       count => {
         this.totalWorksites = count;
@@ -130,20 +172,6 @@ export class AdminPageComponent implements OnInit {
     );
   }
 
-  // NEW METHOD: Initialize notifications by first loading company ID
-  private async initializeNotifications(): Promise<void> {
-    try {
-      this.companyId = await this.loadAdminsCompanyId();
-      if (this.companyId > 0) {
-        this.loadTodaysNotifications();
-      } else {
-        console.error('Could not load company ID');
-      }
-    } catch (error) {
-      console.error('Error initializing notifications:', error);
-    }
-  }
-
   // Your existing method for loading company ID
   private async loadAdminsCompanyId(): Promise<number> {
     try {
@@ -159,10 +187,10 @@ export class AdminPageComponent implements OnInit {
     }
   }
 
-  // NEW METHOD: Load today's notifications from backend
+  // Load today's notifications from backend
   loadTodaysNotifications(): void {
-    if (!this.companyId) {
-      console.error('Company ID not available');
+    if (!this.companyId || !this.hasCompany) {
+      console.log('Company not available, skipping notifications');
       return;
     }
 
@@ -263,7 +291,9 @@ export class AdminPageComponent implements OnInit {
 
   // Method to refresh notifications manually
   refreshNotifications(): void {
-    this.loadTodaysNotifications();
+    if (this.hasCompany) {
+      this.loadTodaysNotifications();
+    }
   }
 
   // Method to delete a notification

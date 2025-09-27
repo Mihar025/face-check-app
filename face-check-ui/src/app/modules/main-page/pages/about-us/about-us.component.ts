@@ -26,4 +26,8 @@ export class AboutUsComponent {
   navigateToFaceCheck(): void {
     this.router.navigate(['/face-check']);
   }
+
+  navigateToViewDemo(): void {
+    this.router.navigate(['/view-demo']);
+  }
 }
