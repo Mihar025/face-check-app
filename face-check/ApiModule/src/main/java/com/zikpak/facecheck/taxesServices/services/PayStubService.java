@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -102,8 +103,8 @@ public class PayStubService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // 5. Вычисляем параметры Insurance
-        Boolean       hasInsurance      = Boolean.TRUE.equals(worker.getEnrolledInHealthPlan());
-        BigDecimal    monthlyPremium    = hasInsurance
+        Boolean hasInsurance = Boolean.TRUE.equals(worker.getEnrolledInHealthPlan());
+        BigDecimal monthlyPremium = hasInsurance
                 ? Optional.ofNullable(worker.getMonthlyHealthPremium())
                 .orElse(BigDecimal.ZERO)
                 : BigDecimal.ZERO;
@@ -111,7 +112,7 @@ public class PayStubService {
 
         // добавляем в начале метода
         int payPeriods = switch (company.getCompanyPaymentPosition()) {
-            case WEEKLY   -> 52;
+            case WEEKLY -> 52;
             case BIWEEKLY -> 26;
         };
 
@@ -126,10 +127,9 @@ public class PayStubService {
                 : BigDecimal.ZERO;
 
 
-
         // 6. Вычисляем параметры SickLeave
-        BigDecimal accrued   = Optional.ofNullable(worker.getSickLeaveAccrued()).orElse(BigDecimal.ZERO);
-        BigDecimal used      = Optional.ofNullable(worker.getSickLeaveUsed()).orElse(BigDecimal.ZERO);
+        BigDecimal accrued = Optional.ofNullable(worker.getSickLeaveAccrued()).orElse(BigDecimal.ZERO);
+        BigDecimal used = Optional.ofNullable(worker.getSickLeaveUsed()).orElse(BigDecimal.ZERO);
         BigDecimal remaining = accrued.subtract(used).max(BigDecimal.ZERO);
 
         // 7. Собираем DTO
@@ -180,8 +180,6 @@ public class PayStubService {
                 .sickLeaveRemaining(remaining.setScale(2, RoundingMode.HALF_UP))
 
 
-
-
                 // ————— Rate & hours —————
                 .baseHourlyRate(worker.getBaseHourlyRate())
                 .totalHours(payroll.getTotalHours())
@@ -193,32 +191,43 @@ public class PayStubService {
 
 
         byte[] pdf = payStubPdfGeneratorService.generatePayStubPdf(stub);
+
         String companyKeyPart = company.getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        String workerKeyPart = (worker.getFirstName() + "_" + worker.getLastName() + "_" + worker.getId())
-                .trim()
-                .replaceAll("[^A-Za-z0-9_]", "_");
-
-        String periodPart = payroll.getPeriodStart().toString()
-                + "_"
-                + payroll.getPeriodEnd().toString();
-
-        // собираем финальный ключ
-        String key = String.format(
-                "%s/%d/paystubs/%s/%s/%d.pdf",
-                companyKeyPart,
-                company.getId(),
-                workerKeyPart,
-                periodPart,
-                payrollId
+        String employeeKeyPart = String.format("%s_%s_%d",
+                worker.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                worker.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                worker.getId()
         );
+
+        int year = payroll.getPeriodEnd().getYear();
+        int month = payroll.getPeriodEnd().getMonthValue();
+        int quarter = (month - 1) / 3 + 1;
+
+        String startDate = payroll.getPeriodStart().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String endDate = payroll.getPeriodEnd().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        String key = String.format(
+                "%s_%d/employees/%s/paystubs/%d/Q%d/paystub_%s_to_%s.pdf",
+                companyKeyPart,         // "facecheck_corp"
+                company.getId(),        // "_123"
+                employeeKeyPart,        // "john_doe_456"
+                year,                   // "/2024"
+                quarter,                // "/Q1"
+                startDate,              // "20240115"
+                endDate                 // "20240131"
+        );
+
+
+
+
 
         amazonS3Service.uploadPdfToS3(pdf, key);
         return pdf;
     }
-
 
     public List<PayStubFileDTO> getPayStubFilesList(Integer companyId, LocalDate startDate, LocalDate endDate) {
         // Используем твой существующий метод
