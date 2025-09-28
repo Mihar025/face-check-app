@@ -6,4 +6,5 @@ export interface DailyFinanceInfo {
   date?: string;
   grossPay?: number;
   hoursWorked?: number;
+  netPay?: number;
 }

@@ -83,7 +83,7 @@ export class CompanyInformationComponent implements OnInit {
       },
       error => {
         console.error('Error loading company name:', error);
-        this.companyName = 'Не удалось загрузить';
+        this.companyName = 'Cant load company name';
       }
     );
   }
