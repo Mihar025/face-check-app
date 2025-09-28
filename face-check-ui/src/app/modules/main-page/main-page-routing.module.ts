@@ -24,6 +24,7 @@ import {RefundPolicyComponent} from "./pages/refund-policy/refund-policy.compone
 import {FinancePageComponent} from "./pages/admin-main-page/finance-page/finance-page.component";
 import {LocTrackComponent} from "./pages/admin-main-page/loc-track/loc-track.component";
 import {EmployeeAttendanceComponent} from "./pages/admin-main-page/employee-attendance/employee-attendance.component";
+import {MainPageAppOwnerComponent} from "./pages/appOwner/main-page-app-owner/main-page-app-owner.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -130,6 +131,16 @@ const routes: Routes = [
   {
     path: 'main-page/admin/employee-attendance',
     component: EmployeeAttendanceComponent
+  },
+
+
+
+  /*
+        Routes for App Owner!
+   */
+  {
+    path: 'main-page/app-owner',
+    component: MainPageAppOwnerComponent
   },
 
   {

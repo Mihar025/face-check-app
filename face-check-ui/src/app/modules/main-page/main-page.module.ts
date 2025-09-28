@@ -27,6 +27,7 @@ import { RefundPolicyComponent } from './pages/refund-policy/refund-policy.compo
 import { FinancePageComponent } from './pages/admin-main-page/finance-page/finance-page.component';
 import { LocTrackComponent } from './pages/admin-main-page/loc-track/loc-track.component';
 import { EmployeeAttendanceComponent } from './pages/admin-main-page/employee-attendance/employee-attendance.component';
+import { MainPageAppOwnerComponent } from './pages/appOwner/main-page-app-owner/main-page-app-owner.component';
 
 
 @NgModule({
@@ -52,7 +53,8 @@ import { EmployeeAttendanceComponent } from './pages/admin-main-page/employee-at
       RefundPolicyComponent,
       FinancePageComponent,
       LocTrackComponent,
-      EmployeeAttendanceComponent
+      EmployeeAttendanceComponent,
+      MainPageAppOwnerComponent
 
   ],
   imports: [
