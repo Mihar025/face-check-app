@@ -11,19 +11,18 @@ import { UpdateName$Params } from "../../../../../services/fn/work-site-controll
 import { UpdateWorkSiteAddress } from "../../../../../services/models/update-work-site-address";
 import { UpdateAddress$Params } from "../../../../../services/fn/work-site-controller/update-address";
 import { WorkSiteUpdateLocationRequest } from "../../../../../services/models/work-site-update-location-request";
-import { UpdateLocation$Params } from "../../../../../services/fn/work-site-controller/update-location";
 import { UpdateWorkingHours$Params } from "../../../../../services/fn/work-site-controller/update-working-hours";
 import { DeleteWorkSiteById$Params } from "../../../../../services/fn/work-site-controller/delete-work-site-by-id";
-import { FindWorkSiteAllInformation$Params } from "../../../../../services/fn/work-site-controller/find-work-site-all-information";
-import { WorkSiteAllInformationResponse } from "../../../../../services/models/work-site-all-information-response";
 import { SetNewCustomRadiusRequest } from "../../../../../services/models/set-new-custom-radius-request";
 import { SetCustomRadius$Params } from "../../../../../services/fn/work-site-controller/set-custom-radius";
 import { FindWorkSiteById$Params } from "../../../../../services/fn/work-site-controller/find-work-site-by-id";
 import {GetActiveWorkers$Params} from "../../../../../services/fn/work-site-controller/get-active-workers";
 import {WorkerCurrentlyWorkingInWorkSite} from "../../../../../services/models/worker-currently-working-in-work-site";
-import {
-  PageResponseWorkerCurrentlyWorkingInWorkSite
-} from "../../../../../services/models/page-response-worker-currently-working-in-work-site";
+
+import {PageResponseWorkerCurrentlyWorkingInWorkSite}
+  from "../../../../../services/models/page-response-worker-currently-working-in-work-site";
+import {UpdateLocation$Params} from "../../../../../services/fn/track-location-controller/update-location";
+import {UpdateLocation1$Params} from "../../../../../services/fn/work-site-controller/update-location-1";
 
 @Component({
   selector: 'app-manage-worksites',
@@ -293,12 +292,12 @@ export class ManageWorksitesComponent implements OnInit {
       newRadius: this.updatedNewRadius
     };
 
-    const params: UpdateLocation$Params = {
+    const params: UpdateLocation1$Params = {
       workSiteId: this.selectedWorksiteId,
       body: data
     };
 
-    this.workSiteService.updateLocation(params).subscribe(
+    this.workSiteService.updateLocation1(params).subscribe(
       () => {
         this.loading = false;
         this.successMessage = 'Worksite location updated successfully!';
