@@ -1,28 +1,9 @@
 <div class="admin-layout">
-  <div class="sidebar">
-    <div class="admin-profile">
-      <div class="avatar-container">
-        <img [src]="userPhotoUrl"  alt="Admin Avatar" class="admin-avatar">
-      </div>
-      <div class="admin-info">
-        <h3 class="admin-name">{{ userName }}</h3>
-        <p class="admin-company">{{ companyName }}</p>
-      </div>
-    </div>
-
-    <nav class="sidebar-menu">
-      <ul>
-        <li><a routerLink="/main-page/admin" routerLinkActive="active">Main Page</a></li>
-        <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
-        <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
-        <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
-        <li><a routerLink="/main-page/admin/finance" routerLinkActive="active">Manage Finance</a></li>
-        <li><a routerLink="/main-page/admin/settings" routerLinkActive="active">Settings</a></li>
-        <li><a (click)="logout()" class="logout-link">Logout</a></li>
-      </ul>
-    </nav>
-  </div>
-
+  <app-admin-sidebar
+    [userName]="userName"
+    [companyName]="companyName"
+    [userPhotoUrl]="userPhotoUrl">
+  </app-admin-sidebar>
 
   <div class="main-content">
     <div class="top-logo-container">
@@ -52,6 +33,7 @@
           <table *ngIf="!loading && employees.length > 0" class="employees-table">
             <thead>
             <tr>
+              <th>Photo</th>
               <th>ID</th>
               <th>First Name</th>
               <th>Last Name</th>
@@ -62,6 +44,20 @@
             </thead>
             <tbody>
             <tr *ngFor="let employee of employees">
+              <td class="photo-cell">
+                <div class="worker-avatar">
+                  <img
+                    *ngIf="employee.photoUrl"
+                    [src]="employee.photoUrl"
+                    [alt]="employee.firstName + ' ' + employee.lastName"
+                    (error)="handleImageError($event)"
+                    class="worker-photo"
+                  >
+                  <div *ngIf="!employee.photoUrl" class="worker-photo-placeholder">
+                    <i class="fas fa-user"></i>
+                  </div>
+                </div>
+              </td>
               <td>{{ employee.workerId }}</td>
               <td>{{ employee.firstName }}</td>
               <td>{{ employee.lastName }}</td>
@@ -69,13 +65,14 @@
               <td>
                 <div class="rate-with-edit">
                   ${{ employee.baseHourlyRate }}
-                  <button class="edit-rate-button" (click)="employee.workerId !== undefined ? openChangeRateModal(employee.workerId, employee.baseHourlyRate ?? 0) : null">
+                  <button class="edit-rate-button" (click)="openChangeRateModal(employee.workerId, employee.baseHourlyRate)">
                     <i class="fas fa-edit"></i>
                   </button>
                 </div>
               </td>
+
               <td class="actions-cell">
-                <button class="action-button info-button" (click)="employee.workerId !== undefined ? openEmployeeInfoModal(employee.workerId) : null">
+                <button class="action-button info-button" (click)="openEmployeeInfoModal(employee.workerId)">
                   <i class="fas fa-info-circle"></i> Details
                 </button>
                 <button
@@ -85,9 +82,7 @@
                 >
                   <i class="fas fa-check-circle"></i> Verificate
                 </button>
-
-
-                <button class="action-button fire-button" (click)="employee.workerId !== undefined ? openFireModal(employee.workerId) : null">
+                <button class="action-button fire-button" (click)="openFireModal(employee.workerId)">
                   <i class="fas fa-user-times"></i> Fire
                 </button>
               </td>
@@ -114,6 +109,7 @@
   </div>
 </div>
 
+<!-- Employee Info Modal -->
 <div class="modal-overlay" *ngIf="showEmployeeInfoModal">
   <div class="modal-container modal-large">
     <div class="modal-header">
@@ -150,19 +146,18 @@
               <label>Address:</label>
               <span>{{ employeePersonalInfo.address }}</span>
             </div>
-
             <div class="info-item">
               <label>Company:</label>
               <span>{{ employeePersonalInfo.companyName }}</span>
             </div>
-
-          <div class="info-item">
-            <label>Role in Company:</label>
-            <span [ngClass]="{
-      'role-admin': employeePersonalInfo?.role === 'ADMIN',
-      'role-foreman': employeePersonalInfo?.role === 'FOREMAN',
-      'role-user': employeePersonalInfo?.role === 'USER'
-    }">{{ employeePersonalInfo?.role }}</span>
+            <div class="info-item">
+              <label>Role in Company:</label>
+              <span [ngClass]="{
+                'role-admin': employeePersonalInfo.role === 'ADMIN',
+                'role-foreman': employeePersonalInfo.role === 'FOREMAN',
+                'role-user': employeePersonalInfo.role === 'USER'
+              }">{{ employeePersonalInfo?.role }}</span>
+            </div>
           </div>
         </div>
 
@@ -193,7 +188,6 @@
               </button>
             </ng-container>
           </div>
-
 
           <div class="time-tabs">
             <button class="tab-button" [class.active]="activeTimeTab === 'updatePunchIn'" (click)="activeTimeTab = 'updatePunchIn'">Update Punch In</button>
@@ -271,8 +265,6 @@
           </div>
         </div>
 
-        </div>
-
         <div class="schedule-section">
           <div class="schedule-header">
             <h4>Work Schedule</h4>
@@ -334,52 +326,60 @@
       <button class="cancel-button" (click)="closeEmployeeInfoModal()">Close</button>
     </div>
   </div>
+</div>
 
+<!-- Add Employee Modal -->
 <div class="modal-overlay" *ngIf="showAddEmployeeModal">
-  <div class="modal-container modal-large">
+  <div class="modal-container modal-extra-large">
     <div class="modal-header">
       <h3>Add New Employee</h3>
       <button class="close-button" (click)="closeAddEmployeeModal()">&times;</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body modal-scrollable">
       <form class="new-employee-form">
+
+        <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+        <div class="section-title">Personal Information</div>
+
         <div class="form-row">
           <div class="form-group">
-            <label for="firstName">First Name</label>
+            <label for="firstName">First Name *</label>
             <input type="text" id="firstName" [(ngModel)]="firstName" name="firstName" required>
           </div>
           <div class="form-group">
-            <label for="lastName">Last Name</label>
+            <label for="lastName">Last Name *</label>
             <input type="text" id="lastName" [(ngModel)]="lastName" name="lastName" required>
+          </div>
+          <div class="form-group">
+            <label for="middleInitial">Middle Initial</label>
+            <input type="text" id="middleInitial" [(ngModel)]="middleInitial" name="middleInitial">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">Email *</label>
             <input type="email" id="email" [(ngModel)]="email" name="email" required>
           </div>
           <div class="form-group">
-            <label for="password">Password</label>
+            <label for="password">Password *</label>
             <input type="password" id="password" [(ngModel)]="password" name="password" required>
           </div>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
-            <label for="phoneNumber">Phone Number</label>
+            <label for="phoneNumber">Phone Number *</label>
             <input type="tel" id="phoneNumber" [(ngModel)]="phoneNumber" name="phoneNumber" required>
           </div>
-          <div class="form-group">
-            <label for="dateOfBirth">Date of Birth</label>
-            <input type="date" id="dateOfBirth" [(ngModel)]="dateOfBirth" name="dateOfBirth">
-          </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="gender">Gender</label>
+            <label for="dateOfBirth">Date of Birth *</label>
+            <input type="date" id="dateOfBirth" [(ngModel)]="dateOfBirth" name="dateOfBirth" required>
+          </div>
+          <div class="form-group">
+            <label for="gender">Gender *</label>
             <select id="gender" [(ngModel)]="gender" name="gender" required>
+              <option value="">Select Gender</option>
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
@@ -387,25 +387,175 @@
           </div>
           <div class="form-group">
             <label for="ssn">SSN</label>
-            <input type="text" id="ssn" [(ngModel)]="ssn_WORKER" name="ssn_WORKER">
+            <input type="text" id="ssn" [(ngModel)]="ssn_WORKER" name="ssn_WORKER" placeholder="XXX-XX-XXXX">
+          </div>
+        </div>
+
+        <!-- АДРЕС -->
+        <div class="section-title">Address Information</div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="homeAddress">Home Address *</label>
+            <input type="text" id="homeAddress" [(ngModel)]="homeAddress" name="homeAddress" required>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="homeAddress">Home Address</label>
-            <input type="text" id="homeAddress" [(ngModel)]="homeAddress" name="homeAddress">
+            <label for="apt">Apt/Unit *</label>
+            <input type="text" id="apt" [(ngModel)]="apt" name="apt" required>
           </div>
           <div class="form-group">
-            <label for="companyAddress">Work Address</label>
-            <input type="text" id="companyAddress" [(ngModel)]="companyAddress" name="companyAddress">
+            <label for="city">City *</label>
+            <input type="text" id="city" [(ngModel)]="city" name="city" required>
+          </div>
+          <div class="form-group">
+            <label for="state">State *</label>
+            <select id="state" [(ngModel)]="state" name="state" required>
+              <option value="NY">New York</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="zipcode">Zipcode *</label>
+            <input type="text" id="zipcode" [(ngModel)]="zipcode" name="zipcode" pattern="[0-9]{5}" required>
           </div>
         </div>
 
-        <div class="form-group full-width">
-          <label for="companyName2">Company Name</label>
-          <input type="text" id="companyName2" [(ngModel)]="companyName2" name="companyName2" [value]="companyName" required>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="companyAddress">Work Address *</label>
+            <input type="text" id="companyAddress" [(ngModel)]="companyAddress" name="companyAddress" required>
+          </div>
         </div>
+
+        <!-- ИНФОРМАЦИЯ О ТРУДОУСТРОЙСТВЕ -->
+        <div class="section-title">Employment Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="companyName2">Company Name *</label>
+            <input type="text" id="companyName2" [(ngModel)]="companyName2" name="companyName2" [value]="companyName" required readonly>
+          </div>
+          <div class="form-group">
+            <label for="employmentType">Employment Type *</label>
+            <select id="employmentType" [(ngModel)]="employmentType" name="employmentType" required>
+              <option value="W2">W2 Employee</option>
+              <option value="CONTRACTOR_1099">1099 Contractor</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="payFrequency">Pay Frequency *</label>
+            <select id="payFrequency" [(ngModel)]="payFrequency" name="payFrequency" required>
+              <option value="WEEKLY">Weekly</option>
+              <option value="BIWEEKLY">Bi-Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wcRiskClassCode">WC Risk Class Code *</label>
+            <input type="text" id="wcRiskClassCode" [(ngModel)]="wcRiskClassCode" name="wcRiskClassCode" required>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isRehired" name="isRehired"> Is Rehired Employee?
+            </label>
+          </div>
+          <div class="form-group" *ngIf="isRehired">
+            <label for="dateWhenRehired">Date When Rehired</label>
+            <input type="date" id="dateWhenRehired" [(ngModel)]="dateWhenRehired" name="dateWhenRehired">
+          </div>
+        </div>
+
+        <!-- НАЛОГОВАЯ ИНФОРМАЦИЯ -->
+        <div class="section-title">Tax Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="filingStatus">Filing Status *</label>
+            <select id="filingStatus" [(ngModel)]="filingStatus" name="filingStatus" required>
+              <option value="SINGLE">Single</option>
+              <option value="MARRIED_FILLING_JOINTLY">Married Filing Jointly</option>
+              <option value="MARRIED_FILLING_SEPARATELY">Married Filing Separately</option>
+              <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="exemptFromWithholding" name="exemptFromWithholding"> Exempt from Withholding
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="extraWithHoldings">Extra Withholdings ($)</label>
+            <input type="number" id="extraWithHoldings" [(ngModel)]="extraWithHoldings" name="extraWithHoldings" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="multipleJobsOrSpouseWorks" name="multipleJobsOrSpouseWorks"> Multiple Jobs or Spouse Works
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="twoJobsCheckBox" name="twoJobsCheckBox"> Two Jobs Total
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="livesInNYC" name="livesInNYC"> Lives in NYC
+            </label>
+          </div>
+        </div>
+
+        <!-- ЗАВИСИМЫЕ ЛИЦА -->
+        <div class="section-title">Dependents Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dependents">Number of Dependents</label>
+            <input type="number" id="dependents" [(ngModel)]="dependents" name="dependents" min="0">
+          </div>
+          <div class="form-group">
+            <label for="dependentsUnder17">Dependents Under 17</label>
+            <input type="number" id="dependentsUnder17" [(ngModel)]="dependentsUnder17" name="dependentsUnder17" min="0">
+          </div>
+          <div class="form-group">
+            <label for="otherDependents">Other Dependents</label>
+            <input type="number" id="otherDependents" [(ngModel)]="otherDependents" name="otherDependents" min="0">
+          </div>
+        </div>
+
+        <!-- СТАТУС ГРАЖДАНСТВА -->
+        <div class="section-title">Citizenship Status</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isCitizen" name="isCitizen"> US Citizen
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isPermanentResident" name="isPermanentResident"> Permanent Resident
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isNonCitizenNationalOfTheUS" name="isNonCitizenNationalOfTheUS"> Non-Citizen National of US
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isANonCitizen" name="isANonCitizen"> Non-Citizen
+            </label>
+          </div>
+        </div>
+
       </form>
     </div>
     <div class="modal-footer">
@@ -418,6 +568,7 @@
   </div>
 </div>
 
+<!-- Fire Employee Modal -->
 <div class="modal-overlay" *ngIf="showFireModal">
   <div class="modal-container">
     <div class="modal-header">
@@ -439,6 +590,7 @@
   </div>
 </div>
 
+<!-- Change Rate Modal -->
 <div class="modal-overlay" *ngIf="showRateModal">
   <div class="modal-container">
     <div class="modal-header">
@@ -456,5 +608,4 @@
       <button class="confirm-button" (click)="changeHourlyRate()">Save</button>
     </div>
   </div>
-</div>
 </div>

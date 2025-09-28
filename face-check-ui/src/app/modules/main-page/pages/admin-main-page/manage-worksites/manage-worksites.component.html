@@ -1,27 +1,10 @@
 <div class="admin-layout">
-  <div class="sidebar">
-    <div class="admin-profile">
-      <div class="avatar-container">
-        <img [src]="userPhotoUrl"  alt="Admin Avatar" class="admin-avatar">
-      </div>
-      <div class="admin-info">
-        <h3 class="admin-name">{{ userName }}</h3>
-        <p class="admin-company">{{ companyName }}</p>
-      </div>
-    </div>
+  <app-admin-sidebar
+    [userName]="userName"
+    [companyName]="companyName"
+    [userPhotoUrl]="userPhotoUrl">
+  </app-admin-sidebar>
 
-    <nav class="sidebar-menu">
-      <ul>
-        <li><a routerLink="/main-page/admin" routerLinkActive="active">Main Page</a></li>
-        <li><a routerLink="/main-page/admin/company-information" routerLinkActive="active">Company Information</a></li>
-        <li><a routerLink="/main-page/admin/manage-worksites" routerLinkActive="active">Manage Worksites</a></li>
-        <li><a routerLink="/main-page/admin/manage-employees" routerLinkActive="active">Manage Employees</a></li>
-        <li><a routerLink="/main-page/admin/finance" routerLinkActive="active">Manage Finance</a></li>
-        <li><a routerLink="/main-page/admin/settings" routerLinkActive="active">Settings</a></li>
-        <li><a (click)="logout()" class="logout-link">Logout</a></li>
-      </ul>
-    </nav>
-  </div>
 
   <div class="main-content">
     <div class="top-logo-container">
@@ -47,9 +30,12 @@
             <p>Loading worksites...</p>
           </div>
 
+
+
           <table *ngIf="!loading && worksites.length > 0" class="worksites-table">
             <thead>
             <tr>
+              <!-- Если у вас есть скрытая колонка с checkbox или номером строки, уберите её -->
               <th>ID</th>
               <th>Name</th>
               <th>Address</th>
@@ -60,6 +46,7 @@
             </thead>
             <tbody>
             <tr *ngFor="let worksite of worksites">
+              <!-- Проверьте, нет ли здесь скрытого <td> элемента -->
               <td>{{ worksite.workSiteId }}</td>
               <td>{{ worksite.workSiteName }}</td>
               <td>{{ worksite.address }}</td>
@@ -79,6 +66,7 @@
             </tr>
             </tbody>
           </table>
+
 
           <div *ngIf="!loading && worksites.length === 0" class="no-worksites">
             <p>No worksites found. Add your first worksite using the "Add New Worksite" button above.</p>
