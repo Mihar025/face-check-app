@@ -75,4 +75,24 @@ export class HomeComponent implements OnInit, AfterViewInit {
   navigateToFaceCheck(): void {
     this.router.navigate(['/face-check']);
   }
+
+
+  navigateToTerms() {
+    this.router.navigate(['/terms-of-service']);
+  }
+
+  navigateToPrivacy() {
+    this.router.navigate(['/privacy-policy']);
+  }
+  navigateToScheduleConsultation() {
+    this.router.navigate(['/schedule-consultation']);
+  }
+
+  navigateToViewDemo() {
+    this.router.navigate(['/view-demo']);
+  }
+
+  navigateToRefundPolicy() {
+    this.router.navigate(['/refund-policy']);
+  }
 }
