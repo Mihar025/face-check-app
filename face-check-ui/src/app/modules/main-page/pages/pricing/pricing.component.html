@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Pricing</title>
+  <title>Pricing - Facecheck</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,6 +12,96 @@
 </head>
 <body>
 
+<!-- Trial Modal -->
+<div class="modal-overlay" id="trialModal" (click)="closeModalOnOverlay($event)">
+  <div class="modal-container">
+    <button class="modal-close" (click)="closeTrialModal()">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <div class="modal-header">
+      <h2>Start Your Free Trial</h2>
+      <p>No credit card required • 30 days free</p>
+    </div>
+
+    <form class="trial-form" (ngSubmit)="submitTrialForm($event)">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input
+          type="text"
+          id="firstName"
+          name="firstName"
+          [(ngModel)]="trialFormData.firstName"
+          placeholder="Enter your first name"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input
+          type="text"
+          id="lastName"
+          name="lastName"
+          [(ngModel)]="trialFormData.lastName"
+          placeholder="Enter your last name"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="phoneNumber">Phone Number</label>
+        <input
+          type="tel"
+          id="phoneNumber"
+          name="phoneNumber"
+          [(ngModel)]="trialFormData.phoneNumber"
+          placeholder="+1 (555) 000-0000"
+          required
+        >
+      </div>
+
+      <div class="selected-plan" *ngIf="selectedPlanName">
+        <i class="fas fa-check-circle"></i>
+        <span>Selected Plan: <strong>{{ selectedPlanName }}</strong></span>
+      </div>
+
+      <button type="submit" class="submit-btn" [disabled]="isSubmitting">
+        <span *ngIf="!isSubmitting">
+          Contact Sales
+          <i class="fas fa-arrow-right"></i>
+        </span>
+        <span *ngIf="isSubmitting">
+          <i class="fas fa-spinner fa-spin"></i>
+          Sending...
+        </span>
+      </button>
+
+      <p class="form-footer">
+        By clicking "Contact Sales", you agree to our
+        <a (click)="navigateToTerms()">Terms of Service</a> and
+        <a (click)="navigateToPrivacy()">Privacy Policy</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-overlay success-modal" id="successModal" *ngIf="showSuccessModal">
+  <div class="modal-container success-container">
+    <div class="success-icon">
+      <i class="fas fa-check"></i>
+    </div>
+    <h2>Welcome to Facecheck!</h2>
+    <p>Your free trial has been activated successfully.</p>
+    <p class="success-info">We'll send you an email with further instructions.</p>
+    <button class="success-btn" (click)="closeSuccessModal()">
+      Get Started
+    </button>
+  </div>
+</div>
+
+<!-- Navigation -->
 <nav class="navbar">
   <div class="navbar-container">
     <div class="logo-container">
@@ -24,16 +113,19 @@
     <div class="nav-links">
       <a (click)="navigateToPricing()" class="nav-link active">Pricing</a>
       <a (click)="navigateToAboutUs()" class="nav-link">About Us</a>
+      <a (click)="navigateToViewDemo()" class="nav-link">Demo</a>
+
     </div>
     <a (click)="navigateToSignIn()" class="sign-in-button">Sign In</a>
   </div>
 </nav>
 
+<!-- Hero Section -->
 <section class="hero-section">
   <div class="hero-content">
     <div class="text-container">
-      <h1>Select perfect plan for you</h1>
-      <p>No matter which plan you will select, it will works for your business perfectly!</p>
+      <h1>Simple, Transparent Pricing</h1>
+      <p>Professional time tracking and IRS calculation tools for your business</p>
     </div>
   </div>
   <button class="scroll-btn" id="scrollBtn" (click)="scrollToPricingPlans()">
@@ -41,164 +133,114 @@
   </button>
 </section>
 
+<!-- Pricing Section -->
 <section class="pricing-section" id="pricingPlans">
   <div class="pricing-container">
+
+    <!-- Basic Plan -->
     <div class="pricing-card basic">
       <div class="card-header">
-        <h2>Basic Plan</h2>
+        <h2>Starter Plan</h2>
+        <p class="plan-description">Perfect for small teams and individual contractors</p>
       </div>
       <div class="card-price">
-        <h3>$10<span>/month</span></h3>
-        <p>+ $4 per employee</p>
+        <h3>$15<span>/month</span></h3>
+        <p>Billed monthly</p>
       </div>
       <div class="card-features">
         <ul>
-          <li><i class="fas fa-check"></i> Basic Face Recognition</li>
-          <li><i class="fas fa-check"></i> 100 Face Checks per month</li>
-          <li><i class="fas fa-check"></i> Email Support</li>
-          <li><i class="fas fa-check"></i> Basic Analytics</li>
-          <li><i class="fas fa-check"></i> 1 Admin Account</li>
+          <li><i class="fas fa-check"></i> Time tracking with photo timestamps</li>
+          <li><i class="fas fa-check"></i> Basic IRS tax calculations</li>
+          <li><i class="fas fa-check"></i> Up to 5 employees</li>
+          <li><i class="fas fa-check"></i> Monthly reports</li>
+          <li><i class="fas fa-check"></i> Email support</li>
+          <li><i class="fas fa-check"></i> Mobile app access</li>
         </ul>
       </div>
-      <button class="select-plan-btn" (click)="selectPlan('basic')">Select Plan</button>
+      <button class="select-plan-btn" (click)="openTrialModal('starter')">Start Free Trial</button>
     </div>
 
+    <!-- Pro Plan -->
     <div class="pricing-card pro">
-      <div class="popular-tag">Popular</div>
+      <div class="popular-tag">Most Popular</div>
       <div class="card-header">
-        <h2>Pro Plan</h2>
+        <h2>Professional Plan</h2>
+        <p class="plan-description">Complete solution for growing businesses</p>
       </div>
       <div class="card-price">
-        <h3>$17<span>/month</span></h3>
-        <p>+ $5.75 per employee</p>
+        <h3>$25<span>/month</span></h3>
+        <p>Billed monthly • Save 20% annually</p>
       </div>
       <div class="card-features">
         <ul>
-          <li><i class="fas fa-check"></i> Advanced Face Recognition</li>
-          <li><i class="fas fa-check"></i> Unlimited Face Checks</li>
-          <li><i class="fas fa-check"></i> Priority Support 24/7</li>
-          <li><i class="fas fa-check"></i> Advanced Analytics Dashboard</li>
-          <li><i class="fas fa-check"></i> Multiple Admin Accounts</li>
+          <li><i class="fas fa-check"></i> <strong>Visual attendance verification</strong></li>
+          <li><i class="fas fa-check"></i> <strong>NO facial recognition or biometrics</strong></li>
+          <li><i class="fas fa-check"></i> Advanced IRS tax calculations</li>
+          <li><i class="fas fa-check"></i> Unlimited employees</li>
+          <li><i class="fas fa-check"></i> Real-time tracking & GPS location</li>
+          <li><i class="fas fa-check"></i> Overtime & break management</li>
+          <li><i class="fas fa-check"></i> Custom reports & analytics</li>
+          <li><i class="fas fa-check"></i> Priority 24/7 support</li>
+          <li><i class="fas fa-check"></i> API access & integrations</li>
+          <li><i class="fas fa-check"></i> 30-day photo storage</li>
         </ul>
       </div>
-      <button class="select-plan-btn pro-btn" (click)="selectPlan('pro')">Select Plan</button>
+      <button class="select-plan-btn pro-btn" (click)="openTrialModal('professional')">Start Free Trial</button>
     </div>
+
+  </div>
+
+  <!-- Important Notice -->
+  <div class="pricing-notice">
+    <i class="fas fa-info-circle"></i>
+    <p><strong>Important:</strong> Our platform provides time tracking and calculation assistance based on IRS guidelines.
+      We are NOT a payroll service. All calculations should be verified by a qualified tax professional.</p>
   </div>
 </section>
 
-<section class="benefits-section">
-  <div class="benefits-header">
-    <h2>Save your time with our payrolls</h2>
-    <p>The reasons why you should choose FACECHECK</p>
-  </div>
+<!-- Rest of the sections remain the same... -->
 
-  <div class="benefits-container">
-    <div class="benefit-card">
-      <div class="benefit-icon">
-        <i class="fas fa-coins"></i>
-      </div>
-      <h3>Save Money</h3>
-      <p>Save over $2,000 per year with FACECHECK</p>
-    </div>
-
-    <div class="benefit-card">
-      <div class="benefit-icon">
-        <i class="fas fa-clock"></i>
-      </div>
-      <h3>Save Time</h3>
-      <p>Save 15 hours per month with FACECHECK</p>
-    </div>
-
-    <div class="benefit-card">
-      <div class="benefit-icon">
-        <i class="fas fa-shield-alt"></i>
-      </div>
-      <h3>Secure & Compliant</h3>
-      <p>94% of businesses trust FACECHECK to meet their security and compliance requirements</p>
-    </div>
-
-    <div class="benefit-card">
-      <div class="benefit-icon">
-        <i class="fas fa-chart-line"></i>
-      </div>
-      <h3>Easy to Use</h3>
-      <p>9 out of 10 companies find payroll processing easier with FACECHECK</p>
-    </div>
-  </div>
-</section>
-
+<!-- CTA Section -->
 <section class="cta-section">
   <div class="cta-container">
-    <h2>Work Smarter not Harder!</h2>
-    <p>Sign in with FACECHECK today!</p>
-    <button class="cta-btn" (click)="scrollToPricingPlans()">Choose your plan</button>
+    <h2>Start Your 30-Day Free Trial</h2>
+    <p>No credit card required • Full access • Cancel anytime</p>
+    <div class="cta-buttons">
+      <button class="cta-btn primary" (click)="openTrialModal()">
+        Start Free Trial
+        <i class="fas fa-arrow-right"></i>
+      </button>
+      <button class="cta-btn secondary" (click)="navigateToViewDemo()">
+        Watch Demo
+        <i class="fas fa-play-circle"></i>
+      </button>
+    </div>
   </div>
 </section>
 
-
+<!-- Footer -->
 <footer class="footer">
   <div class="footer-container">
     <div class="footer-top">
-      <div class="footer-column company-info">
+      <div class="footer-brand">
         <div class="footer-logo">
-          <img src="logo.jpg" alt="Facecheck Logo" class="footer-logo-img">
-          <span class="footer-brand">facecheck</span>
+          <img src="logo.jpg" alt="Facecheck">
+          <span>facecheck</span>
         </div>
-        <p class="company-description">
-          Innovative solution for workforce management, payroll processing, and business optimization.
-        </p>
-        <div class="social-links">
-          <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
-        </div>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Company</h3>
-        <ul class="footer-links">
-          <li><a href="#">About Us</a></li>
-          <li><a href="#">Our Team</a></li>
-          <li><a href="#">Careers</a></li>
-          <li><a href="#">Partners</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Products</h3>
-        <ul class="footer-links">
-          <li><a href="#">Time Tracking</a></li>
-          <li><a href="#">Payroll System</a></li>
-          <li><a href="#">Business Analytics</a></li>
-          <li><a href="#">Mobile App</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Support</h3>
-        <ul class="footer-links">
-          <li><a href="#">Help Center</a></li>
-          <li><a href="#">Contact Us</a></li>
-          <li><a href="#">FAQ</a></li>
-          <li><a href="#">Documentation</a></li>
-        </ul>
+        <p>Professional workforce time tracking and calculation platform</p>
       </div>
     </div>
 
-    <div class="footer-divider"></div>
-
     <div class="footer-bottom">
-      <p class="copyright">© 2025 Facecheck. All rights reserved.</p>
-      <div class="legal-links">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Legal Information</a>
+      <p>&copy; 2025 Facecheck. All rights reserved.</p>
+      <div class="footer-legal">
+        <a (click)="navigateToPrivacy()">Privacy Policy</a>
+        <a (click)="navigateToTerms()">Terms of Service</a>
+        <a (click)="navigateToRefundPolicy()">Refund Policy</a>
       </div>
     </div>
   </div>
 </footer>
-
 
 </body>
 </html>
