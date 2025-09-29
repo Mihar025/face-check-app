@@ -2,6 +2,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
+// Variables
+$primary: #2563eb;
+$primary-dark: #1e40af;
+$secondary: #10b981;
+$warning: #f59e0b;
+$danger: #ef4444;
+$dark: #111827;
+$gray: #6b7280;
+$light-gray: #f3f4f6;
+$white: #ffffff;
+
+// Hero gradient - изменено с персикового на синий градиент
+$hero-gradient: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+
 * {
   margin: 0;
   padding: 0;
@@ -10,11 +24,12 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #ffffff;
+  background-color: $white;
   color: #333;
   overflow-x: hidden;
 }
 
+// Navigation
 .navbar {
   position: fixed;
   top: 20px;
@@ -48,6 +63,7 @@ body {
 .logo-container {
   display: flex;
   align-items: center;
+  cursor: pointer;
 }
 
 .logo {
@@ -72,6 +88,7 @@ body {
   color: #333;
   text-decoration: none;
   letter-spacing: -0.3px;
+  cursor: pointer;
 }
 
 .nav-links {
@@ -88,15 +105,16 @@ body {
   padding: 8px 12px;
   border-radius: 8px;
   transition: all 0.2s ease;
-}
+  cursor: pointer;
 
-.nav-link:hover, .nav-link.active {
-  color: #2563EB;
-  background-color: rgba(37, 99, 235, 0.08);
+  &:hover, &.active {
+    color: $primary;
+    background-color: rgba($primary, 0.08);
+  }
 }
 
 .sign-in-button {
-  background-color: #2563EB;
+  background-color: $primary;
   color: white;
   font-family: 'Montserrat', sans-serif;
   font-weight: 600;
@@ -105,556 +123,584 @@ body {
   border-radius: 30px;
   text-decoration: none;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.2);
-}
-
-.sign-in-button:hover {
-  background-color: #1E50CF;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-a {
+  box-shadow: 0 2px 10px rgba($primary, 0.2);
   cursor: pointer;
+
+  &:hover {
+    background-color: $primary-dark;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba($primary, 0.3);
+  }
 }
 
+// Hero Section - обновлен градиент
 .hero-section {
-  height: 65vh;
-  min-height: 600px;
-  background-color: #FFDAB9;
+  height: 50vh;
+  min-height: 500px;
+  background: $hero-gradient;
+  display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 20px;
   position: relative;
-  padding-top: 0;
+  padding-top: 100px;
+
+  .hero-content {
+    max-width: 900px;
+    margin: 0 auto;
+
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    p {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: rgba(white, 0.95);
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+  }
+
+  .scroll-btn {
+    background-color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    i {
+      color: $primary;
+      font-size: 1.25rem;
+    }
+
+    &:hover {
+      transform: translateX(-50%) translateY(3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+  }
 }
 
-.hero-content {
-  max-width: 800px;
-  margin-top: 10%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 70%;
-}
-
-.hero-section h1 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 3.5rem;
-  font-weight: 800;
-  color: white;
-  margin-bottom: 30px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.hero-section p {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 400;
-  color: white;
-  margin-bottom: 50px;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.5;
-}
-
-.scroll-btn {
-  background-color: white;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  margin: 0 auto;
-  position: absolute;
-  bottom: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-}
-
-.scroll-btn i {
-  color: #FFDAB9;
-  font-size: 1.5rem;
-}
-
-.scroll-btn:hover {
-  transform: translateY(3px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
+// Pricing Section
 .pricing-section {
-  padding: 80px 20px 150px;
-  background-color: #f9f9f9;
-  margin-top: 50px;
+  padding: 80px 20px;
+  background-color: $light-gray;
+
+  .pricing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+  }
+
+  .pricing-card {
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 40px 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    &.pro {
+      border-color: $primary;
+      transform: scale(1.05);
+
+      .popular-tag {
+        position: absolute;
+        top: -12px;
+        right: 30px;
+        background-color: $primary;
+        color: white;
+        padding: 5px 20px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba($primary, 0.3);
+      }
+    }
+
+    .card-header {
+      margin-bottom: 30px;
+
+      h2 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: $dark;
+        margin-bottom: 10px;
+      }
+
+      .plan-description {
+        font-size: 0.95rem;
+        color: $gray;
+        line-height: 1.4;
+      }
+    }
+
+    .card-price {
+      margin-bottom: 30px;
+
+      h3 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: $primary;
+        margin-bottom: 5px;
+
+        span {
+          font-size: 1rem;
+          font-weight: 500;
+          color: $gray;
+        }
+      }
+
+      p {
+        font-size: 0.9rem;
+        color: $gray;
+      }
+    }
+
+    .card-features {
+      margin-bottom: 30px;
+
+      ul {
+        list-style: none;
+        text-align: left;
+
+        li {
+          margin-bottom: 15px;
+          display: flex;
+          align-items: flex-start;
+          line-height: 1.5;
+          font-size: 0.95rem;
+          color: $dark;
+
+          i {
+            color: $secondary;
+            margin-right: 12px;
+            font-size: 0.9rem;
+            margin-top: 3px;
+            flex-shrink: 0;
+          }
+
+          strong {
+            color: $primary;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+
+    .select-plan-btn {
+      background-color: white;
+      color: $primary;
+      border: 2px solid $primary;
+      padding: 12px 35px;
+      border-radius: 30px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 250px;
+
+      &:hover {
+        background-color: $primary;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba($primary, 0.2);
+      }
+
+      &.pro-btn {
+        background-color: $primary;
+        color: white;
+
+        &:hover {
+          background-color: $primary-dark;
+        }
+      }
+    }
+  }
+
+  .pricing-notice {
+    max-width: 900px;
+    margin: 40px auto 0;
+    padding: 20px 25px;
+    background: rgba($warning, 0.1);
+    border-left: 4px solid $warning;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+
+    i {
+      color: $warning;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: $dark;
+
+      strong {
+        color: $warning;
+      }
+    }
+  }
 }
 
-.pricing-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 60px;
-  flex-wrap: wrap;
-}
-
-.pricing-card {
+// Features Comparison Section
+.comparison-section {
+  padding: 80px 20px;
   background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 50px 40px;
-  width: 400px;
-  height: 550px;
-  text-align: center;
-  transition: all 0.3s ease;
-  position: relative;
-  border: 1px solid #eaeaea;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+
+  .comparison-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: $dark;
+      margin-bottom: 50px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 40px;
+
+      .feature-item {
+        text-align: center;
+
+        i {
+          font-size: 2.5rem;
+          color: $primary;
+          margin-bottom: 20px;
+        }
+
+        h4 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: $dark;
+          margin-bottom: 10px;
+        }
+
+        p {
+          font-size: 0.95rem;
+          color: $gray;
+          line-height: 1.5;
+        }
+      }
+    }
+  }
 }
 
-.pricing-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-}
-
-.popular-tag {
-  position: absolute;
-  top: -12px;
-  right: 30px;
-  background-color: #2563EB;
-  color: white;
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
-}
-
-.card-header h2 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 25px;
-}
-
-.card-price {
-  margin-bottom: 30px;
-}
-
-.card-price h3 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #2563EB;
-  margin-bottom: 5px;
-}
-
-.card-price h3 span {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #777;
-}
-
-.card-price p {
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  color: #666;
-}
-
-.card-features {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 40px;
-  min-height: 200px;
-}
-
-.card-features ul {
-  list-style: none;
-  text-align: left;
-  flex-grow: 1;
-}
-
-.card-features li {
-  margin-bottom: 15px;
-  font-family: 'Inter', sans-serif;
-  display: flex;
-  align-items: flex-start;
-  line-height: 1.5;
-  font-size: 1.05rem;
-}
-
-.card-features i {
-  color: #2563EB;
-  margin-right: 12px;
-  font-size: 1rem;
-  margin-top: 3px;
-}
-
-.select-plan-btn {
-  background-color: white;
-  color: #2563EB;
-  border: 2px solid #2563EB;
-  padding: 15px 40px;
-  border-radius: 30px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  align-self: center;
-  width: 220px;
-  margin-bottom: 10px;
-  position: absolute;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.select-plan-btn:hover {
-  background-color: #2563EB;
-  color: white;
-  transform: translateX(-50%) translateY(-3px);
-  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);
-}
-
-.pro-btn {
-  background-color: #2563EB;
-  color: white;
-}
-
-.pro-btn:hover {
-  background-color: #1E50CF;
-}
-
+// Benefits Section
 .benefits-section {
-  padding: 100px 20px;
-  background-color: #ffffff;
+  padding: 80px 20px;
+  background-color: $light-gray;
   text-align: center;
+
+  .benefits-header {
+    max-width: 800px;
+    margin: 0 auto 60px;
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: $dark;
+      margin-bottom: 15px;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: $gray;
+    }
+  }
+
+  .benefits-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+
+    .benefit-card {
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+      padding: 40px 30px;
+      text-align: center;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      }
+
+      .benefit-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background-color: rgba($primary, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+
+        i {
+          font-size: 1.8rem;
+          color: $primary;
+        }
+      }
+
+      h3 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: $dark;
+        margin-bottom: 15px;
+      }
+
+      p {
+        font-size: 0.95rem;
+        color: $gray;
+        line-height: 1.5;
+      }
+    }
+  }
 }
 
-.benefits-header {
-  max-width: 800px;
-  margin: 0 auto 60px;
-}
-
-.benefits-header h2 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 2.8rem;
-  font-weight: 800;
-  color: #333;
-  margin-bottom: 15px;
-  animation: fadeInUp 0.8s ease forwards;
-}
-
-.benefits-header p {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 500;
-  color: #555;
-  animation: fadeInUp 0.8s ease 0.2s forwards;
-  opacity: 0;
-}
-
-.benefits-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  flex-wrap: wrap;
-}
-
-.benefit-card {
+// FAQ Section
+.faq-section {
+  padding: 80px 20px;
   background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
-  padding: 40px 30px;
-  width: 260px;
-  height: 260px;
-  text-align: center;
-  transition: all 0.3s ease;
-  position: relative;
-  border: 1px solid #f0f0f0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: fadeInUp 0.8s ease forwards;
-  opacity: 0;
+
+  .faq-container {
+    max-width: 1200px;
+    margin: 0 auto;
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: $dark;
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .faq-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 40px;
+
+      .faq-item {
+        padding: 25px;
+        background: $light-gray;
+        border-radius: 12px;
+        border-left: 4px solid $primary;
+
+        h4 {
+          font-size: 1.15rem;
+          font-weight: 600;
+          color: $dark;
+          margin-bottom: 15px;
+        }
+
+        p {
+          font-size: 0.95rem;
+          color: $gray;
+          line-height: 1.6;
+        }
+      }
+    }
+  }
 }
 
-.benefit-card:nth-child(1) {
-  animation-delay: 0.3s;
-}
-
-.benefit-card:nth-child(2) {
-  animation-delay: 0.5s;
-}
-
-.benefit-card:nth-child(3) {
-  animation-delay: 0.7s;
-}
-
-.benefit-card:nth-child(4) {
-  animation-delay: 0.9s;
-}
-
-.benefit-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-}
-
-.benefit-icon {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background-color: rgba(37, 99, 235, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.benefit-icon i {
-  font-size: 2rem;
-  color: #2563EB;
-}
-
-.benefit-card h3 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.benefit-card p {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.5;
-}
-
+// CTA Section
 .cta-section {
-  padding: 60px 20px 100px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: 100px 20px;
+  background: $hero-gradient;
+
+  .cta-container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 1.25rem;
+      color: rgba(white, 0.95);
+      margin-bottom: 40px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+
+      .cta-btn {
+        padding: 15px 35px;
+        border-radius: 30px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+
+        &.primary {
+          background-color: white;
+          color: $primary;
+
+          &:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+          }
+        }
+
+        &.secondary {
+          background-color: transparent;
+          color: white;
+          border: 2px solid white;
+
+          &:hover {
+            background-color: white;
+            color: $primary;
+          }
+        }
+
+        i {
+          transition: transform 0.3s ease;
+        }
+
+        &:hover i {
+          transform: translateX(3px);
+        }
+      }
+    }
+  }
 }
 
-.cta-container {
-  background-color: #FFDAB9;
-  border-radius: 30px;
-  padding: 70px 50px;
-  max-width: 900px;
-  width: 100%;
-  text-align: center;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
-  animation: fadeInUp 0.8s ease forwards;
-}
-
-.cta-container h2 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 3rem;
-  font-weight: 800;
-  color: white;
-  margin-bottom: 20px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.cta-container p {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: white;
-  margin-bottom: 40px;
-}
-
-.cta-btn {
-  background-color: #2563EB;
-  color: white;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 600;
-  font-size: 1.1rem;
-  padding: 15px 40px;
-  border-radius: 30px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
-}
-
-.cta-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 20px rgba(37, 99, 235, 0.4);
-  background-color: #1E50CF;
-}
-
+// Footer - такой же как на главной
 .footer {
-  background-color: #f8f9fa;
-  padding: 70px 0 30px;
-  width: 100%;
-  margin-top: 80px;
-  border-top: 1px solid #eaeaea;
-}
-
-.footer-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.footer-top {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  margin-bottom: 40px;
-}
-
-.footer-column {
-  flex: 1;
-  min-width: 200px;
-  margin-bottom: 30px;
-  padding-right: 20px;
-}
-
-.company-info {
-  flex: 1.5;
-}
-
-.footer-logo {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.footer-logo-img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  margin-right: 10px;
-}
-
-.footer-brand {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #333;
-}
-
-.company-description {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 20px;
-}
-
-.social-links {
-  display: flex;
-  gap: 15px;
-}
-
-.social-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: #f0f2f5;
-  color: #555;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.social-link:hover {
-  background-color: #2563EB;
+  background: $dark;
   color: white;
-  transform: translateY(-3px);
+  padding: 60px 0 30px;
+
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+
+    .footer-top {
+      margin-bottom: 3rem;
+
+      .footer-brand {
+        .footer-logo {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+
+          img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+          }
+
+          span {
+            font-size: 1.5rem;
+            font-weight: 700;
+          }
+        }
+
+        p {
+          color: rgba(white, 0.7);
+          line-height: 1.6;
+        }
+      }
+    }
+
+    .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid rgba(white, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+
+      p {
+        color: rgba(white, 0.5);
+        font-size: 0.875rem;
+      }
+
+      .footer-legal {
+        display: flex;
+        gap: 2rem;
+
+        a {
+          color: rgba(white, 0.5);
+          text-decoration: none;
+          font-size: 0.875rem;
+          transition: color 0.3s ease;
+          cursor: pointer;
+
+          &:hover {
+            color: white;
+          }
+        }
+      }
+    }
+  }
 }
 
-.footer-title {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-.footer-links {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.footer-links li {
-  margin-bottom: 12px;
-}
-
-.footer-links a {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  color: #555;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.footer-links a:hover {
-  color: #2563EB;
-}
-
-.footer-divider {
-  height: 1px;
-  background-color: #e5e5e5;
-  margin-bottom: 30px;
-}
-
-.footer-bottom {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.copyright {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.85rem;
-  color: #777;
-  margin: 0;
-}
-
-.legal-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.legal-links a {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.85rem;
-  color: #777;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.legal-links a:hover {
-  color: #2563EB;
-}
-
-
+// Animations
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -666,110 +712,378 @@ a {
   }
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+// Responsive
 @media (max-width: 768px) {
   .hero-section h1 {
     font-size: 2.2rem;
   }
 
-  .hero-section p {
+  .pricing-section .pricing-container {
+    grid-template-columns: 1fr;
+
+    .pricing-card.pro {
+      transform: scale(1);
+    }
+  }
+
+  .faq-section .faq-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .nav-links {
+    display: none;
+  }
+}
+
+// Добавьте эти стили в ваш существующий pricing.component.scss файл
+
+// Modal Styles
+.modal-overlay {
+  display: none; // Initially hidden
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+
+  &.success-modal {
+    display: flex;
+  }
+}
+
+.modal-container {
+  background: white;
+  border-radius: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+  &.success-container {
+    text-align: center;
+    padding: 50px 40px;
+    max-width: 400px;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: $gray;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: $light-gray;
+    color: $dark;
+    transform: rotate(90deg);
+  }
+}
+
+.modal-header {
+  padding: 40px 40px 30px;
+  text-align: center;
+  border-bottom: 1px solid rgba($gray, 0.1);
+
+  h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: $dark;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: $gray;
     font-size: 1rem;
   }
+}
 
-  .pricing-card {
+.trial-form {
+  padding: 30px 40px 40px;
+
+  .form-group {
+    margin-bottom: 25px;
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: $dark;
+      margin-bottom: 8px;
+
+      &:after {
+        content: ' *';
+        color: $danger;
+      }
+    }
+
+    label[for="company"]:after {
+      content: ''; // Remove asterisk for optional field
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background-color: #fafafa;
+
+      &:focus {
+        outline: none;
+        border-color: $primary;
+        background-color: white;
+        box-shadow: 0 0 0 4px rgba($primary, 0.1);
+      }
+
+      &:hover {
+        border-color: #d1d5db;
+      }
+
+      &::placeholder {
+        color: #9ca3af;
+      }
+    }
+  }
+
+  .selected-plan {
+    background: rgba($primary, 0.1);
+    border: 1px solid rgba($primary, 0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+
+    i {
+      color: $primary;
+      font-size: 1.1rem;
+    }
+
+    span {
+      color: $dark;
+      font-size: 0.95rem;
+
+      strong {
+        color: $primary;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .submit-btn {
     width: 100%;
-    max-width: 350px;
+    background: $primary;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    &:hover {
+      background: $primary-dark;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba($primary, 0.3);
+
+      i {
+        transform: translateX(3px);
+      }
+    }
+
+    i {
+      transition: transform 0.3s ease;
+    }
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+
+      &:hover {
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    .fa-spinner {
+      margin-right: 8px;
+    }
+
+
   }
 
-  .select-plan-btn {
-    bottom: 30px;
-  }
+  .form-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: $gray;
 
-  .benefits-header h2 {
-    font-size: 2rem;
-  }
+    a {
+      color: $primary;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
 
-  .benefits-header p {
-    font-size: 1.1rem;
-  }
-
-  .benefit-card {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  @media (max-width: 768px) {
-    .cta-container {
-      padding: 50px 30px;
-    }
-
-    .cta-container h2 {
-      font-size: 2.2rem;
-    }
-
-    .cta-container p {
-      font-size: 1.2rem;
-    }
-  }
-  @media screen and (max-width: 991px) {
-    .footer-top {
-      gap: 30px;
-    }
-
-    .footer-column {
-      flex: 1 1 40%;
-    }
-
-    .company-info {
-      flex: 1 1 100%;
-    }
-  }
-
-  @media screen and (max-width: 768px) {
-    .footer {
-      padding: 50px 0 25px;
-    }
-
-    .footer-column {
-      flex: 1 1 100%;
-    }
-
-    .footer-bottom {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .legal-links {
-      gap: 15px;
-    }
-  }
-
-  @media screen and (max-width: 576px) {
-    .footer-top {
-      flex-direction: column;
-    }
-
-    .footer-title {
-      margin-bottom: 15px;
-    }
-
-    .social-links {
-      justify-content: flex-start;
-    }
-
-    .legal-links {
-      flex-direction: column;
-      gap: 10px;
+      &:hover {
+        text-decoration: underline;
+      }
     }
   }
 }
+
+// Success Modal Styles
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, $secondary, darken($secondary, 10%));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 30px;
+  animation: scaleIn 0.5s ease;
+
+  i {
+    color: white;
+    font-size: 2.5rem;
+    animation: checkmark 0.6s ease 0.3s both;
+  }
+}
+
+.success-container {
+  h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: $dark;
+    margin-bottom: 15px;
+  }
+
+  p {
+    color: $gray;
+    font-size: 1rem;
+    margin-bottom: 10px;
+
+    &.success-info {
+      font-size: 0.9rem;
+      margin-bottom: 30px;
+    }
+  }
+
+  .success-btn {
+    background: $primary;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: $primary-dark;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba($primary, 0.3);
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(0) rotate(45deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+// Responsive for Modal
+@media (max-width: 768px) {
+  .modal-container {
+    width: 95%;
+    max-height: 95vh;
+    margin: 10px;
+  }
+
+  .modal-header {
+    padding: 30px 25px 20px;
+
+    h2 {
+      font-size: 1.6rem;
+    }
+  }
+
+  .trial-form {
+    padding: 20px 25px 30px;
+  }
+}
+
