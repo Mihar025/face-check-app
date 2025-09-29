@@ -177,5 +177,5 @@ public interface PaymentHistoryIrsRepository extends JpaRepository<PaymentHistor
     );
 
 
-
+    List<PaymentHistoryIrs> findAllPaymentsByCompanyId(Integer id);
 }
