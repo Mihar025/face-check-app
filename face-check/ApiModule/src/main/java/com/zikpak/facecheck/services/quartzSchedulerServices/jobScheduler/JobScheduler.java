@@ -20,29 +20,40 @@ public class JobScheduler {
     public void scheduleJobs() {
         try {
             scheduleWeeklyEmployerTaxes();
-            scheduleWeeklyPayStubJob();
-            scheduleBIWeeklyPayStubJob();
-            scheduleW2OfficialForms();
+         //   scheduleWeeklyPayStubJob();
+         //   scheduleBIWeeklyPayStubJob();
+       //     scheduleW2OfficialForms();
             scheduleWeeklyPayrollReport();
             scheduleMonthlyPayrollReport();
             scheduleWeeklyHoursReport();
             scheduleMonthlyHoursReport();
-            scheduleQuarterlyTaxSummaryReportReport();
-            scheduleW3Job();
-            scheduleMTA305Job();
-            scheduleAnnualSutaReportJob();
-            scheduleQuarterlySutaReportJob();
-            scheduleFutaYearEndReportsJob();
+        //    scheduleQuarterlyTaxSummaryReportReport();
+        //    scheduleW3Job();
+        //    scheduleMTA305Job();
+        //    scheduleAnnualSutaReportJob();
+         //   scheduleQuarterlySutaReportJob();
+         //   scheduleFutaYearEndReportsJob();
             //check again this:
-            scheduleAnnualFutaReportsJob();
+         //   scheduleAnnualFutaReportsJob();
             ////
-            scheduleFutaQuarterlyComplienceJob();
-            scheduleQuarterlyFutaReportsJob();
+         //   scheduleFutaQuarterlyComplienceJob();
+         //   scheduleQuarterlyFutaReportsJob();
 
         } catch (SchedulerException e) {
             log.error("❌ Failed to schedule jobs", e);
         }
     }
+
+
+
+
+
+
+
+
+
+
+
 
     private void scheduleQuarterlyFutaReportsJob() throws SchedulerException {
         JobDetail quarterFutaEndJob = JobBuilder.newJob(QuarterlyFutaReportsJob.class)
@@ -358,7 +369,7 @@ public class JobScheduler {
         Trigger wpTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("monthlyPayrollTrigger", "REPORT_JOBS")
                 .withSchedule(CronScheduleBuilder
-                        .cronSchedule("0 0 7 ? * 1#1")
+                        .cronSchedule("0 30 7 1 * ?")
                         .inTimeZone(TimeZone.getTimeZone("America/New_York")))
                 .build();
 
@@ -404,7 +415,7 @@ public class JobScheduler {
         Trigger wpTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("monthlyHoursTrigger", "REPORT_JOBS")
                 .withSchedule(CronScheduleBuilder
-                        .cronSchedule("0 30 7 ? * 1#1")
+                        .cronSchedule("0 30 7 1 * ?")
                         .inTimeZone(TimeZone.getTimeZone("America/New_York")))
                 .build();
 
