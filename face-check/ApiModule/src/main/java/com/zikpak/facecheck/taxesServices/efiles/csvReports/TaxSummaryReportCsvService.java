@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -188,20 +189,36 @@ public class TaxSummaryReportCsvService {
         try {
             String companyKeyPart = reportData.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String fileName = String.format("taxSummaryReport_%d_%d.csv",
-                    companyId,
-                    reportData.getTaxYear()
-            );
+            String periodPart;
+            String fileName;
 
-            String key = String.format("%s/%d/taxSummaryReport/csv/%s",
+            if (reportData.getQuarter() != null) {
+                periodPart = String.format("Q%d", reportData.getQuarter());
+                fileName = String.format("tax_summary_%d_Q%d_%s.csv",
+                        reportData.getTaxYear(),
+                        reportData.getQuarter(),
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            } else {
+                periodPart = "annual";
+                fileName = String.format("tax_summary_%d_annual_%s.csv",
+                        reportData.getTaxYear(),
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
+            }
+
+            String key = String.format("%s_%d/reports/taxes/%d/%s/csv/%s",
                     companyKeyPart,
                     companyId,
+                    reportData.getTaxYear(),
+                    periodPart,
                     fileName
             );
 
+
             amazonS3Service.uploadPdfToS3(csvBytes, key);
+
             log.info("Successfully uploaded Tax Summary Report CSV to S3 with key: {}", key);
 
         } catch (Exception e) {
