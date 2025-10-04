@@ -81,21 +81,45 @@ public class TaxSummaryPdfService {
 
             byte[] pdfBytes = baos.toByteArray();
 
-            // Upload to S3
+// Генерируем правильный S3 ключ
             String companyKeyPart = reportData.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String fileName = String.format("taxSummaryReport_%d_%d.pdf",
-                    reportData.getCompanyId(),
-                    reportData.getTaxYear()
+// Определяем период (квартал или годовой)
+            String periodPart;
+            String fileName;
+
+            if (reportData.getQuarter() != null) {
+                // Квартальный отчет
+                periodPart = String.format("Q%d", reportData.getQuarter());
+                fileName = String.format("tax_summary_%d_Q%d_%s.pdf",
+                        reportData.getTaxYear(),
+                        reportData.getQuarter(),
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+                );
+            } else {
+                // Годовой отчет
+                periodPart = "annual";
+                fileName = String.format("tax_summary_%d_annual_%s.pdf",
+                        reportData.getTaxYear(),
+                        LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+                );
+            }
+
+            String key = String.format("%s_%d/reports/taxes/%d/%s/%s",
+                    companyKeyPart,                    // "facecheck_corp"
+                    reportData.getCompanyId(),          // "_123"
+                    reportData.getTaxYear(),            // "/2024"
+                    periodPart,                         // "/Q1" или "/annual"
+                    fileName                            // "tax_summary_2024_Q1_20240415.pdf"
             );
 
-            String key = String.format("%s/%d/taxSummaryReport/%s",
-                    companyKeyPart,
-                    reportData.getCompanyId(),
-                    fileName
-            );
+// Результат:
+// Квартальный: facecheck_corp_123/reports/taxes/2024/Q1/tax_summary_2024_Q1_20240415.pdf
+// Годовой: facecheck_corp_123/reports/taxes/2024/annual/tax_summary_2024_annual_20250131.pdf
+
             long ms = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
             long end = System.currentTimeMillis() - ms;
