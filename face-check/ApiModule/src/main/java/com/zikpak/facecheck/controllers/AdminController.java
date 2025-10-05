@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("admin")
 @RequiredArgsConstructor
@@ -74,7 +76,6 @@ public class AdminController {
         foremanAndAdminService.deleteWorkerPunchIn(authentication, workerId);
         return ResponseEntity.noContent().build();
     }
-    //working
     @PutMapping("/worker/{workerId}/punch-in")
     public ResponseEntity<UpdatePunchInForWorkerResponse> updatePunchInTime(
             Authentication authentication,
@@ -111,6 +112,39 @@ public class AdminController {
                 adminService.findAllWorksitesInCompany(authentication)
         );
     }
+
+
+    @PutMapping("/budget")
+    public ResponseEntity<BigDecimal> setBudget(
+            Authentication authentication,
+            @RequestBody BigDecimal budget) {
+        adminService.setUpBudget(authentication, budget);
+        return ResponseEntity.ok(budget);
+    }
+
+    @GetMapping("/budget")
+    public ResponseEntity<BigDecimal> getBudget(Authentication authentication) {
+        return ResponseEntity.ok(adminService.findCurrentBudget(authentication));
+    }
+
+    @GetMapping("/expenses")
+    public ResponseEntity<BigDecimal> getExpenses(Authentication authentication) {
+        return ResponseEntity.ok(adminService.findCurrentExpenses(authentication));
+    }
+
+    @GetMapping("/salaries-cost")
+    public ResponseEntity<BigDecimal> getSalariesCost(Authentication authentication) {
+        return ResponseEntity.ok(adminService.findCurrentCostOfSalaries(authentication));
+    }
+
+    @GetMapping("/profit")
+    public ResponseEntity<BigDecimal> getProfit(Authentication authentication) {
+        return ResponseEntity.ok(adminService.findCurrentProfit(authentication));
+    }
+
+
+
+
 
 
 }
