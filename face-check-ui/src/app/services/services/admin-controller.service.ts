@@ -19,6 +19,14 @@ import { ChangePunchOutForWorker$Params } from '../fn/admin-controller/change-pu
 import { ChangePunchOutForWorkerResponse } from '../models/change-punch-out-for-worker-response';
 import { deleteWorkerPunchIn } from '../fn/admin-controller/delete-worker-punch-in';
 import { DeleteWorkerPunchIn$Params } from '../fn/admin-controller/delete-worker-punch-in';
+import { getBudget } from '../fn/admin-controller/get-budget';
+import { GetBudget$Params } from '../fn/admin-controller/get-budget';
+import { getExpenses } from '../fn/admin-controller/get-expenses';
+import { GetExpenses$Params } from '../fn/admin-controller/get-expenses';
+import { getProfit } from '../fn/admin-controller/get-profit';
+import { GetProfit$Params } from '../fn/admin-controller/get-profit';
+import { getSalariesCost } from '../fn/admin-controller/get-salaries-cost';
+import { GetSalariesCost$Params } from '../fn/admin-controller/get-salaries-cost';
 import { getTotalEmployeesCount } from '../fn/admin-controller/get-total-employees-count';
 import { GetTotalEmployeesCount$Params } from '../fn/admin-controller/get-total-employees-count';
 import { getTotalWorksitesCount } from '../fn/admin-controller/get-total-worksites-count';
@@ -26,6 +34,8 @@ import { GetTotalWorksitesCount$Params } from '../fn/admin-controller/get-total-
 import { getWorkersInWorksite } from '../fn/admin-controller/get-workers-in-worksite';
 import { GetWorkersInWorksite$Params } from '../fn/admin-controller/get-workers-in-worksite';
 import { PageResponseWorksiteWorkerResponse } from '../models/page-response-worksite-worker-response';
+import { setBudget } from '../fn/admin-controller/set-budget';
+import { SetBudget$Params } from '../fn/admin-controller/set-budget';
 import { UpdatePunchInForWorkerResponse } from '../models/update-punch-in-for-worker-response';
 import { updatePunchInTime } from '../fn/admin-controller/update-punch-in-time';
 import { UpdatePunchInTime$Params } from '../fn/admin-controller/update-punch-in-time';
@@ -86,6 +96,56 @@ export class AdminControllerService extends BaseService {
     );
   }
 
+  /** Path part for operation `getBudget()` */
+  static readonly GetBudgetPath = '/admin/budget';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getBudget()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getBudget$Response(params?: GetBudget$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getBudget(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getBudget$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getBudget(params?: GetBudget$Params, context?: HttpContext): Observable<number> {
+    return this.getBudget$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /** Path part for operation `setBudget()` */
+  static readonly SetBudgetPath = '/admin/budget';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `setBudget()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  setBudget$Response(params: SetBudget$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return setBudget(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `setBudget$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  setBudget(params: SetBudget$Params, context?: HttpContext): Observable<number> {
+    return this.setBudget$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
   /** Path part for operation `changePunchOutForWorker()` */
   static readonly ChangePunchOutForWorkerPath = '/admin/worker/{workerId}/punch-out';
 
@@ -108,6 +168,81 @@ export class AdminControllerService extends BaseService {
   changePunchOutForWorker(params: ChangePunchOutForWorker$Params, context?: HttpContext): Observable<ChangePunchOutForWorkerResponse> {
     return this.changePunchOutForWorker$Response(params, context).pipe(
       map((r: StrictHttpResponse<ChangePunchOutForWorkerResponse>): ChangePunchOutForWorkerResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getSalariesCost()` */
+  static readonly GetSalariesCostPath = '/admin/salaries-cost';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getSalariesCost()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getSalariesCost$Response(params?: GetSalariesCost$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getSalariesCost(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getSalariesCost$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getSalariesCost(params?: GetSalariesCost$Params, context?: HttpContext): Observable<number> {
+    return this.getSalariesCost$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /** Path part for operation `getProfit()` */
+  static readonly GetProfitPath = '/admin/profit';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getProfit()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getProfit$Response(params?: GetProfit$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getProfit(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getProfit$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getProfit(params?: GetProfit$Params, context?: HttpContext): Observable<number> {
+    return this.getProfit$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /** Path part for operation `getExpenses()` */
+  static readonly GetExpensesPath = '/admin/expenses';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getExpenses()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getExpenses$Response(params?: GetExpenses$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getExpenses(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getExpenses$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getExpenses(params?: GetExpenses$Params, context?: HttpContext): Observable<number> {
+    return this.getExpenses$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 
