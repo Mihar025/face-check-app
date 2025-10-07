@@ -167,26 +167,25 @@ public class W3OfficialPDFServicer {
 
             String companyKeyPart = company.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String datePart = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
 
-            String fileName = String.format("w3_%d_%s.pdf",
-                    companyId,
-                    datePart);
-
-            String key = String.format("%s/%d/W3Official/%s/%s",
+            String key = String.format("%s_%d/forms/w3/%d/form_w3_%d_annual_%s.pdf",
                     companyKeyPart,
                     companyId,
-                    datePart,
-                    fileName);
+                    year,
+                    year,
+                    datePart
+            );
+
 
             long ms = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
             long end = System.currentTimeMillis() - ms;
 
             log.info("✅ Form W3 uploaded to S3: {}", key);
-
 
 
             metric.recordGenerated(FORM, true);
