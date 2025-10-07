@@ -83,6 +83,8 @@ CREATE  TABLE  work_site (
 
 );
 
+
+
 CREATE TABLE _user(
   id SERIAL PRIMARY KEY,
   first_name VARCHAR(255),
@@ -351,6 +353,8 @@ CREATE TABLE employer_tax_record(
     CONSTRAINT fk_employer_tax_record_user FOREIGN KEY (employee_id) REFERENCES _user(id) ON DELETE CASCADE,
     CONSTRAINT fk_employer_tax_record_worker_payroll FOREIGN KEY (pay_stub_id) REFERENCES worker_payroll(id) ON DELETE CASCADE
 );
+
+
 CREATE TABLE worker_schedule(
     id SERIAL PRIMARY KEY,
     schedule_date DATE,
@@ -366,6 +370,8 @@ CREATE TABLE worker_schedule(
     CONSTRAINT fk_worker_schedule_user FOREIGN KEY (worker_id) REFERENCES _user(id),
     CONSTRAINT fk_worker_schedule_work_site FOREIGN KEY (work_site_id) REFERENCES work_site(id)
 );
+
+
 
 CREATE TABLE worker_attendance(
     id SERIAL PRIMARY KEY,
