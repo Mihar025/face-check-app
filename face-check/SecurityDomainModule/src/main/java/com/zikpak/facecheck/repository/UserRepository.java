@@ -28,10 +28,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT u FROM User u WHERE u.company.id = :companyId ORDER BY u.createdDate DESC")
     Page<User> findAllEmployeesInCompany(Pageable pageable, @Param("companyId") Integer companyId);
 
-
-
     @Query("SELECT COUNT(u) FROM User u WHERE u.company.id = :companyId")
-    long countEmployeesByCompanyId(@Param("companyId") Integer companyId);
+    long countEmployeesInCompany(@Param("companyId") Integer companyId);
+
+
+
+
 
     @Query("""
     SELECT u 
@@ -80,6 +82,16 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     )
     Page<User> findAllEmployeesInCompanyWhoseRoleIsAdmin(Pageable pageable, @Param("companyId") Integer companyId);
 
+
+    @Query(
+            """
+        SELECT DISTINCT u
+        from User u
+        WHERE u.company.id = :companyId
+"""
+    )
+    Page<User> findAllEmployeesInCertainCompany(Pageable pageable, @Param("companyId") Integer companyId);
+
     @Query("""
     SELECT DISTINCT u, wa.checkInTime FROM User u
     JOIN u.workSites ws
@@ -117,7 +129,6 @@ AND EXISTS (
     Page<User> findAllWorkerInWorkSite(Pageable pageable,
                                        @Param("workSiteId") Integer workSiteId,
                                        @Param("companyId") Integer companyId);
-
 
     @Query("""
 SELECT DISTINCT u, wa
