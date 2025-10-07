@@ -7,6 +7,8 @@ import lombok.Data;
 @Builder
 public class UserFullContactInformation {
 
+    private Integer userId;
+
     private String fullName;
 
     private String phoneNumber;
