@@ -1,15 +1,18 @@
 package com.zikpak.facecheck.services.userService;
 
 
+import com.zikpak.facecheck.controllers.UserIdResponse;
 import com.zikpak.facecheck.domain.UserFinance;
+import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.helperServices.UserServiceImpl;
 import com.zikpak.facecheck.helperServices.WorkerPayRollService;
-import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
-import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
-import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
+import com.zikpak.facecheck.repository.UserRepository;
+import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.worker.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +26,7 @@ public class UserService implements UserFinance {
 
     private final UserServiceImpl userService;
     private final WorkerPayRollService workerPayRollService;
-
+    private final UserRepository userRepository;
 
     public void updateEmail( String email, Authentication authentication) {
         userService.updateEmail(email, authentication);
@@ -71,6 +74,18 @@ public class UserService implements UserFinance {
 
     public UserCompanyNameInformation findWorkersCompanyNameInformation(Authentication authentication) {
         return userService.findUserCompanyName(authentication);
+    }
+
+    public UserCompanyAddressResponse findWorkersCompanyAddressInformation(Authentication authentication) {
+        return userService.findUserCompanyAddress(authentication);
+    }
+
+    public UserCompanyPhoneNumberResponse findWorkersCompanyPhoneNumberInformation(Authentication authentication) {
+        return userService.findUserCompanyPhoneNumber(authentication);
+    }
+
+    public UserCompanyEmailResponse findWorkersCompanyEmailInformation(Authentication authentication) {
+        return userService.findUserCompanyEmail(authentication);
     }
 
     public WorkerCompanyIdByAuthenticationResponse findWorkersCompanyByAuthentication(Authentication authentication){
@@ -184,5 +199,11 @@ public class UserService implements UserFinance {
     }
 
 
-
+    public UserIdResponse findUserById(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        userRepository.findById(user.getId());
+        return UserIdResponse.builder()
+                .userId(user.getId())
+                .build();
+    }
 }

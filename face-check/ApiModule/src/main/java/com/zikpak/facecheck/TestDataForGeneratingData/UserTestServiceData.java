@@ -11,6 +11,7 @@ import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WcRiskClassRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,7 +29,8 @@ public class UserTestServiceData {
     private final CompanyRepository companyRepository;
     private final RoleRepository roleRepository;
     private final WorkerScheduleTest workerScheduleTest;
-    private final WcRiskClassRepository wcRiskClassRepository;
+    private final PasswordEncoder passwordEncoder;
+
 
     public User createAdmin1(){
         List<Role> allRoles = roleRepository.findAll();
@@ -55,7 +57,7 @@ public class UserTestServiceData {
         adminForCompany1.setForeman(false);
         adminForCompany1.setBusinessOwner(true);
         adminForCompany1.setUser(false);
-        adminForCompany1.setPassword("12345678");
+        adminForCompany1.setPassword(passwordEncoder.encode("12345678"));
         adminForCompany1.setEnabled(true);
         adminForCompany1.setAccountLocked(false);
         adminForCompany1.setSSN_WORKER("123-12-1234");
@@ -106,7 +108,7 @@ public class UserTestServiceData {
         adminForCompany1.setForeman(false);
         adminForCompany1.setBusinessOwner(true);
         adminForCompany1.setUser(false);
-        adminForCompany1.setPassword("12345678");
+        adminForCompany1.setPassword(passwordEncoder.encode("12345678"));
         adminForCompany1.setEnabled(true);
         adminForCompany1.setAccountLocked(false);
         adminForCompany1.setSSN_WORKER("123-12-1234");
@@ -161,7 +163,7 @@ public class UserTestServiceData {
         u.setForeman(false);
         u.setBusinessOwner(false);
         u.setUser(true);
-        u.setPassword("password1");
+        u.setPassword(passwordEncoder.encode("12345678" ));
         u.setEnabled(true);
         u.setAccountLocked(false);
         u.setSSN_WORKER("111-11-1111");
@@ -227,7 +229,7 @@ public class UserTestServiceData {
         u.setForeman(false);
         u.setBusinessOwner(false);
         u.setUser(true);
-        u.setPassword("password2");
+        u.setPassword(passwordEncoder.encode("12345678"));
         u.setEnabled(true);
         u.setAccountLocked(false);
         u.setSSN_WORKER("222-22-2222");
@@ -292,7 +294,7 @@ public class UserTestServiceData {
         u.setForeman(false);
         u.setBusinessOwner(false);
         u.setUser(true);
-        u.setPassword("password3");
+        u.setPassword(passwordEncoder.encode("12345678"));
         u.setEnabled(true);
         u.setAccountLocked(false);
         u.setSSN_WORKER("333-33-3333");
@@ -358,7 +360,7 @@ public class UserTestServiceData {
         u.setForeman(false);
         u.setBusinessOwner(false);
         u.setUser(true);
-        u.setPassword("password4");
+        u.setPassword(passwordEncoder.encode("12345678"));
         u.setEnabled(true);
         u.setAccountLocked(false);
         u.setSSN_WORKER("444-44-4444");
@@ -424,7 +426,7 @@ public class UserTestServiceData {
         u.setForeman(false);
         u.setBusinessOwner(false);
         u.setUser(true);
-        u.setPassword("password5");
+        u.setPassword(passwordEncoder.encode("12345678"));
         u.setEnabled(true);
         u.setAccountLocked(false);
         u.setSSN_WORKER("555-55-5555");
@@ -494,7 +496,8 @@ public class UserTestServiceData {
         adminForCompany1.setForeman(false);
         adminForCompany1.setBusinessOwner(false);
         adminForCompany1.setUser(true);
-        adminForCompany1.setPassword("12345678");
+        adminForCompany1.setPassword(passwordEncoder.encode("12345678"));
+
         adminForCompany1.setEnabled(true);
         adminForCompany1.setAccountLocked(false);
         adminForCompany1.setSSN_WORKER("123-12-1234");
@@ -546,7 +549,7 @@ public class UserTestServiceData {
         adminForCompany1.setForeman(false);
         adminForCompany1.setBusinessOwner(false);
         adminForCompany1.setUser(true);
-        adminForCompany1.setPassword("12345678");
+        adminForCompany1.setPassword(passwordEncoder.encode("12345678"));
         adminForCompany1.setEnabled(true);
         adminForCompany1.setAccountLocked(false);
         adminForCompany1.setSSN_WORKER("123-12-1234");
@@ -598,7 +601,7 @@ public class UserTestServiceData {
         adminForCompany1.setForeman(false);
         adminForCompany1.setBusinessOwner(false);
         adminForCompany1.setUser(true);
-        adminForCompany1.setPassword("12345678");
+        adminForCompany1.setPassword(passwordEncoder.encode("12345678"));
         adminForCompany1.setEnabled(true);
         adminForCompany1.setAccountLocked(false);
         adminForCompany1.setSSN_WORKER("123-12-1234");
@@ -650,7 +653,7 @@ public class UserTestServiceData {
         adminForCompany1.setForeman(false);
         adminForCompany1.setBusinessOwner(false);
         adminForCompany1.setUser(true);
-        adminForCompany1.setPassword("12345678");
+        adminForCompany1.setPassword(passwordEncoder.encode("12345678"));
         adminForCompany1.setEnabled(true);
         adminForCompany1.setAccountLocked(false);
         adminForCompany1.setSSN_WORKER("123-12-1234");
@@ -702,7 +705,7 @@ public class UserTestServiceData {
         adminForCompany1.setForeman(false);
         adminForCompany1.setBusinessOwner(false);
         adminForCompany1.setUser(true);
-        adminForCompany1.setPassword("12345678");
+        adminForCompany1.setPassword(passwordEncoder.encode("12345678"));
         adminForCompany1.setEnabled(true);
         adminForCompany1.setAccountLocked(false);
         adminForCompany1.setSSN_WORKER("123-12-1234");
