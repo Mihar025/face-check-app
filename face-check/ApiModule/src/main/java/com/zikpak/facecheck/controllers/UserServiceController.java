@@ -1,10 +1,9 @@
 package com.zikpak.facecheck.controllers;
 
-import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
-import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
-import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
+import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import com.zikpak.facecheck.services.userService.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,35 +19,35 @@ public class UserServiceController {
     private final UserService userService;
 
     @PutMapping("/email/{email}")
-    public ResponseEntity<Void> updateEmail(@PathVariable String email, Authentication authentication){
+    public ResponseEntity<Void> updateEmail(@Valid @PathVariable String email, Authentication authentication){
         userService.updateEmail(email, authentication);
         return ResponseEntity.ok().build();
     }
 
     //working
     @PutMapping("/password/{password}")
-    public ResponseEntity<Void> updatePassword(@PathVariable String password, Authentication authentication) {
+    public ResponseEntity<Void> updatePassword(@Valid @PathVariable String password, Authentication authentication) {
         userService.updatePassword(password, authentication);
         return ResponseEntity.ok().build();
     }
 
     //working
     @PutMapping("/phone/{phone}")
-    public ResponseEntity<Void> updatePhone(@PathVariable String phone, Authentication authentication) {
+    public ResponseEntity<Void> updatePhone(@Valid @PathVariable String phone, Authentication authentication) {
         userService.updatePhone(phone, authentication);
         return ResponseEntity.ok().build();
     }
 
     //working
     @PutMapping("/address/{homeAddress}")
-    public ResponseEntity<Void> updateHomeAddress(@PathVariable String homeAddress, Authentication authentication) {
+    public ResponseEntity<Void> updateHomeAddress( @Valid @PathVariable String homeAddress, Authentication authentication) {
         userService.updateHomeAddress(homeAddress, authentication);
         return ResponseEntity.ok().build();
     }
 
 
 
-    //working
+
     @GetMapping("/full-name")
     public ResponseEntity<UserFullNameResponse> findWorkerFullName(Authentication authentication) {
         return ResponseEntity.ok(userService.findWorkerFullName(authentication));
@@ -72,6 +71,11 @@ public class UserServiceController {
     @GetMapping("/contact-info")
     public ResponseEntity<UserFullContactInformation> findWorkerFullContactInformation(Authentication authentication) {
         return ResponseEntity.ok(userService.findWorkerFullContactInformation(authentication));
+    }
+
+    @GetMapping("/find-user-id")
+    public ResponseEntity<UserIdResponse> findWorkerId(Authentication authentication){
+        return ResponseEntity.ok(userService.findUserById(authentication));
     }
 
      // Salary Information - Base Rate
@@ -195,10 +199,28 @@ public class UserServiceController {
         return ResponseEntity.ok(userService.findWorkerTotalPayedTaxesAmountForSpecialYear(authentication, years));
     }
 
+
+
     @GetMapping("/company")
     public ResponseEntity<UserCompanyNameInformation> findWorkerCompanyName(Authentication authentication) {
         return ResponseEntity.ok(userService.findWorkersCompanyNameInformation(authentication));
     }
+
+    @GetMapping("/company/address")
+    public ResponseEntity<UserCompanyAddressResponse> findWorkerCompanyAddress(Authentication authentication) {
+        return ResponseEntity.ok(userService.findWorkersCompanyAddressInformation(authentication));
+    }
+
+    @GetMapping("/company/phoneNumber")
+    public ResponseEntity<UserCompanyPhoneNumberResponse> findWorkerCompanyPhoneNumber(Authentication authentication) {
+        return ResponseEntity.ok(userService.findWorkersCompanyPhoneNumberInformation(authentication));
+    }
+
+    @GetMapping("/company/email")
+    public ResponseEntity<UserCompanyEmailResponse> findWorkerCompanyEmail(Authentication authentication) {
+        return ResponseEntity.ok(userService.findWorkersCompanyEmailInformation(authentication));
+    }
+
 
     @GetMapping("/company/id")
     public ResponseEntity<WorkerCompanyIdByAuthenticationResponse> findWorkerCompanyIdByAuthentication(Authentication authentication) {
