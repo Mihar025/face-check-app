@@ -6,9 +6,7 @@ import com.zikpak.facecheck.entity.*;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.repository.WcRiskClassRepository;
-import com.zikpak.facecheck.requestsResponses.UserCompanyNameInformation;
-import com.zikpak.facecheck.requestsResponses.WorkerCompanyIdByAuthenticationResponse;
-import com.zikpak.facecheck.requestsResponses.WorkerPersonalInformationResponse;
+import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.admin.WorksiteWorkerResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -51,6 +50,7 @@ public class UserMapper {
 
     public UserFullContactInformation toFullUserInfoResponse(User foundedUser) {
         return UserFullContactInformation.builder()
+                .userId(foundedUser.getId())
                 .fullName(foundedUser.fullName())
                 .email(foundedUser.getEmail())
                 .phoneNumber(foundedUser.getPhoneNumber())
@@ -62,6 +62,10 @@ public class UserMapper {
 
 
     public User toWorker(RegistrationRequest request){
+        if (request.getWcRiskClassCode() == null) {
+            throw new IllegalArgumentException("WC Risk Class Code is required");
+        }
+
         WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
         User user = User.builder()
@@ -76,7 +80,7 @@ public class UserMapper {
                 .dateOfBirth(request.getDateOfBirth())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .SSN_WORKER(request.getSSN_WORKER())
+                .SSN_WORKER(passwordEncoder.encode(request.getSSN_WORKER()))
                 .gender(request.getGender())
 
                 .accountLocked(false)
@@ -116,18 +120,21 @@ public class UserMapper {
                 .wcRiskClass(wcRiskClass)
                 .build();
 
-        // Привязка списка зависимых
-        List<Dependents> deps = request.getDependentsList().stream()
-                .map(dto -> {
-                    Dependents d = new Dependents();
-                    d.setFirstName(dto.getFirstName());
-                    d.setLastName(dto.getLastName());
-                    d.setBirthDate(dto.getBirthDate());
-                    d.setUser(user);
-                    return d;
-                })
-                .toList();
-        user.setDependent(deps);
+        if (request.getDependentsList() != null && !request.getDependentsList().isEmpty()) {
+            List<Dependents> deps = request.getDependentsList().stream()
+                    .map(dto -> {
+                        Dependents d = new Dependents();
+                        d.setFirstName(dto.getFirstName());
+                        d.setLastName(dto.getLastName());
+                        d.setBirthDate(dto.getBirthDate());
+                        d.setUser(user);
+                        return d;
+                    })
+                    .toList();
+            user.setDependent(deps);
+        } else {
+            user.setDependent(new ArrayList<>()); // или Collections.emptyList()
+        }
 
         if (request.getI9Documents() != null) {
             List<DocumentsI9> docs = request.getI9Documents().stream()
@@ -188,6 +195,10 @@ public class UserMapper {
     }
 
     public User toAdmin(RegistrationAdminRequest request) {
+        if (request.getWcRiskClassCode() == null) {
+            throw new IllegalArgumentException("WC Risk Class Code is required");
+        }
+
         WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
         User user = User.builder()
@@ -197,7 +208,7 @@ public class UserMapper {
                 .middleInitial(request.getMiddleInitial())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .SSN_WORKER(request.getSSN_WORKER())
+                .SSN_WORKER(passwordEncoder.encode(request.getSSN_WORKER()))
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
                 .phoneNumber(request.getPhoneNumber())
@@ -252,19 +263,21 @@ public class UserMapper {
                 .wcRiskClass(wcRiskClass)
                 .build();
 
-        // Связываем список зависимых
-        List<Dependents> deps = request.getDependentsList().stream()
-                .map(dto -> {
-                    Dependents d = new Dependents();
-                    d.setFirstName(dto.getFirstName());
-                    d.setLastName(dto.getLastName());
-                    d.setBirthDate(dto.getBirthDate());
-                    d.setUser(user);
-                    return d;
-                })
-                .toList();
-        user.setDependent(deps);
-
+        if (request.getDependentsList() != null && !request.getDependentsList().isEmpty()) {
+            List<Dependents> deps = request.getDependentsList().stream()
+                    .map(dto -> {
+                        Dependents d = new Dependents();
+                        d.setFirstName(dto.getFirstName());
+                        d.setLastName(dto.getLastName());
+                        d.setBirthDate(dto.getBirthDate());
+                        d.setUser(user);
+                        return d;
+                    })
+                    .toList();
+            user.setDependent(deps);
+        } else{
+            user.setDependent(new ArrayList<>());
+        }
         if (request.getI9Documents() != null) {
             List<DocumentsI9> docs = request.getI9Documents().stream()
                     .map(d -> DocumentsI9.builder()
@@ -300,16 +313,7 @@ public class UserMapper {
     }
 
 
-    public UserFullContactInformation toUserFullContactInformation(User userInfo) {
-        return UserFullContactInformation.builder()
-                .fullName(userInfo.getFirstName() + " " + userInfo.getLastName())
-                .email(userInfo.getEmail())
-                .phoneNumber(userInfo.getPhoneNumber())
-                .address(userInfo.getHomeAddress())
-                .photoUrl(userInfo.getPhotoUrl())
-                .photoFileName(userInfo.getPhotoFileName())
-                .build();
-    }
+
 
     public UserCompanyNameInformation toUserCompanyNameResponse(String savedCompanyName) {
         return UserCompanyNameInformation.builder()
@@ -339,6 +343,36 @@ public class UserMapper {
                                 .map(Role::getName)
                                 .findFirst()
                                 .orElse("USER"))
+                .build();
+    }
+
+    public UserCompanyAddressResponse toUserCompanyAddressResponse(String savedCompanyName) {
+        return UserCompanyAddressResponse.builder()
+                .companyAddress(savedCompanyName)
+                .build();
+    }
+
+    public UserCompanyPhoneNumberResponse toUserCompanyPhoneNumberResponse(String savedCompanyPhone) {
+        return UserCompanyPhoneNumberResponse.builder()
+                .phoneNumber(savedCompanyPhone)
+                .build();
+    }
+
+    public UserCompanyEmailResponse toUserCompanyEmailResponse(String savedCompanyPhone) {
+        return UserCompanyEmailResponse.builder()
+                .email(savedCompanyPhone)
+                .build();
+    }
+
+    public RelatedUserInCompanyResponse toRelatedUserInCompanyResponse(User user) {
+        return RelatedUserInCompanyResponse.builder()
+                .workerId(user.getId())
+                .companyId(user.getCompany().getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .baseHourlyRate(user.getBaseHourlyRate())
+                .enabled(user.isEnabled())
                 .build();
     }
 }
