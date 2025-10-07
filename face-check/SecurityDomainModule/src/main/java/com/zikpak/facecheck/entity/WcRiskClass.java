@@ -8,26 +8,26 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "wc_risk_class")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class WcRiskClass {
 
-    /** Код класса риска (PRIMARY KEY) */
     @Id
-    @Column(length = 10, nullable = true)
+    @Column(length = 10, nullable = true, name = "code")
     private String code;
 
-    /** Описание: например, "Строительные работы — общие" */
-    @Column(nullable = true)
-    private String description;
+    @Column(nullable = true, name = "description")
+    private String description = "";
 
-    @Column(precision = 6, scale = 4, nullable = true)
-    private BigDecimal rate;
+    @Column(precision = 6, scale = 4, nullable = true, name = "rate")
+    private BigDecimal rate = BigDecimal.ZERO;;
 
-    /** Отраслевой тег для удобства: CONSTRUCTION, OFFICE, MEDICAL и т.д. */
-    @Column(length = 30, nullable = true)
-    private String industryTag;
+    @Column(length = 30, nullable = true, name = "industry_tag")
+    private String industryTag = "";
 
-    /** Год начала действия этой ставки (чтобы версии хранить) */
-    @Column(nullable = true)
-    private Integer effectiveYear;
+    @Column(nullable = true, name = "effective_year")
+    private Integer effectiveYear = 0;
 }
