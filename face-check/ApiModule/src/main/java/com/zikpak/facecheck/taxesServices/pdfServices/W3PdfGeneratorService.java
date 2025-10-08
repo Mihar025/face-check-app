@@ -30,6 +30,7 @@ import static com.itextpdf.kernel.color.Color.BLACK;
 public class W3PdfGeneratorService {
     public byte[] generateW3Pdf(CompanyYearlySummaryDTO summary, String companyName, String companyEin, String companyAddress) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdfDoc = new PdfDocument(writer);
             Document document = new Document(pdfDoc);
@@ -37,7 +38,6 @@ public class W3PdfGeneratorService {
             PdfFont regularFont = PdfFontFactory.createFont(HELVETICA);
             PdfFont boldFont = PdfFontFactory.createFont(HELVETICA_BOLD);
 
-            // Логотип
             String logoPath = "/Users/mishamaydanskiy/face-check-app/face-check/ApiModule/src/main/resources/assets/logo.jpg";
             ImageData logoData = ImageDataFactory.create(logoPath);
             Image logo = new Image(logoData);
