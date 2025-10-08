@@ -21,6 +21,8 @@ import { deleteWorkSiteById } from '../fn/work-site-controller/delete-work-site-
 import { DeleteWorkSiteById$Params } from '../fn/work-site-controller/delete-work-site-by-id';
 import { findAllWorkSites } from '../fn/work-site-controller/find-all-work-sites';
 import { FindAllWorkSites$Params } from '../fn/work-site-controller/find-all-work-sites';
+import { findAllWorkSitesForAppOwner } from '../fn/work-site-controller/find-all-work-sites-for-app-owner';
+import { FindAllWorkSitesForAppOwner$Params } from '../fn/work-site-controller/find-all-work-sites-for-app-owner';
 import { findWorkSiteAllInformation } from '../fn/work-site-controller/find-work-site-all-information';
 import { FindWorkSiteAllInformation$Params } from '../fn/work-site-controller/find-work-site-all-information';
 import { findWorkSiteById } from '../fn/work-site-controller/find-work-site-by-id';
@@ -55,8 +57,8 @@ import { SetNewCustomRadiusForWorkerInSpecialWorkSiteResponse } from '../models/
 import { SetNewCustomRadiusResponse } from '../models/set-new-custom-radius-response';
 import { updateAddress } from '../fn/work-site-controller/update-address';
 import { UpdateAddress$Params } from '../fn/work-site-controller/update-address';
-import { updateLocation } from '../fn/work-site-controller/update-location';
-import { UpdateLocation$Params } from '../fn/work-site-controller/update-location';
+import { updateLocation1 } from '../fn/work-site-controller/update-location-1';
+import { UpdateLocation1$Params } from '../fn/work-site-controller/update-location-1';
 import { updateName } from '../fn/work-site-controller/update-name';
 import { UpdateName$Params } from '../fn/work-site-controller/update-name';
 import { updateWorkingHours } from '../fn/work-site-controller/update-working-hours';
@@ -441,8 +443,8 @@ export class WorkSiteControllerService extends BaseService {
     );
   }
 
-  /** Path part for operation `updateLocation()` */
-  static readonly UpdateLocationPath = '/workSite/{workSiteId}/location';
+  /** Path part for operation `updateLocation1()` */
+  static readonly UpdateLocation1Path = '/workSite/{workSiteId}/location';
 
   /**
    * Update location of work site.
@@ -450,12 +452,12 @@ export class WorkSiteControllerService extends BaseService {
    *
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `updateLocation()` instead.
+   * To access only the response body, use `updateLocation1()` instead.
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateLocation$Response(params: UpdateLocation$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkSiteUpdateLocationResponse>> {
-    return updateLocation(this.http, this.rootUrl, params, context);
+  updateLocation1$Response(params: UpdateLocation1$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkSiteUpdateLocationResponse>> {
+    return updateLocation1(this.http, this.rootUrl, params, context);
   }
 
   /**
@@ -464,12 +466,12 @@ export class WorkSiteControllerService extends BaseService {
    *
    *
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `updateLocation$Response()` instead.
+   * To access the full response (for headers, for example), `updateLocation1$Response()` instead.
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  updateLocation(params: UpdateLocation$Params, context?: HttpContext): Observable<WorkSiteUpdateLocationResponse> {
-    return this.updateLocation$Response(params, context).pipe(
+  updateLocation1(params: UpdateLocation1$Params, context?: HttpContext): Observable<WorkSiteUpdateLocationResponse> {
+    return this.updateLocation1$Response(params, context).pipe(
       map((r: StrictHttpResponse<WorkSiteUpdateLocationResponse>): WorkSiteUpdateLocationResponse => r.body)
     );
   }
@@ -735,6 +737,39 @@ export class WorkSiteControllerService extends BaseService {
   countAllWorksitesRelatedToTheCompany(params?: CountAllWorksitesRelatedToTheCompany$Params, context?: HttpContext): Observable<number> {
     return this.countAllWorksitesRelatedToTheCompany$Response(params, context).pipe(
       map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /** Path part for operation `findAllWorkSitesForAppOwner()` */
+  static readonly FindAllWorkSitesForAppOwnerPath = '/workSite/all-worksites/app-owner';
+
+  /**
+   * Find all work sites for App Owner with pagination.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findAllWorkSitesForAppOwner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllWorkSitesForAppOwner$Response(params?: FindAllWorkSitesForAppOwner$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseWorkSiteResponse>> {
+    return findAllWorkSitesForAppOwner(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Find all work sites for App Owner with pagination.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findAllWorkSitesForAppOwner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllWorkSitesForAppOwner(params?: FindAllWorkSitesForAppOwner$Params, context?: HttpContext): Observable<PageResponseWorkSiteResponse> {
+    return this.findAllWorkSitesForAppOwner$Response(params, context).pipe(
+      map((r: StrictHttpResponse<PageResponseWorkSiteResponse>): PageResponseWorkSiteResponse => r.body)
     );
   }
 

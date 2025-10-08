@@ -4,7 +4,10 @@
 
 import { LocalTime } from '../models/local-time';
 export interface WorkSchedulerResponse {
+  endLunch?: string;
   endTime?: LocalTime;
+  isCompanyPayingLunch?: boolean;
+  startLunch?: string;
   startTime?: LocalTime;
   workerId?: number;
 }
