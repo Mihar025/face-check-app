@@ -23,60 +23,97 @@ class WorkSiteSelectorButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.read<LocalizationProvider>().localizations;
-    final screenSize = MediaQuery.of(context).size.width;
-    final isVerySmallScreen = screenSize < 320;
 
     final txtColor = textColor ?? theme.textTheme.bodyLarge?.color ?? Colors.white;
     final bgColor = backgroundColor ?? (theme.brightness == Brightness.dark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.1));
+        ? Colors.white.withOpacity(0.05)
+        : Colors.white);
 
-    final sizeFactor = isVerySmallScreen ? 0.75 : (isSmallScreen ? 0.9 : 1.0);
-    final double fontSize = 16.0 * sizeFactor;
-    final double padding = 16.0 * sizeFactor;
-    final double borderRadius = 12.0 * sizeFactor;
-    final double iconSize = 18.0 * sizeFactor;
-    final double margin = 20.0 * sizeFactor;
-
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: margin),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: Container(
-            padding: EdgeInsets.all(padding),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(
-                color: theme.brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: EdgeInsets.all(isSmallScreen ? 14 : 16),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selectedWorkSite != null
+                  ? Colors.blue.withOpacity(0.3)
+                  : (theme.brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.2)),
+              width: 1,
+            ),
+            boxShadow: theme.brightness == Brightness.light
+                ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    selectedWorkSite?.workSiteName ?? l10n.get('selectWorkSite'),
-                    style: TextStyle(
-                      color: txtColor,
-                      fontSize: fontSize,
-                      fontWeight: selectedWorkSite != null ? FontWeight.w600 : FontWeight.w500,
+            ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+                decoration: BoxDecoration(
+                  color: selectedWorkSite != null
+                      ? Colors.blue.withOpacity(0.1)
+                      : txtColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  selectedWorkSite != null
+                      ? Icons.location_on_rounded
+                      : Icons.location_searching_rounded,
+                  color: selectedWorkSite != null
+                      ? Colors.blue
+                      : txtColor.withOpacity(0.5),
+                  size: isSmallScreen ? 20 : 24,
+                ),
+              ),
+              SizedBox(width: isSmallScreen ? 12 : 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      selectedWorkSite != null
+                          ? l10n.get('workSite')
+                          : l10n.get('selectWorkSite'),
+                      style: TextStyle(
+                        color: txtColor.withOpacity(0.6),
+                        fontSize: isSmallScreen ? 12 : 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                    if (selectedWorkSite != null) ...[
+                      SizedBox(height: 2),
+                      Text(
+                        selectedWorkSite!.workSiteName ?? '',
+                        style: TextStyle(
+                          color: txtColor,
+                          fontSize: isSmallScreen ? 15 : 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: txtColor.withOpacity(0.5),
-                  size: iconSize,
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: txtColor.withOpacity(0.4),
+                size: isSmallScreen ? 20 : 24,
+              ),
+            ],
           ),
         ),
       ),
