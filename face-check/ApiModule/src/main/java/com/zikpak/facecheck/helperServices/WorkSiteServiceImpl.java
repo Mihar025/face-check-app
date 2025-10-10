@@ -18,6 +18,8 @@ import com.zikpak.facecheck.requestsResponses.workSite.WorkerCurrentlyWorkingInW
 import com.zikpak.facecheck.requestsResponses.workSite.data.*;
 import com.zikpak.facecheck.requestsResponses.workSite.selectWorkSite.SelectWorkSiteResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.updates.*;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationRequest;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationService;
 import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -45,6 +47,8 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     private final WorkSiteMapper workSiteMapper;
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
+
+    private final NotificationService notificationService;
 
     private final MetricsWorkSiteService metric;
 
@@ -104,13 +108,51 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         }
     }
 
+
+    public PageResponse<WorkSiteResponse> findAllWorkSitesFromAllCompanies(Authentication authentication, int page, int size) {
+        Timer.Sample timer = metric.startTimer();
+        try {
+
+            checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by("siteName").descending());
+            Page<WorkSite> workSites = workSiteRepository.findAll(pageable);
+            List<WorkSiteResponse> workSiteResponses = workSites.getContent().stream()
+                    .map(workSiteMapper::toWorkSiteResponse)
+                    .toList();
+
+            for (WorkSite workSite : workSites) {
+                metric.recordWorkSiteById(workSite.getSiteName(), workSite.getId(), true);
+                metric.recordOperationTime(timer, "find_all_worksite_success");
+            }
+
+            return new PageResponse<>(
+                    workSiteResponses,
+                    workSites.getNumber(),
+                    workSites.getSize(),
+                    workSites.getTotalElements(),
+                    workSites.getTotalPages(),
+                    workSites.isFirst(),
+                    workSites.isLast()
+            );
+
+        } catch (Exception e) {
+            metric.recordWorkSiteById("unknown", 0, false);
+            metric.recordOperationTime(timer, "find_all_worksite_failed");
+            metric.recordError("f_all_worksite_failed", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+
     @Transactional
     @Override
     public WorkSiteResponse createWorkSite(Authentication authentication, WorkSiteRequest request) {
         Timer.Sample timer = metric.startTimer();
         try {
-            var user = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-            var company = companyRepository.findById(user.getCompany().getId())
+
+            checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+            var company = companyRepository.findById(request.getCompanyId())
                     .orElseThrow(() -> new EntityNotFoundException("Company not found"));
             var newWorkSite = WorkSite.builder()
                     .siteName(request.getWorkSiteName())
@@ -125,6 +167,14 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     .build();
             company.addWorkSite(newWorkSite);
             var savedWorkSite = workSiteRepository.save(newWorkSite);
+
+
+            NotificationRequest notification = NotificationRequest.builder()
+                    .message("Worksite: " + newWorkSite.getSiteName()+ " " + newWorkSite.getAddress() +  " was successfully registered")
+                    .build();
+            notificationService.createNotification(company.getId(), notification);
+
+
             metric.recordWorkSiteById(newWorkSite.getSiteName(), newWorkSite.getId(), true);
             metric.recordOperationTime(timer, "create_new_work_success");
 
@@ -183,7 +233,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         Timer.Sample timer = metric.startTimer();
         try {
             checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-
 
             var foundedWorkSite = workSiteRepository.findById(workSiteId)
                     .orElseThrow(() -> new EntityNotFoundException("Work site with id " + workSiteId + " not found"));
@@ -363,7 +412,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         }
     }
 
-
     @Override
     public WorkSiteUpdateLocationResponse updateWorkSiteLocation(Authentication authentication, Integer workSiteId, WorkSiteUpdateLocationRequest request) {
         Timer.Sample timer = metric.startTimer();
@@ -470,6 +518,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         if (inactiveDate.getInactiveDate().getDayOfWeek() == DayOfWeek.SATURDAY) {
             throw new IllegalStateException("Cannot remove inactive day, in Saturday!");
         }
+
         Set<LocalDate> inactiveDays = foundedWorkSite.getInactiveDays();
         if (inactiveDays == null || !inactiveDays.contains(inactiveDate.getInactiveDate())) {
             throw new IllegalStateException("This date is not scheduled as inactive day!");
@@ -725,6 +774,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("wa.checkInTime").descending());
         Page<Object[]> results = userRepository.findAllActiveWorkersWithAttendance(pageable, adminsCompany, foundedWorksite.getWorkSiteId());
+
         List<WorkerCurrentlyWorkingInWorkSite> workerCurrentlyWorkingInWorkSitesResponse = results.getContent().stream()
                 .map(arr -> {
                     User users = (User) arr[0];
@@ -736,6 +786,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                             .punchedIn(latestAttendance.getCheckInTime())
                             .workerFullName(users.getFirstName() + " " + users.getLastName())
                             .workerPhoneNumber(users.getPhoneNumber())
+                            .photoUrl(users.getPhotoUrl())
                             .workSiteName(foundedWorksite.getWorkSiteName())
                             .workSiteAddress(foundedWorksite.getAddress())
                             .build();
@@ -751,7 +802,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                 results.isLast()
         );
     }
-
     @Transactional(rollbackOn = Exception.class)
     public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
         var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
@@ -790,7 +840,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     private User checkIsUserHasAdminRoleAndBusinessOwner(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        if(!user.isAdmin() && !user.isBusinessOwner()) {
+
+        boolean isAppOwner = user.getRoles().stream()
+                .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+        if(!user.isAdmin() && !user.isBusinessOwner() && !isAppOwner) {
             throw new AccessDeniedException("You dont have permission for this operation!");
         }
         return user;
