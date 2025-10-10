@@ -31,6 +31,10 @@ public class WorkSiteService {
         return workSiteService.findAllWorkSites(authentication, page, size);
     }
 
+    public PageResponse<WorkSiteResponse> findAllWorkSitesForAppOwner(Authentication authentication, int page, int size) {
+        return workSiteService.findAllWorkSitesFromAllCompanies(authentication, page, size);
+    }
+
     public SelectWorkSiteResponse selectWorkSite(Integer workSiteId, Authentication authentication) {
         return workSiteService.selectWorkSite(workSiteId, authentication);
     }
