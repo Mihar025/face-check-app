@@ -14,11 +14,15 @@ import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinance
 import com.zikpak.facecheck.services.workSiteService.WorkSiteService;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import com.zikpak.facecheck.taxesServices.calculators.FinanceCalculator;
+import com.zikpak.facecheck.taxesServices.services.AsyncNotificationService;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationRequest;
+import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationService;
 import com.zikpak.facecheck.taxesServices.services.sickDayService.SickLeaveService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -50,53 +57,86 @@ public class WorkAttendanceService {
         private final FinanceCalculator financeCalculator;
         private final SickLeaveService sickLeaveService;
         private final MetricsService metricsService;
+        private final AsyncNotificationService notificationService;
+
+
+
+        private static final String typePunchIn = "PUNCH-IN";
+        private static final String typePunchOut = "PUNCH-OUT";
+        private static final ExecutorService PHOTO_UPLOAD_EXECUTOR = Executors.newFixedThreadPool(10);
+
+
+
+        public CompletableFuture<String> uploadPhotoAsync(String base64, String email, String type){
+                return CompletableFuture.supplyAsync(() ->
+                        amazonS3Service.uploadAttendancePhoto(base64, email, type), PHOTO_UPLOAD_EXECUTOR);
+        }
 
 
         @Transactional
         public PunchInResponse makePunchIn(Authentication authentication, PunchInRequest punchInRequest) {
+
                 Timer.Sample  timer = metricsService.startTimer();
+                User user = validateAndGetUserByEmail(authentication);
+
+                CompletableFuture<String> photoUrlFuture = uploadPhotoAsync(
+                        punchInRequest.getPhotoBase64(),
+                        user.getEmail(),
+                        "punch-in"
+                );
+
                 try {
-                        User user = validateAndGetUserByEmail(authentication);
 
-                        checkForExistingPunchIn(user);
 
-                        WorkSite workSite = validateAndGetWorkSite(punchInRequest.getWorkSiteId());
+                                checkForExistingPunchIn(user);
 
-                        if (!user.getWorkSites().contains(workSite)) {
-                                user.getWorkSites().add(workSite);
-                                workSite.getUsers().add(user);
-                        }
+                                WorkSite workSite = validateAndGetWorkSite(punchInRequest.getWorkSiteId());
 
-                        boolean isInRadius = validateLocationForPunchIn(punchInRequest, workSite);
-                        metricsService.recordLocationValidation(
-                                workSite.getSiteName(),
-                                user.getFirstName() + " " + user.getLastName(),
-                                user.getCompany().getCompanyName(),
-                                isInRadius,
-                                true
-                        );
+                                if (!user.getWorkSites().contains(workSite)) {
+                                        user.getWorkSites().add(workSite);
+                                        workSite.getUsers().add(user);
+                                }
 
-                        LocalDate today = LocalDate.now();
-                        WorkerSchedule schedule = getWorkerScheduleForDate(user, today);
-                        validatePunchInTime(schedule);
+                                boolean isInRadius = validateLocationForPunchIn(punchInRequest, workSite);
+                                metricsService.recordLocationValidation(
+                                        workSite.getSiteName(),
+                                        user.getFirstName() + " " + user.getLastName(),
+                                        user.getCompany().getCompanyName(),
+                                        isInRadius,
+                                        true
+                                );
 
-                        long startTime = System.currentTimeMillis();
-                        String photoUrl = amazonS3Service.uploadAttendancePhoto(
-                                punchInRequest.getPhotoBase64(),
-                                user.getEmail(),
-                                "punch-in"
-                        );
-                        long endTime = System.currentTimeMillis();
-                        long duration = endTime - startTime;
+                                LocalDate today = LocalDate.now();
+                                WorkerSchedule schedule = getWorkerScheduleForDate(user, today);
+                                validatePunchInTime(schedule);
 
-                        metricsService.recordPhotoUploading(
-                                "punch_in",
-                                true,
-                                duration
-                        );
+                                long startTime = System.currentTimeMillis();
 
-                        WorkerAttendance attendance = createAttendance(user, punchInRequest, photoUrl);
-                        WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
+                                long endTime = System.currentTimeMillis();
+                                long duration = endTime - startTime;
+                                log.info("Punch IN {} ms", duration);
+
+                                metricsService.recordPhotoUploading(
+                                        "punch_in",
+                                        true,
+                                        duration
+                                );
+
+                               // String photoUrl = photoUrlFuture.join();
+                                WorkerAttendance attendance = createAttendance(user, punchInRequest, "uploading");
+                                WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
+
+                        photoUrlFuture.thenAccept(url -> {
+                                savedAttendance.setCheckInPhotoUrl(url);
+                                workerAttendanceRepository.save(savedAttendance);
+                        })
+                                .exceptionally(ex -> {
+                                        log.error("Failed to upload photo for attendance {}", savedAttendance.getId(), ex);
+                                        savedAttendance.setCheckInPhotoUrl("upload-failed");
+                                        workerAttendanceRepository.save(savedAttendance);
+                                        return null;
+                                });
+
 
                         LocalTime currentTime = LocalTime.now();
                         LocalTime scheduledTime = schedule.getExpectedStartTime();
@@ -109,6 +149,16 @@ public class WorkAttendanceService {
                         workSite.setIsWorkerDidPunchIn(Boolean.TRUE);
                         user.setCurrentWorkSite(workSite);
 
+                        notificationService.buildAsyncNotificationForPunchInOut(
+                                user.getFirstName(),
+                                user.getLastName(),
+                                workSite.getSiteName(),
+                                today,
+                                workSite.getAddress(),
+                                user.getCompany().getId(),
+                                typePunchIn
+                        );
+
                         metricsService.recordPunchIn(workSite.getSiteName(), true);
                         metricsService.recordOperationTime(timer, "punch_in");
 
@@ -120,14 +170,22 @@ public class WorkAttendanceService {
                         log.error(e.getMessage());
                         return createErrorResponseForPunchIn(e.getMessage());
                 }
-
         }
 
 
+
+        @Transactional
         public PunchOutResponse makePunchOut(Authentication authentication, PunchOutRequest punchOutRequest) {
                 Timer.Sample  timer = metricsService.startTimer();
+                User user = validateAndGetUserByEmail(authentication);
+
+                CompletableFuture<String> photoUrlAsyncOut = uploadPhotoAsync(
+                        punchOutRequest.getPhotoBase64(),
+                        user.getEmail(),
+                        "punch-out"
+                );
+
                 try {
-                        User user = validateAndGetUserByEmail(authentication);
                         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
                         LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
 
@@ -151,23 +209,22 @@ public class WorkAttendanceService {
                         }
                         boolean isInRadius = validateLocationForPunchOut(punchOutRequest, workSite);
 
-                        long startTime = System.currentTimeMillis();
-                        String photoUrl = amazonS3Service.uploadAttendancePhoto(
-                                punchOutRequest.getPhotoBase64(),
-                                user.getEmail(),
-                                "punch-out"
-                        );
-                        long endTime = System.currentTimeMillis();
-                        long duration = endTime - startTime;
 
-                        metricsService.recordPhotoUploading(
-                                "punch_out",
-                                true,
-                                duration
-                        );
+                        //String photoUrl = photoUrlAsyncOut.join();
+                        photoUrlAsyncOut.thenAccept(url -> {
+                                existingAttendance.setCheckOutPhotoUrl(url);
+                                workerAttendanceRepository.save(existingAttendance);
+                        })
+                                .exceptionally(ex -> {
+                                        log.error("Failed to upload photo for attendance {}", existingAttendance.getId(), ex);
+                                        existingAttendance.setCheckOutPhotoUrl("upload-failed");
+                                        workerAttendanceRepository.save(existingAttendance);
+                                        return null;
+                                });
+
+
 
                         existingAttendance.setCheckOutTime(LocalDateTime.now());
-                        existingAttendance.setCheckOutPhotoUrl(photoUrl);
                         existingAttendance.setCheckOutLatitude(punchOutRequest.getLatitude());
                         existingAttendance.setCheckOutLongitude(punchOutRequest.getLongitude());
                         existingAttendance.setCheckOutLocation(workSite.getAddress());
@@ -190,6 +247,18 @@ public class WorkAttendanceService {
                         log.info("After payroll update - attendance hours: {}, payroll hours: {}",
                                 savedAttendance.getHoursWorked(), payroll.getRegularHours() + payroll.getOvertimeHours());
                         workSite.setIsWorkerDidPunchIn(Boolean.FALSE);
+
+
+
+                        notificationService.buildAsyncNotificationForPunchInOut(
+                                user.getFirstName(),
+                                user.getLastName(),
+                                workSite.getSiteName(),
+                                today,
+                                workSite.getAddress(),
+                                user.getCompany().getId(),
+                                typePunchOut
+                        );
 
                         metricsService.recordLocationValidation(
                                 workSite.getSiteName(),
@@ -232,6 +301,7 @@ public class WorkAttendanceService {
                         return createErrorResponseForPunchOut(e.getMessage());
                 }
         }
+
 
 
         public List<DailyEarningResponse> getCurrentWeekEarnings(Authentication authentication) {
@@ -300,6 +370,8 @@ public class WorkAttendanceService {
                                         weekStart.atStartOfDay(),
                                         weekEnd.atTime(LocalTime.MAX));
 
+
+
                         if (weeklyAttendances.isEmpty()) {
                                 return createEmptyResponse(weekStart, weekEnd);
                         }
@@ -331,6 +403,9 @@ public class WorkAttendanceService {
                                                 .sum())
                                         .grossPay(dayAttendances.stream()
                                                 .map(a -> a.getGrossPayPerDay() != null ? a.getGrossPayPerDay() : BigDecimal.ZERO)
+                                                .reduce(BigDecimal.ZERO, BigDecimal::add))
+                                        .netPay(dayAttendances.stream()
+                                                .map(a -> a.getNetPay() != null ? a.getNetPay() : BigDecimal.ZERO)
                                                 .reduce(BigDecimal.ZERO, BigDecimal::add))
                                         .build();
 
@@ -553,9 +628,12 @@ public class WorkAttendanceService {
 
         private User validateAndGetUserByEmail(Authentication authentication) {
                 User user = ((User) authentication.getPrincipal());
+
+
                 if(user == null || user.getId() == null){
                         throw new RuntimeException("User not found");
                 }
+
                 return userRepository.findByEmail(user.getEmail())
                         .orElseThrow(() -> new RuntimeException("User not found"));
         }
@@ -582,6 +660,18 @@ public class WorkAttendanceService {
 
         private boolean validateLocationForPunchIn(PunchInRequest punchInRequest, WorkSite workSite) {
 
+                if(punchInRequest.getLatitude() == null || punchInRequest.getLongitude() == null){
+                        throw new IllegalArgumentException("Coordinates cannot be null");
+                }
+
+                if(punchInRequest.getLatitude() < -90 || punchInRequest.getLatitude() > 90){
+                        throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees");
+                }
+
+                if(punchInRequest.getLongitude() < -180 || punchInRequest.getLongitude() > 180){
+                        throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees");
+                }
+
                 boolean isInRadius  = workSiteService.isWithinRadiusForPunchInOut(
                         workSite.getId(),
                         punchInRequest.getLatitude(),
@@ -595,6 +685,18 @@ public class WorkAttendanceService {
         }
 
         private boolean validateLocationForPunchOut(PunchOutRequest punchOutRequest, WorkSite workSite) {
+
+                if(punchOutRequest.getLatitude() == null || punchOutRequest.getLongitude() == null){
+                        throw new IllegalArgumentException("Coordinates cannot be null");
+                }
+
+                if(punchOutRequest.getLatitude() < -90 || punchOutRequest.getLatitude() > 90){
+                        throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees");
+                }
+
+                if(punchOutRequest.getLongitude() < -180 || punchOutRequest.getLongitude() > 180){
+                        throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees");
+                }
 
                 boolean isInRadius = workSiteService.isWithinRadiusForPunchInOut(
                         workSite.getId(),
@@ -612,18 +714,29 @@ public class WorkAttendanceService {
         private void validatePunchInTime(WorkerSchedule schedule) {
                 LocalTime currentTime = LocalTime.now();
                 LocalTime earliestAllowed = schedule.getExpectedStartTime().minusMinutes(30);
+                LocalTime latestAllowed = schedule.getExpectedEndTime(); // НЕ ПОЗЖЕ окончания рабочего дня!
 
                 if (currentTime.isBefore(earliestAllowed)) {
                         throw new IllegalStateException(
-                                "Too early for punch-in. Allowed from: " + earliestAllowed
+                                String.format("Too early for punch-in. Allowed from: %s", earliestAllowed)
                         );
                 }
+
+                if (currentTime.isAfter(latestAllowed)) {
+                        throw new IllegalStateException(
+                                String.format("Too late for punch-in! Work day ends at: %s. Current time: %s",
+                                        latestAllowed, currentTime)
+                        );
+                }
+
+                log.info("Punch-in time validation passed. Current: {}, Allowed window: {} to {}",
+                        currentTime, earliestAllowed, latestAllowed);
         }
 
 
 
 
-        private WorkerAttendance createAttendance(User user, PunchInRequest punchInRequest, String photoUrl) {
+        private WorkerAttendance createAttendance(User user, PunchInRequest punchInRequest,String photoUrl) {
                 var foundedWorkSite = workSiteRepository.findById(punchInRequest.getWorkSiteId())
                                 .orElseThrow(() -> new RuntimeException("Work site not found"));
                 return WorkerAttendance.builder()
@@ -716,6 +829,7 @@ public class WorkAttendanceService {
                                         log.info("Creating new payroll period");
                                         return createNewPayrollPeriod(worker, now);
                                 });
+
                         currentPayroll.setRiskClass(worker.getWcRiskClass());
                         workerAttendance.setPeriodStart(currentPayroll.getPeriodStart());
                         workerAttendance.setPeriodEnd(currentPayroll.getPeriodEnd());
@@ -723,13 +837,28 @@ public class WorkAttendanceService {
                         log.info("Before calculations - payroll ID: {}, base rate: {}",
                                 currentPayroll.getId(), currentPayroll.getBaseHourlyRate());
 
+                        BigDecimal dayGrossPay = financeCalculator.calculateGrossPay(
+                                currentPayroll.getBaseHourlyRate() != null ? currentPayroll.getBaseHourlyRate() : worker.getBaseHourlyRate(),
+                                currentPayroll.getOvertimeRate() != null ? currentPayroll.getOvertimeRate() : worker.getBaseHourlyRate().multiply(BigDecimal.valueOf(1.5)),
+                                workerAttendance.getHoursWorked() != null ? workerAttendance.getHoursWorked() : 0.0,
+                                workerAttendance.getOvertimeHours() != null ? workerAttendance.getOvertimeHours() : 0.0
+                        );
+
+                        workerAttendance.setGrossPayPerDay(dayGrossPay);
+                        workerAttendanceRepository.save(workerAttendance);
+
+                        log.info("Saved attendance with gross pay: {}", dayGrossPay);
+
+                        // Теперь обновляем общий payroll
                         updatePayrollCalculations(currentPayroll, workerAttendance);
 
                         log.info("After calculations - regular hours: {}, overtime: {}, gross pay: {}",
                                 currentPayroll.getRegularHours(), currentPayroll.getOvertimeHours(), currentPayroll.getGrossPay());
 
                         WorkerPayroll savedPayroll = workerPayrollRepository.save(currentPayroll);
-                        distributePayrollToAttendances(savedPayroll);
+
+                        // ВАЖНОЕ ИЗМЕНЕНИЕ: Распределяем ТОЛЬКО net pay, не трогая уже рассчитанный gross pay
+                        distributeOnlyNetPay(savedPayroll);
 
                         metricsService.recordEarningPeriod(
                                 worker.getFirstName() + " " + worker.getLastName(),
@@ -740,14 +869,84 @@ public class WorkAttendanceService {
                         metricsService.recordOperationTime(timer, "update_on_punch_out");
 
                         return savedPayroll;
-                }catch (Exception e) {
+                } catch (Exception e) {
                         metricsService.recordOperationTime(timer, "update_on_punch_out_failed");
                         metricsService.recordError("update_on_punch_error", e.getMessage(), e);
                         throw e;
                 }
         }
 
+        // Новый метод для распределения ТОЛЬКО net pay без изменения gross pay
+        private void distributeOnlyNetPay(WorkerPayroll payroll) {
+                log.info("📊 Starting distribution of NET PAY ONLY for period {} to {}",
+                        payroll.getPeriodStart(), payroll.getPeriodEnd());
 
+                // Получаем все attendance за период с уже рассчитанным gross pay
+                List<WorkerAttendance> periodAttendances = workerAttendanceRepository
+                        .findAllByWorkerIdAndCheckInTimeBetween(
+                                payroll.getWorker().getId(),
+                                payroll.getPeriodStart().atStartOfDay(),
+                                payroll.getPeriodEnd().atTime(LocalTime.MAX)
+                        )
+                        .stream()
+                        .filter(a -> a.getGrossPayPerDay() != null && a.getGrossPayPerDay().compareTo(BigDecimal.ZERO) > 0)
+                        .sorted(Comparator.comparing(WorkerAttendance::getCheckInTime))
+                        .collect(Collectors.toList());
+
+                if (periodAttendances.isEmpty()) {
+                        log.warn("No attendances with gross pay found for distribution");
+                        return;
+                }
+
+                // Считаем общую gross pay за период (сумма всех дней)
+                BigDecimal totalDailyGross = periodAttendances.stream()
+                        .map(WorkerAttendance::getGrossPayPerDay)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                log.info("Total daily gross pay: {}, Payroll net pay to distribute: {}",
+                        totalDailyGross, payroll.getNetPay());
+
+                // Распределяем net pay пропорционально gross pay каждого дня
+                BigDecimal totalNetToDistribute = payroll.getNetPay();
+                BigDecimal distributedSoFar = BigDecimal.ZERO;
+
+                for (int i = 0; i < periodAttendances.size(); i++) {
+                        WorkerAttendance attendance = periodAttendances.get(i);
+
+                        BigDecimal dayNetPay;
+
+                        // Для последнего дня - даём остаток (чтобы избежать ошибок округления)
+                        if (i == periodAttendances.size() - 1) {
+                                dayNetPay = totalNetToDistribute.subtract(distributedSoFar);
+                                log.info("Last day adjustment - giving remaining: {}", dayNetPay);
+                        } else {
+                                // Для остальных дней - пропорционально
+                                BigDecimal dayRatio = attendance.getGrossPayPerDay()
+                                        .divide(totalDailyGross, 10, RoundingMode.HALF_UP);
+                                dayNetPay = totalNetToDistribute.multiply(dayRatio)
+                                        .setScale(2, RoundingMode.HALF_UP);
+                                distributedSoFar = distributedSoFar.add(dayNetPay);
+                        }
+
+                        // ВАЖНО: Обновляем ТОЛЬКО net pay, НЕ трогая gross pay и hours!
+                        attendance.setNetPay(dayNetPay);
+                        // НЕ изменяем grossPayPerDay, hoursWorked, overtimeHours!
+
+                        workerAttendanceRepository.save(attendance);
+
+                        log.debug("Day {} - Gross: {} (UNCHANGED), Net: {}, Hours: {} (UNCHANGED)",
+                                attendance.getCheckInTime().toLocalDate(),
+                                attendance.getGrossPayPerDay(),
+                                dayNetPay,
+                                attendance.getHoursWorked());
+                }
+
+                log.info("✅ Net pay distribution complete without changing gross pay or hours!");
+        }
+
+
+        // ВРЕМЕННОЕ ИСПРАВЛЕНИЕ для метода updatePunchForWorker
+// Добавляем вызов updatePayrollOnPunchOut вместо recalculatePayrollForPeriod
         @Transactional(rollbackOn = Exception.class)
         public UpdatePunchForWorkerResponse updatePunchForWorker(
                 Integer workerId,
@@ -757,12 +956,8 @@ public class WorkAttendanceService {
                         workerId, request.getNewPunchDate(), request.getPunchType());
 
                 try {
-                        // 1. Валидация и получение работника
                         User worker = userRepository.findById(workerId)
                                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
-
-                        // 2. Валидация запроса
-                     //   validatePunchUpdate(request, worker);
 
                         LocalDate punchDate = request.getNewPunchDate();
                         LocalTime punchTime = request.getNewPunchTime();
@@ -793,7 +988,6 @@ public class WorkAttendanceService {
                                 }
                         }
 
-
                         WorkSite workSite = workSiteRepository.findById(request.getWorkSiteId())
                                 .orElseThrow(() -> new EntityNotFoundException("Work site not found"));
 
@@ -806,6 +1000,7 @@ public class WorkAttendanceService {
                                 WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
                                 metricsService.recordPunchIn(workSite.getSiteName(), true);
                                 metricsService.recordOperationTime(timer, "punch_in");
+
                                 return UpdatePunchForWorkerResponse.builder()
                                         .workerId(workerId)
                                         .workerName(worker.fullName())
@@ -818,7 +1013,7 @@ public class WorkAttendanceService {
                                         .isSuccessful(true)
                                         .build();
 
-                } else { // PUNCH_OUT
+                        } else { // PUNCH_OUT
                                 // ДЛЯ PUNCH OUT - ДЕЛАЕМ ВСЕ РАСЧЕТЫ
                                 log.info("Processing PUNCH OUT - calculating hours and payroll");
 
@@ -833,18 +1028,17 @@ public class WorkAttendanceService {
                                         }
                                 }
 
-                                // 8. Находим правильный payroll период
-                                WorkerPayroll payroll = findOrCreatePayrollForDate(worker, punchDate);
 
-                                // 9. Устанавливаем периоды в attendance
-                                attendance.setPeriodStart(payroll.getPeriodStart());
-                                attendance.setPeriodEnd(payroll.getPeriodEnd());
-
-                                // 10. Сохраняем attendance
                                 WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
 
-                                // 11. Пересчитываем payroll для всего периода
-                                recalculatePayrollForPeriod(payroll);
+                                // Вызываем тот же метод, что и в makePunchOut!
+                                WorkerPayroll payroll = updatePayrollOnPunchOut(savedAttendance);
+
+                                // Теперь grossPayPerDay и netPay должны быть установлены правильно!
+                                log.info("After updatePayrollOnPunchOut - grossPayPerDay: {}, netPay: {}",
+                                        savedAttendance.getGrossPayPerDay(),
+                                        savedAttendance.getNetPay());
+                                // ===== КОНЕЦ ВАЖНОГО ИЗМЕНЕНИЯ =====
 
                                 // 12. Начисляем sick leave
                                 double totalHours = (savedAttendance.getHoursWorked() != null ? savedAttendance.getHoursWorked() : 0.0) +
@@ -855,9 +1049,16 @@ public class WorkAttendanceService {
                                 }
 
                                 // 13. Логирование результата
-                                log.info("Successfully updated PUNCH OUT for worker {} - regular hours: {}, overtime: {}, period: {} to {}",
-                                        workerId, savedAttendance.getHoursWorked(), savedAttendance.getOvertimeHours(),
-                                        payroll.getPeriodStart(), payroll.getPeriodEnd());
+                                log.info("Successfully updated PUNCH OUT for worker {} - regular hours: {}, overtime: {}, " +
+                                                "grossPayPerDay: {}, netPay: {}, period: {} to {}",
+                                        workerId,
+                                        savedAttendance.getHoursWorked(),
+                                        savedAttendance.getOvertimeHours(),
+                                        savedAttendance.getGrossPayPerDay(),
+                                        savedAttendance.getNetPay(),
+                                        payroll.getPeriodStart(),
+                                        payroll.getPeriodEnd());
+
                                 metricsService.recordPunchOut(
                                         workSite.getSiteName(),
                                         worker.getCompany().getCompanyName(),
@@ -873,6 +1074,7 @@ public class WorkAttendanceService {
                                         payroll.getTotalDeductions()
                                 );
                                 metricsService.recordOperationTime(timer, "punch_out");
+
                                 return UpdatePunchForWorkerResponse.builder()
                                         .workerId(workerId)
                                         .workerName(worker.fullName())
@@ -886,7 +1088,7 @@ public class WorkAttendanceService {
                                         .periodStart(payroll.getPeriodStart())
                                         .periodEnd(payroll.getPeriodEnd())
                                         .build();
-                        }
+                }
 
                 } catch (EntityNotFoundException e) {
                         metricsService.recordPunchIn("unknown", false);
@@ -908,6 +1110,10 @@ public class WorkAttendanceService {
                         throw new RuntimeException("Failed to update punch: " + e.getMessage(), e);
                 }
         }
+
+
+
+
 
         private WorkerAttendance findOrCreateAttendance(
                 User worker,
@@ -1243,7 +1449,6 @@ public class WorkAttendanceService {
                                 "No schedule found for worker on date: " + punchDate));
         }
 
-        // Метод для обработки случаев когда punch out был на следующий день
         private void handleOvernightShift(WorkerAttendance attendance) {
                 LocalDateTime checkIn = attendance.getCheckInTime();
                 LocalDateTime checkOut = attendance.getCheckOutTime();
@@ -1317,8 +1522,9 @@ public class WorkAttendanceService {
                         .build();
         }
 
+        @Transactional
         public void updatePayrollCalculations(WorkerPayroll payroll, WorkerAttendance currentAttendance) {
-                Timer.Sample  timer = metricsService.startTimer();
+                Timer.Sample timer = metricsService.startTimer();
                 log.info("🔄 Starting payroll calculations with current attendance - hours worked: {}, overtime: {}",
                         currentAttendance.getHoursWorked(), currentAttendance.getOvertimeHours());
 
@@ -1351,7 +1557,7 @@ public class WorkAttendanceService {
                                 }
                         }
 
-                        // ИСПРАВЛЕНИЕ: Округление часов до 2 знаков после запятой для точности
+                        // Округление часов до 2 знаков после запятой для точности
                         BigDecimal preciseRegularHours = BigDecimal.valueOf(totalRegularHours)
                                 .setScale(2, RoundingMode.HALF_UP);
                         BigDecimal preciseOvertimeHours = BigDecimal.valueOf(totalOvertimeHours)
@@ -1398,8 +1604,8 @@ public class WorkAttendanceService {
                                 payroll.getWorker(),
                                 payroll.getBaseHourlyRate(),
                                 payroll.getOvertimeRate(),
-                                payroll.getRegularHours(),    // ✅ Уже рассчитанные regular часы
-                                payroll.getOvertimeHours(),   // ✅ Уже рассчитанные overtime часы
+                                payroll.getRegularHours(),
+                                payroll.getOvertimeHours(),
                                 calculateYtdPFL(payroll.getWorker(), payroll.getPeriodStart()),
                                 calculateYtdSocialSecurity(payroll.getWorker(), payroll.getPeriodStart()),
                                 calculateYtdMedicare(payroll.getWorker(), payroll.getPeriodStart())
@@ -1416,7 +1622,8 @@ public class WorkAttendanceService {
                         payroll.setNyPaidFamilyLeave(response.getPfl());
                         payroll.setTotalDeductions(response.getTotalDeductions());
 
-
+                        // ВАЖНОЕ ИЗМЕНЕНИЕ: Рассчитываем grossPayPerDay ТОЛЬКО для текущего attendance
+                        // НЕ трогаем уже сохраненные grossPayPerDay для других attendance!
                         BigDecimal dayGrossPay = financeCalculator.calculateGrossPay(
                                 payroll.getBaseHourlyRate(),
                                 payroll.getOvertimeRate(),
@@ -1425,10 +1632,15 @@ public class WorkAttendanceService {
                         );
 
                         currentAttendance.setGrossPayPerDay(dayGrossPay);
+
+                        // НЕ устанавливаем netPay здесь! Это будет сделано в distributePayrollToAttendances
+                        // currentAttendance.setNetPay(response.getNetPay()); // УДАЛЕНО!
+
                         workerAttendanceRepository.save(currentAttendance);
 
-                        log.info("✅ Daily gross pay saved: {}", dayGrossPay);
+                        log.info("✅ Daily gross pay saved for current attendance: {}", dayGrossPay);
                         log.info("✅ Total payroll updated - gross: {}, net: {}", response.getGrossPay(), response.getNetPay());
+
                         metricsService.recordPayrollCalculations(
                                 payroll.getWorker().getFirstName() + " " + payroll.getWorker().getLastName(),
                                 payroll.getWorker().getCompany().getCompanyName(),
@@ -1451,7 +1663,6 @@ public class WorkAttendanceService {
                         throw e;
                 }
         }
-
 
 
 
@@ -1524,18 +1735,47 @@ public class WorkAttendanceService {
                                 payroll.getPeriodEnd().atTime(LocalTime.MAX)
                         )
                         .stream()
-                        .filter(a -> a.getGrossPayPerDay() != null && a.getGrossPayPerDay().compareTo(BigDecimal.ZERO) > 0)
-                        .sorted((a1, a2) -> a1.getCheckInTime().compareTo(a2.getCheckInTime())) // Сортируем по дате
+                        // ВАЖНО: Берем ВСЕ attendance, даже те, у которых еще нет gross pay
+                        .sorted(Comparator.comparing(WorkerAttendance::getCheckInTime))
                         .collect(Collectors.toList());
 
                 if (periodAttendances.isEmpty()) {
-                        log.warn("No attendances with gross pay found for distribution");
+                        log.warn("No attendances found for distribution");
+                        return;
+                }
+
+                // Сначала убеждаемся, что у всех attendance есть gross pay
+                for (WorkerAttendance attendance : periodAttendances) {
+                        // Если gross pay еще не рассчитан - рассчитываем
+                        if (attendance.getGrossPayPerDay() == null || attendance.getGrossPayPerDay().compareTo(BigDecimal.ZERO) == 0) {
+                                if (attendance.getHoursWorked() != null && attendance.getHoursWorked() > 0) {
+                                        BigDecimal dayGrossPay = financeCalculator.calculateGrossPay(
+                                                payroll.getBaseHourlyRate(),
+                                                payroll.getOvertimeRate(),
+                                                attendance.getHoursWorked(),
+                                                attendance.getOvertimeHours() != null ? attendance.getOvertimeHours() : 0.0
+                                        );
+                                        attendance.setGrossPayPerDay(dayGrossPay);
+                                        workerAttendanceRepository.save(attendance);
+                                        log.info("Calculated missing gross pay for attendance on {}: {}",
+                                                attendance.getCheckInTime().toLocalDate(), dayGrossPay);
+                                }
+                        }
+                }
+
+                // Теперь фильтруем только те, у которых есть gross pay для распределения net pay
+                List<WorkerAttendance> attendancesWithGrossPay = periodAttendances.stream()
+                        .filter(a -> a.getGrossPayPerDay() != null && a.getGrossPayPerDay().compareTo(BigDecimal.ZERO) > 0)
+                        .collect(Collectors.toList());
+
+                if (attendancesWithGrossPay.isEmpty()) {
+                        log.warn("No attendances with gross pay found for net pay distribution");
                         return;
                 }
 
                 // Считаем общую gross pay за период (сумма всех дней)
-                BigDecimal totalDailyGross = periodAttendances.stream()
-                        .map(a -> a.getGrossPayPerDay())
+                BigDecimal totalDailyGross = attendancesWithGrossPay.stream()
+                        .map(WorkerAttendance::getGrossPayPerDay)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 log.info("Total daily gross pay: {}, Payroll net pay to distribute: {}",
@@ -1545,13 +1785,13 @@ public class WorkAttendanceService {
                 BigDecimal totalNetToDistribute = payroll.getNetPay();
                 BigDecimal distributedSoFar = BigDecimal.ZERO;
 
-                for (int i = 0; i < periodAttendances.size(); i++) {
-                        WorkerAttendance attendance = periodAttendances.get(i);
+                for (int i = 0; i < attendancesWithGrossPay.size(); i++) {
+                        WorkerAttendance attendance = attendancesWithGrossPay.get(i);
 
                         BigDecimal dayNetPay;
 
                         // Для последнего дня - даём остаток (чтобы избежать ошибок округления)
-                        if (i == periodAttendances.size() - 1) {
+                        if (i == attendancesWithGrossPay.size() - 1) {
                                 dayNetPay = totalNetToDistribute.subtract(distributedSoFar);
                                 log.info("Last day adjustment - giving remaining: {}", dayNetPay);
                         } else {
@@ -1563,30 +1803,31 @@ public class WorkAttendanceService {
                                 distributedSoFar = distributedSoFar.add(dayNetPay);
                         }
 
+                        // ВАЖНО: Сохраняем ТОЛЬКО net pay, не трогая существующие gross pay и hours
                         attendance.setNetPay(dayNetPay);
                         workerAttendanceRepository.save(attendance);
 
-                        log.debug("Day {} - Gross: {}, Net: {}, Ratio: {}",
+                        log.debug("Day {} - Gross: {} (preserved), Net: {}, Hours: {} (preserved), Overtime: {} (preserved)",
                                 attendance.getCheckInTime().toLocalDate(),
                                 attendance.getGrossPayPerDay(),
                                 dayNetPay,
-                                attendance.getGrossPayPerDay().divide(totalDailyGross, 4, RoundingMode.HALF_UP));
+                                attendance.getHoursWorked(),
+                                attendance.getOvertimeHours());
                 }
 
                 // Проверка суммы
-                BigDecimal checkSum = periodAttendances.stream()
+                BigDecimal checkSum = attendancesWithGrossPay.stream()
                         .map(WorkerAttendance::getNetPay)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 log.info("✅ Distribution complete! Distributed {} to {} attendances. Check sum: {} (should equal {})",
-                        totalNetToDistribute, periodAttendances.size(), checkSum, totalNetToDistribute);
+                        totalNetToDistribute, attendancesWithGrossPay.size(), checkSum, totalNetToDistribute);
 
                 if (checkSum.compareTo(totalNetToDistribute) != 0) {
                         log.error("❌ ERROR: Distribution sum mismatch! Expected: {}, Actual: {}",
                                 totalNetToDistribute, checkSum);
                 }
         }
-
 
         @Transactional
         public void useSickLeave(Integer userId,
