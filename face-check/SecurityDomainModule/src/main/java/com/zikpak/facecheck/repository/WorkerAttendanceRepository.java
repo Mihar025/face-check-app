@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.nio.channels.FileChannel;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -74,6 +75,17 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
             @Param("companyId") Integer companyId,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime
-    );}
+    );
+
+
+    @Query("""
+    SELECT wa.checkInPhotoUrl, wa.checkOutPhotoUrl 
+    FROM WorkerAttendance wa
+    WHERE wa.worker.id = :workerId
+    AND (wa.checkInPhotoUrl IS NOT NULL OR wa.checkOutPhotoUrl IS NOT NULL)
+    
+ """)
+    List<Object[]> findAllPhotosUrlRelatedToUser(@Param("workerId") Integer workerId);
+}
 
 
