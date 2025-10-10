@@ -1,6 +1,7 @@
 package com.zikpak.facecheck.requestsResponses.admin;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
+@AllArgsConstructor
 public class WorksiteWorkerResponse {
 
     private Integer workerId;

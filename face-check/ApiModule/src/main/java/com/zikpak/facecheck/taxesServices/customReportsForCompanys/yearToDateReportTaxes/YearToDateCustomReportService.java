@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 
@@ -35,21 +36,23 @@ public class YearToDateCustomReportService {
 
         String companyKeyPart = dto.getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        String periodPart = startDate.toString()
-                + "_to_"
-                + endDate.toString();
+        int year = endDate.getYear();
 
-        // Собираем финальный ключ
+        String startDateStr = startDate.format(DateTimeFormatter.BASIC_ISO_DATE);
+        String endDateStr = endDate.format(DateTimeFormatter.BASIC_ISO_DATE);
+
         String key = String.format(
-                "%s/%d/yearToDate/%s.pdf",
+                "%s_%d/reports/year_to_date/%d/ytd_report_%s_to_%s.pdf",
                 companyKeyPart,
                 companyId,
-                periodPart
+                year,
+                startDateStr,
+                endDateStr
         );
 
-        // Загружаем в S3
         try {
             amazonS3Service.uploadPdfToS3(report, key);
             log.info("Year to date report was uploaded to S3 with key: {}", key);
@@ -59,7 +62,6 @@ public class YearToDateCustomReportService {
 
         return report;
     }
-
 
 
 
