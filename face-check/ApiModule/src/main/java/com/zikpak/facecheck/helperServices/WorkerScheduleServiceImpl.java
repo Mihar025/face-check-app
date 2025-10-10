@@ -10,6 +10,7 @@ import com.zikpak.facecheck.requestsResponses.schedule.*;
 import com.zikpak.facecheck.requestsResponses.workScheduler.WorkSchedulerResponse;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -225,7 +226,7 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
     private void checkIsPersonHasAdminAndBusinessOwnerRoleAuthenticatedAndFindHim(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         if(!user.isAdmin() && !user.isBusinessOwner()){
-            throw new RuntimeException("You dont have permission to do this operation");
+            throw new AccessDeniedException("You dont have permission to do this operation");
         }
     }
 
