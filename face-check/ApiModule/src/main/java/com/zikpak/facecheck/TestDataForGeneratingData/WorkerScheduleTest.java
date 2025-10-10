@@ -22,7 +22,7 @@ public class WorkerScheduleTest {
 
         WorkerSetScheduleRequest request = new WorkerSetScheduleRequest();
         request.setStartTime(LocalTime.of(7, 30));
-        request.setEndTime(LocalTime.of(15, 30));
+        request.setEndTime(LocalTime.of(20, 30));
         request.setStartLunch(LocalDateTime.of(today, LocalTime.of(12, 0)));
         request.setEndLunch(LocalDateTime.of(today, LocalTime.of(12, 45)));
         request.setIsCompanyPayingLunch(true);
