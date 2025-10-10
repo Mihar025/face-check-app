@@ -2,10 +2,7 @@ package com.zikpak.facecheck.requestsResponses.workSite;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalTime;
 
@@ -14,6 +11,9 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @Builder
 public class WorkSiteRequest {
+
+
+    private Integer companyId;
 
     @NotNull(message = "Work site name cannot be null")
     @NotEmpty(message = "Work site name is mandatory!")
