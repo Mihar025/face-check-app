@@ -3,6 +3,7 @@ package com.zikpak.facecheck.controllers;
 import com.zikpak.facecheck.requestsResponses.attendance.*;
 import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinanceScreenResponse;
 import com.zikpak.facecheck.services.workAttendanceService.WorkAttendanceService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -21,12 +22,12 @@ public class WorkerAttendanceController {
 
     @PostMapping("/punch-in")
     public ResponseEntity<PunchInResponse> punchIn(
-            @RequestBody PunchInRequest request,
+            @Valid @RequestBody PunchInRequest request,
             Authentication authentication) {
         long start = System.currentTimeMillis();
         PunchInResponse response = workAttendanceService.makePunchIn(authentication, request);
         long end = System.currentTimeMillis();
-        System.out.println(" Время выполнения запроса: " + (end - start) + " мс");
+        System.out.println("Время выполнения запроса: " + (end - start) + " мс");
         return response.getIsSuccessful()
                 ? ResponseEntity.ok(response)
                 : ResponseEntity.badRequest().body(response);
@@ -34,7 +35,7 @@ public class WorkerAttendanceController {
 
     @PostMapping("/punch-out")
     public ResponseEntity<PunchOutResponse> punchOut(
-            @RequestBody PunchOutRequest request,
+            @Valid @RequestBody PunchOutRequest request,
             Authentication authentication) {
         long start = System.currentTimeMillis();
         PunchOutResponse response = workAttendanceService.makePunchOut(authentication, request);
