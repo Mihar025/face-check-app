@@ -30,12 +30,27 @@ public class WorkerSchedule {
     @JoinColumn(name = "work_site_id")
     private WorkSite workSite;
 
+    @Column(name = "schedule_date")
     private LocalDate scheduleDate;
+
+    @Column(name = "expected_start_time")
     private LocalTime expectedStartTime;
+
+    @Column(name = "expected_end_time")
     private LocalTime expectedEndTime;
+
+    @Column(name = "shift")
     private String shift;
+
+    @Column(name = "is_on_duty")
     private Boolean isOnDuty;
+
+    @Column(name = "start_lunch")
     private LocalDateTime startLunch;
+
+    @Column(name = "end_lunch")
     private LocalDateTime endLunch;
+
+    @Column(name = "is_company_paying_lunch")
     private Boolean isCompanyPayingLunch;
 }
