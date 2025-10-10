@@ -175,5 +175,5 @@ where wp.company.id = :companyId
     );
 
 
-
+    List<WorkerPayroll> findAllByCompanyId(Integer companyId);
 }

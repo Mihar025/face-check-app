@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -526,19 +527,33 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
                 year
         );
 
+// Генерируем правильный S3 ключ
         String companyKeyPart = company.getCompanyName()
                 .trim()
-                .replaceAll("[^A-Za-z0-9]+", "_");
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_");
 
-        // 3) Составить ключ
-        String key = String.format(
-                "%s/%d/w2-statements/%d/w2_%d.pdf",
-                companyKeyPart,       // Acme_Corp_
-                company.getId(),      // 42
-                year,                 // 2025
-                workerId              // 7
+        String employeeKeyPart = String.format("%s_%s_%d",
+                worker.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                worker.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                workerId
         );
+
+        String key = String.format(
+                "%s_%d/employees/%s/statements/w2/%d/w2_statement_%d_%s_%s.pdf",
+                companyKeyPart,         // "facecheck_corp"
+                company.getId(),        // "_123"
+                employeeKeyPart,        // "john_doe_456"
+                year,                   // "/2024"
+                year,                   // "2024"
+                worker.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                worker.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_")
+        );
+
+
+
         amazonS3Service.uploadPdfToS3(pdfContent, key);
+        log.info("✅ W2 Statement uploaded to S3: {}", key);
         return pdfContent;
     }
 
