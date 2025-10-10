@@ -24,6 +24,9 @@ public class WorkerCurrentlyWorkingInWorkSite {
         private String workSiteName;
         private String workSiteAddress;
 
+        private String photoUrl;
+
+
 
 
 
