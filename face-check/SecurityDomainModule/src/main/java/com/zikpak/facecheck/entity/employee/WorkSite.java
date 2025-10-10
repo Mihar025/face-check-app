@@ -23,16 +23,31 @@ public class WorkSite {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "site_name")
     private String siteName;
+
+    @Column(name = "address")
     private String address;
+
+    @Column(name = "latitude")
     private Double latitude;
+
+    @Column(name = "longitude")
     private Double longitude;
+
+    @Column(name = "allowed_radius")
     private Double allowedRadius;
 
+    @Column(name = "work_day_start")
     private LocalTime workDayStart;
+
+    @Column(name = "work_day_end")
     private LocalTime workDayEnd;
+
+    @Column(name = "is_active")
     private Boolean isActive;
-    @Column(nullable = true)
+
+    @Column(nullable = true, name = "is_worker_did_punch_in")
     private Boolean isWorkerDidPunchIn;
 
     @ElementCollection

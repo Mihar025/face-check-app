@@ -40,6 +40,21 @@ public class WorkSiteController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(workSiteService.findAllWorkSites(authentication, page, size));
     }
+
+
+
+    @GetMapping("/all-worksites/app-owner")
+    @Operation(summary = "Find all work sites for App Owner with pagination")
+    public ResponseEntity<PageResponse<WorkSiteResponse>> findAllWorkSitesForAppOwner(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(workSiteService.findAllWorkSitesForAppOwner(authentication, page, size));
+    }
+
+
+
+
     //working
     @PostMapping("/select/{workSiteId}")
     @Operation(summary = "Select work site")
@@ -87,7 +102,7 @@ public class WorkSiteController {
     public ResponseEntity<WorkSiteUpdateAddressResponse> updateAddress(
             Authentication authentication,
             @PathVariable Integer workSiteId,
-            @RequestBody UpdateWorkSiteAddress updateWorkSiteAddress) {
+            @Valid @RequestBody UpdateWorkSiteAddress updateWorkSiteAddress) {
         return ResponseEntity.ok(workSiteService.updateWorkSiteAddress(authentication, workSiteId, updateWorkSiteAddress));
     }
 
@@ -118,7 +133,7 @@ public class WorkSiteController {
     public ResponseEntity<Void> setActive(
             Authentication authentication,
             @PathVariable Integer workSiteId,
-            @RequestBody UpdateStatusWorkSiteRequest updateStatusWorkSiteRequest) {
+            @Valid @RequestBody UpdateStatusWorkSiteRequest updateStatusWorkSiteRequest) {
         workSiteService.setWorkSiteActiveOrNotActive(authentication, workSiteId, updateStatusWorkSiteRequest);
         return ResponseEntity.ok().build();
     }
@@ -171,7 +186,7 @@ public class WorkSiteController {
             Authentication authentication,
             @PathVariable Integer workSiteId,
             @PathVariable Integer userId,
-            @RequestBody CanPunchOutRequestWorkSite canPunchOutRequestWorkSite) {
+            @RequestBody @Valid CanPunchOutRequestWorkSite canPunchOutRequestWorkSite) {
         return ResponseEntity.ok(workSiteService.canPunchInOut(authentication, workSiteId, userId, canPunchOutRequestWorkSite));
     }
 
@@ -216,6 +231,8 @@ public class WorkSiteController {
     }
 
 
+
+
     @DeleteMapping("/{workSiteId}")
     @Operation(summary = "Delete work site by ID")
     public ResponseEntity<Void> deleteWorkSiteById(
@@ -239,5 +256,4 @@ public class WorkSiteController {
             Authentication authentication) {
         return ResponseEntity.ok(workSiteService.findSumOfWorkSitesRelatedToCompany(authentication));
     }
-
 }
