@@ -6,6 +6,7 @@ import com.zikpak.facecheck.repository.RoleRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -16,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaAuditing
 @EnableAsync
 @EnableScheduling
+@EnableCaching
 public class FaceCheckApplication {
 
     public static void main(String[] args) {
@@ -33,9 +35,15 @@ public class FaceCheckApplication {
                 roleRepository.save(Role.builder().name("ADMIN").build());
                 System.out.println("Created ADMIN role");
             }
+
             if(roleRepository.findByName("FOREMAN").isEmpty()){
                 roleRepository.save(Role.builder().name("FOREMAN").build());
                 System.out.println("Created FOREMAN role");
+            }
+
+            if(roleRepository.findByName("AppOwner").isEmpty()){
+                roleRepository.save(Role.builder().name("AppOwner").build());
+                System.out.println("Created AppOwner role");
             }
         };
     }
