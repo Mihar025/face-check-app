@@ -42,6 +42,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -77,6 +78,7 @@ public class AuthenticationService {
 
             user.setRoles(List.of(role));
             user.setCompany(company);
+            user.setEnabled(true);
 
             userRepository.save(user);
 
@@ -108,6 +110,7 @@ public class AuthenticationService {
 
         user.setRoles(List.of(role));
         user.setCompany(company);
+        user.setEnabled(true);
 
         userRepository.save(user);
         try {
@@ -126,6 +129,7 @@ public class AuthenticationService {
 
             var role = authenticationServiceImpl.findRoleAdmin();
             var user = userMapper.toAdmin(request);
+            user.setEnabled(true);
 
             user.setRoles(List.of(role));
 
@@ -226,6 +230,46 @@ public class AuthenticationService {
             throw e;
         }
     }
+
+
+    @Transactional(rollbackOn = Exception.class)
+    public void registerCompanyByAppOwner(CompanyRegistrationAppOwnerRequest companyRegistrationRequest, Authentication authentication) throws MessagingException {
+        Timer.Sample timer = metric.startTimer();
+        try {
+            User user = ((User) authentication.getPrincipal());
+
+            boolean isAppOwner = user.getRoles().stream()
+                    .anyMatch(role -> "AppOwner".equals(role.getName()));
+            boolean isAdmin = user.isAdmin();
+
+
+            if (!isAppOwner && !isAdmin) {
+                throw new AccessDeniedException("You dont have permission for this operation");
+            }
+
+            var newCompany = authenticationServiceImpl.createNewCompanyAppOwner(companyRegistrationRequest);
+
+            Optional<User> foundedAdmin = userRepository.findById(companyRegistrationRequest.getCompanyAdminId());
+
+            if(foundedAdmin.isPresent()) {
+                User admin = foundedAdmin.get();
+                authenticationServiceImpl.setBusinessInformation(admin, newCompany);
+            }
+
+            NotificationRequest notification = NotificationRequest.builder()
+                    .message("Comapny: " + newCompany.getCompanyName() + " was successfully registered")
+                    .build();
+
+            notificationService.createNotification(newCompany.getId(),notification);
+
+            metric.recordOperationTime(timer, "register_company_successfully");
+        } catch (Exception e){
+            metric.recordError("register_failed", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+
 
 
  public AuthenticationResponse authenticate(@Valid AuthenticationRequest request) {
