@@ -2,6 +2,7 @@ package com.zikpak.facecheck.security;
 
 
 import com.amazonaws.services.kms.model.NotFoundException;
+import com.zikpak.facecheck.authRequests.CompanyRegistrationAppOwnerRequest;
 import com.zikpak.facecheck.authRequests.CompanyRegistrationRequest;
 import com.zikpak.facecheck.authRequests.PaymentRequest;
 import com.zikpak.facecheck.domain.AuthenticationServiceRegAuth;
@@ -97,6 +98,15 @@ public class AuthenticationServiceImpl implements AuthenticationServiceRegAuth {
         return companyRepository.findByCompanyName(companyRegistrationRequest.getCompanyName())
                 .orElseGet(() -> {
                     var company = companyMapper.createNewCompany(companyRegistrationRequest);
+                    return companyRepository.save(company);
+                });
+    }
+
+
+    public Company createNewCompanyAppOwner(CompanyRegistrationAppOwnerRequest companyRegistrationRequest) {
+        return companyRepository.findByCompanyName(companyRegistrationRequest.getCompanyName())
+                .orElseGet(() -> {
+                    var company = companyMapper.createNewAppOwnerCompany(companyRegistrationRequest);
                     return companyRepository.save(company);
                 });
     }
