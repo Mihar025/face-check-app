@@ -2,98 +2,163 @@ package com.zikpak.facecheck.taxesServices.scheduler;
 
 
 import com.zikpak.facecheck.entity.Company;
-import com.zikpak.facecheck.entity.CompanyPaymentPosition;
-import com.zikpak.facecheck.entity.Role;
 import com.zikpak.facecheck.entity.User;
-import com.zikpak.facecheck.entity.employee.WorkerAttendance;
-import com.zikpak.facecheck.entity.employee.WorkerPayroll;
-import com.zikpak.facecheck.helperServices.WorkerPayRollService;
 import com.zikpak.facecheck.repository.*;
-import com.zikpak.facecheck.security.mailServiceForReports.ReportsMailSender;
-import com.zikpak.facecheck.taxesServices.ASCIIservices.EFW2GeneratorService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportDTO;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportPdfService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.futaCustomTaxReport.FutaReportService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.hoursReport.HoursReportDTO;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.hoursReport.HoursReportDataService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.hoursReport.HoursReportPdfService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.payrollReport.PayrollSummaryDataService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.payrollReport.PayrollSummaryReportDTO;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.payrollReport.PayrollSummaryReportService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.sutaCustomTaxReturn.SutaReportDTO;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.sutaCustomTaxReturn.SutaReportPdfService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.sutaCustomTaxReturn.SutaReportService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryDataService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryPdfService;
-import com.zikpak.facecheck.taxesServices.customReportsForCompanys.taxSummary.TaxSummaryReportDTO;
-import com.zikpak.facecheck.taxesServices.efiles.xml.Form940ScheduleAXmlGenerator;
-import com.zikpak.facecheck.taxesServices.efiles.xml.Form940XmlGenerator;
-import com.zikpak.facecheck.taxesServices.efiles.xml.Form941ScheduleBXmlGenerator;
-import com.zikpak.facecheck.taxesServices.efiles.xml.Form941XmlGenerator;
-import com.zikpak.facecheck.taxesServices.efiles.csvReports.*;
-import com.zikpak.facecheck.taxesServices.pdfServices.*;
-import com.zikpak.facecheck.taxesServices.services.EmployerTaxService;
-import com.zikpak.facecheck.taxesServices.services.PayStubService;
-import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcRiskCsvService;
-import com.zikpak.facecheck.taxesServices.services.wcRiskService.WcRiskServiceForPDF;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class EmployerTaxScheduler {
 
-    private final WorkerPayrollRepository workerPayrollRepository;
-    private final EmployerTaxService employerTaxService;
-    private final PayStubService payStubService;
-    private final WorkerPayRollService workerPayRollService;
     private final UserRepository userRepository;
-    private final PayrollSummaryDataService payrollSummaryDataService;
-    private final PayrollSummaryReportService payrollSummaryReportService;
     private final CompanyRepository companyRepository;
+    private final WorkerPayrollRepository workerPayrollRepository;
+    private final PaymentHistoryIrsRepository paymentHistoryIrsRepository;
+
+    /*
+    private final PayrollSummaryDataService payrollSummaryDataService;
     private final HoursReportDataService hoursReportDataService;
-    private final HoursReportPdfService hoursReportPdfService;
     private final WorkerAttendanceRepository attendanceRepository;
     private final RoleRepository roleRepository;
     private final TaxSummaryDataService taxSummaryDataService;
-    private final TaxSummaryPdfService taxSummaryPdfService;
-
     private final HoursReportCsvService hoursReportCsvService;
     private final PayrollSummaryReportCsvService payrollSummaryReportCsvService;
     private final TaxSummaryReportCsvService taxSummaryReportCsvService;
-
     private final Form941XmlGenerator form941XmlGenerator;
     private final Form941ScheduleBXmlGenerator form941ScheduleBXmlGenerator;
     private final EFW2GeneratorService efw2GeneratorService;
-
     private final FillForm940SA fillForm940SA;
     private final Form940PdfGeneratorService form940PdfGeneratorService;
-
     private final Form940XmlGenerator form940XmlGenerator;
     private final Form940ScheduleAXmlGenerator generateForm940ScheduleAXml;
-
-
-    private final FutaReportService futaReportService;
-    private final FutaReportPdfService futaReportPdfService;
-
-    private final SutaReportService sutaReportService;
-    private final SutaReportPdfService sutaReportPdfService;
-
     private final ReportsMailSender reportsMailSender;
-    private final W2OfficialPDFService w2OfficialPDFService;
-    private final W3OfficialPDFServicer w3OfficialPDFServicer;
 
-    private final FillFormMTA305 fillFormMTA305;
+     */
+
+
+    @Scheduled(cron = "0 0 17 * * SUN")
+    @Transactional
+    public void updateCostOfSalaries(){
+        List<Company> companies = companyRepository.findAll();
+
+        for(Company company : companies){
+            try{
+                updateCompanyCostOfSalaries(company);
+            } catch (Exception e){
+                log.error(e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    @Scheduled(cron = "0 0 18 * * SUN")
+    @Transactional
+    public void updateExpenses(){
+        List<Company> companies = companyRepository.findAll();
+
+        for(Company company : companies){
+            try{
+                updateCompanyTotalExpenses(company);
+            } catch (Exception e){
+                log.error(e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 0 19 * * SUN")
+    @Transactional
+    public void updateProfit(){
+        List<Company> companies = companyRepository.findAll();
+
+        for(Company company : companies){
+            try{
+                updateCompanyRemainsBalance(company);
+            } catch (Exception e){
+                log.error(e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private void updateCompanyCostOfSalaries(Company company) {
+        User owner = company.getCompanyOwner();
+
+        if(owner == null){
+            return;
+        }
+
+        BigDecimal totalCostOfSalaries = workerPayrollRepository.findAllByCompanyId(company.getId())
+                .stream()
+                .map(payroll -> payroll.getGrossPay() != null ? payroll.getGrossPay() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal previousCost = owner.getCostOfSalaries();
+
+        owner.setCostOfSalaries(totalCostOfSalaries);
+        userRepository.save(owner);
+
+        log.info("Updated company {} - Previous cost: {}, New cost: {}, Difference: {}",
+                company.getCompanyName(),
+                previousCost,
+                totalCostOfSalaries,
+                totalCostOfSalaries.subtract(previousCost));
+    }
+
+
+    private void updateCompanyTotalExpenses(Company company) {
+        User owner = company.getCompanyOwner();
+        if(owner == null) return;
+
+        BigDecimal totalSalaries = owner.getCostOfSalaries();
+
+        BigDecimal totalIrsPayments = paymentHistoryIrsRepository.findAllPaymentsByCompanyId(company.getId())
+                .stream()
+                .map(payments -> payments.getAmount() != null ? payments.getAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalExpenses = totalSalaries.add(totalIrsPayments);
+
+        owner.setExpenses(totalExpenses);
+        userRepository.save(owner);
+
+        log.info("Updated company {} - Total salaries: {}, IRS payments: {}, Total expenses: {}",
+                company.getCompanyName(), totalSalaries, totalIrsPayments, totalExpenses);
+    }
+
+
+    private void updateCompanyRemainsBalance(Company company) {
+        User owner = company.getCompanyOwner();
+        if(owner == null){
+            return;
+        }
+
+        BigDecimal budget = owner.getActualBudget();
+        BigDecimal expenses = owner.getExpenses();
+        BigDecimal profit = budget.subtract(expenses);
+        owner.setProfit(profit);
+        userRepository.save(owner);
+    }
+    }
+
+
+
+
+
+
+
+
+
+
 
 /*
     @Scheduled(cron = "0 0 4 * * SUN") // каждое воскресенье в 4:00 утра
@@ -685,7 +750,7 @@ public class EmployerTaxScheduler {
 // =============================================================================
 // 📅 MONTHLY CSV REPORTS
 // =============================================================================
-
+/*
     @Scheduled(cron = "0 15 7 1-7 * SUN", zone = "America/New_York") // 15 минут после PDF генерации
     public void generateMonthlyPayrollReportsCsv() {
         log.info("📊 Monthly PayrollReportCSV Scheduler запущен: генерируем месячные CSV отчеты");
@@ -1942,6 +2007,7 @@ public class EmployerTaxScheduler {
     }
 
 */
+    /*
 
     private boolean isNYCCompany(Company company) {
         String city = company.getCompanyCity();
@@ -1976,6 +2042,7 @@ public class EmployerTaxScheduler {
     /**
      * Проверяет, является ли ZIP код NYC Zone 1
      */
+    /*
     private boolean isNYCZipCode(String zipCode) {
         if (zipCode == null || zipCode.length() < 5) {
             return false;
@@ -2040,4 +2107,5 @@ public class EmployerTaxScheduler {
 
     }
 
-}
+     */
+
