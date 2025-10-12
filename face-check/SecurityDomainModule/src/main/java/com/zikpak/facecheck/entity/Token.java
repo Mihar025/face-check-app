@@ -17,9 +17,16 @@ public class Token {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "token")
     private String token;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
+
+    @Column(name = "validated_at")
     private LocalDateTime validatedAt;
 
     @ManyToOne
