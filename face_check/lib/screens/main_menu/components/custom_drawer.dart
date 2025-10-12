@@ -34,7 +34,12 @@ class _CustomDrawerState extends State<CustomDrawer> {
 
   Future<void> _refreshApplication() async {
     try {
+      // Сначала закрываем drawer
       Navigator.pop(context);
+
+      // Проверяем mounted перед показом диалога
+      if (!mounted) return;
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -44,17 +49,27 @@ class _CustomDrawerState extends State<CustomDrawer> {
       await _controller.loadUserInfo();
       await _loadUserRole();
 
-      if (context.mounted) {
-        Navigator.pop(context);
-        Navigator.pushReplacementNamed(context, '/main');
-      }
+      // ВАЖНО: используем mounted вместо context.mounted
+      if (!mounted) return;
+
+      // Закрываем диалог
+      Navigator.pop(context);
+
+      // Проверяем еще раз перед навигацией
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(context, '/main');
     } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка при обновлении: $e')),
-        );
-      }
+      // Проверяем mounted перед любым использованием context
+      if (!mounted) return;
+
+      Navigator.pop(context);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при обновлении: $e')),
+      );
     }
   }
 
