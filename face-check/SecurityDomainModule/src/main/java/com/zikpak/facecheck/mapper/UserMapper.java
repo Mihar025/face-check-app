@@ -9,6 +9,7 @@ import com.zikpak.facecheck.repository.WcRiskClassRepository;
 import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.admin.WorksiteWorkerResponse;
 import com.zikpak.facecheck.requestsResponses.worker.*;
+import com.zikpak.facecheck.taxesServices.services.cryptoService.CryptoService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +24,9 @@ import java.util.List;
 public class UserMapper {
     private final PasswordEncoder passwordEncoder;
     private final WcRiskClassRepository wcRiskClassRepository;
+    private final CryptoService cryptoService;
 
+    // ВСЕ СУЩЕСТВУЮЩИЕ МЕТОДЫ ДЛЯ RESPONSE
     public UserFullNameResponse toUserFullNameResponse(String savedFullName) {
         return UserFullNameResponse.builder()
                 .fullName(savedFullName)
@@ -60,7 +63,84 @@ public class UserMapper {
                 .build();
     }
 
+    public WorksiteWorkerResponse toUserWorkSiteResponse(User user) {
+        return WorksiteWorkerResponse.builder()
+                .workerId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
+                .workSiteAddress(user.getWorkSites().stream()
+                        .findFirst()
+                        .map(WorkSite::getAddress)
+                        .orElse(null))
+                .punchIn(user.getAttendances().stream()
+                        .max(Comparator.comparing(WorkerAttendance::getCheckInTime))
+                        .map(WorkerAttendance::getCheckInTime)
+                        .orElseThrow(() -> new EntityNotFoundException("No check-in time found for user: " + user.getId())))
+                .build();
+    }
 
+    public UserCompanyNameInformation toUserCompanyNameResponse(String savedCompanyName) {
+        return UserCompanyNameInformation.builder()
+                .companyName(savedCompanyName)
+                .build();
+    }
+
+    public WorkerCompanyIdByAuthenticationResponse toWorkerCompanyIdByAuthenticationResponse(Integer foundedCompanyId) {
+        return  WorkerCompanyIdByAuthenticationResponse.builder()
+                .companyId(foundedCompanyId)
+                .build();
+    }
+
+    public WorkerPersonalInformationResponse toWorkerPersonalInformationResponse(User foundedUser) {
+        return WorkerPersonalInformationResponse.builder()
+                .workerId(foundedUser.getId())
+                .companyId(foundedUser.getCompany().getId())
+                .firstName(foundedUser.getFirstName())
+                .lastName(foundedUser.getLastName())
+                .email(foundedUser.getEmail())
+                .companyName(foundedUser.getCompany().getCompanyName())
+                .phoneNumber(foundedUser.getPhoneNumber())
+                .address(foundedUser.getHomeAddress())
+                .baseHourlyRate(foundedUser.getBaseHourlyRate())
+                .role(foundedUser.getRoles().stream()
+                        .map(Role::getName)
+                        .findFirst()
+                        .orElse("USER"))
+                .build();
+    }
+
+    public UserCompanyAddressResponse toUserCompanyAddressResponse(String savedCompanyName) {
+        return UserCompanyAddressResponse.builder()
+                .companyAddress(savedCompanyName)
+                .build();
+    }
+
+    public UserCompanyPhoneNumberResponse toUserCompanyPhoneNumberResponse(String savedCompanyPhone) {
+        return UserCompanyPhoneNumberResponse.builder()
+                .phoneNumber(savedCompanyPhone)
+                .build();
+    }
+
+    public UserCompanyEmailResponse toUserCompanyEmailResponse(String savedCompanyPhone) {
+        return UserCompanyEmailResponse.builder()
+                .email(savedCompanyPhone)
+                .build();
+    }
+
+    public RelatedUserInCompanyResponse toRelatedUserInCompanyResponse(User user) {
+        return RelatedUserInCompanyResponse.builder()
+                .workerId(user.getId())
+                .companyId(user.getCompany().getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .baseHourlyRate(user.getBaseHourlyRate())
+                .enabled(user.isEnabled())
+                .build();
+    }
+
+    // МЕТОДЫ ДЛЯ СОЗДАНИЯ ПОЛЬЗОВАТЕЛЕЙ С ШИФРОВАНИЕМ
     public User toWorker(RegistrationRequest request){
         if (request.getWcRiskClassCode() == null) {
             throw new IllegalArgumentException("WC Risk Class Code is required");
@@ -68,6 +148,7 @@ public class UserMapper {
 
         WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
+
         User user = User.builder()
                 // === Основные поля ===
                 .firstName(request.getFirstName())
@@ -80,7 +161,6 @@ public class UserMapper {
                 .dateOfBirth(request.getDateOfBirth())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .SSN_WORKER(passwordEncoder.encode(request.getSSN_WORKER()))
                 .gender(request.getGender())
 
                 .accountLocked(false)
@@ -120,6 +200,21 @@ public class UserMapper {
                 .wcRiskClass(wcRiskClass)
                 .build();
 
+        // Шифруем SSN
+        if (request.getSSN_WORKER() != null && !request.getSSN_WORKER().isBlank()) {
+            CryptoService.Sealed sealed = cryptoService.seal(request.getSSN_WORKER());
+            if (sealed != null) {
+                user.setSsnCiphertext(sealed.getCiphertext());
+                user.setSsnIv(sealed.getIv());
+                user.setSsnKeyVersion(sealed.getKeyVersion());
+                user.setSsnH(sealed.getHmac());
+                user.setSsnLast4(sealed.getLast4());
+                // Очищаем старое поле для безопасности
+                user.setSSN_WORKER("");
+            }
+        }
+
+        // Обработка иждивенцев
         if (request.getDependentsList() != null && !request.getDependentsList().isEmpty()) {
             List<Dependents> deps = request.getDependentsList().stream()
                     .map(dto -> {
@@ -133,25 +228,41 @@ public class UserMapper {
                     .toList();
             user.setDependent(deps);
         } else {
-            user.setDependent(new ArrayList<>()); // или Collections.emptyList()
+            user.setDependent(new ArrayList<>());
         }
 
+        // Обработка I-9 документов с шифрованием
         if (request.getI9Documents() != null) {
             List<DocumentsI9> docs = request.getI9Documents().stream()
-                    .map(d -> DocumentsI9.builder()
-                            .documentTitle(d.getDocumentTitle())
-                            .issuingAuthority(d.getIssuingAuthority())
-                            .documentNumber(d.getDocumentNumber())
-                            .expirationDate(d.getExpirationDate())
-                            .user(user)
-                            .build())
+                    .map(d -> {
+                        DocumentsI9.DocumentsI9Builder docBuilder = DocumentsI9.builder()
+                                .documentTitle(d.getDocumentTitle())
+                                .issuingAuthority(d.getIssuingAuthority())
+                                .expirationDate(d.getExpirationDate())
+                                .user(user);
+
+                        // Шифруем номер документа
+                        if (d.getDocumentNumber() != null && !d.getDocumentNumber().isBlank()) {
+                            CryptoService.Sealed sealedDoc = cryptoService.seal(d.getDocumentNumber());
+                            if (sealedDoc != null) {
+                                docBuilder.documentNumberCiphertext(sealedDoc.getCiphertext())
+                                        .documentNumberIv(sealedDoc.getIv())
+                                        .documentNumberKeyVersion(sealedDoc.getKeyVersion())
+                                        .documentNumberH(sealedDoc.getHmac())
+                                        .documentNumberLast4(sealedDoc.getLast4());
+                                // Не сохраняем незашифрованный номер
+                                docBuilder.documentNumber("");
+                            }
+                        }
+
+                        return docBuilder.build();
+                    })
                     .toList();
             user.setDocumentsI9(docs);
         }
 
         return user;
     }
-
 
     public User toForeman(RegistrationRequest request){
         User user = User.builder()
@@ -162,7 +273,6 @@ public class UserMapper {
                 .dateOfBirth(request.getDateOfBirth())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .SSN_WORKER((request.getSSN_WORKER()))
                 .gender(request.getGender())
                 .accountLocked(false)
                 .enabled(false)
@@ -170,7 +280,7 @@ public class UserMapper {
                 .isForeman(true)
                 .isUser(false)
                 .phoneNumber(request.getPhoneNumber())
-                .dependents(request.getDependentsList().size())
+                .dependents(request.getDependentsList() != null ? request.getDependentsList().size() : 0)
                 .extraWithHoldings(request.getExtraWithHoldings())
                 .livesInNYC(request.getLivesInNYC())
                 .payFrequency(request.getPayFrequency())
@@ -180,17 +290,34 @@ public class UserMapper {
                 .monthlyHealthPremium(request.getMonthlyHealthPremium())
                 .build();
 
-        List<Dependents> deps = request.getDependentsList().stream()
-                .map(dto -> {
-                    Dependents d = new Dependents();
-                    d.setFirstName(dto.getFirstName());
-                    d.setLastName(dto.getLastName());
-                    d.setBirthDate(dto.getBirthDate());
-                    d.setUser(user);
-                    return d;
-                })
-                .toList();
-        user.setDependent(deps);
+        // Шифруем SSN для Foreman
+        if (request.getSSN_WORKER() != null && !request.getSSN_WORKER().isBlank()) {
+            CryptoService.Sealed sealed = cryptoService.seal(request.getSSN_WORKER());
+            if (sealed != null) {
+                user.setSsnCiphertext(sealed.getCiphertext());
+                user.setSsnIv(sealed.getIv());
+                user.setSsnKeyVersion(sealed.getKeyVersion());
+                user.setSsnH(sealed.getHmac());
+                user.setSsnLast4(sealed.getLast4());
+                user.setSSN_WORKER("");
+            }
+        }
+
+        // Обработка иждивенцев
+        if (request.getDependentsList() != null && !request.getDependentsList().isEmpty()) {
+            List<Dependents> deps = request.getDependentsList().stream()
+                    .map(dto -> {
+                        Dependents d = new Dependents();
+                        d.setFirstName(dto.getFirstName());
+                        d.setLastName(dto.getLastName());
+                        d.setBirthDate(dto.getBirthDate());
+                        d.setUser(user);
+                        return d;
+                    })
+                    .toList();
+            user.setDependent(deps);
+        }
+
         return user;
     }
 
@@ -201,6 +328,7 @@ public class UserMapper {
 
         WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
+
         User user = User.builder()
                 // === Основные поля ===
                 .firstName(request.getFirstName())
@@ -208,7 +336,6 @@ public class UserMapper {
                 .middleInitial(request.getMiddleInitial())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .SSN_WORKER(passwordEncoder.encode(request.getSSN_WORKER()))
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
                 .phoneNumber(request.getPhoneNumber())
@@ -234,7 +361,7 @@ public class UserMapper {
 
                 // === W-4 Step 1: Filing & Dependents ===
                 .filingStatus(request.getFilingStatus())
-                .dependents(request.getDependents())               // общее число иждивенцев
+                .dependents(request.getDependents())
                 .dependentsUnder17(request.getDependentsUnder17())
                 .otherDependents(request.getOtherDependents())
                 .totalDependentsCredit(request.getTotalDependentsCredit())
@@ -263,6 +390,20 @@ public class UserMapper {
                 .wcRiskClass(wcRiskClass)
                 .build();
 
+        // Шифруем SSN для Admin
+        if (request.getSSN_WORKER() != null && !request.getSSN_WORKER().isBlank()) {
+            CryptoService.Sealed sealed = cryptoService.seal(request.getSSN_WORKER());
+            if (sealed != null) {
+                user.setSsnCiphertext(sealed.getCiphertext());
+                user.setSsnIv(sealed.getIv());
+                user.setSsnKeyVersion(sealed.getKeyVersion());
+                user.setSsnH(sealed.getHmac());
+                user.setSsnLast4(sealed.getLast4());
+                user.setSSN_WORKER("");
+            }
+        }
+
+        // Обработка иждивенцев
         if (request.getDependentsList() != null && !request.getDependentsList().isEmpty()) {
             List<Dependents> deps = request.getDependentsList().stream()
                     .map(dto -> {
@@ -275,18 +416,35 @@ public class UserMapper {
                     })
                     .toList();
             user.setDependent(deps);
-        } else{
+        } else {
             user.setDependent(new ArrayList<>());
         }
+
+        // Обработка I-9 документов с шифрованием
         if (request.getI9Documents() != null) {
             List<DocumentsI9> docs = request.getI9Documents().stream()
-                    .map(d -> DocumentsI9.builder()
-                            .documentTitle(d.getDocumentTitle())
-                            .issuingAuthority(d.getIssuingAuthority())
-                            .documentNumber(d.getDocumentNumber())
-                            .expirationDate(d.getExpirationDate())
-                            .user(user)
-                            .build())
+                    .map(d -> {
+                        DocumentsI9.DocumentsI9Builder docBuilder = DocumentsI9.builder()
+                                .documentTitle(d.getDocumentTitle())
+                                .issuingAuthority(d.getIssuingAuthority())
+                                .expirationDate(d.getExpirationDate())
+                                .user(user);
+
+                        // Шифруем номер документа
+                        if (d.getDocumentNumber() != null && !d.getDocumentNumber().isBlank()) {
+                            CryptoService.Sealed sealedDoc = cryptoService.seal(d.getDocumentNumber());
+                            if (sealedDoc != null) {
+                                docBuilder.documentNumberCiphertext(sealedDoc.getCiphertext())
+                                        .documentNumberIv(sealedDoc.getIv())
+                                        .documentNumberKeyVersion(sealedDoc.getKeyVersion())
+                                        .documentNumberH(sealedDoc.getHmac())
+                                        .documentNumberLast4(sealedDoc.getLast4());
+                                docBuilder.documentNumber("");
+                            }
+                        }
+
+                        return docBuilder.build();
+                    })
                     .toList();
             user.setDocumentsI9(docs);
         }
@@ -294,85 +452,35 @@ public class UserMapper {
         return user;
     }
 
-
-    public WorksiteWorkerResponse toUserWorkSiteResponse(User user) {
-        return WorksiteWorkerResponse.builder()
-                .workerId(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .phoneNumber(user.getPhoneNumber())
-                .workSiteAddress(user.getWorkSites().stream()
-                        .findFirst()
-                        .map(WorkSite::getAddress)
-                        .orElse(null))
-                .punchIn(user.getAttendances().stream()
-                        .max(Comparator.comparing(WorkerAttendance::getCheckInTime))
-                        .map(WorkerAttendance::getCheckInTime)
-                        .orElseThrow(() -> new EntityNotFoundException("No check-in time found for user: " + user.getId())))
+    // Метод для AppOwner (если нужен)
+    public User toAppOwner(RegistrationRequest request) {
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .accountLocked(false)
+                .enabled(true)
+                .isBusinessOwner(true)
+                .isAdmin(false)
+                .isForeman(false)
+                .isUser(false)
+                .phoneNumber(request.getPhoneNumber())
                 .build();
-    }
 
+        // Шифруем SSN для AppOwner
+        if (request.getSSN_WORKER() != null && !request.getSSN_WORKER().isBlank()) {
+            CryptoService.Sealed sealed = cryptoService.seal(request.getSSN_WORKER());
+            if (sealed != null) {
+                user.setSsnCiphertext(sealed.getCiphertext());
+                user.setSsnIv(sealed.getIv());
+                user.setSsnKeyVersion(sealed.getKeyVersion());
+                user.setSsnH(sealed.getHmac());
+                user.setSsnLast4(sealed.getLast4());
+                user.setSSN_WORKER("");
+            }
+        }
 
-
-
-    public UserCompanyNameInformation toUserCompanyNameResponse(String savedCompanyName) {
-        return UserCompanyNameInformation.builder()
-                .companyName(savedCompanyName)
-                .build();
-    }
-
-    public WorkerCompanyIdByAuthenticationResponse toWorkerCompanyIdByAuthenticationResponse(Integer foundedCompanyId) {
-        return  WorkerCompanyIdByAuthenticationResponse.builder()
-                .companyId(foundedCompanyId)
-                .build();
-    }
-
-
-    public WorkerPersonalInformationResponse toWorkerPersonalInformationResponse(User foundedUser) {
-        return WorkerPersonalInformationResponse.builder()
-                .workerId(foundedUser.getId())
-                .companyId(foundedUser.getCompany().getId())
-                .firstName(foundedUser.getFirstName())
-                .lastName(foundedUser.getLastName())
-                .email(foundedUser.getEmail())
-                .companyName(foundedUser.getCompany().getCompanyName())
-                .phoneNumber(foundedUser.getPhoneNumber())
-                .address(foundedUser.getHomeAddress())
-                .baseHourlyRate(foundedUser.getBaseHourlyRate())
-                .role(foundedUser.getRoles().stream()
-                                .map(Role::getName)
-                                .findFirst()
-                                .orElse("USER"))
-                .build();
-    }
-
-    public UserCompanyAddressResponse toUserCompanyAddressResponse(String savedCompanyName) {
-        return UserCompanyAddressResponse.builder()
-                .companyAddress(savedCompanyName)
-                .build();
-    }
-
-    public UserCompanyPhoneNumberResponse toUserCompanyPhoneNumberResponse(String savedCompanyPhone) {
-        return UserCompanyPhoneNumberResponse.builder()
-                .phoneNumber(savedCompanyPhone)
-                .build();
-    }
-
-    public UserCompanyEmailResponse toUserCompanyEmailResponse(String savedCompanyPhone) {
-        return UserCompanyEmailResponse.builder()
-                .email(savedCompanyPhone)
-                .build();
-    }
-
-    public RelatedUserInCompanyResponse toRelatedUserInCompanyResponse(User user) {
-        return RelatedUserInCompanyResponse.builder()
-                .workerId(user.getId())
-                .companyId(user.getCompany().getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .baseHourlyRate(user.getBaseHourlyRate())
-                .enabled(user.isEnabled())
-                .build();
+        return user;
     }
 }
