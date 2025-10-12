@@ -1,5 +1,6 @@
 package com.zikpak.facecheck.authController;
 
+import com.zikpak.facecheck.annotation.RateLimit;
 import com.zikpak.facecheck.authRequests.*;
 import com.zikpak.facecheck.requestsResponses.settings.*;
 import com.zikpak.facecheck.taxesServices.services.authenticationService.AuthenticationService;
@@ -27,6 +28,7 @@ public class AuthenticationController {
 
     //working
     @PostMapping("/register")
+    @RateLimit(requests = 5, perSeconds = 60)
     public ResponseEntity<?> register(@RequestBody @Valid RegistrationRequest request) throws MessagingException {
             authenticationService.register(request);
             return ResponseEntity.accepted().build();
@@ -34,12 +36,14 @@ public class AuthenticationController {
 
 
     @PostMapping("/register/admin")
+    @RateLimit(requests = 5, perSeconds = 60)
     public ResponseEntity<?> registerAdmin(@RequestBody @Valid RegistrationAdminRequest request) throws MessagingException, IOException {
         authenticationService.registerAdmin(request);
         return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/register/app-owner")
+    @RateLimit(requests = 5, perSeconds = 60)
     public ResponseEntity<?> registerAppowner(@RequestBody @Valid RegistrationAdminRequest request) throws MessagingException, IOException {
         authenticationService.registerAppOwner(request);
         return ResponseEntity.accepted().build();
@@ -47,12 +51,14 @@ public class AuthenticationController {
 
 
     @PostMapping("/register/foreman")
+    @RateLimit(requests = 5, perSeconds = 60)
     public ResponseEntity<?> registerForeman(@RequestBody @Valid RegistrationRequest request) throws MessagingException {
         authenticationService.registerForeman(request);
         return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/register/company")
+    @RateLimit(requests = 5, perSeconds = 60)
     public ResponseEntity<Void> registerCompany(
             @Valid @RequestBody CompanyRegistrationRequest request,
             Authentication authentication
@@ -61,7 +67,18 @@ public class AuthenticationController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/register/company-app-owner")
+    @RateLimit(requests = 5, perSeconds = 60)
+    public ResponseEntity<Void> registerCompanyAppOwner(
+            @Valid @RequestBody CompanyRegistrationAppOwnerRequest request,
+            Authentication authentication
+    ) throws MessagingException {
+        authenticationService.registerCompanyByAppOwner(request, authentication);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/authenticate")
+    @RateLimit(requests = 6, perSeconds = 60)
     public ResponseEntity<?> authenticate(@RequestBody @Valid AuthenticationRequest request) {
         try {
             AuthenticationResponse response = authenticationService.authenticate(request);
@@ -77,6 +94,7 @@ public class AuthenticationController {
     }
     //working
     @GetMapping("/activate-account")
+    @RateLimit(requests = 10, perSeconds = 60)
     public void confirm(
             @RequestParam String token
     ) throws MessagingException {
