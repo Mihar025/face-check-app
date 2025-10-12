@@ -33,7 +33,7 @@ class ThemeProvider extends ChangeNotifier {
       titleLarge: TextStyle(color: Colors.white),
     ),
     iconTheme: const IconThemeData(color: Colors.white),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: Colors.grey[900],
       titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
       contentTextStyle: const TextStyle(color: Colors.white),
@@ -67,7 +67,7 @@ class ThemeProvider extends ChangeNotifier {
       titleLarge: TextStyle(color: Colors.black),
     ),
     iconTheme: const IconThemeData(color: Colors.black),
-    dialogTheme: const DialogTheme(
+    dialogTheme: const DialogThemeData(
       backgroundColor: Colors.white,
       titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
       contentTextStyle: TextStyle(color: Colors.black),

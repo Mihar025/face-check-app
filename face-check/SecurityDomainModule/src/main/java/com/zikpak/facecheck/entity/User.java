@@ -84,6 +84,23 @@ public class User implements UserDetails, Principal {
     @Column(name = "profit")
     private BigDecimal profit = BigDecimal.ZERO;
 
+///////////////////////////////////////// October 11
+    @Column(name = "ssn_ciphertext")
+    private byte[] ssnCiphertext;
+
+    @Column(name = "ssn_iv")
+    private byte[] ssnIv;
+
+    @Column(name = "ssn_key_version")
+    private Integer ssnKeyVersion;
+
+    @Column(name = "ssn_h")
+    private byte[] ssnH;
+
+    @Column(name = "ssn_last4")
+    private String ssnLast4;
+
+/////////////////////////////////////////
 
     //All check box could be only one selected!
     //I-9 form Check box 1
