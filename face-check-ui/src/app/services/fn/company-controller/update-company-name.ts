@@ -8,23 +8,25 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { UpdateCompanyNameRequest } from '../../models/update-company-name-request';
+import { UpdateCompanyNameResponse } from '../../models/update-company-name-response';
 
 export interface UpdateCompanyName$Params {
-      body: string
+      body: UpdateCompanyNameRequest
 }
 
-export function updateCompanyName(http: HttpClient, rootUrl: string, params: UpdateCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function updateCompanyName(http: HttpClient, rootUrl: string, params: UpdateCompanyName$Params, context?: HttpContext): Observable<StrictHttpResponse<UpdateCompanyNameResponse>> {
   const rb = new RequestBuilder(rootUrl, updateCompanyName.PATH, 'put');
   if (params) {
     rb.body(params.body, 'application/json');
   }
 
   return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
+    rb.build({ responseType: 'json', accept: 'application/json', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
+      return r as StrictHttpResponse<UpdateCompanyNameResponse>;
     })
   );
 }
