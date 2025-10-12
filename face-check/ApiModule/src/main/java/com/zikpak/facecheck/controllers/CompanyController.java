@@ -1,6 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
 
+import com.zikpak.facecheck.requestsResponses.company.CompanyResponse;
 import com.zikpak.facecheck.services.company.*;
 import com.zikpak.facecheck.taxesServices.services.PayStubService;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingRequest;
@@ -10,6 +11,7 @@ import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,7 @@ import java.util.List;
 @RestController
 @RequestMapping("company")
 @RequiredArgsConstructor
+@Slf4j
 public class CompanyController {
 
     private final CompanyService companyService;
@@ -134,6 +137,33 @@ public class CompanyController {
             Authentication authentication) {
         return ResponseEntity.ok(companyService.findAllEmployeesInCertainCompany(page, size, companyId, authentication));
     }
+
+
+
+    @GetMapping("/find-all-companies")
+    public ResponseEntity<PageResponse<CompanyResponse>> findAllCompanies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication) {
+        return ResponseEntity.ok(companyService.findAllCompanies(page, size, authentication));
+    }
+
+
+
+    @GetMapping("/find-all-employees")
+    public ResponseEntity<PageResponse<RelatedUserInCompanyResponse>> findAllEmployees(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication) {
+        log.info("=== findAllEmployees endpoint called ==="); // ← Добавьте это
+        log.info("Authentication: {}", authentication);
+        log.info("Principal: {}", authentication.getPrincipal());
+
+        return ResponseEntity.ok(companyService.findAllEmployees(page, size, authentication));
+    }
+
+
+
 
     //working
     @GetMapping("/{companyId}/employees/users")
