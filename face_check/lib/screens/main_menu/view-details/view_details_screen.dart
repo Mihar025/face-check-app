@@ -7,7 +7,6 @@ import '../../../providers/localization_provider.dart';
 import '../../../services/ApiService.dart';
 import 'components/info_row.dart';
 import 'components/progress_circle/progress_circle.dart';
-import 'components/progress_circle/payroll_progress_circle.dart';
 import 'utils/date_formatter.dart';
 
 class ViewDetailsScreen extends StatefulWidget {
@@ -22,25 +21,109 @@ class ViewDetailsScreen extends StatefulWidget {
   State<ViewDetailsScreen> createState() => _ViewDetailsScreenState();
 }
 
-class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
-  bool _isLoading = true;
-  double _baseHourRate = 0.0;
-  double _weekGrossAmount = 0.0;
-  double _weekTaxesAmount = 0.0;
-  double _weekNetAmount = 0.0;
-  List<DailyEarning> _weeklyEarnings = [];
+class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProviderStateMixin {
+  // Animation controllers
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
 
+  // ValueNotifiers для оптимизации перерисовок
+  late final ValueNotifier<bool> _isLoading;
+  late final ValueNotifier<double> _baseHourRate;
+  late final ValueNotifier<double> _weekGrossAmount;
+  late final ValueNotifier<List<DailyEarning>> _weeklyEarnings;
+  late final ValueNotifier<bool> _hasCurrentPeriodData;
+
+  // Кэшированные значения
+  late Size _screenSize;
+  late bool _isSmallScreen;
+  late double _padding;
+  late double _sectionSpacing;
+  late AppLocalizations _l10n;
+  late ThemeData _theme;
+  late bool _isDark;
+
+  // Кэшированные вычисления
+  double? _cachedOvertimeHours;
+  double? _cachedMissedHours;
+  double? _cachedMaxEarning;
+  String? _cachedPeriod;
+
+  // Предопределенные константы
   static const double _largeSpacing = 40.0;
   static const double _smallSpacing = 30.0;
-  static const double _largeFontSize = 18.0;
-  static const double _smallFontSize = 16.0;
-  static const double _largeRowSpacing = 12.0;
-  static const double _smallRowSpacing = 8.0;
+  static const double _smallScreenThreshold = 400.0;
 
   @override
   void initState() {
     super.initState();
+
+    // Инициализация анимаций
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    // Инициализация ValueNotifiers
+    _isLoading = ValueNotifier<bool>(true);
+    _baseHourRate = ValueNotifier<double>(0.0);
+    _weekGrossAmount = ValueNotifier<double>(0.0);
+    _weeklyEarnings = ValueNotifier<List<DailyEarning>>([]);
+    _hasCurrentPeriodData = ValueNotifier<bool>(false);
+
+    // Кэшируем период один раз
+    _cachedPeriod = DateFormatter.getCurrentPeriod();
+
     _loadData();
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateCachedValues();
+  }
+
+  void _updateCachedValues() {
+    _screenSize = MediaQuery.of(context).size;
+    _isSmallScreen = _screenSize.width < _smallScreenThreshold;
+    _padding = _isSmallScreen ? 12.0 : 16.0;
+    _sectionSpacing = _isSmallScreen ? _smallSpacing : _largeSpacing;
+    _l10n = context.read<LocalizationProvider>().localizations;
+    _theme = Theme.of(context);
+    _isDark = _theme.brightness == Brightness.dark;
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _isLoading.dispose();
+    _baseHourRate.dispose();
+    _weekGrossAmount.dispose();
+    _weeklyEarnings.dispose();
+    _hasCurrentPeriodData.dispose();
+    super.dispose();
+  }
+
+  bool _isCurrentPeriodData(List<DailyEarning> earnings) {
+    if (earnings.isEmpty) return false;
+
+    final now = DateTime.now();
+    // Получаем начало текущей недели (воскресенье)
+    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+
+    // Проверяем, есть ли хотя бы одна запись за текущую неделю
+    return earnings.any((earning) {
+      final date = earning.date;
+      return date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+          date.isBefore(endOfWeek.add(const Duration(days: 1)));
+    });
   }
 
   Future<void> _loadData() async {
@@ -48,466 +131,867 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> {
       final futures = await Future.wait([
         ApiService.instance.userApi.findWorkerBaseHourRate(),
         ApiService.instance.userApi.findWorkerSalaryPerWeekGross(),
-        ApiService.instance.userApi.findWorkerTotalPayedTaxesAmountForWeek(),
-        ApiService.instance.userApi.findWorkerSalaryPerWeekNet(),
         ApiService.instance.getWeeklyEarnings(),
       ]);
 
-      if (mounted) {
-        setState(() {
-          _baseHourRate = (futures[0] as dynamic).data?.toDouble() ?? 0.0;
-          _weekGrossAmount = (futures[1] as dynamic).data?.toDouble() ?? 0.0;
-          _weekTaxesAmount = (futures[2] as dynamic).data?.toDouble() ?? 0.0;
-          _weekNetAmount = (futures[3] as dynamic).data?.toDouble() ?? 0.0;
-          _weeklyEarnings = futures[4] as List<DailyEarning>;
-          _isLoading = false;
-        });
+      if (!mounted) return;
+
+      _baseHourRate.value = (futures[0] as dynamic).data?.toDouble() ?? 0.0;
+
+      final earnings = futures[2] as List<DailyEarning>;
+      _weeklyEarnings.value = earnings;
+
+      // Проверяем актуальность данных
+      final isCurrentPeriod = _isCurrentPeriodData(earnings);
+      _hasCurrentPeriodData.value = isCurrentPeriod;
+
+      // Если данные актуальны, используем их, иначе обнуляем
+      if (isCurrentPeriod) {
+        _weekGrossAmount.value = (futures[1] as dynamic).data?.toDouble() ?? 0.0;
+      } else {
+        _weekGrossAmount.value = 0.0;
       }
+
+      // Кэшируем максимальное значение после загрузки
+      _updateCachedMaxEarning();
+
+      _isLoading.value = false;
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        _isLoading.value = false;
       }
     }
   }
 
-  double _getMaxEarning() => _weeklyEarnings.isEmpty
-      ? 100.0
-      : _weeklyEarnings.map((e) => e.netPay).reduce((a, b) => a > b ? a : b);
+  double get overtimeHours {
+    if (!_hasCurrentPeriodData.value) return 0.0;
+    _cachedOvertimeHours ??= widget.workedHours > 40 ? widget.workedHours - 40 : 0.0;
+    return _cachedOvertimeHours!;
+  }
+
+  double get missedHours {
+    if (!_hasCurrentPeriodData.value) return 40.0;
+    _cachedMissedHours ??= widget.workedHours < 40 ? 40 - widget.workedHours : 0.0;
+    return _cachedMissedHours!;
+  }
+
+  void _updateCachedMaxEarning() {
+    final earnings = _weeklyEarnings.value;
+    _cachedMaxEarning = earnings.isEmpty
+        ? 100.0
+        : earnings.map((e) => e.netPay).reduce((a, b) => a > b ? a : b);
+  }
+
+  double get maxEarning => _cachedMaxEarning ?? 100.0;
 
   String _formatCurrency(double value) => '\$${value.toStringAsFixed(2)}';
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.read<LocalizationProvider>().localizations;
-    final overtimeHours = widget.workedHours > 40 ? widget.workedHours - 40 : 0.0;
-    final missedHours = widget.workedHours < 40 ? 40 - widget.workedHours : 0.0;
+    _updateCachedValues();
 
-                       final isSmallScreen = MediaQuery.of(context).size.width < 400;
-    final padding = isSmallScreen ? 12.0 : 16.0;
-    final sectionSpacing = isSmallScreen ? _smallSpacing : _largeSpacing;
-
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    // Цвета в зависимости от темы
+    final backgroundColor = _isDark ? Colors.grey[900]! : Colors.grey[50]!;
+    final cardColor = _isDark ? Colors.grey[850]! : Colors.white;
+    final textColor = _isDark ? Colors.grey[100]! : Colors.grey[900]!;
+    final subtitleColor = _isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text(
-          l10n.get('productivity'),
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: FadeTransition(
+          opacity: _fadeController,
+          child: Text(
+            _l10n.get('productivity'),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              fontSize: 24,
+              color: textColor,
+            ),
+          ),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: textColor),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(padding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSection(
-                l10n,
-                'attendance',
-                isSmallScreen,
-                firstWidget: ProgressCircle(workedHours: widget.workedHours),
-                infoRows: [
-                  _buildInfoRow(l10n, 'hours', '${widget.workedHours.toStringAsFixed(1)}hrs', Colors.orange, isSmallScreen),
-                  _buildInfoRow(l10n, 'overtime', '${overtimeHours.toStringAsFixed(1)}hrs', Colors.red, isSmallScreen),
-                  _buildInfoRow(l10n, 'missedHours', '${missedHours.toStringAsFixed(1)}hrs', Colors.yellow, isSmallScreen),
-                  _buildInfoRow(l10n, 'period', DateFormatter.getCurrentPeriod(), Colors.green, isSmallScreen),
-                ],
-              ),
-
-              SizedBox(height: sectionSpacing),
-
-              _buildSection(
-                l10n,
-                'workerPayroll',
-                isSmallScreen,
-                firstWidget: PayrollProgressCircle(
-                  baseRate: _baseHourRate,
-                  grossAmount: _weekGrossAmount,
-                  taxesAmount: _weekTaxesAmount,
-                  netAmount: _weekNetAmount,
-                  maxAmount: _weekGrossAmount > 0 ? _weekGrossAmount : 100,
+      body: ValueListenableBuilder<bool>(
+        valueListenable: _isLoading,
+        builder: (context, isLoading, child) {
+          if (isLoading) {
+            return Center(
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade600,
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                infoRows: [
-                  _buildInfoRow(l10n, 'hourlyRate', _formatCurrency(_baseHourRate), Colors.purpleAccent, isSmallScreen),
-                  _buildInfoRow(l10n, 'gross', _formatCurrency(_weekGrossAmount), Colors.indigo, isSmallScreen),
-                  _buildInfoRow(l10n, 'totalTaxes', _formatCurrency(_weekTaxesAmount), Colors.lightBlue, isSmallScreen),
-                  _buildInfoRow(l10n, 'netTotal', _formatCurrency(_weekNetAmount), Colors.indigoAccent, isSmallScreen),
-                ],
-                circleWidth: isSmallScreen ? 140.0 : 150.0,
-                topPadding: 30.0,
-              ),
-
-              SizedBox(height: sectionSpacing),
-
-              Padding(
-                padding: EdgeInsets.only(left: isSmallScreen ? 8.0 : 12.0),
-                child: Text(
-                  l10n.get('workerFinancialStatistics'),
-                  style: _getSectionStyle(isSmallScreen),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3,
+                  ),
                 ),
               ),
-              SizedBox(height: isSmallScreen ? 16 : 24),
-              _buildFinancialChart(l10n, isSmallScreen),
-            ],
-          ),
+            );
+          }
+
+          return ValueListenableBuilder<bool>(
+            valueListenable: _hasCurrentPeriodData,
+            builder: (context, hasData, _) {
+              // Если нет данных за текущий период, показываем сообщение
+              if (!hasData) {
+                return _buildNoDataView(textColor, subtitleColor);
+              }
+
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: EdgeInsets.all(_padding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // HERO SECTION - Combined Stats
+                      SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, -0.2),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(
+                          parent: _slideController,
+                          curve: Curves.easeOutCubic,
+                        )),
+                        child: _buildHeroSection(),
+                      ),
+
+                      SizedBox(height: _sectionSpacing),
+
+                      // PRODUCTIVITY METRICS
+                      FadeTransition(
+                        opacity: _fadeController,
+                        child: _buildProductivityMetrics(textColor, subtitleColor, cardColor),
+                      ),
+
+                      SizedBox(height: _sectionSpacing),
+
+                      // EARNINGS OVERVIEW
+                      ValueListenableBuilder<double>(
+                        valueListenable: _baseHourRate,
+                        builder: (context, baseRate, _) {
+                          return ValueListenableBuilder<double>(
+                            valueListenable: _weekGrossAmount,
+                            builder: (context, grossAmount, _) {
+                              return FadeTransition(
+                                opacity: _fadeController,
+                                child: _buildEarningsOverview(
+                                  baseRate,
+                                  grossAmount,
+                                  cardColor,
+                                  textColor,
+                                  subtitleColor,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+
+                      SizedBox(height: _sectionSpacing),
+
+                      // WEEKLY PERFORMANCE CHART
+                      ValueListenableBuilder<List<DailyEarning>>(
+                        valueListenable: _weeklyEarnings,
+                        builder: (context, earnings, _) {
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.2),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: _slideController,
+                              curve: Curves.easeOutCubic,
+                            )),
+                            child: _buildWeeklyPerformance(
+                              earnings,
+                              cardColor,
+                              textColor,
+                              subtitleColor,
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildNoDataView(Color textColor, Color subtitleColor) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 80,
+              color: subtitleColor.withOpacity(0.3),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Data for Current Period',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Period: $_cachedPeriod',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: subtitleColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No hours recorded for this week',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: subtitleColor,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Go Back'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSection(
-      AppLocalizations l10n,
-      String titleKey,
-      bool isSmallScreen, {
-        required Widget firstWidget,
-        required List<Widget> infoRows,
-        double? circleWidth,
-        double topPadding = 59.0,
-      }) {
-    final titlePadding = isSmallScreen ? 8.0 : 12.0;
-    final titleWidget = Padding(
-      padding: EdgeInsets.only(left: titlePadding),
-      child: Text(
-        l10n.get(titleKey),
-        style: _getSectionStyle(isSmallScreen),
+  // HERO SECTION с ключевыми метриками
+  Widget _buildHeroSection() {
+    final displayHours = _hasCurrentPeriodData.value ? widget.workedHours : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade600, Colors.blue.shade800],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.shade600.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.calendar_today, color: Colors.white.withOpacity(0.9), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                _cachedPeriod!,
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              // Worked Hours Circle
+              Expanded(
+                child: Column(
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              displayHours.toStringAsFixed(1),
+                              style: GoogleFonts.poppins(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                            Text(
+                              'Hours',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.grey[600]!,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 20),
+              // Stats Column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStatRow(
+                      icon: Icons.trending_up,
+                      label: 'Overtime',
+                      value: '${overtimeHours.toStringAsFixed(1)}h',
+                      color: Colors.green,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStatRow(
+                      icon: Icons.trending_down,
+                      label: 'Missed',
+                      value: '${missedHours.toStringAsFixed(1)}h',
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStatRow(
+                      icon: Icons.check_circle,
+                      label: 'Status',
+                      value: displayHours >= 40 ? 'Complete' : 'In Progress',
+                      color: displayHours >= 40 ? Colors.green : Colors.blue,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
+  }
 
-    final spacingAfterTitle = isSmallScreen ? 16.0 : 24.0;
-
-    if (isSmallScreen) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          titleWidget,
-          SizedBox(height: spacingAfterTitle),
-          Center(
-            child: circleWidth != null
-                ? SizedBox(width: circleWidth, child: firstWidget)
-                : firstWidget,
-          ),
-          SizedBox(height: 24),
-          ...infoRows,
-        ],
-      );
-    }
-
+  Widget _buildStatRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            titleWidget,
-            SizedBox(height: spacingAfterTitle),
-            if (circleWidth != null)
-              SizedBox(width: circleWidth, child: firstWidget)
-            else
-              firstWidget,
-          ],
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white, size: 16),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 8),
         Expanded(
-          child: Container(
-            padding: EdgeInsets.only(top: topPadding),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: infoRows,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildInfoRow(
-      AppLocalizations l10n,
-      String labelKey,
-      String value,
-      Color color,
-      bool isSmallScreen,
-      ) {
-    final spacing = isSmallScreen ? _smallRowSpacing : _largeRowSpacing;
-    return Padding(
-      padding: EdgeInsets.only(bottom: spacing),
-      child: InfoRow(
-        label: l10n.get(labelKey),
-        value: value,
-        color: color,
-      ),
-    );
-  }
+  // PRODUCTIVITY METRICS
+  Widget _buildProductivityMetrics(Color textColor, Color subtitleColor, Color cardColor) {
+    final displayHours = _hasCurrentPeriodData.value ? widget.workedHours : 0.0;
+    final productivity = (displayHours / 40 * 100).clamp(0, 150);
+    final efficiency = displayHours > 0
+        ? ((40 - missedHours) / 40 * 100).clamp(0, 100)
+        : 0.0;
 
-  TextStyle _getSectionStyle(bool isSmallScreen) {
-    return GoogleFonts.poppins(
-      fontSize: isSmallScreen ? _smallFontSize : _largeFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.grey[800],
-    );
-  }
-
-  Widget _buildFinancialChart(AppLocalizations l10n, bool isSmallScreen) {
-    final height = isSmallScreen ? 280.0 : 320.0;
-    final padding = isSmallScreen ? 12.0 : 16.0;
-    final titleSize = isSmallScreen ? 14.0 : 16.0;
-    final spacingAfterTitle = isSmallScreen ? 16.0 : 24.0;
-
-    return Container(
-      width: double.infinity,
-      height: height,
-      margin: EdgeInsets.symmetric(vertical: isSmallScreen ? 12 : 16),
-      decoration: BoxDecoration(
-        color: Colors.black87,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Productivity Metrics',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: textColor,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(padding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        const SizedBox(height: 16),
+        Row(
           children: [
-            Text(
-              l10n.get('earningsDynamics'),
-              style: GoogleFonts.poppins(
-                fontSize: titleSize,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+            Expanded(
+              child: _buildMetricCard(
+                title: 'Productivity',
+                value: '${productivity.toStringAsFixed(0)}%',
+                icon: Icons.speed,
+                color: Colors.purple,
+                progress: productivity / 100,
+                cardColor: cardColor,
+                subtitleColor: subtitleColor,
               ),
             ),
-            SizedBox(height: spacingAfterTitle),
+            const SizedBox(width: 12),
             Expanded(
-              child: _weeklyEarnings.isEmpty
-                  ? Center(
-                child: Text(
-                  l10n.get('noDataAvailable'),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              )
-                  : _buildOptimizedChart(isSmallScreen),
+              child: _buildMetricCard(
+                title: 'Efficiency',
+                value: '${efficiency.toStringAsFixed(0)}%',
+                icon: Icons.insights,
+                color: Colors.indigo,
+                progress: efficiency / 100,
+                cardColor: cardColor,
+                subtitleColor: subtitleColor,
+              ),
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required double progress,
+    required Color cardColor,
+    required Color subtitleColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _isDark
+                ? Colors.black.withOpacity(0.2)
+                : Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const Spacer(),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: subtitleColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: _isDark
+                ? Colors.grey[800]!
+                : Colors.grey[200]!,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 6,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildOptimizedChart(bool isSmallScreen) {
-    final maxValue = _getMaxEarning();
-
-    return CustomPaint(
-      painter: OptimizedLineChartPainter(
-        earnings: _weeklyEarnings,
-        maxValue: maxValue,
-        isSmallScreen: isSmallScreen,
-      ),
-      size: Size.infinite,
-    );
-  }
-}
-
-class OptimizedLineChartPainter extends CustomPainter {
-  final List<DailyEarning> earnings;
-  final double maxValue;
-  final bool isSmallScreen;
-
-  final List<String> _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-  OptimizedLineChartPainter({
-    required this.earnings,
-    required this.maxValue,
-    this.isSmallScreen = false,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (earnings.isEmpty) return;
-
-    final double bottomPadding = isSmallScreen ? 30 : 40;
-    final double rightPadding = isSmallScreen ? 40 : 60;
-    final double leftPadding = isSmallScreen ? 30 : 40;
-    final double height = size.height - bottomPadding;
-    final double width = size.width - rightPadding - leftPadding;
-    final double startX = leftPadding;
-
-    final linePaint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = isSmallScreen ? 1.5 : 2.0
-      ..strokeCap = StrokeCap.round;
-
-    final glowPaint = Paint()
-      ..color = Colors.red.withOpacity(0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = isSmallScreen ? 3.0 : 4.0
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, isSmallScreen ? 3 : 4);
-
-    final gridPaint = Paint()
-      ..color = Colors.grey.withOpacity(0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
-
-    final List<Offset> points = _calculatePoints(startX, width, height);
-    final path = _createPath(points);
-
-    _drawVerticalGrid(canvas, points, height, gridPaint);
-
-    canvas.drawPath(path, glowPaint);
-    canvas.drawPath(path, linePaint);
-
-    _drawPointsAndLabels(canvas, points, size, height);
-  }
-
-  List<Offset> _calculatePoints(double startX, double width, double height) {
-    final points = <Offset>[];
-
-    for (int i = 0; i < earnings.length; i++) {
-      final x = startX + (i / (earnings.length - 1)) * width;
-      final y = height - (earnings[i].netPay / maxValue * height);
-      points.add(Offset(x, y));
-    }
-
-    return points;
-  }
-
-  Path _createPath(List<Offset> points) {
-    final path = Path();
-
-    if (points.isEmpty) return path;
-
-    path.moveTo(points[0].dx, points[0].dy);
-
-    for (int i = 1; i < points.length; i++) {
-      final prevPoint = points[i-1];
-      final currentPoint = points[i];
-
-      final controlX = prevPoint.dx + (currentPoint.dx - prevPoint.dx) * 0.5;
-      path.quadraticBezierTo(
-          controlX, prevPoint.dy,
-          currentPoint.dx, currentPoint.dy
-      );
-    }
-
-    return path;
-  }
-
-  void _drawVerticalGrid(Canvas canvas, List<Offset> points, double height, Paint gridPaint) {
-    final step = isSmallScreen && earnings.length > 5 ? 2 : 1;
-
-    for (int i = 0; i < points.length; i += step) {
-      canvas.drawLine(
-        Offset(points[i].dx, 0),
-        Offset(points[i].dx, height),
-        gridPaint,
-      );
-    }
-  }
-
-  void _drawPointsAndLabels(Canvas canvas, List<Offset> points, Size size, double height) {
-    final markerSize = isSmallScreen ? 4.0 : 6.0;
-    final innerMarkerSize = isSmallScreen ? 3.0 : 4.0;
-
-    for (int i = 0; i < points.length; i++) {
-      final point = points[i];
-
-      canvas.drawCircle(
-        point,
-        markerSize,
-        Paint()..color = Colors.red,
-      );
-
-      canvas.drawCircle(
-        point,
-        innerMarkerSize,
-        Paint()..color = Colors.white,
-      );
-
-      final dateText = _formatDate(earnings[i].date);
-      _drawText(
-        canvas,
-        dateText,
-        Offset(point.dx, height + 5),
-        isSmallScreen ? 8 : 10,
-        Colors.white70,
-        TextAlign.center,
-      );
-
-      bool showValue = !isSmallScreen || (i % 2 == 0);
-
-      if (showValue) {
-        final valueText = '\$${earnings[i].netPay.toStringAsFixed(2)}';
-        _drawText(
-          canvas,
-          valueText,
-          Offset(point.dx, point.dy - (isSmallScreen ? 15 : 20)),
-          isSmallScreen ? 10 : 12,
-          Colors.white,
-          TextAlign.center,
-          FontWeight.bold,
-        );
-      }
-    }
-  }
-
-  void _drawText(
-      Canvas canvas,
-      String text,
-      Offset position,
-      double fontSize,
-      Color color,
-      TextAlign align,
-      [FontWeight weight = FontWeight.normal]
+  // EARNINGS OVERVIEW
+  Widget _buildEarningsOverview(
+      double baseRate,
+      double grossAmount,
+      Color cardColor,
+      Color textColor,
+      Color subtitleColor,
       ) {
-    final textSpan = TextSpan(
-      text: text,
-      style: TextStyle(
-        color: color,
-        fontSize: fontSize,
-        fontWeight: weight,
+    final projectedEarnings = baseRate * 40;
+    final actualVsProjected = grossAmount > 0
+        ? ((grossAmount / projectedEarnings) * 100).clamp(0, 200)
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _isDark
+                ? Colors.black.withOpacity(0.2)
+                : Colors.grey.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.attach_money, color: Colors.green.shade700, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Earnings Overview',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Key Metrics
+          Row(
+            children: [
+              Expanded(
+                child: _buildEarningMetric(
+                  label: 'Hourly Rate',
+                  value: _formatCurrency(baseRate),
+                  icon: Icons.schedule,
+                  color: Colors.blue,
+                  textColor: textColor,
+                  subtitleColor: subtitleColor,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildEarningMetric(
+                  label: 'Week Total',
+                  value: _formatCurrency(grossAmount),
+                  icon: Icons.account_balance_wallet,
+                  color: Colors.green,
+                  textColor: textColor,
+                  subtitleColor: subtitleColor,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Progress Bar
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Earning Progress',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: subtitleColor,
+                    ),
+                  ),
+                  Text(
+                    '${actualVsProjected.toStringAsFixed(0)}% of target',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: (actualVsProjected / 100).clamp(0, 1),
+                  backgroundColor: _isDark
+                      ? Colors.grey[800]!
+                      : Colors.grey[200]!,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    actualVsProjected >= 100 ? Colors.green : Colors.blue,
+                  ),
+                  minHeight: 10,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
-
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-      textAlign: align,
-    );
-
-    textPainter.layout();
-
-    final offset = Offset(
-      position.dx - (align == TextAlign.center ? textPainter.width / 2 : 0),
-      position.dy,
-    );
-
-    textPainter.paint(canvas, offset);
   }
 
-  String _formatDate(DateTime date) {
-    if (isSmallScreen) {
-      return '${date.day}/${date.month}';
-    }
-    return '${_months[date.month - 1]} ${date.day}';
+  Widget _buildEarningMetric({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required Color textColor,
+    required Color subtitleColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: subtitleColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    if (oldDelegate is OptimizedLineChartPainter) {
-      return oldDelegate.earnings != earnings ||
-          oldDelegate.maxValue != maxValue ||
-          oldDelegate.isSmallScreen != isSmallScreen;
-    }
-    return true;
+  // WEEKLY PERFORMANCE
+  Widget _buildWeeklyPerformance(
+      List<DailyEarning> earnings,
+      Color cardColor,
+      Color textColor,
+      Color subtitleColor,
+      ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _isDark
+                ? Colors.black.withOpacity(0.2)
+                : Colors.grey.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.bar_chart, color: Colors.purple.shade700, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Weekly Performance',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          if (earnings.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  children: [
+                    Icon(Icons.info_outline, size: 48, color: subtitleColor.withOpacity(0.5)),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No data available',
+                      style: GoogleFonts.poppins(
+                        color: subtitleColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 200,
+              child: _buildBarChart(earnings, textColor, subtitleColor),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart(List<DailyEarning> earnings, Color textColor, Color subtitleColor) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final barWidth = (width / earnings.length) * 0.6;
+        final spacing = (width / earnings.length) * 0.4;
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: earnings.map((earning) {
+            final heightPercentage = maxEarning > 0
+                ? (earning.netPay / maxEarning).clamp(0.0, 1.0)
+                : 0.0;
+
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  '\$${earning.netPay.toStringAsFixed(0)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 800 + earnings.indexOf(earning) * 100),
+                  width: barWidth.clamp(20, 50),
+                  height: heightPercentage * 120,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.blue.shade400,
+                        Colors.blue.shade600,
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      topRight: Radius.circular(6),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _formatDayLabel(earning.date),
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    color: subtitleColor,
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  String _formatDayLabel(DateTime date) {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[date.weekday - 1];
   }
 }
