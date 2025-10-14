@@ -1,0 +1,11 @@
+
+ALTER table _user
+    ADD COLUMN IF NOT EXISTS actual_budget NUMERIC,
+    ADD COLUMN IF NOT EXISTS expenses NUMERIC,
+    ADD COLUMN IF NOT EXISTS cost_of_salaries  NUMERIC,
+    ADD COLUMN IF NOT EXISTS profit  NUMERIC;
+
+
+
+
+
