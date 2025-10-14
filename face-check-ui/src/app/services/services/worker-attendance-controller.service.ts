@@ -11,6 +11,8 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { addManualOvertime } from '../fn/worker-attendance-controller/add-manual-overtime';
+import { AddManualOvertime$Params } from '../fn/worker-attendance-controller/add-manual-overtime';
 import { DailyEarningResponse } from '../models/daily-earning-response';
 import { FinanceInfoForWeekInFinanceScreenResponse } from '../models/finance-info-for-week-in-finance-screen-response';
 import { getFinanceInfoForWeek } from '../fn/worker-attendance-controller/get-finance-info-for-week';
@@ -20,6 +22,7 @@ import { GetLastPunchTime$Params } from '../fn/worker-attendance-controller/get-
 import { getWeeklyEarnings } from '../fn/worker-attendance-controller/get-weekly-earnings';
 import { GetWeeklyEarnings$Params } from '../fn/worker-attendance-controller/get-weekly-earnings';
 import { LastPunchTimeDto } from '../models/last-punch-time-dto';
+import { OvertimeResponse } from '../models/overtime-response';
 import { punchIn } from '../fn/worker-attendance-controller/punch-in';
 import { PunchIn$Params } from '../fn/worker-attendance-controller/punch-in';
 import { PunchInResponse } from '../models/punch-in-response';
@@ -80,6 +83,31 @@ export class WorkerAttendanceControllerService extends BaseService {
   punchIn(params: PunchIn$Params, context?: HttpContext): Observable<PunchInResponse> {
     return this.punchIn$Response(params, context).pipe(
       map((r: StrictHttpResponse<PunchInResponse>): PunchInResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `addManualOvertime()` */
+  static readonly AddManualOvertimePath = '/attendance/overtime/add';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `addManualOvertime()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  addManualOvertime$Response(params: AddManualOvertime$Params, context?: HttpContext): Observable<StrictHttpResponse<OvertimeResponse>> {
+    return addManualOvertime(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `addManualOvertime$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  addManualOvertime(params: AddManualOvertime$Params, context?: HttpContext): Observable<OvertimeResponse> {
+    return this.addManualOvertime$Response(params, context).pipe(
+      map((r: StrictHttpResponse<OvertimeResponse>): OvertimeResponse => r.body)
     );
   }
 
