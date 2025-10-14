@@ -66,11 +66,13 @@ public class W2OfficialPDFService {
             var company = companyRepository.findById(companyId)
                     .orElseThrow(() -> new EntityNotFoundException("Company Not Found"));
 
-
+/*
             System.out.println("==== Список полей формы ====");
             for (String fieldName : fields.keySet()) {
                 System.out.println(fieldName);
             }
+
+ */
 
 
             LocalDate startOfYear = LocalDate.of(year, 1, 1);
@@ -650,30 +652,28 @@ public class W2OfficialPDFService {
             // form.flattenFields();
             pdfDoc.close();
 
+// Замените строки 538-551 на:
             byte[] pdfBytes = baos.toByteArray();
 
+// Генерируем правильный S3 ключ
             String companyKeyPart = company.getCompanyName()
                     .trim()
-                    .replaceAll("[^A-Za-z0-9]+", "_");
+                    .toLowerCase()
+                    .replaceAll("[^a-z0-9]+", "_");
 
-            String workerKeyPart = String.format("%s_%s",
-                    user.getFirstName().trim().replaceAll("\\s+", "_"),
-                    user.getLastName().trim().replaceAll("\\s+", "_"));
-
-// 2. Имя файла (можете скорректировать по своему вкусу)
-            String fileName = String.format("w2_%d_%s_%s.pdf",
-                    companyId,
-                    user.getFirstName().toLowerCase(),
-                    user.getLastName().toLowerCase());
-
-// 3. Собираем полный ключ
-            String key = String.format("%s/%d/OfficialW2/%s/%s",
+            String key = String.format("%s_%d/employees/%s_%s_%d/forms/w2/%d/w2_%d_%s_%s.pdf",
                     companyKeyPart,
                     companyId,
-                    workerKeyPart,
-                    fileName);
+                    user.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    user.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    userId,
+                    year,
+                    year,
+                    user.getFirstName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_"),
+                    user.getLastName().toLowerCase().trim().replaceAll("[^a-z0-9]+", "_")
+            );
 
-// 4. Загружаем в S3
+
             long ms = System.currentTimeMillis();
             amazonS3Service.uploadPdfToS3(pdfBytes, key);
             long end = System.currentTimeMillis() - ms;
