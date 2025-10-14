@@ -11,14 +11,18 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { deleteWorkerScheduleTemplate } from '../fn/work-schedule-controller/delete-worker-schedule-template';
+import { DeleteWorkerScheduleTemplate$Params } from '../fn/work-schedule-controller/delete-worker-schedule-template';
 import { getCurrentWeekHours } from '../fn/work-schedule-controller/get-current-week-hours';
 import { GetCurrentWeekHours$Params } from '../fn/work-schedule-controller/get-current-week-hours';
+import { getScheduleTemplate } from '../fn/work-schedule-controller/get-schedule-template';
+import { GetScheduleTemplate$Params } from '../fn/work-schedule-controller/get-schedule-template';
 import { getSpecialWeekHours } from '../fn/work-schedule-controller/get-special-week-hours';
 import { GetSpecialWeekHours$Params } from '../fn/work-schedule-controller/get-special-week-hours';
 import { getWeekSchedule } from '../fn/work-schedule-controller/get-week-schedule';
 import { GetWeekSchedule$Params } from '../fn/work-schedule-controller/get-week-schedule';
-import { setWorkerSchedule } from '../fn/work-schedule-controller/set-worker-schedule';
-import { SetWorkerSchedule$Params } from '../fn/work-schedule-controller/set-worker-schedule';
+import { setWeeklySchedule } from '../fn/work-schedule-controller/set-weekly-schedule';
+import { SetWeeklySchedule$Params } from '../fn/work-schedule-controller/set-weekly-schedule';
 import { WeeklyScheduleResponse } from '../models/weekly-schedule-response';
 import { WorkerHourResponse } from '../models/worker-hour-response';
 import { WorkSchedulerResponse } from '../models/work-scheduler-response';
@@ -29,27 +33,27 @@ export class WorkScheduleControllerService extends BaseService {
     super(config, http);
   }
 
-  /** Path part for operation `setWorkerSchedule()` */
-  static readonly SetWorkerSchedulePath = '/schedule/worker/{workerId}';
+  /** Path part for operation `setWeeklySchedule()` */
+  static readonly SetWeeklySchedulePath = '/schedule/set-schedule/{workerId}';
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `setWorkerSchedule()` instead.
+   * To access only the response body, use `setWeeklySchedule()` instead.
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  setWorkerSchedule$Response(params: SetWorkerSchedule$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkSchedulerResponse>> {
-    return setWorkerSchedule(this.http, this.rootUrl, params, context);
+  setWeeklySchedule$Response(params: SetWeeklySchedule$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkSchedulerResponse>> {
+    return setWeeklySchedule(this.http, this.rootUrl, params, context);
   }
 
   /**
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `setWorkerSchedule$Response()` instead.
+   * To access the full response (for headers, for example), `setWeeklySchedule$Response()` instead.
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  setWorkerSchedule(params: SetWorkerSchedule$Params, context?: HttpContext): Observable<WorkSchedulerResponse> {
-    return this.setWorkerSchedule$Response(params, context).pipe(
+  setWeeklySchedule(params: SetWeeklySchedule$Params, context?: HttpContext): Observable<WorkSchedulerResponse> {
+    return this.setWeeklySchedule$Response(params, context).pipe(
       map((r: StrictHttpResponse<WorkSchedulerResponse>): WorkSchedulerResponse => r.body)
     );
   }
@@ -76,6 +80,56 @@ export class WorkScheduleControllerService extends BaseService {
   getWeekSchedule(params?: GetWeekSchedule$Params, context?: HttpContext): Observable<WeeklyScheduleResponse> {
     return this.getWeekSchedule$Response(params, context).pipe(
       map((r: StrictHttpResponse<WeeklyScheduleResponse>): WeeklyScheduleResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getScheduleTemplate()` */
+  static readonly GetScheduleTemplatePath = '/schedule/template/{workerId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getScheduleTemplate()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getScheduleTemplate$Response(params: GetScheduleTemplate$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkSchedulerResponse>> {
+    return getScheduleTemplate(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getScheduleTemplate$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getScheduleTemplate(params: GetScheduleTemplate$Params, context?: HttpContext): Observable<WorkSchedulerResponse> {
+    return this.getScheduleTemplate$Response(params, context).pipe(
+      map((r: StrictHttpResponse<WorkSchedulerResponse>): WorkSchedulerResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `deleteWorkerScheduleTemplate()` */
+  static readonly DeleteWorkerScheduleTemplatePath = '/schedule/template/{workerId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deleteWorkerScheduleTemplate()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deleteWorkerScheduleTemplate$Response(params: DeleteWorkerScheduleTemplate$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return deleteWorkerScheduleTemplate(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deleteWorkerScheduleTemplate$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deleteWorkerScheduleTemplate(params: DeleteWorkerScheduleTemplate$Params, context?: HttpContext): Observable<void> {
+    return this.deleteWorkerScheduleTemplate$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 
