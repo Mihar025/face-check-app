@@ -6,6 +6,7 @@ import { LocalTime } from '../models/local-time';
 export interface WorkSiteRequest {
   address: string;
   allowedRadius: number;
+  companyId?: number;
   latitude: number;
   longitude: number;
   workDayEnd: LocalTime;
