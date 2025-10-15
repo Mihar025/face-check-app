@@ -46,6 +46,9 @@ import { TermsOfServiceComponent } from './pages/terms-of-service/terms-of-servi
 import { ScheduleConsultationComponent } from './pages/schedule-consultation/schedule-consultation.component';
 import { ViewDemoComponent } from './pages/view-demo/view-demo.component';
 import { RefundPolicyComponent } from './pages/refund-policy/refund-policy.component';
+import {
+  AttendenceTrackEmployeeAppOwnerComponent
+} from "./pages/appOwner/attendence-track-employee-app-owner/attendence-track-employee-app-owner.component";
 
 @NgModule({
   declarations: [
@@ -80,6 +83,7 @@ import { RefundPolicyComponent } from './pages/refund-policy/refund-policy.compo
     SettingsAppOwnerComponent,
     PayrollsAppOwnerComponent,
     CallToCustomersAppOwnerComponent,
+    AttendenceTrackEmployeeAppOwnerComponent,
     AttendenceTrackEmployeeAdminComponent,
     StatForAttendenceComponent
   ],
