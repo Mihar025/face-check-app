@@ -1,0 +1,447 @@
+<app-app-owner-sidebar
+  [userName]="userName"
+  [companyName]="companyName"
+  [userPhotoUrl]="userPhotoUrl">
+</app-app-owner-sidebar>
+
+<div class="worksites-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1>Manage Worksites</h1>
+      <button class="btn btn-primary" (click)="openRegisterModal()">
+        <i class="fas fa-plus"></i> Add New Worksite
+      </button>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, address, or company..."
+          [(ngModel)]="searchTerm"
+          class="search-input">
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="filterActive" class="filter-select">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+
+        <select [(ngModel)]="size" (change)="onPageSizeChange()" class="filter-select">
+          <option value="10">10 per page</option>
+          <option value="25">25 per page</option>
+          <option value="50">50 per page</option>
+          <option value="100">100 per page</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <i class="fas fa-spinner fa-spin fa-3x"></i>
+    <p>Loading worksites...</p>
+  </div>
+
+  <!-- Worksites Table -->
+  <div *ngIf="!isLoading" class="table-container">
+    <table class="worksites-table">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Company</th>
+        <th>Address</th>
+        <th>Coordinates</th>
+        <th>Radius</th>
+        <th>Work Hours</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let worksite of getFilteredWorksites()">
+        <td>{{ worksite.workSiteId || 'N/A' }}</td>
+        <td>{{ worksite.workSiteName || 'N/A' }}</td>
+        <td>{{ worksite.companyName || 'N/A' }}</td>
+        <td>{{ worksite.address || 'N/A' }}</td>
+        <td>
+          <span *ngIf="worksite.latitude && worksite.longitude">
+            {{ worksite.latitude.toFixed(4) }}, {{ worksite.longitude.toFixed(4) }}
+          </span>
+          <span *ngIf="!worksite.latitude || !worksite.longitude">N/A</span>
+        </td>
+        <td>{{ worksite.allowedRadius || 0 }}m</td>
+        <td>
+          <span *ngIf="worksite.workDayStart && worksite.workDayEnd">
+            <ng-container *ngIf="worksite.workDayStart.hour !== undefined">
+              {{ (worksite.workDayStart.hour || 0).toString().padStart(2, '0') }}:{{ (worksite.workDayStart.minute || 0).toString().padStart(2, '0') }} -
+              {{ (worksite.workDayEnd.hour || 0).toString().padStart(2, '0') }}:{{ (worksite.workDayEnd.minute || 0).toString().padStart(2, '0') }}
+            </ng-container>
+            <ng-container *ngIf="worksite.workDayStart.hour === undefined">
+              {{ worksite.workDayStart }} - {{ worksite.workDayEnd }}
+            </ng-container>
+          </span>
+          <span *ngIf="!worksite.workDayStart || !worksite.workDayEnd">N/A</span>
+        </td>
+        <td>
+          <span class="status-badge" [ngClass]="worksite.isActive ? 'active' : 'inactive'">
+            {{ worksite.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-icon" title="View Details" (click)="viewDetails(worksite)">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn-icon" title="Edit" (click)="openEditModal(worksite)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon" title="Active Workers" (click)="viewActiveWorkers(worksite)">
+              <i class="fas fa-users"></i>
+            </button>
+            <button class="btn-icon" title="Closed Days" (click)="viewClosedDays(worksite)">
+              <i class="fas fa-calendar-times"></i>
+            </button>
+            <button class="btn-icon" title="Set Custom Radius" (click)="setCustomRadius(worksite)">
+              <i class="fas fa-map-marker-alt"></i>
+            </button>
+            <button class="btn-icon" [title]="worksite.isActive ? 'Deactivate' : 'Activate'"
+                    (click)="toggleWorksiteStatus(worksite)">
+              <i class="fas" [ngClass]="worksite.isActive ? 'fa-toggle-on' : 'fa-toggle-off'"></i>
+            </button>
+            <button class="btn-icon danger" title="Delete" (click)="deleteWorksite(worksite)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="getFilteredWorksites().length === 0" class="no-data">
+      <i class="fas fa-map-marked-alt fa-3x"></i>
+      <p>No worksites found</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="btn-page" [disabled]="currentPage === 0" (click)="previousPage()">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+
+    <span class="page-info">
+      Page {{ currentPage + 1 }} of {{ totalPages }} ({{ totalElements }} total)
+    </span>
+
+    <button class="btn-page" [disabled]="currentPage === totalPages - 1" (click)="nextPage()">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Registration Modal -->
+<div class="modal-overlay" *ngIf="isRegisterModalOpen" (click)="closeRegisterModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Register New Worksite</h2>
+      <button class="close-btn" (click)="closeRegisterModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="registerErrorMessage" class="error-notification">{{ registerErrorMessage }}</div>
+      <div *ngIf="registerSuccessMessage" class="success-notification">{{ registerSuccessMessage }}</div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()">
+        <div class="section-title">Worksite Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" formControlName="workSiteName" placeholder="Worksite Name *">
+            <div *ngIf="registerForm.get('workSiteName')?.invalid && registerForm.get('workSiteName')?.touched"
+                 class="error-message">
+              Worksite name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="companyId" placeholder="Company ID *">
+            <div *ngIf="registerForm.get('companyId')?.invalid && registerForm.get('companyId')?.touched"
+                 class="error-message">
+              Company ID is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <input type="text" formControlName="address" placeholder="Address *">
+            <div *ngIf="registerForm.get('address')?.invalid && registerForm.get('address')?.touched"
+                 class="error-message">
+              Address is required
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Location Settings</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="number" formControlName="latitude" placeholder="Latitude *" step="0.000001">
+            <div *ngIf="registerForm.get('latitude')?.invalid && registerForm.get('latitude')?.touched"
+                 class="error-message">
+              Valid latitude is required (-90 to 90)
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="longitude" placeholder="Longitude *" step="0.000001">
+            <div *ngIf="registerForm.get('longitude')?.invalid && registerForm.get('longitude')?.touched"
+                 class="error-message">
+              Valid longitude is required (-180 to 180)
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="allowedRadius" placeholder="Allowed Radius (meters) *">
+            <div *ngIf="registerForm.get('allowedRadius')?.invalid && registerForm.get('allowedRadius')?.touched"
+                 class="error-message">
+              Allowed radius is required
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Working Hours</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="time" formControlName="workDayStart" placeholder="Work Day Start *">
+            <div *ngIf="registerForm.get('workDayStart')?.invalid && registerForm.get('workDayStart')?.touched"
+                 class="error-message">
+              Work day start is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input type="time" formControlName="workDayEnd" placeholder="Work Day End *">
+            <div *ngIf="registerForm.get('workDayEnd')?.invalid && registerForm.get('workDayEnd')?.touched"
+                 class="error-message">
+              Work day end is required
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeRegisterModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="isRegisterLoading || registerForm.invalid">
+            <span *ngIf="!isRegisterLoading">Create Worksite</span>
+            <span *ngIf="isRegisterLoading"><i class="fas fa-spinner fa-spin"></i> Creating...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" *ngIf="isEditModalOpen" (click)="closeEditModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Edit Worksite</h2>
+      <button class="close-btn" (click)="closeEditModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <form [formGroup]="editForm" (ngSubmit)="onEditSubmit()">
+        <div class="section-title">Worksite Information</div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <input type="text" formControlName="workSiteName" placeholder="Worksite Name *">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <input type="text" formControlName="address" placeholder="Address *">
+          </div>
+        </div>
+
+        <div class="section-title">Location Settings</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="number" formControlName="latitude" placeholder="Latitude *" step="0.000001">
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="longitude" placeholder="Longitude *" step="0.000001">
+          </div>
+
+          <div class="form-group">
+            <input type="number" formControlName="allowedRadius" placeholder="Allowed Radius (meters) *">
+          </div>
+        </div>
+
+        <div class="section-title">Working Hours</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <input type="time" formControlName="workDayStart" placeholder="Work Day Start *">
+          </div>
+
+          <div class="form-group">
+            <input type="time" formControlName="workDayEnd" placeholder="Work Day End *">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid">
+            Update Worksite
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-overlay" *ngIf="isDetailsModalOpen" (click)="closeDetailsModal()">
+  <div class="modal-content large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Worksite Details</h2>
+      <button class="close-btn" (click)="closeDetailsModal()">×</button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedWorksiteDetails">
+      <div class="details-grid">
+        <div class="detail-item">
+          <label>ID:</label>
+          <span>{{ selectedWorksiteDetails.workSiteId || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Name:</label>
+          <span>{{ selectedWorksiteDetails.workSiteName || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Company:</label>
+          <span>{{ selectedWorksiteDetails.companyName || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Address:</label>
+          <span>{{ selectedWorksiteDetails.address || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Coordinates:</label>
+          <span *ngIf="selectedWorksiteDetails.latitude && selectedWorksiteDetails.longitude">
+            {{ selectedWorksiteDetails.latitude }}, {{ selectedWorksiteDetails.longitude }}
+          </span>
+          <span *ngIf="!selectedWorksiteDetails.latitude || !selectedWorksiteDetails.longitude">N/A</span>
+        </div>
+        <div class="detail-item">
+          <label>Radius:</label>
+          <span>{{ selectedWorksiteDetails.allowedRadius || 0 }} meters</span>
+        </div>
+        <div class="detail-item">
+          <label>Working Hours:</label>
+          <span *ngIf="selectedWorksiteDetails.workDayStart && selectedWorksiteDetails.workDayEnd">
+            {{ (selectedWorksiteDetails.workDayStart.hour || 0).toString().padStart(2, '0') }}:{{ (selectedWorksiteDetails.workDayStart.minute || 0).toString().padStart(2, '0') }} -
+            {{ (selectedWorksiteDetails.workDayEnd.hour || 0).toString().padStart(2, '0') }}:{{ (selectedWorksiteDetails.workDayEnd.minute || 0).toString().padStart(2, '0') }}
+          </span>
+          <span *ngIf="!selectedWorksiteDetails.workDayStart || !selectedWorksiteDetails.workDayEnd">N/A</span>
+        </div>
+        <div class="detail-item">
+          <label>Status:</label>
+          <span class="status-badge" [ngClass]="selectedWorksiteDetails.isActive ? 'active' : 'inactive'">
+            {{ selectedWorksiteDetails.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <label>Created:</label>
+          <span>{{ selectedWorksiteDetails.createdAt || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Updated:</label>
+          <span>{{ selectedWorksiteDetails.updatedAt || 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Active Workers Modal -->
+<div class="modal-overlay" *ngIf="isActiveWorkersModalOpen" (click)="closeActiveWorkersModal()">
+  <div class="modal-content large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Active Workers - {{ selectedWorksite?.workSiteName }}</h2>
+      <button class="close-btn" (click)="closeActiveWorkersModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="activeWorkers.length > 0" class="workers-list">
+        <table class="workers-table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Check-in Time</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let worker of activeWorkers">
+            <td>{{ worker.workerId || worker.id || 'N/A' }}</td>
+            <td>{{ worker.firstName || '' }} {{ worker.lastName || '' }}</td>
+            <td>{{ worker.email || 'N/A' }}</td>
+            <td>{{ worker.phone || 'N/A' }}</td>
+            <td>{{ worker.checkInTime || 'N/A' }}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="activeWorkers.length === 0" class="no-data">
+        <i class="fas fa-users fa-3x"></i>
+        <p>No active workers at this worksite</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Closed Days Modal -->
+<div class="modal-overlay" *ngIf="isClosedDaysModalOpen" (click)="closeClosedDaysModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Closed Days - {{ selectedWorksite?.workSiteName }}</h2>
+      <button class="close-btn" (click)="closeClosedDaysModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <button class="btn btn-primary mb-3" (click)="addClosedDay()">
+        <i class="fas fa-plus"></i> Add Closed Day
+      </button>
+
+      <div *ngIf="closedDays.length > 0" class="closed-days-list">
+        <div *ngFor="let day of closedDays" class="closed-day-item">
+          <span>{{ day.inactiveDate || day.date || 'N/A' }}</span>
+          <button class="btn-icon danger" (click)="removeClosedDay(day.inactiveDate || day.date)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="closedDays.length === 0" class="no-data">
+        <i class="fas fa-calendar-check fa-3x"></i>
+        <p>No closed days scheduled</p>
+      </div>
+    </div>
+  </div>
+</div>

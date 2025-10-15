@@ -143,11 +143,12 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     return '\$${amount.toStringAsFixed(2)}';
   }
 
-  double calculateTaxes() {
-    final info = _financeInfo.value;
-    if (info == null) return 0.0;
-    return info.totalGrossPay - info.totalNetPay;
-  }
+  // TODO: Раскомментировать когда понадобятся налоги
+  // double calculateTaxes() {
+  //   final info = _financeInfo.value;
+  //   if (info == null) return 0.0;
+  //   return info.totalGrossPay - info.totalNetPay;
+  // }
 
   Future<void> _downloadFinanceReport() async {
     final info = _financeInfo.value;
@@ -286,9 +287,10 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                           Share.share(
                                             '${l10n.get('finance.shareTitle')} ($periodText):\n'
                                                 '${l10n.get('finance.totalHours')}: ${info.totalHoursWorked.toStringAsFixed(1)}\n'
-                                                '${l10n.get('finance.totalGrossPay')}: ${formatMoney(info.totalGrossPay)}\n'
-                                                '${l10n.get('finance.totalNetPay')}: ${formatMoney(info.totalNetPay)}\n'
-                                                '${l10n.get('finance.totalTaxes')}: ${formatMoney(calculateTaxes())}',
+                                                '${l10n.get('finance.totalGrossPay')}: ${formatMoney(info.totalGrossPay)}',
+                                            // TODO: Раскомментировать когда понадобятся налоги
+                                            // '${l10n.get('finance.totalNetPay')}: ${formatMoney(info.totalNetPay)}\n'
+                                            // '${l10n.get('finance.totalTaxes')}: ${formatMoney(calculateTaxes())}',
                                           );
                                         }
                                       },
@@ -340,7 +342,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                 ),
               ),
 
-              // Summary Cards with ValueListenableBuilder
+              // Summary Cards - ТОЛЬКО HOURS И GROSS
               ValueListenableBuilder<bool>(
                 valueListenable: _isLoading,
                 builder: (context, isLoading, _) {
@@ -370,20 +372,21 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                   const [Color(0xFF48BB78), Color(0xFF38A169)],
                                   1,
                                 ),
-                                _buildModernSummaryCard(
-                                  l10n.get('finance.net'),
-                                  formatMoney(financeInfo.totalNetPay),
-                                  Icons.account_balance_wallet_rounded,
-                                  const [Color(0xFF4299E1), Color(0xFF3182CE)],
-                                  2,
-                                ),
-                                _buildModernSummaryCard(
-                                  l10n.get('finance.totalTaxes'),
-                                  formatMoney(calculateTaxes()),
-                                  Icons.receipt_long_rounded,
-                                  const [Color(0xFFED8936), Color(0xFFDD6B20)],
-                                  3,
-                                ),
+                                // TODO: Раскомментировать когда понадобятся налоги
+                                // _buildModernSummaryCard(
+                                //   l10n.get('finance.net'),
+                                //   formatMoney(financeInfo.totalNetPay),
+                                //   Icons.account_balance_wallet_rounded,
+                                //   const [Color(0xFF4299E1), Color(0xFF3182CE)],
+                                //   2,
+                                // ),
+                                // _buildModernSummaryCard(
+                                //   l10n.get('finance.totalTaxes'),
+                                //   formatMoney(calculateTaxes()),
+                                //   Icons.receipt_long_rounded,
+                                //   const [Color(0xFFED8936), Color(0xFFDD6B20)],
+                                //   3,
+                                // ),
                               ],
                             ),
                           ),
@@ -828,7 +831,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Date Badge - Updated design
+                  // Date Badge
                   Container(
                     width: 60,
                     height: 60,
@@ -863,7 +866,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Data
+                  // Data - ТОЛЬКО HOURS И GROSS
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -878,11 +881,12 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                           formatMoney(daily.grossPay),
                           hasData,
                         ),
-                        _buildDataItem(
-                          Icons.account_balance_wallet,
-                          formatMoney(daily.netPay),
-                          hasData,
-                        ),
+                        // TODO: Раскомментировать когда понадобится net pay
+                        // _buildDataItem(
+                        //   Icons.account_balance_wallet,
+                        //   formatMoney(daily.netPay),
+                        //   hasData,
+                        // ),
                       ],
                     ),
                   ),
@@ -980,16 +984,17 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                   formatMoney(financeInfo.totalGrossPay),
                   'gross',
                 ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.white.withOpacity(0.2),
-                ),
-                _buildTotalItem(
-                  Icons.account_balance_wallet_rounded,
-                  formatMoney(financeInfo.totalNetPay),
-                  'net',
-                ),
+                // TODO: Раскомментировать когда понадобится net
+                // Container(
+                //   width: 1,
+                //   height: 40,
+                //   color: Colors.white.withOpacity(0.2),
+                // ),
+                // _buildTotalItem(
+                //   Icons.account_balance_wallet_rounded,
+                //   formatMoney(financeInfo.totalNetPay),
+                //   'net',
+                // ),
               ],
             ),
           ],

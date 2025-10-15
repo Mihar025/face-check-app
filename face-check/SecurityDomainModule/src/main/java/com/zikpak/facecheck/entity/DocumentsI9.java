@@ -37,4 +37,24 @@ public class DocumentsI9 {
     private User user;
 
 
+    //October 11
+
+    @Column(name = "document_number_ciphertext")
+    private byte[] documentNumberCiphertext;
+
+    @Column(name = "document_number_iv")
+    private byte[] documentNumberIv;
+
+    @Column(name = "document_number_key_version")
+    private Integer documentNumberKeyVersion;
+
+    @Column(name = "document_number_h")
+    private byte[] documentNumberH;
+
+    @Column(name = "document_number_last4")
+    private String documentNumberLast4;
+
+    ////////////////
+
+
 }

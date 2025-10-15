@@ -5,10 +5,12 @@ import { Authenticate$Params } from "../../../services/fn/authentication/authent
 import { RegisterCompany$Params } from "../../../services/fn/authentication/register-company";
 import { RegisterAdmin$Params } from "../../../services/fn/authentication/register-admin";
 import { VerifyCode$Params } from "../../../services/fn/authentication/verify-code";
-import {HttpHeaders} from "@angular/common/http";
-import {RegistrationAdminRequest} from "../../../services/models/registration-admin-request";
-import {I9DocumentRequest} from "../../../services/models/i-9-document-request";
-import {DependentsRequest} from "../../../services/models/dependents-request";
+import { HttpHeaders } from "@angular/common/http";
+import { RegistrationAdminRequest } from "../../../services/models/registration-admin-request";
+import { I9DocumentRequest } from "../../../services/models/i-9-document-request";
+import { DependentsRequest } from "../../../services/models/dependents-request";
+import { RegisterCompanyAppOwner$Params } from "../../../services/fn/authentication/register-company-app-owner";
+import { Router } from "@angular/router"; // ДОБАВЛЕНО
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +18,8 @@ import {DependentsRequest} from "../../../services/models/dependents-request";
 export class AuthService {
 
   constructor(
-    private apiAuthService: AuthenticationService
+    private apiAuthService: AuthenticationService,
+    private router: Router // ДОБАВЛЕНО
   ) {}
 
   login(email: string, password: string): Observable<any> {
@@ -51,8 +54,8 @@ export class AuthService {
               let targetUrl = '/';
               if (role === 'ADMIN') {
                 targetUrl = '/main-page/admin';
-              } else if (role === 'USER') {
-                targetUrl = '/main-page/user';
+              } else if (role === 'AppOwner') {
+                // targetUrl = '/appOwner/main-page';
               }
 
               console.log('Redirecting to:', targetUrl);
@@ -93,46 +96,128 @@ export class AuthService {
     localStorage.removeItem('verification_email');
     localStorage.removeItem('temp_token');
 
-    window.location.href = '/sign-in';
+    // ИЗМЕНЕНО: редирект на face-check вместо sign-in
+    this.router.navigate(['/face-check']);
   }
 
+  // ДОБАВЛЕН МЕТОД getToken()
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }
 
+  // ДОБАВЛЕН МЕТОД getUserRole()
   getUserRole(): string | null {
     return localStorage.getItem('user_role');
   }
 
+  // ДОБАВЛЕН МЕТОД isUserAuthenticated()
   isUserAuthenticated(): boolean {
     return !!localStorage.getItem('auth_token');
   }
 
+  // Остальные методы остаются без изменений...
+  registerCompanyByAppOwner(
+    companyAdminId: number,
+    companyAddress: string,
+    companyCity: string,
+    CompanyEmail: string,
+    companyName: string,
+    CompanyPhone: string,
+    companyPaymentPosition: 'WEEKLY' | 'BIWEEKLY',
+    companyState: string,
+    companyStateIdNumber: string,
+    companyZipCode: string,
+    defaultMemo: string,
+    employerEIN: string,
+    experienceModRate: number,
+    fundingAccountNumber: string,
+    fundingBankName: string,
+    fundingRoutingNumber: string,
+    returnMailingAddress: string,
+    signatureName: string,
+    signatureTitle: string,
+    socialSecurityTaxForCompany: number,
+    specialTwoCharConditionCodeForMTA305: string,
+    wcInsuranceCarrier: string,
+    wcPolicyNumber: string,
+  ): Observable<any> {
+    const params: RegisterCompanyAppOwner$Params = {
+      body: {
+        companyAdminId: companyAdminId,
+        companyAddress: companyAddress,
+        companyCity: companyCity,
+        companyEmail: CompanyEmail,
+        companyName: companyName,
+        companyPaymentPosition: companyPaymentPosition,
+        companyPhone: CompanyPhone,
+        companyState: companyState,
+        companyStateIdNumber: companyStateIdNumber,
+        companyZipCode: companyZipCode,
+        defaultMemo: defaultMemo,
+        employerEIN: employerEIN,
+        experienceModRate: experienceModRate,
+        fundingAccountNumber: fundingAccountNumber,
+        fundingBankName: fundingBankName,
+        fundingRoutingNumber: fundingRoutingNumber,
+        returnMailingAddress: returnMailingAddress,
+        signatureName: signatureName,
+        signatureTitle: signatureTitle,
+        socialSecurityTaxForCompany: socialSecurityTaxForCompany,
+        specialTwoCharConditionCodeForMTA305: specialTwoCharConditionCodeForMTA305,
+        wcInsuranceCarrier: wcInsuranceCarrier,
+        wcPolicyNumber: wcPolicyNumber,
+      }
+    };
 
+    console.log('Registering company:', params);
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('Authentication token not found'));
+    }
+
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      })
+    };
+
+    return this.apiAuthService.registerCompanyAppOwner(params).pipe(
+      tap((response: any) => {
+        console.log('Company Registration response:', response);
+      }),
+      catchError(error => {
+        console.error('Auth error:', error);
+        if (error.status === 401 || error.status === 403) {
+          console.warn('Authentication error. Token may be expired.');
+        }
+        return throwError(() => error);
+      })
+    );
+  }
 
   registerCompany(
-                  companyAddress: string,
-                  companyCity: string,
-                  CompanyEmail: string,
-                  companyName: string,
-                  CompanyPhone: string,
-                  companyPaymentPosition: 'WEEKLY' | 'BIWEEKLY',
-                  companyState: string,
-                  companyStateIdNumber: string,
-                  companyZipCode: string,
-                  defaultMemo: string,
-                  employerEIN: string,
-                  experienceModRate: number,
-                  fundingAccountNumber: string,
-                  fundingBankName: string,
-                  fundingRoutingNumber: string,
-                  returnMailingAddress: string,
-                  signatureName: string,
-                  signatureTitle: string,
-                  socialSecurityTaxForCompany: number,
-                  specialTwoCharConditionCodeForMTA305: string,
-                  wcInsuranceCarrier: string,
-                  wcPolicyNumber: string,
+    companyAddress: string,
+    companyCity: string,
+    CompanyEmail: string,
+    companyName: string,
+    CompanyPhone: string,
+    companyPaymentPosition: 'WEEKLY' | 'BIWEEKLY',
+    companyState: string,
+    companyStateIdNumber: string,
+    companyZipCode: string,
+    defaultMemo: string,
+    employerEIN: string,
+    experienceModRate: number,
+    fundingAccountNumber: string,
+    fundingBankName: string,
+    fundingRoutingNumber: string,
+    returnMailingAddress: string,
+    signatureName: string,
+    signatureTitle: string,
+    socialSecurityTaxForCompany: number,
+    specialTwoCharConditionCodeForMTA305: string,
+    wcInsuranceCarrier: string,
+    wcPolicyNumber: string,
   ): Observable<any> {
     const params: RegisterCompany$Params = {
       body: {
@@ -187,51 +272,38 @@ export class AuthService {
     );
   }
 
-
   registerAdminExtended(
-    // Основная информация
+    // ... все параметры остаются без изменений
     firstName: string,
     lastName: string,
     middleInitial: string | undefined,
     email: string,
     password: string,
     phoneNumber: string,
-
-    // Адрес
     homeAddress: string,
     apt: string,
     city: string,
     state: string,
     zipcode: string,
-
-    // Персональная информация
     dateOfBirth: string,
     gender: 'MALE' | 'FEMALE' | 'OTHER',
     ssn_WORKER: string | undefined,
-
-    // Информация о трудоустройстве
     employmentType: 'W2' | 'CONTRACTOR_1099',
     payFrequency: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY',
     wcRiskClassCode: string | undefined,
     isRehired: boolean | undefined,
     dateWhenRehired: string | undefined,
-
-    // Налоговая информация
     filingStatus: 'SINGLE' | 'HEAD_OF_HOUSEHOLD' | 'MARRIED_FILLING_SEPARATELY' | 'MARRIED_FILLING_JOINTLY',
     exemptFromWithholding: boolean,
     extraWithHoldings: number,
     multipleJobsOrSpouseWorks: boolean,
     twoJobsCheckBox: boolean,
     livesInNYC: boolean,
-
-    // Зависимые лица
     dependents: number,
     dependentsList: Array<DependentsRequest>,
     dependentsUnder17: number | undefined,
     otherDependents: number | undefined,
     totalDependentsCredit: number | undefined,
-
-    // Дополнительные налоговые поля
     multipleJobsWorksheetLine2a: number | undefined,
     multipleJobsWorksheetLine2b: number | undefined,
     multipleJobsAdditionalWithholding: number | undefined,
@@ -239,13 +311,9 @@ export class AuthService {
     deductions: number | undefined,
     estimatedItemizedDeductions: number | undefined,
     otherIncome: number | undefined,
-
-    // Медицинское страхование
     enrolledInHealthPlan: boolean | undefined,
     monthlyHealthPremium: number | undefined,
     coverageStartDate: string | undefined,
-
-    // Статус гражданства и документы I-9
     isCitizen: boolean | undefined,
     isNonCitizenNationalOfTheUS: boolean | undefined,
     isPermanentResident: boolean | undefined,
@@ -259,7 +327,6 @@ export class AuthService {
   ): Observable<any> {
 
     const registrationData: RegistrationAdminRequest = {
-      // Обязательные поля
       firstName,
       lastName,
       email,
@@ -282,8 +349,6 @@ export class AuthService {
       livesInNYC,
       dependents,
       dependentsList,
-
-      // Опциональные поля
       ...(middleInitial && { middleInitial }),
       ...(ssn_WORKER && { ssn_WORKER }),
       ...(wcRiskClassCode && { wcRiskClassCode }),
@@ -336,4 +401,35 @@ export class AuthService {
     );
   }
 
+
+
+  // В auth-service.ts
+
+  isTokenExpired(): boolean {
+    const token = this.getToken();
+    if (!token) return true;
+
+    try {
+      const decodedToken = this.decodeToken(token);
+      if (!decodedToken || !decodedToken.exp) return true;
+
+      // Проверяем время истечения (exp в секундах)
+      const expiryTime = decodedToken.exp * 1000; // конвертируем в миллисекунды
+      const now = Date.now();
+
+      return now >= expiryTime;
+    } catch (error) {
+      console.error('Error checking token expiry:', error);
+      return true;
+    }
+  }
+
+// Метод для автоматического редиректа при истечении
+  checkTokenAndRedirect(): void {
+    if (this.isTokenExpired()) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_role');
+      this.router.navigate(['/face-check']);
+    }
+  }
 }

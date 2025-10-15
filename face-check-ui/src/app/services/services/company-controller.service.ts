@@ -25,6 +25,10 @@ import { DemoteFromAdminToForeman$Params } from '../fn/company-controller/demote
 import { demoteFromForemanToUser } from '../fn/company-controller/demote-from-foreman-to-user';
 import { DemoteFromForemanToUser$Params } from '../fn/company-controller/demote-from-foreman-to-user';
 import { EmployeeSalaryResponse } from '../models/employee-salary-response';
+import { findAllCompanies } from '../fn/company-controller/find-all-companies';
+import { FindAllCompanies$Params } from '../fn/company-controller/find-all-companies';
+import { findAllEmployees } from '../fn/company-controller/find-all-employees';
+import { FindAllEmployees$Params } from '../fn/company-controller/find-all-employees';
 import { findCertainEmployeeInCompany } from '../fn/company-controller/find-certain-employee-in-company';
 import { FindCertainEmployeeInCompany$Params } from '../fn/company-controller/find-certain-employee-in-company';
 import { findCompanyIncomePerMonth } from '../fn/company-controller/find-company-income-per-month';
@@ -55,6 +59,7 @@ import { getTotalSalaries } from '../fn/company-controller/get-total-salaries';
 import { GetTotalSalaries$Params } from '../fn/company-controller/get-total-salaries';
 import { getUserEmployees } from '../fn/company-controller/get-user-employees';
 import { GetUserEmployees$Params } from '../fn/company-controller/get-user-employees';
+import { PageResponseCompanyResponse } from '../models/page-response-company-response';
 import { PageResponseRelatedUserInCompanyResponse } from '../models/page-response-related-user-in-company-response';
 import { promoteToAdmin } from '../fn/company-controller/promote-to-admin';
 import { PromoteToAdmin$Params } from '../fn/company-controller/promote-to-admin';
@@ -683,6 +688,56 @@ export class CompanyControllerService extends BaseService {
   getCompanyId(params?: GetCompanyId$Params, context?: HttpContext): Observable<number> {
     return this.getCompanyId$Response(params, context).pipe(
       map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /** Path part for operation `findAllEmployees()` */
+  static readonly FindAllEmployeesPath = '/company/find-all-employees';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findAllEmployees()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllEmployees$Response(params?: FindAllEmployees$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseRelatedUserInCompanyResponse>> {
+    return findAllEmployees(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findAllEmployees$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllEmployees(params?: FindAllEmployees$Params, context?: HttpContext): Observable<PageResponseRelatedUserInCompanyResponse> {
+    return this.findAllEmployees$Response(params, context).pipe(
+      map((r: StrictHttpResponse<PageResponseRelatedUserInCompanyResponse>): PageResponseRelatedUserInCompanyResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `findAllCompanies()` */
+  static readonly FindAllCompaniesPath = '/company/find-all-companies';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findAllCompanies()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllCompanies$Response(params?: FindAllCompanies$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseCompanyResponse>> {
+    return findAllCompanies(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findAllCompanies$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllCompanies(params?: FindAllCompanies$Params, context?: HttpContext): Observable<PageResponseCompanyResponse> {
+    return this.findAllCompanies$Response(params, context).pipe(
+      map((r: StrictHttpResponse<PageResponseCompanyResponse>): PageResponseCompanyResponse => r.body)
     );
   }
 

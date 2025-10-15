@@ -7,8 +7,11 @@ import com.zikpak.facecheck.metrics.MetricServiceWorkerSchedule;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerScheduleRepository;
 import com.zikpak.facecheck.requestsResponses.schedule.*;
+import com.zikpak.facecheck.requestsResponses.workScheduler.ScheduleDto;
 import com.zikpak.facecheck.requestsResponses.workScheduler.WorkSchedulerResponse;
 import io.micrometer.core.instrument.Timer;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -17,8 +20,12 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -84,6 +91,7 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
 
 
 
+/*
     @Override
     public WorkSchedulerResponse setScheduleForWorkerScenario(Integer workerId, WorkerSetScheduleRequest request) {
         Timer.Sample timer = metric.startTimer();
@@ -96,7 +104,6 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
 
             LocalDate currentDate = startDate;
             while (currentDate.isBefore(endDate)) {
-                if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY) {
                     WorkerSchedule workerSchedule = WorkerSchedule.builder()
                             .worker(worker)
                             .scheduleDate(currentDate)
@@ -109,10 +116,13 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
                             .isOnDuty(false)
                             .build();
 
+                if (!workerScheduleRepository.existsByWorkerAndScheduleDate(worker, currentDate)) {
+                    workerScheduleRepository.save(workerSchedule);
+                }
+
                     workerScheduleRepository.save(workerSchedule);
                 }
                 currentDate = currentDate.plusDays(1);
-            }
             metric.recordNewWorkerSchedule(true);
             metric.recordOperationTime(timer, "set_schedule_for_worker_scenario");
             return WorkSchedulerResponse.builder()
@@ -129,6 +139,106 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
             metric.recordScheduleError("schedule_for_worker_scenario_failed", e.getMessage(), e);
             throw e;
         }
+    }
+
+ */
+
+    @Transactional
+    public WorkSchedulerResponse setScheduleForWorkerScenario2(
+            Integer workerId,
+            WorkerSetScheduleRequest2 request
+    ) {
+        // 1. Валидация запроса
+        request.validate();
+
+        // 2. Получаем работника
+        User worker = userRepository.findById(workerId)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
+
+        // 3. Удаляем старые ШАБЛОНЫ расписания
+        workerScheduleRepository.deleteByWorkerAndIsTemplateTrue(worker);
+
+        // 4. Создаём новые шаблоны для каждого дня недели
+        List<WorkerSchedule> schedules = new ArrayList<>();
+
+        for (Map.Entry<DayOfWeek, WorkerSetScheduleRequest2.DaySchedule> entry :
+                request.getWeeklySchedule().entrySet()) {
+
+            DayOfWeek dayOfWeek = entry.getKey();
+            WorkerSetScheduleRequest2.DaySchedule daySchedule = entry.getValue();
+
+            WorkerSchedule schedule = WorkerSchedule.builder()
+                    .worker(worker)
+                    .dayOfWeek(dayOfWeek)
+                    .isDayOff(daySchedule.getIsDayOff())
+                    .isTemplate(true) // ЭТО ШАБЛОН!
+                    .build();
+
+            // Если НЕ выходной - заполняем время
+            if (!Boolean.TRUE.equals(daySchedule.getIsDayOff())) {
+                schedule.setExpectedStartTime(daySchedule.getStartTime());
+                schedule.setExpectedEndTime(daySchedule.getEndTime());
+                schedule.setStartLunch(daySchedule.getLunchStart());
+                schedule.setEndLunch(daySchedule.getLunchEnd());
+                schedule.setIsCompanyPayingLunch(daySchedule.getIsCompanyPayingLunch());
+            }
+
+            schedules.add(schedule);
+        }
+
+        // 5. Сохраняем все шаблоны
+        List<WorkerSchedule> savedSchedules = workerScheduleRepository.saveAll(schedules);
+
+        // 6. Формируем ответ
+        return WorkSchedulerResponse.builder()
+                .workerId(workerId)
+                .workerName(worker.getFirstName() + " " + worker.getLastName())
+                .schedules(savedSchedules.stream()
+                        .map(this::convertToScheduleDto)
+                        .collect(Collectors.toList()))
+                .message("Weekly schedule template set successfully for " +
+                        savedSchedules.stream()
+                                .filter(s -> !Boolean.TRUE.equals(s.getIsDayOff()))
+                                .count() + " working days")
+                .build();
+    }
+
+    private ScheduleDto convertToScheduleDto(WorkerSchedule entity) {
+        return ScheduleDto.builder()
+                .scheduleId(entity.getId())
+                .dayOfWeek(entity.getDayOfWeek())
+                .startTime(entity.getExpectedStartTime())
+                .endTime(entity.getExpectedEndTime())
+                .lunchStart(entity.getStartLunch())
+                .lunchEnd(entity.getEndLunch())
+                .isCompanyPayingLunch(entity.getIsCompanyPayingLunch())
+                .isDayOff(entity.getIsDayOff())
+                .build();
+    }
+
+    @Transactional
+    public void deleteWorkerScheduleTemplate(Integer workerId) {
+        User worker = userRepository.findById(workerId)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found"));
+
+        workerScheduleRepository.deleteByWorkerAndIsTemplateTrue(worker);
+    }
+
+    // НОВЫЙ МЕТОД - Получить шаблон расписания работника
+    public WorkSchedulerResponse getWorkerScheduleTemplate(Integer workerId) {
+        User worker = userRepository.findById(workerId)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
+
+        List<WorkerSchedule> templates = workerScheduleRepository.findByWorkerAndIsTemplateTrue(worker);
+
+        return WorkSchedulerResponse.builder()
+                .workerId(workerId)
+                .workerName(worker.getFirstName() + " " + worker.getLastName())
+                .schedules(templates.stream()
+                        .map(this::convertToScheduleDto)
+                        .collect(Collectors.toList()))
+                .message("Schedule template retrieved successfully")
+                .build();
     }
 
 

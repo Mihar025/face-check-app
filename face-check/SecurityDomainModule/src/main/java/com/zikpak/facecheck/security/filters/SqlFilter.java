@@ -49,6 +49,8 @@ public class SqlFilter implements Filter {
         log.info("Initializing SQL Injection Filter");
     }
 
+    // В вашем SqlFilter класс, замените метод doFilter:
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -57,24 +59,43 @@ public class SqlFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         try {
+            // Проверяем URL и параметры
             if (isSqlInjectionDetected(httpRequest)) {
-                log.warn("SQL Injection attempt detected in URI or parameters");
-                return;
+                log.warn("SQL Injection attempt detected from IP: {}", httpRequest.getRemoteAddr());
+                sendErrorResponse(httpResponse);
+                return; // ВАЖНО: останавливаем обработку
             }
 
+            // Проверяем JSON body для POST/PUT
             if (isPostOrPutRequest(httpRequest) && hasJsonContent(httpRequest)) {
                 String jsonBody = readJsonBody(httpRequest);
                 if (containsSqlInjectionInJson(jsonBody)) {
-                    log.warn("SQL Injection attempt detected in JSON body");
-                    return;
+                    log.warn("SQL Injection in JSON from IP: {}", httpRequest.getRemoteAddr());
+                    sendErrorResponse(httpResponse);
+                    return; // ВАЖНО: останавливаем обработку
                 }
                 request = new RequestWrapper(httpRequest, jsonBody);
             }
+
             chain.doFilter(request, response);
+
         } catch (Exception e) {
             log.error("Error in SQL Injection Filter", e);
             httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // Добавьте этот новый метод:
+    private void sendErrorResponse(HttpServletResponse response) throws IOException {
+        response.setStatus(400); // Bad Request
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"status\":400," +
+                        "\"error\":\"Bad Request\"," +
+                        "\"message\":\"Invalid characters in request\"," +
+                        "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\"}"
+        );
+        response.getWriter().flush();
     }
 
     private boolean isSqlInjectionDetected(HttpServletRequest request) {

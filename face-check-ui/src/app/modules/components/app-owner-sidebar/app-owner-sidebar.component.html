@@ -1,0 +1,82 @@
+<div class="sidebar">
+  <div class="admin-profile">
+    <div class="avatar-container">
+      <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'" alt="Admin Avatar" class="admin-avatar">
+    </div>
+    <div class="admin-info">
+      <h3 class="admin-name">{{ userName }}</h3>
+      <p class="admin-company">{{ companyName }}</p>
+    </div>
+  </div>
+
+  <nav class="sidebar-menu">
+    <ul>
+      <li>
+        <a routerLink="/app-owner/main-page"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{exact: true}">
+          Main Page
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/companies-info"
+           routerLinkActive="active">
+          Companies Information
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/manage-worksites"
+           routerLinkActive="active">
+          Manage Worksites
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/manage-employees"
+           routerLinkActive="active">
+          Manage Employees
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/payroll"
+           routerLinkActive="active">
+          Payrolls
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/location-tracking"
+           routerLinkActive="active">
+          Location Tracking
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/employee-attendance"
+           routerLinkActive="active">
+          Employees Attendance
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/attendance-statistic"
+           routerLinkActive="active">
+          Attendance Statistic
+        </a>
+      </li>
+      <li>
+        <a routerLink="/app-owner/call-to-customers"
+           routerLinkActive="active">
+          Customer Call Back
+        </a>
+      </li>
+
+      <li>
+        <a routerLink="/app-owner/settings"
+           routerLinkActive="active">
+          Settings
+        </a>
+      </li>
+      <li>
+        <a (click)="logout()" class="logout-link">Logout</a>
+      </li>
+    </ul>
+  </nav>
+</div>
+

@@ -1,0 +1,450 @@
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="logo-container" (click)="navigateToFaceCheck()">
+      <div class="logo">
+        <img src="logo.jpg" alt="Facecheck Logo" class="logo-img">
+      </div>
+      <a class="brand-name">facecheck</a>
+    </div>
+    <div class="nav-links">
+      <a class="nav-link" (click)="navigateToPricing()">Pricing</a>
+      <a class="nav-link" (click)="navigateToAboutUs()">About Us</a>
+      <a class="nav-link" (click)="navigateToViewDemo()">Demo</a>
+    </div>
+    <a class="sign-in-button" (click)="navigateToSignIn()">Sign In</a>
+  </div>
+</nav>
+
+<!-- Refund Hero -->
+<section class="refund-hero">
+  <div class="refund-hero-content">
+    <h1>Refund & Cancellation Policy</h1>
+    <span class="effective-date">
+      <i class="fas fa-calendar"></i> Effective Date: August 23, 2025
+    </span>
+  </div>
+</section>
+
+<!-- Refund Content with Sidebar -->
+<div class="refund-content-wrapper">
+
+  <!-- Left Sidebar Navigation -->
+  <nav class="sidebar-nav">
+    <h3 class="sidebar-title">
+      <i class="fas fa-hand-holding-dollar"></i> Quick Navigation
+    </h3>
+    <ul>
+      <li>
+        <a href="#section1" class="nav-item">
+          <span class="section-num">1</span>
+          <span>Subscription Cancellation</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section2" class="nav-item">
+          <span class="section-num">2</span>
+          <span>Refund Eligibility</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section3" class="nav-item">
+          <span class="section-num">3</span>
+          <span>Processing Times</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section4" class="nav-item">
+          <span class="section-num">4</span>
+          <span>App Store Purchases</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section5" class="nav-item">
+          <span class="section-num">5</span>
+          <span>Stripe Payments</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section6" class="nav-item">
+          <span class="section-num">6</span>
+          <span>Technical Issues</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section7" class="nav-item">
+          <span class="section-num">7</span>
+          <span>Disputes</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section8" class="nav-item">
+          <span class="section-num">8</span>
+          <span>Contact Support</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="refund-container">
+    <div class="refund-card">
+
+      <!-- Legal Entity Information -->
+      <div class="legal-entity-box">
+        <h3>Billing Entity Information</h3>
+        <p><i class="fas fa-building"></i> <strong>Company:</strong> Facecheck LLC</p>
+        <p><i class="fas fa-map-marker-alt"></i> <strong>Address:</strong> 407 Ocean View Ave, Apt 1A, Brooklyn, NY 11235, USA</p>
+        <p><i class="fas fa-phone"></i> <strong>Support:</strong> +1 (347) 828-5790</p>
+        <p><i class="fas fa-clock"></i> <strong>Support Hours:</strong> Monday-Friday, 9 AM - 6 PM EST</p>
+      </div>
+
+      <!-- Introduction -->
+      <div class="important-box">
+        <p>This Refund & Cancellation Policy explains how <strong>Facecheck LLC</strong> handles subscription cancellations, refund requests, and billing disputes. We strive to be fair and transparent in all billing matters. Please read this policy carefully before purchasing any subscription or service.</p>
+      </div>
+
+      <!-- Section 1: Subscription Cancellation -->
+      <div class="refund-section" id="section1">
+        <h2>
+          <span class="section-number">1</span>
+          Subscription Cancellation
+        </h2>
+
+        <h3>How to Cancel Your Subscription</h3>
+        <ul>
+          <li><strong>In-App Cancellation:</strong> Go to Settings → Subscription → Cancel Subscription</li>
+          <li><strong>Web Portal:</strong> Log into your account dashboard and select "Manage Subscription"</li>
+          <li><strong>Phone Support:</strong> Call +1 (347) 828-5790 during business hours</li>
+        </ul>
+
+        <h3>When Cancellation Takes Effect</h3>
+        <ul>
+          <li>Cancellation is <strong>effective at the end of your current billing period</strong></li>
+          <li>You retain access to premium features until the end of the paid period</li>
+          <li>No charges will occur after the current billing period ends</li>
+          <li>Employee seats are automatically adjusted at the next billing cycle</li>
+        </ul>
+
+        <div class="info-box">
+          <p><i class="fas fa-info-circle"></i> <strong>Note:</strong> Cancelling your subscription does not delete your account or data. You can reactivate your subscription at any time.</p>
+        </div>
+      </div>
+
+      <!-- Section 2: Refund Eligibility -->
+      <div class="refund-section" id="section2">
+        <h2>
+          <span class="section-number">2</span>
+          Refund Eligibility
+        </h2>
+
+        <h3>Eligible for Refund</h3>
+        <ul>
+          <li><strong>First-time subscribers:</strong> Full refund within 7 days of initial purchase if no substantial use</li>
+          <li><strong>Technical failures:</strong> Service unavailable for more than 72 consecutive hours</li>
+          <li><strong>Billing errors:</strong> Duplicate charges, incorrect amounts, or unauthorized transactions</li>
+          <li><strong>Feature misrepresentation:</strong> Advertised features not available as described</li>
+          <li><strong>Account suspension errors:</strong> Wrongful suspension without Terms violation</li>
+        </ul>
+
+        <h3>Not Eligible for Refund</h3>
+        <ul>
+          <li><strong>Partial period refunds:</strong> No refunds for unused time in billing period</li>
+          <li><strong>Change of mind:</strong> After 7-day initial period for first-time users</li>
+          <li><strong>Terms violations:</strong> Account suspended for violating Terms of Service</li>
+          <li><strong>Price changes:</strong> Subscription price increases with proper notice</li>
+          <li><strong>Third-party fees:</strong> Payment processing or currency conversion fees</li>
+        </ul>
+
+        <table class="timeline-table">
+          <thead>
+          <tr>
+            <th>Subscription Type</th>
+            <th>Refund Window</th>
+            <th>Conditions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td><strong>Monthly - New User</strong></td>
+            <td>7 days</td>
+            <td>First subscription only, minimal usage</td>
+          </tr>
+          <tr>
+            <td><strong>Monthly - Existing</strong></td>
+            <td>48 hours</td>
+            <td>Technical issues or billing errors only</td>
+          </tr>
+          <tr>
+            <td><strong>Annual - New User</strong></td>
+            <td>14 days</td>
+            <td>First subscription only, minimal usage</td>
+          </tr>
+          <tr>
+            <td><strong>Annual - Existing</strong></td>
+            <td>7 days</td>
+            <td>Technical issues or billing errors only</td>
+          </tr>
+          <tr>
+            <td><strong>Employee Seats</strong></td>
+            <td>Prorated</td>
+            <td>Adjusted at next billing cycle</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section 3: Processing Times -->
+      <div class="refund-section" id="section3">
+        <h2>
+          <span class="section-number">3</span>
+          Processing Times & Methods
+        </h2>
+
+        <h3>Refund Processing Timeline</h3>
+        <ul>
+          <li><strong>Request Review:</strong> 1-2 business days</li>
+          <li><strong>Approval Notification:</strong> Within 3 business days</li>
+          <li><strong>Payment Processing:</strong> 5-10 business days after approval</li>
+          <li><strong>Bank Processing:</strong> Additional 3-5 business days may apply</li>
+        </ul>
+
+        <h3>Refund Methods</h3>
+        <ul>
+          <li><strong>Original Payment Method:</strong> Default refund to the card/account used for purchase</li>
+          <li><strong>Account Credit:</strong> Optional credit for future subscription periods</li>
+          <li><strong>Alternative Methods:</strong> Bank transfer for special circumstances (fees may apply)</li>
+        </ul>
+
+        <div class="warning-box">
+          <h4><i class="fas fa-exclamation-triangle"></i> Important Processing Notes</h4>
+          <ul>
+            <li>Refunds cannot be processed to different payment methods without verification</li>
+            <li>International refunds may take up to 15 business days</li>
+            <li>Currency conversion rates apply at time of refund, not original purchase</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 4: App Store Purchases -->
+      <div class="refund-section" id="section4">
+        <h2>
+          <span class="section-number">4</span>
+          App Store & Google Play Purchases
+        </h2>
+
+        <p>Purchases made through Apple App Store or Google Play Store are subject to their respective refund policies:</p>
+
+        <h3>Apple App Store</h3>
+        <ul>
+          <li>Request refunds directly through Apple's <strong>Report a Problem</strong> page</li>
+          <li>Visit: reportaproblem.apple.com</li>
+          <li>Apple determines refund eligibility based on their policies</li>
+          <li>Typical review time: 48 hours</li>
+        </ul>
+
+        <h3>Google Play Store</h3>
+        <ul>
+          <li>Request refunds through Google Play <strong>Order History</strong></li>
+          <li>48-hour window for immediate refunds</li>
+          <li>After 48 hours, contact Facecheck support for assistance</li>
+          <li>Google reviews requests based on their refund policy</li>
+        </ul>
+
+        <div class="info-box">
+          <p><i class="fas fa-mobile-alt"></i> <strong>Mobile Users:</strong> We cannot directly refund App Store or Google Play purchases. You must request through their platforms, but we can provide supporting documentation if needed.</p>
+        </div>
+      </div>
+
+      <!-- Section 5: Stripe Payments -->
+      <div class="refund-section" id="section5">
+        <h2>
+          <span class="section-number">5</span>
+          Direct Stripe Payments
+        </h2>
+
+        <h3>Web & Direct Subscriptions</h3>
+        <p>For subscriptions purchased directly through our website using Stripe:</p>
+
+        <ul>
+          <li><strong>Full Control:</strong> We can process refunds directly</li>
+          <li><strong>Faster Processing:</strong> Typically 3-5 business days</li>
+          <li><strong>Partial Refunds:</strong> Available for technical issues</li>
+          <li><strong>Instant Cancellation:</strong> Stop future charges immediately</li>
+        </ul>
+
+        <h3>Payment Disputes & Chargebacks</h3>
+        <ul>
+          <li>Contact us before initiating a chargeback - we'll resolve it faster</li>
+          <li>Chargebacks may result in account suspension during investigation</li>
+          <li>Fraudulent chargebacks will result in permanent account termination</li>
+          <li>We reserve the right to challenge disputed transactions with evidence</li>
+        </ul>
+      </div>
+
+      <!-- Section 6: Technical Issues -->
+      <div class="refund-section" id="section6">
+        <h2>
+          <span class="section-number">6</span>
+          Technical Issues & Service Credits
+        </h2>
+
+        <h3>Qualifying Technical Issues</h3>
+        <ul>
+          <li><strong>Complete Service Outage:</strong> App unavailable for all users</li>
+          <li><strong>Data Loss:</strong> Permanent loss of user data due to our error</li>
+          <li><strong>Critical Feature Failure:</strong> Core features (punch in/out, calculations) non-functional</li>
+          <li><strong>Security Breach:</strong> Compromised account due to our security failure</li>
+        </ul>
+
+        <h3>Service Level Credits</h3>
+        <table class="timeline-table">
+          <thead>
+          <tr>
+            <th>Downtime Duration</th>
+            <th>Credit Amount</th>
+            <th>Application</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>4-24 hours</td>
+            <td>5% of monthly fee</td>
+            <td>Automatic credit</td>
+          </tr>
+          <tr>
+            <td>24-72 hours</td>
+            <td>15% of monthly fee</td>
+            <td>Automatic credit</td>
+          </tr>
+          <tr>
+            <td>72+ hours</td>
+            <td>Full month refund</td>
+            <td>Upon request</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <div class="info-box">
+          <p><i class="fas fa-tools"></i> <strong>Maintenance:</strong> Scheduled maintenance windows do not qualify for service credits. We provide 48-hour advance notice for planned downtime.</p>
+        </div>
+      </div>
+
+      <!-- Section 7: Disputes -->
+      <div class="refund-section" id="section7">
+        <h2>
+          <span class="section-number">7</span>
+          Dispute Resolution Process
+        </h2>
+
+        <h3>How to File a Dispute</h3>
+        <ol>
+          <li><strong>Provide Information:</strong> Include receipt, date, amount, and reason for dispute</li>
+          <li><strong>Investigation:</strong> We review within 3 business days</li>
+          <li><strong>Resolution:</strong> Final decision communicated within 7 business days</li>
+        </ol>
+
+        <h3>Escalation Process</h3>
+        <ul>
+          <li>If unsatisfied with initial resolution, request manager review</li>
+          <li>Second-level review completed within 5 business days</li>
+          <li>Arbitration available per Terms of Service if needed</li>
+        </ul>
+
+        <div class="warning-box">
+          <h4><i class="fas fa-balance-scale"></i> Fair Use Policy</h4>
+          <p>Excessive refund requests or pattern of disputes may result in account review and potential service termination. We track refund history to prevent abuse.</p>
+        </div>
+      </div>
+
+      <!-- Section 8: Contact Support -->
+      <div class="refund-section" id="section8">
+        <h2>
+          <span class="section-number">8</span>
+          Contact Support
+        </h2>
+
+        <h3>Billing Support Channels</h3>
+        <div class="legal-entity-box">
+          <p><i class="fas fa-phone"></i> <strong>Phone:</strong> +1 (347) 828-5790</p>
+          <p><i class="fas fa-clock"></i> <strong>Hours:</strong> Monday-Friday, 9 AM - 6 PM EST</p>
+          <p><i class="fas fa-globe"></i> <strong>Portal:</strong> support.facecheck.com</p>
+        </div>
+
+        <h3>Information to Provide</h3>
+        <ul>
+          <li>Account email address</li>
+          <li>Transaction ID or receipt number</li>
+          <li>Date of purchase</li>
+          <li>Reason for refund request</li>
+          <li>Any supporting documentation</li>
+        </ul>
+
+        <div class="info-box">
+          <p><i class="fas fa-headset"></i> <strong>Response Time:</strong> We aim to respond to all billing inquiries within 24 hours during business days. Weekend and holiday requests are processed the next business day.</p>
+        </div>
+      </div>
+
+      <!-- Quick Summary -->
+      <div class="quick-summary">
+        <h3><i class="fas fa-clipboard-check"></i> Quick Reference</h3>
+        <ul>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <strong>New users:</strong> 7-day money-back guarantee for monthly, 14 days for annual
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <strong>Cancel anytime:</strong> No penalties, keep access until period ends
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <strong>Technical issues:</strong> Full refund for 72+ hours downtime
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <strong>App Store/Google Play:</strong> Request refunds through their platforms
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <strong>Processing time:</strong> 5-10 business days for approved refunds
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <strong>Support:</strong> Call 347-828-5790
+          </li>
+        </ul>
+      </div>
+
+      <!-- Policy Updates Notice -->
+      <div class="important-box" style="margin-top: 3rem;">
+        <p><strong>Policy Updates:</strong> This Refund & Cancellation Policy may be updated periodically. Changes become effective immediately upon posting. For substantial changes, we'll notify active subscribers via email. Continued use of the service after changes constitutes acceptance of the updated policy.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <img src="logo.jpg" alt="Facecheck">
+          <span>facecheck</span>
+        </div>
+        <p>Professional workforce time tracking platform designed for modern businesses</p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2025 Facecheck. All rights reserved.</p>
+      <div class="footer-legal">
+        <a (click)="navigateToPrivacy()">Privacy Policy</a>
+        <a (click)="navigateToTerms()">Terms of Use</a>
+        <a (click)="navigateToRefundPolicy()">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,520 @@
+// Простой и чистый дизайн для companies компонента
+
+.companies-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+  margin-left: 260px; // Для сайдбара
+
+  // Шапка
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+
+    .total-count {
+      background: #f5f5f5;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+  }
+
+  // Сетка карточек
+  .companies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  // Карточка компании
+  .company-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    transition: box-shadow 0.2s;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .company-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #f0f0f0;
+
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+      }
+
+      .company-id {
+        font-size: 12px;
+        color: #999;
+        font-weight: 500;
+      }
+    }
+
+    // Информация о компании
+    .company-info {
+      margin-bottom: 20px;
+
+      .info-row {
+        display: flex;
+        margin-bottom: 10px;
+        font-size: 14px;
+
+        .label {
+          color: #666;
+          width: 80px;
+          flex-shrink: 0;
+        }
+
+        .value {
+          color: #333;
+          flex: 1;
+        }
+      }
+    }
+
+    // Кнопки действий
+    .company-actions {
+      display: flex;
+      gap: 10px;
+
+      .btn {
+        flex: 1;
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+
+        &:hover {
+          background: #f5f5f5;
+        }
+
+        &.btn-edit {
+          color: #2196F3;
+          border-color: #2196F3;
+
+          &:hover {
+            background: #2196F3;
+            color: white;
+          }
+        }
+
+        &.btn-delete {
+          color: #f44336;
+          border-color: #f44336;
+
+          &:hover {
+            background: #f44336;
+            color: white;
+          }
+        }
+
+        &.btn-save {
+          color: #4CAF50;
+          border-color: #4CAF50;
+
+          &:hover {
+            background: #4CAF50;
+            color: white;
+          }
+        }
+
+        &.btn-cancel {
+          color: #666;
+          border-color: #ddd;
+
+          &:hover {
+            background: #f5f5f5;
+          }
+        }
+      }
+    }
+  }
+
+  // Режим редактирования
+  .edit-mode {
+    .edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+
+      .form-input {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: #2196F3;
+        }
+
+        &::placeholder {
+          color: #999;
+        }
+      }
+    }
+  }
+
+  // Пустое состояние
+  .no-companies {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+
+    p {
+      font-size: 16px;
+      color: #666;
+      margin: 0;
+    }
+  }
+
+  // Пагинация
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 40px;
+
+    .pagination-btn {
+      padding: 8px 16px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+
+      &:hover:not(:disabled) {
+        background: #333;
+        color: white;
+        border-color: #333;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .pagination-info {
+      font-size: 14px;
+      color: #666;
+    }
+  }
+}
+
+// Адаптивность
+@media (max-width: 1024px) {
+  .companies-container {
+    margin-left: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .companies-container {
+    margin-left: 0;
+    padding: 20px;
+
+    .header {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+
+    .companies-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .company-card {
+      .company-actions {
+        flex-direction: column;
+
+        .btn {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .companies-container {
+    padding: 15px;
+
+    .company-card {
+      padding: 15px;
+
+      .company-info {
+        .info-row {
+          flex-direction: column;
+          gap: 4px;
+
+          .label {
+            width: auto;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+// Добавьте эти стили в companies-info-app-owner.component.scss
+
+// Modal styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    margin: 0;
+    color: #333;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      color: #333;
+    }
+  }
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+    margin: 20px 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+
+    &.full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    input, select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+
+      &:focus {
+        outline: none;
+        border-color: #4CAF50;
+      }
+
+      &.ng-invalid.ng-touched {
+        border-color: #f44336;
+      }
+    }
+
+    .form-select {
+      background-color: white;
+      cursor: pointer;
+    }
+  }
+
+  .error-message {
+    color: #f44336;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+
+  .error-notification {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #ffcdd2;
+  }
+
+  .success-notification {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #a5d6a7;
+  }
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &.btn-secondary {
+      background-color: #f5f5f5;
+      color: #333;
+
+      &:hover {
+        background-color: #e0e0e0;
+      }
+    }
+
+    &.btn-primary {
+      background-color: #4CAF50;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: #45a049;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// Update header styles to accommodate the button
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    .btn-primary {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &:hover {
+        background-color: #45a049;
+      }
+
+      i {
+        font-size: 12px;
+      }
+    }
+
+    .total-count {
+      color: #666;
+      font-size: 14px;
+    }
+  }
+}

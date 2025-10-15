@@ -1,5 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
+import com.zikpak.facecheck.helperServices.WorkerScheduleServiceImpl;
+import com.zikpak.facecheck.helperServices.WorkerSetScheduleRequest2;
 import com.zikpak.facecheck.requestsResponses.schedule.WeeklyScheduleResponse;
 import com.zikpak.facecheck.requestsResponses.schedule.WorkerHourResponse;
 import com.zikpak.facecheck.requestsResponses.schedule.WorkerSetScheduleRequest;
@@ -30,7 +32,7 @@ public class WorkScheduleController {
         );
     }
 
-    //working
+    /*
     @PostMapping("/worker/{workerId}")
     public ResponseEntity<WorkSchedulerResponse> setWorkerSchedule(
         //    Authentication authentication,
@@ -40,6 +42,8 @@ public class WorkScheduleController {
 
         return ResponseEntity.ok( workerScheduleService.setScheduleForWorker(workerId, request));
     }
+
+     */
     //working
     @GetMapping("/hours/current-week")
     public ResponseEntity<WorkerHourResponse> getCurrentWeekHours(Authentication authentication) {
@@ -56,5 +60,28 @@ public class WorkScheduleController {
         return ResponseEntity.ok(
                 workerScheduleService.findTotalHoursPerSpecialWeek(authentication, date)
         );
+    }
+
+    @PostMapping("/set-schedule/{workerId}")
+    public ResponseEntity<WorkSchedulerResponse> setWeeklySchedule(
+            @PathVariable Integer workerId,
+            @Valid @RequestBody WorkerSetScheduleRequest2 request
+    ) {
+        WorkSchedulerResponse response = workerScheduleService.setScheduleForWorkerScenario2(workerId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/template/{workerId}")
+    public ResponseEntity<WorkSchedulerResponse> getScheduleTemplate(
+            @PathVariable Integer workerId
+    ) {
+        WorkSchedulerResponse response = workerScheduleService.getWorkerScheduleTemplate(workerId);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/template/{workerId}")
+    public ResponseEntity<Void> deleteWorkerScheduleTemplate(@PathVariable Integer workerId) {
+        workerScheduleService.deleteWorkerScheduleTemplate(workerId);
+        return ResponseEntity.noContent().build();
     }
 }

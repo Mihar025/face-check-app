@@ -9,4 +9,5 @@ export interface UserFullContactInformation {
   phoneNumber?: string;
   photoFileName?: string;
   photoUrl?: string;
+  userId?: number;
 }

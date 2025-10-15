@@ -20,8 +20,8 @@
     </button>
 
     <div class="modal-header">
-      <h2>Start Your Free Trial</h2>
-      <p>No credit card required • 30 days free</p>
+      <h2>Contact Sales</h2>
+      <p>Get in touch with our team</p>
     </div>
 
     <form class="trial-form" (ngSubmit)="submitTrialForm($event)">
@@ -87,16 +87,16 @@
 </div>
 
 <!-- Success Modal -->
-<div class="modal-overlay success-modal" id="successModal" *ngIf="showSuccessModal">
+<div class="modal-overlay success-modal" *ngIf="showSuccessModal">
   <div class="modal-container success-container">
     <div class="success-icon">
       <i class="fas fa-check"></i>
     </div>
-    <h2>Welcome to Facecheck!</h2>
-    <p>Your free trial has been activated successfully.</p>
-    <p class="success-info">We'll send you an email with further instructions.</p>
+    <h2>Thank You!</h2>
+    <p>We've received your information.</p>
+    <p class="success-info">Our sales team will contact you shortly.</p>
     <button class="success-btn" (click)="closeSuccessModal()">
-      Get Started
+      Got it
     </button>
   </div>
 </div>
@@ -114,23 +114,72 @@
       <a (click)="navigateToPricing()" class="nav-link active">Pricing</a>
       <a (click)="navigateToAboutUs()" class="nav-link">About Us</a>
       <a (click)="navigateToViewDemo()" class="nav-link">Demo</a>
-
     </div>
     <a (click)="navigateToSignIn()" class="sign-in-button">Sign In</a>
   </div>
 </nav>
 
-<!-- Hero Section -->
+<!-- Hero Section with Animations -->
 <section class="hero-section">
-  <div class="hero-content">
-    <div class="text-container">
-      <h1>Simple, Transparent Pricing</h1>
-      <p>Professional time tracking and IRS calculation tools for your business</p>
+  <div class="hero-background">
+    <!-- Grid Lines -->
+    <div class="grid-lines">
+      <div class="line vertical"></div>
+      <div class="line vertical"></div>
+      <div class="line vertical"></div>
+      <div class="line vertical"></div>
+      <div class="line horizontal"></div>
+      <div class="line horizontal"></div>
+      <div class="line horizontal"></div>
+    </div>
+
+    <!-- Geometric Shapes -->
+    <div class="geometric-shapes">
+      <div class="geo-shape circle"></div>
+      <div class="geo-shape square"></div>
+      <div class="geo-shape triangle"></div>
+    </div>
+
+    <!-- Particles -->
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
     </div>
   </div>
-  <button class="scroll-btn" id="scrollBtn" (click)="scrollToPricingPlans()">
-    <i class="fas fa-arrow-down"></i>
-  </button>
+
+  <div class="hero-content">
+    <div class="badge">
+      <i class="fas fa-clock"></i>
+      <span>Time Tracking Made Simple</span>
+    </div>
+
+    <h1>Simple, Transparent Pricing</h1>
+    <p>GPS-verified time tracking with photo timestamps for your workforce</p>
+
+    <button class="scroll-btn" (click)="scrollToPricingPlans()">
+      <i class="fas fa-arrow-down"></i>
+    </button>
+  </div>
+
+  <!-- Wave Bottom -->
+  <div class="wave-bottom">
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path d="M0,64 C480,150 960,-30 1440,64 L1440,120 L0,120 Z" fill="#f3f4f6"></path>
+    </svg>
+  </div>
 </section>
 
 <!-- Pricing Section -->
@@ -149,15 +198,15 @@
       </div>
       <div class="card-features">
         <ul>
-          <li><i class="fas fa-check"></i> Time tracking with photo timestamps</li>
-          <li><i class="fas fa-check"></i> Basic IRS tax calculations</li>
+          <li><i class="fas fa-check"></i> GPS time tracking</li>
+          <li><i class="fas fa-check"></i> Photo timestamps</li>
           <li><i class="fas fa-check"></i> Up to 5 employees</li>
-          <li><i class="fas fa-check"></i> Monthly reports</li>
+          <li><i class="fas fa-check"></i> Basic reports</li>
           <li><i class="fas fa-check"></i> Email support</li>
           <li><i class="fas fa-check"></i> Mobile app access</li>
         </ul>
       </div>
-      <button class="select-plan-btn" (click)="openTrialModal('starter')">Start Free Trial</button>
+      <button class="select-plan-btn" (click)="openTrialModal('starter')">Contact Sales</button>
     </div>
 
     <!-- Pro Plan -->
@@ -174,40 +223,38 @@
       <div class="card-features">
         <ul>
           <li><i class="fas fa-check"></i> <strong>Visual attendance verification</strong></li>
-          <li><i class="fas fa-check"></i> <strong>NO facial recognition or biometrics</strong></li>
-          <li><i class="fas fa-check"></i> Advanced IRS tax calculations</li>
+          <li><i class="fas fa-check"></i> <strong>GPS location tracking</strong></li>
+          <li><i class="fas fa-check"></i> <strong>Photo timestamps</strong></li>
           <li><i class="fas fa-check"></i> Unlimited employees</li>
-          <li><i class="fas fa-check"></i> Real-time tracking & GPS location</li>
-          <li><i class="fas fa-check"></i> Overtime & break management</li>
-          <li><i class="fas fa-check"></i> Custom reports & analytics</li>
+          <li><i class="fas fa-check"></i> Real-time tracking</li>
+          <li><i class="fas fa-check"></i> Overtime tracking</li>
+          <li><i class="fas fa-check"></i> Advanced reports & analytics</li>
           <li><i class="fas fa-check"></i> Priority 24/7 support</li>
           <li><i class="fas fa-check"></i> API access & integrations</li>
           <li><i class="fas fa-check"></i> 30-day photo storage</li>
         </ul>
       </div>
-      <button class="select-plan-btn pro-btn" (click)="openTrialModal('professional')">Start Free Trial</button>
+      <button class="select-plan-btn pro-btn" (click)="openTrialModal('professional')">Contact Sales</button>
     </div>
 
   </div>
 
-  <!-- Important Notice -->
+  <!-- Notice -->
   <div class="pricing-notice">
     <i class="fas fa-info-circle"></i>
-    <p><strong>Important:</strong> Our platform provides time tracking and calculation assistance based on IRS guidelines.
-      We are NOT a payroll service. All calculations should be verified by a qualified tax professional.</p>
+    <p><strong>Note:</strong> Facecheck provides accurate time tracking and hours calculation.
+      Our platform focuses on attendance verification and workforce management.</p>
   </div>
 </section>
-
-<!-- Rest of the sections remain the same... -->
 
 <!-- CTA Section -->
 <section class="cta-section">
   <div class="cta-container">
-    <h2>Start Your 30-Day Free Trial</h2>
-    <p>No credit card required • Full access • Cancel anytime</p>
+    <h2>Ready to Track Your Team?</h2>
+    <p>Get started with GPS-verified time tracking today</p>
     <div class="cta-buttons">
       <button class="cta-btn primary" (click)="openTrialModal()">
-        Start Free Trial
+        Contact Sales
         <i class="fas fa-arrow-right"></i>
       </button>
       <button class="cta-btn secondary" (click)="navigateToViewDemo()">
@@ -227,7 +274,7 @@
           <img src="logo.jpg" alt="Facecheck">
           <span>facecheck</span>
         </div>
-        <p>Professional workforce time tracking and calculation platform</p>
+        <p>GPS-verified workforce time tracking platform</p>
       </div>
     </div>
 

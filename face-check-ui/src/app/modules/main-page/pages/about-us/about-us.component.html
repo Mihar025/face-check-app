@@ -24,6 +24,7 @@
     <div class="nav-links">
       <a (click)="navigateToPricing()" class="nav-link">Pricing</a>
       <a (click)="navigateToAboutUs()" class="nav-link active">About Us</a>
+      <a (click)="navigateToViewDemo()" class="nav-link">Demo</a>
     </div>
     <a (click)="navigateToSignIn()" class="sign-in-button">Sign In</a>
   </div>
@@ -33,7 +34,7 @@
   <div class="about-hero-content">
     <div class="about-text-container">
       <h1>The story behind <span class="highlight-text">Facecheck</span></h1>
-      <p>Transforming how businesses manage payroll, track time, and optimize workforce productivity</p>
+      <p>Transforming how businesses manage workforce time tracking and optimize productivity</p>
     </div>
   </div>
 </section>
@@ -43,7 +44,7 @@
     <div class="mission-content">
       <div class="mission-text">
         <h2 class="section-title">Our Mission</h2>
-        <p class="mission-statement">To provide businesses with innovative technology that makes payroll processing and time management simpler, faster, and more reliable than ever before.</p>
+        <p class="mission-statement">To provide businesses with innovative technology that makes time tracking and workforce management simpler, faster, and more reliable than ever before.</p>
         <p class="mission-description">
           At Facecheck, we believe that businesses should focus on growth and innovation, not administrative burdens.
           Our mission is to eliminate the complexity of workforce management, giving you back the time to do what you do best.
@@ -104,19 +105,18 @@
       <div class="story-text">
         <h2 class="section-title">Our Story</h2>
         <p>
-          Facecheck was founded in 2022 by a team of technology and HR professionals who saw firsthand how outdated payroll systems were holding businesses back.
+          Facecheck was founded in 2022 by a team of technology professionals who saw firsthand how outdated time tracking systems were holding businesses back.
         </p>
         <p>
           After experiencing the frustration of manual timesheets, error-prone calculations, and lack of insights, our founders set out to build a solution that would revolutionize workforce management.
         </p>
         <p>
-          Today, Facecheck serves over 100 businesses across multiple industries, helping them save time, reduce errors, and gain valuable insights into their workforce productivity and finances.
+          Today, Facecheck serves businesses across multiple industries, helping them save time, reduce errors, and gain valuable insights into their workforce productivity.
         </p>
       </div>
     </div>
   </div>
 </section>
-
 
 <section class="contact-section">
   <div class="container">
@@ -126,42 +126,84 @@
         <p>We'd love to hear from you! Whether you have questions about our solutions or want to discuss how Facecheck can help your business, our team is ready to assist.</p>
         <div class="contact-details">
           <div class="contact-item">
-            <i class="fas fa-envelope"></i>
-            <span>infofacecheck.com</span>
-          </div>
-          <div class="contact-item">
             <i class="fas fa-phone-alt"></i>
-            <span>+1 (555) 123-4567</span>
+            <span>+1 347-828-5790</span>
           </div>
           <div class="contact-item">
             <i class="fas fa-map-marker-alt"></i>
-            <span>123 Tech Avenue, San Francisco, CA 94107</span>
+            <span>407 Ocean View Ave Brooklyn 11235</span>
           </div>
         </div>
       </div>
+
       <div class="contact-form">
         <h3>Send us a message</h3>
-        <form>
+        <form (ngSubmit)="submitContactForm($event)">
           <div class="form-group">
-            <input type="text" placeholder="Your Name" required>
+            <label for="contactFirstName">First Name</label>
+            <input
+              type="text"
+              id="contactFirstName"
+              name="firstName"
+              [(ngModel)]="contactFormData.firstName"
+              placeholder="Enter your first name"
+              maxlength="50"
+              required
+            >
           </div>
+
           <div class="form-group">
-            <input type="email" placeholder="Your Email" required>
+            <label for="contactLastName">Last Name</label>
+            <input
+              type="text"
+              id="contactLastName"
+              name="lastName"
+              [(ngModel)]="contactFormData.lastName"
+              placeholder="Enter your last name"
+              maxlength="50"
+              required
+            >
           </div>
+
           <div class="form-group">
-            <select>
-              <option value="" disabled selected>Select Topic</option>
-              <option value="support">Customer Support</option>
-              <option value="sales">Sales Inquiry</option>
-              <option value="partnership">Partnership Opportunity</option>
-              <option value="other">Other</option>
-            </select>
+            <label for="contactPhone">Phone Number</label>
+            <input
+              type="tel"
+              id="contactPhone"
+              name="phoneNumber"
+              [(ngModel)]="contactFormData.phoneNumber"
+              placeholder="+1 (555) 000-0000"
+              maxlength="20"
+              required
+            >
           </div>
-          <div class="form-group">
-            <textarea placeholder="Your Message" rows="4" required></textarea>
-          </div>
-          <button type="submit" class="submit-btn">Send Message</button>
+
+          <button
+            type="submit"
+            class="submit-btn"
+            [disabled]="isSubmitting">
+            <span *ngIf="!isSubmitting">
+              Send Message
+              <i class="fas fa-paper-plane"></i>
+            </span>
+            <span *ngIf="isSubmitting">
+              <i class="fas fa-spinner fa-spin"></i>
+              Sending...
+            </span>
+          </button>
         </form>
+
+        <!-- Success Message -->
+        <div *ngIf="showSuccessMessage" class="success-message">
+          <i class="fas fa-check-circle"></i>
+          <span>Message sent successfully! We'll get back to you soon.</span>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="showErrorMessage" class="error-message">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>{{ errorMessage }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -170,10 +212,16 @@
 <section class="cta-section">
   <div class="cta-container">
     <h2>Ready to transform your business?</h2>
-    <p>Join over 100 companies already using Facecheck</p>
+    <p>Join businesses already using Facecheck for workforce management</p>
     <div class="cta-buttons">
-      <a href="#" class="cta-btn primary">Start Free Trial</a>
-      <a href="#" class="cta-btn secondary">Book a Demo</a>
+      <button class="cta-btn primary" (click)="navigateToPricing()">
+        Start Free Trial
+        <i class="fas fa-arrow-right"></i>
+      </button>
+      <button class="cta-btn secondary" (click)="navigateToViewDemo()">
+        View Demo
+        <i class="fas fa-play-circle"></i>
+      </button>
     </div>
   </div>
 </section>
@@ -181,79 +229,25 @@
 <footer class="footer">
   <div class="footer-container">
     <div class="footer-top">
-      <div class="footer-column company-info">
+      <div class="footer-brand">
         <div class="footer-logo">
-          <img src="logo.jpg" alt="Facecheck Logo" class="footer-logo-img">
-          <span class="footer-brand">facecheck</span>
+          <img src="logo.jpg" alt="Facecheck">
+          <span>facecheck</span>
         </div>
-        <p class="company-description">
-          Innovative solution for workforce management, payroll processing, and business optimization.
-        </p>
-        <div class="social-links">
-          <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-          <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
-        </div>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Company</h3>
-        <ul class="footer-links">
-          <li><a href="#">About Us</a></li>
-          <li><a href="#">Our Team</a></li>
-          <li><a href="#">Careers</a></li>
-          <li><a href="#">Partners</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Products</h3>
-        <ul class="footer-links">
-          <li><a href="#">Time Tracking</a></li>
-          <li><a href="#">Payroll System</a></li>
-          <li><a href="#">Business Analytics</a></li>
-          <li><a href="#">Mobile App</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h3 class="footer-title">Support</h3>
-        <ul class="footer-links">
-          <li><a href="#">Help Center</a></li>
-          <li><a href="#">Contact Us</a></li>
-          <li><a href="#">FAQ</a></li>
-          <li><a href="#">Documentation</a></li>
-        </ul>
+        <p>GPS-verified workforce time tracking platform</p>
       </div>
     </div>
 
-    <div class="footer-divider"></div>
-
     <div class="footer-bottom">
-      <p class="copyright">© 2025 Facecheck. All rights reserved.</p>
-      <div class="legal-links">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Legal Information</a>
+      <p>&copy; 2025 Facecheck. All rights reserved.</p>
+      <div class="footer-legal">
+        <a (click)="navigateToPrivacy()">Privacy Policy</a>
+        <a (click)="navigateToTerms()">Terms of Service</a>
+        <a (click)="navigateToRefundPolicy()">Refund Policy</a>
       </div>
     </div>
   </div>
 </footer>
 
-<script>
-  function handleScroll() {
-    const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 50) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
-    }
-  }
-  window.addEventListener('scroll', handleScroll);
-  document.addEventListener('DOMContentLoaded', function() {
-    handleScroll();
-  });
-</script>
 </body>
 </html>

@@ -1,0 +1,231 @@
+<div class="page">
+
+  <!-- Сайдбар слева -->
+  <aside class="sidebar-left">
+    <app-admin-sidebar
+      [userName]="userName"
+      [companyName]="companyName"
+      [userPhotoUrl]="userPhotoUrl">
+    </app-admin-sidebar>
+  </aside>
+
+  <!-- Основной контент -->
+  <main class="main-content">
+    <div class="attendance-container">
+
+      <!-- Заголовок -->
+      <div class="header-section">
+        <h1>Employee Attendance Tracking</h1>
+        <p class="subtitle">Monitor all employee check-ins and check-outs across all companies</p>
+      </div>
+
+      <!-- Контроль размера страницы -->
+      <div class="controls-section">
+        <div class="page-size-control">
+          <label>Show:</label>
+          <select [(ngModel)]="size" (change)="changePageSize(size)" class="page-size-select">
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+          </select>
+          <span>entries per page</span>
+        </div>
+        <div class="total-records">
+          Total Records: <strong>{{ totalElements }}</strong>
+        </div>
+      </div>
+
+      <!-- Сообщение об ошибке -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Индикатор загрузки -->
+      <div *ngIf="isLoading" class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading attendance data...</p>
+      </div>
+
+      <!-- Таблица посещаемости -->
+      <div *ngIf="!isLoading && !errorMessage" class="table-container">
+        <table class="attendance-table">
+          <thead>
+          <tr>
+            <th>Worker ID</th>
+            <th>Name</th>
+            <th>Company</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Hours Worked</th>
+            <th>Gross Pay</th>
+            <th>Period</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let attendance of attendanceList">
+            <td>{{ attendance.workerId }}</td>
+            <td>
+              <div class="worker-name">
+                {{ attendance.firstName }} {{ attendance.lastName }}
+              </div>
+            </td>
+            <td>
+              <span class="company-badge">{{ attendance.companyName }}</span>
+            </td>
+            <td>{{ attendance.email }}</td>
+            <td>{{ attendance.phone }}</td>
+            <td>
+              <div class="time-info">
+                <i class="fas fa-clock"></i>
+                {{ formatDateTime(attendance.checkInTime) }}
+              </div>
+              <div class="location-info" *ngIf="attendance.checkInLocation">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ attendance.checkInLocation }}
+              </div>
+            </td>
+            <td>
+              <div class="time-info" *ngIf="attendance.checkOutTime">
+                <i class="fas fa-clock"></i>
+                {{ formatDateTime(attendance.checkOutTime) }}
+              </div>
+              <div class="location-info" *ngIf="attendance.checkOutLocation">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ attendance.checkOutLocation }}
+              </div>
+              <span *ngIf="!attendance.checkOutTime" class="status-badge active">Active</span>
+            </td>
+            <td>
+              <span class="hours-badge">{{ formatHours(attendance.hoursWorked) }}</span>
+            </td>
+            <td>{{ formatCurrency(attendance.grossPayPerDay) }}</td>
+            <td>
+              <div class="period-info">
+                {{ formatDate(attendance.periodStart) }} - {{ formatDate(attendance.periodEnd) }}
+              </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  class="btn-icon"
+                  *ngIf="attendance.checkInPhotoUrl"
+                  title="View Photos"
+                  (click)="openPhotoModal(attendance)">
+                  <i class="fas fa-camera"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+
+        <!-- Сообщение когда нет данных -->
+        <div *ngIf="attendanceList.length === 0" class="no-data">
+          <i class="fas fa-inbox"></i>
+          <p>No attendance records found</p>
+        </div>
+      </div>
+
+      <!-- Пагинация -->
+      <div *ngIf="!isLoading && attendanceList.length > 0" class="pagination-section">
+        <div class="pagination-info">
+          Showing {{ page * size + 1 }} to {{ Math.min((page + 1) * size, totalElements) }} of {{ totalElements }} entries
+        </div>
+
+        <div class="pagination-controls">
+          <button
+            class="pagination-btn"
+            [disabled]="isFirst"
+            (click)="previousPage()">
+            <i class="fas fa-chevron-left"></i>
+            Previous
+          </button>
+
+          <button
+            *ngFor="let pageNum of getPageNumbers()"
+            class="pagination-btn page-number"
+            [class.active]="pageNum === page"
+            (click)="goToPage(pageNum)">
+            {{ pageNum + 1 }}
+          </button>
+
+          <button
+            class="pagination-btn"
+            [disabled]="isLast"
+            (click)="nextPage()">
+            Next
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Photo Modal -->
+  <div class="modal-overlay" *ngIf="showPhotoModal" (click)="closeModal()">
+    <div class="modal-container" (click)="preventClose($event)">
+      <div class="modal-header">
+        <h3>{{ selectedAttendance?.firstName }} {{ selectedAttendance?.lastName }} - Attendance Photos</h3>
+        <button class="close-button" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Date Selector -->
+        <div class="date-selector">
+          <label>Select Date:</label>
+          <input type="date"
+                 [(ngModel)]="selectedDate"
+                 (change)="loadPhotosForWorker()"
+                 [max]="getCurrentDate()">
+          <button class="today-btn" (click)="setToday()">Today</button>
+          <span class="photo-count">Photos found: {{ photos.length }}</span>
+        </div>
+
+        <!-- Loading Photos -->
+        <div *ngIf="loadingPhotos" class="loading-photos">
+          <div class="spinner"></div>
+          <p>Loading photos...</p>
+        </div>
+
+        <!-- Photos Display -->
+        <div class="photos-grid" *ngIf="!loadingPhotos && photos.length > 0">
+          <div *ngFor="let photo of photos" class="photo-item">
+            <div class="photo-label">
+              <span class="photo-type" [class.check-in]="photo.type === 'punch-in'">
+                {{ photo.type === 'punch-in' ? 'Check In' : 'Check Out' }}
+              </span>
+              <span class="photo-time">{{ extractTime(photo.url) }}</span>
+            </div>
+            <img [src]="photo.url"
+                 alt="Attendance photo"
+                 (click)="openFullscreen(photo.url)"
+                 (error)="onImageError($event)">
+          </div>
+        </div>
+
+        <!-- No Photos -->
+        <div class="no-photos" *ngIf="!loadingPhotos && photos.length === 0">
+          <i class="fas fa-camera-retro"></i>
+          <p>No photos for {{ formatDate(selectedDate) }}</p>
+          <small>The employee did not record attendance on this day</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Viewer -->
+  <div class="fullscreen-viewer" *ngIf="fullscreenImage" (click)="closeFullscreen()">
+    <img [src]="fullscreenImage" alt="Enlarged photo">
+    <button class="close-fullscreen" (click)="closeFullscreen()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>

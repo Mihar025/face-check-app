@@ -8,11 +8,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../api_client/api/authentication_api.dart';
 import '../../../providers/localization_provider.dart';
+import '../../../services/pivacy_policy_service.dart';
 import '../../../utils/date_time_formatter.dart';
 import '../../../services/ApiService.dart';
+import '../../loginScreen/privacy_policy_screen.dart';
 import '../components/custom_drawer.dart';
 import '../components/face_check_button.dart';
 import '../components/time_circle.dart';
@@ -233,6 +236,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   // Константы для производительности
   static const EdgeInsets _standardPadding = EdgeInsets.symmetric(horizontal: 16);
   static const EdgeInsets _bottomPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 16);
+  bool _privacyCheckCompleted = false;
+  int? _currentUserId;
 
   @override
   void initState() {
@@ -244,6 +249,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+
+
 
     // Инициализация ValueNotifiers
     _currentDate = ValueNotifier<String>('');
@@ -272,7 +279,138 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
     _timeService = TimeService(dio);
     _bootstrapTimeAndData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeUserAndCheckPrivacy();
+    });
   }
+
+  Future<void> _initializeUserAndCheckPrivacy() async {
+    try {
+      // Сначала пытаемся получить userId из кэша
+      final prefs = await SharedPreferences.getInstance();
+      _currentUserId = prefs.getInt('user_id');
+
+      // Если в кэше нет, получаем с сервера
+      if (_currentUserId == null || _currentUserId == 0) {
+        print('📱 Fetching user ID from server...');
+
+        // Используем тот же dio что уже инициализировали
+        final dio = Dio(BaseOptions(
+          baseUrl: 'http://192.168.1.194:8088/api/v1/',
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 30),
+        ));
+
+        dio.interceptors.add(InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            final token = await ApiService.instance.getAuthToken();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+            return handler.next(options);
+          },
+        ));
+
+        final response = await dio.get('user/find-user-id');
+
+        if (response.statusCode == 200 && response.data != null) {
+          final userId = response.data['userId'];
+
+          if (userId != null) {
+            _currentUserId = userId;
+            await prefs.setInt('user_id', userId);
+            print('✅ User ID fetched and saved: $userId');
+          }
+        }
+      } else {
+        print('📦 Using cached user ID: $_currentUserId');
+      }
+
+      // Если userId получен, проверяем Privacy Policy
+      if (_currentUserId != null && _currentUserId != 0) {
+        await _checkPrivacyPolicy(_currentUserId!);
+      } else {
+        print('⚠️ No user ID available, skipping privacy check');
+        setState(() {
+          _privacyCheckCompleted = true;
+        });
+      }
+    } catch (e) {
+      print('❌ Error in initialization: $e');
+      setState(() {
+        _privacyCheckCompleted = true;
+      });
+    }
+  }
+
+  // МЕТОД ПРОВЕРКИ PRIVACY POLICY
+  Future<void> _checkPrivacyPolicy(int userId) async {
+    try {
+      print('🔍 Checking privacy policy for user: $userId');
+
+      // Проверяем статус принятия Privacy Policy
+      final hasAccepted = await PrivacyPolicyService.instance
+          .hasAcceptedPrivacyPolicy(userId);
+
+      print('Privacy policy accepted: $hasAccepted');
+
+      setState(() {
+        _privacyCheckCompleted = true;
+      });
+
+      // Если не принял - показываем экран Privacy Policy
+      if (!hasAccepted && mounted) {
+        // Небольшая задержка для плавного перехода
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (!mounted) return;
+
+        // Показываем экран Privacy Policy
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PrivacyPolicyScreen(
+              userId: userId,
+              onAccepted: () {
+                Navigator.pop(context);
+                _onPrivacyPolicyAccepted();
+              },
+            ),
+            fullscreenDialog: true, // Модальное окно
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error checking privacy policy: $e');
+      setState(() {
+        _privacyCheckCompleted = true;
+      });
+    }
+  }
+
+  // CALLBACK ПОСЛЕ ПРИНЯТИЯ PRIVACY POLICY
+  void _onPrivacyPolicyAccepted() {
+    print('✅ Privacy Policy accepted by user: $_currentUserId');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Welcome to FaceCheck!'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+
+    // Перезагружаем данные если нужно
+    _loadLastPunchTime();
+    _loadWorkedHours();
+  }
+
+
 
   @override
   void didChangeDependencies() {
@@ -352,6 +490,48 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Widget build(BuildContext context) {
     _updateCachedValues();
     final l10n = context.watch<LocalizationProvider>().localizations;
+    if (!_privacyCheckCompleted) {
+      return Scaffold(
+        backgroundColor: _theme.scaffoldBackgroundColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Логотип или иконка
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blue.withOpacity(0.1),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.security_rounded,
+                    size: 50,
+                    color: Colors.blue.shade600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              CircularProgressIndicator(
+                color: Colors.blue.shade600,
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Initializing...',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: _theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -417,11 +597,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                             children: [
                               Icon(
                                 Icons.location_on_outlined,
-                                size: 16,
+                                size: 14,
                                 color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                               ),
-                              const SizedBox(height: 4),
-                               WeatherWidget(),
+                              const SizedBox(height: 2),
+                              WeatherWidget(),
                             ],
                           ),
                         ),
@@ -514,19 +694,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   padding: _standardPadding,
                   child: Column(
                     children: [
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
 
-                      // Title
-                      Text(
-                        l10n.get('weeklyProgress'),
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: _theme.textTheme.bodyLarge?.color,
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 15),
 
                       // Time Circle с ValueListenableBuilder
                       Container(
@@ -551,7 +721,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 20),
 
                       // Period Card с ValueListenableBuilder
                       Container(
@@ -650,7 +820,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

@@ -5,10 +5,12 @@
 export interface RelatedUserInCompanyResponse {
   baseHourlyRate?: number;
   companyId?: number;
+  companyName?: string;
   email?: string;
   enabled?: boolean;
   firstName?: string;
   lastName?: string;
   photoUrl?: string;
+  role?: string;
   workerId?: number;
 }

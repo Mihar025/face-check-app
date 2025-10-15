@@ -32,9 +32,9 @@ public class JwtFilter extends OncePerRequestFilter {
                                     @NotNull HttpServletResponse response,
                                     @NotNull FilterChain filterChain) throws ServletException, IOException {
 
-        System.out.println("=== JWT FILTER START ===");
-        System.out.println("URL: " + request.getRequestURI());
-        System.out.println("Method: " + request.getMethod());
+       // System.out.println("=== JWT FILTER START ===");
+       // System.out.println("URL: " + request.getRequestURI());
+      //  System.out.println("Method: " + request.getMethod());
 
         if (request.getServletPath().contains("/api/v1/auth")) {
             filterChain.doFilter(request, response);
@@ -42,30 +42,30 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         final String authHeader = request.getHeader("Authorization");
-        System.out.println("Auth header: " + authHeader);
+      //  System.out.println("Auth header: " + authHeader);
 
         final String jwt;
         final String userEmail;
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("No valid auth header, passing through");
+        //    System.out.println("No valid auth header, passing through");
             filterChain.doFilter(request, response);
             return;
         }
 
         jwt = authHeader.substring(7);
-        System.out.println("JWT token: " + jwt.substring(0, Math.min(jwt.length(), 20)) + "...");
+       // System.out.println("JWT token: " + jwt.substring(0, Math.min(jwt.length(), 20)) + "...");
 
         try {
             userEmail = jwtFilterService.extractUsername(jwt);
-            System.out.println("Extracted email: " + userEmail);
+          //  System.out.println("Extracted email: " + userEmail);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-                System.out.println("User details loaded: " + userDetails.getUsername());
-                System.out.println("User authorities: " + userDetails.getAuthorities());
+           //     System.out.println("User details loaded: " + userDetails.getUsername());
+           //     System.out.println("User authorities: " + userDetails.getAuthorities());
 
                 if (jwtFilterService.isTokenValid(jwt, userDetails)) {
-                    System.out.println("Token is valid!");
+              //      System.out.println("Token is valid!");
                     UsernamePasswordAuthenticationToken authToken
                             = new UsernamePasswordAuthenticationToken(
                             userDetails,
@@ -76,17 +76,17 @@ public class JwtFilter extends OncePerRequestFilter {
                             new WebAuthenticationDetailsSource().buildDetails(request)
                     );
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("Authentication set!");
+                //    System.out.println("Authentication set!");
                 } else {
-                    System.out.println("Token is NOT valid!");
+                //    System.out.println("Token is NOT valid!");
                 }
             }
         } catch (Exception e) {
-            System.out.println("Error in JWT filter: " + e.getMessage());
+          //  System.out.println("Error in JWT filter: " + e.getMessage());
             e.printStackTrace();
         }
 
-        System.out.println("=== JWT FILTER END ===");
+      //  System.out.println("=== JWT FILTER END ===");
         filterChain.doFilter(request, response);
     }
 }

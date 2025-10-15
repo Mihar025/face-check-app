@@ -1,9 +1,11 @@
 package com.zikpak.facecheck.controllers;
 
+import com.zikpak.facecheck.annotation.RateLimit;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.services.contactSalesService.ContactSalesFormRequest;
 import com.zikpak.facecheck.services.contactSalesService.ContactSalesFormResponse;
 import com.zikpak.facecheck.services.contactSalesService.ContactSalesService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.*;
 public class ContactSalesController {
 
     private final ContactSalesService contactSalesService;
-
-
 
     @GetMapping
     public PageResponse<ContactSalesFormResponse> getAllContactForms(
@@ -39,8 +39,9 @@ public class ContactSalesController {
 
 
     @PostMapping
+    @RateLimit(requests = 3, perSeconds = 60)
     public ContactSalesFormResponse createContactForm(
-            @RequestBody ContactSalesFormRequest request
+            @RequestBody @Valid ContactSalesFormRequest request
     ) {
         return contactSalesService.saveContactForm(request);
     }

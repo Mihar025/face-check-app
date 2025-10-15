@@ -28,6 +28,17 @@ import { FinancePageComponent } from './pages/admin-main-page/finance-page/finan
 import { LocTrackComponent } from './pages/admin-main-page/loc-track/loc-track.component';
 import { EmployeeAttendanceComponent } from './pages/admin-main-page/employee-attendance/employee-attendance.component';
 import { MainPageAppOwnerComponent } from './pages/appOwner/main-page-app-owner/main-page-app-owner.component';
+import { CompaniesInfoAppOwnerComponent } from './pages/appOwner/companies-info-app-owner/companies-info-app-owner.component';
+import { ManageWorksitesAppOwnerComponent } from './pages/appOwner/manage-worksites-app-owner/manage-worksites-app-owner.component';
+import { ManageEmployeesAppOwnerComponent } from './pages/appOwner/manage-employees-app-owner/manage-employees-app-owner.component';
+import { LocationTrackingAppOwnerComponent } from './pages/appOwner/location-tracking-app-owner/location-tracking-app-owner.component';
+import { EmployeesAttendanceAppOwnerComponent } from './pages/appOwner/employees-attendance-app-owner/employees-attendance-app-owner.component';
+import { SettingsAppOwnerComponent } from './pages/appOwner/settings-app-owner/settings-app-owner.component';
+import { PayrollsAppOwnerComponent } from './pages/appOwner/payrolls-app-owner/payrolls-app-owner.component';
+import { CallToCustomersAppOwnerComponent } from './pages/appOwner/call-to-customers-app-owner/call-to-customers-app-owner.component';
+import { AttendenceTrackEmployeeAppOwnerComponent } from './pages/appOwner/attendence-track-employee-app-owner/attendence-track-employee-app-owner.component';
+import { AttendenceTrackEmployeeAdminComponent } from './pages/admin-main-page/attendence-track-employee-admin/attendence-track-employee-admin.component';
+import { StatForAttendenceComponent } from './pages/admin-main-page/stat-for-attendence/stat-for-attendence.component';
 
 
 @NgModule({
@@ -54,7 +65,18 @@ import { MainPageAppOwnerComponent } from './pages/appOwner/main-page-app-owner/
       FinancePageComponent,
       LocTrackComponent,
       EmployeeAttendanceComponent,
-      MainPageAppOwnerComponent
+      MainPageAppOwnerComponent,
+      CompaniesInfoAppOwnerComponent,
+      ManageWorksitesAppOwnerComponent,
+      ManageEmployeesAppOwnerComponent,
+      LocationTrackingAppOwnerComponent,
+      EmployeesAttendanceAppOwnerComponent,
+      SettingsAppOwnerComponent,
+      PayrollsAppOwnerComponent,
+      CallToCustomersAppOwnerComponent,
+      AttendenceTrackEmployeeAppOwnerComponent,
+      AttendenceTrackEmployeeAdminComponent,
+      StatForAttendenceComponent
 
   ],
   imports: [
@@ -63,7 +85,8 @@ import { MainPageAppOwnerComponent } from './pages/appOwner/main-page-app-owner/
     ReactiveFormsModule,
     CodeInputModule,
     FormsModule,
-    SharedModule
+    SharedModule,
+
 
   ]
 })

@@ -27,6 +27,8 @@ import { YearToDateCustomReportControllerService } from './services/year-to-date
 import { W2ControllerService } from './services/w-2-controller.service';
 import { TaxesControllerService } from './services/taxes-controller.service';
 import { EFilesControllerService } from './services/e-files-controller.service';
+import { ReportAwsControllerService } from './services/report-aws-controller.service';
+import { CustomErrorControllerService } from './services/custom-error-controller.service';
 
 /**
  * Module that provides all services and configuration.
@@ -57,6 +59,8 @@ import { EFilesControllerService } from './services/e-files-controller.service';
     W2ControllerService,
     TaxesControllerService,
     EFilesControllerService,
+    ReportAwsControllerService,
+    CustomErrorControllerService,
     ApiConfiguration
   ],
 })

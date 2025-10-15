@@ -1,0 +1,705 @@
+// Color Variables
+$primary-color: #5B47E0;
+$primary-light: #7B6AEF;
+$primary-dark: #4936C9;
+
+$sidebar-bg: #0F0F23;
+$sidebar-hover: #1A1A35;
+
+$success-color: #00D97E;
+$warning-color: #FFC107;
+$danger-color: #FF5757;
+$info-color: #39AFEA;
+
+$dark-text: #1E1E2E;
+$medium-text: #6C7293;
+$light-text: #A0A0B2;
+$white: #FFFFFF;
+
+$background: #F7F8FC;
+$card-bg: #FFFFFF;
+$border-light: #E5E7EB;
+
+// Layout Variables
+$sidebar-width: 250px; // Изменено на реальную ширину сайдбара!
+$header-height: 72px;
+$border-radius: 12px;
+$border-radius-sm: 8px;
+$border-radius-lg: 16px;
+
+// Typography
+$font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+// Mixins
+@mixin card-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+@mixin card-shadow-hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+@mixin smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Base Styles
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: $font-family;
+  background-color: $background;
+  color: $dark-text;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Layout
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+// Sidebar
+.sidebar {
+  width: $sidebar-width;
+  background: $sidebar-bg;
+  color: $white;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  overflow-y: auto;
+  @include smooth-transition;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+}
+
+.admin-profile {
+  padding: 32px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.avatar-container {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid $primary-color;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    background: $success-color;
+    border: 3px solid $sidebar-bg;
+    border-radius: 50%;
+  }
+}
+
+.admin-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: $white;
+}
+
+.admin-company {
+  font-size: 13px;
+  color: $light-text;
+  font-weight: 400;
+}
+
+.sidebar-menu {
+  padding: 24px 0;
+
+  ul {
+    list-style: none;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    color: $light-text;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    position: relative;
+    @include smooth-transition;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 0;
+      background: $primary-color;
+      border-radius: 0 2px 2px 0;
+      transition: height 0.3s ease;
+    }
+
+    i {
+      width: 20px;
+      margin-right: 12px;
+      font-size: 16px;
+    }
+
+    &:hover {
+      color: $white;
+      background: $sidebar-hover;
+
+      &::before {
+        height: 24px;
+      }
+    }
+
+    &.active {
+      color: $white;
+      background: $primary-color;
+
+      &::before {
+        height: 100%;
+      }
+    }
+  }
+}
+
+.logout-link {
+  color: $danger-color !important;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 24px;
+}
+
+// Main Content - ОПТИМИЗИРОВАНО
+.main-content {
+  flex: 1;
+  margin-left: $sidebar-width;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// Header - ОПТИМИЗИРОВАНО
+.top-header {
+  height: $header-height;
+  background: $white;
+  border-bottom: 1px solid $border-light;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  @include card-shadow;
+}
+
+.header-content {
+  height: 100%;
+  padding: 0 20px; // Синхронизировано с admin-container
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+}
+
+.top-logo {
+  height: 40px;
+  object-fit: contain;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: $background;
+  color: $medium-text;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  @include smooth-transition;
+
+  &:hover {
+    background: $primary-color;
+    color: $white;
+    transform: scale(1.05);
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.notification-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: $danger-color;
+  color: $white;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid $white;
+}
+
+// Page Content - ГЛАВНАЯ ОПТИМИЗАЦИЯ
+.admin-container {
+  padding: 20px; // Еще больше уменьшен отступ!
+  padding-left: 20px; // Явно указан левый отступ
+  flex: 1;
+  max-width: 100%; // Добавлено для контроля ширины
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px; // Уменьшен отступ
+}
+
+.page-title-section {
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: $dark-text;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .page-subtitle {
+    color: $medium-text;
+    font-size: 14px;
+    font-weight: 400;
+  }
+}
+
+.page-actions {
+  display: flex;
+  gap: 12px;
+}
+
+// Buttons
+.btn-primary,
+.btn-secondary {
+  padding: 10px 20px;
+  border-radius: $border-radius-sm;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  @include smooth-transition;
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.btn-primary {
+  background: $primary-color;
+  color: $white;
+
+  &:hover {
+    background: $primary-dark;
+    transform: translateY(-2px);
+    @include card-shadow-hover;
+  }
+}
+
+.btn-secondary {
+  background: $white;
+  color: $medium-text;
+  border: 1px solid $border-light;
+
+  &:hover {
+    background: $background;
+    color: $primary-color;
+    border-color: $primary-color;
+  }
+}
+
+// Stats Overview - ОПТИМИЗИРОВАНО
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); // Адаптивная сетка
+  gap: 15px; // Еще меньше gap
+  margin-bottom: 20px;
+  width: 100%; // Полная ширина
+}
+
+.stat-card {
+  background: $white;
+  padding: 20px; // Уменьшен padding
+  border-radius: $border-radius;
+  @include card-shadow;
+  @include smooth-transition;
+
+  &:hover {
+    transform: translateY(-4px);
+    @include card-shadow-hover;
+  }
+
+  .stat-value {
+    font-size: 28px; // Уменьшен размер
+    font-weight: 700;
+    color: $dark-text;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 14px;
+    color: $medium-text;
+  }
+}
+
+// Dashboard Cards - ОПТИМИЗИРОВАНО
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); // Изменено на 1fr
+  gap: 16px; // Уменьшен gap
+  margin-bottom: 24px;
+  width: 100%;
+  max-width: 1200px; // Максимальная ширина
+}
+
+.card {
+  background: $white;
+  border-radius: $border-radius;
+  overflow: hidden;
+  @include card-shadow;
+  @include smooth-transition;
+
+  &:hover {
+    transform: translateY(-4px);
+    @include card-shadow-hover;
+
+    .card-icon-wrapper {
+      transform: rotate(10deg) scale(1.1);
+    }
+  }
+}
+
+.company-info-card {
+  .card-header {
+    padding: 20px 20px 0; // Уменьшен padding
+  }
+
+  .card-body {
+    padding: 16px 20px 20px; // Уменьшен padding
+  }
+}
+
+.card-icon-wrapper {
+  width: 44px; // Уменьшен размер
+  height: 44px;
+  border-radius: $border-radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px; // Уменьшен размер иконки
+  margin-bottom: 14px;
+  @include smooth-transition;
+  background: rgba($primary-color, 0.1);
+  color: $primary-color;
+
+  &.email {
+    background: rgba($info-color, 0.1);
+    color: $info-color;
+  }
+
+  &.phone {
+    background: rgba($warning-color, 0.1);
+    color: $warning-color;
+  }
+
+  &.location {
+    background: rgba($danger-color, 0.1);
+    color: $danger-color;
+  }
+
+  &.success {
+    background: rgba($success-color, 0.1);
+    color: $success-color;
+  }
+
+  &.security {
+    background: rgba($primary-dark, 0.1);
+    color: $primary-dark;
+  }
+}
+
+.card-body {
+  h3 {
+    font-size: 12px; // Уменьшен размер
+    font-weight: 600;
+    color: $medium-text;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .card-info {
+    font-size: 16px; // Уменьшен размер
+    font-weight: 600;
+    color: $dark-text;
+    margin-bottom: 6px;
+    word-break: break-word;
+  }
+
+  .card-meta {
+    font-size: 12px;
+    color: $light-text;
+    display: inline-block;
+  }
+}
+
+// Status Badge
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 6px 0;
+
+  &.active {
+    background: rgba($success-color, 0.1);
+    color: $success-color;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s infinite;
+  }
+}
+
+// Activity Section - ОПТИМИЗИРОВАНО
+.activity-section {
+  background: $white;
+  border-radius: $border-radius;
+  padding: 20px; // Уменьшен padding
+  width: 100%;
+  max-width: 1200px; // Увеличена максимальная ширина
+  @include card-shadow;
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: $dark-text;
+    margin-bottom: 20px;
+  }
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid $border-light;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.activity-icon {
+  width: 36px; // Уменьшен размер
+  height: 36px;
+  border-radius: 50%;
+  background: $background;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $primary-color;
+  flex-shrink: 0;
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.activity-content {
+  flex: 1;
+
+  .activity-text {
+    font-size: 14px;
+    color: $dark-text;
+    margin-bottom: 4px;
+  }
+
+  .activity-time {
+    font-size: 12px;
+    color: $light-text;
+  }
+}
+
+// Animations
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+// Responsive Design - ОБНОВЛЕНО
+@media (max-width: 1600px) {
+  .stats-overview {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .dashboard-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1400px) {
+  .stats-overview {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .dashboard-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+
+    &.active {
+      transform: translateX(0);
+    }
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-actions {
+    width: 100%;
+
+    button {
+      flex: 1;
+    }
+  }
+
+  .admin-container {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 16px;
+  }
+
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .header-content {
+    padding: 0 16px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+}

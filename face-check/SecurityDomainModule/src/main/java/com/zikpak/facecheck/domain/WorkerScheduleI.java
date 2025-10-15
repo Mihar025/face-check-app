@@ -1,5 +1,6 @@
 package com.zikpak.facecheck.domain;
 
+import com.zikpak.facecheck.helperServices.WorkerSetScheduleRequest2;
 import com.zikpak.facecheck.requestsResponses.schedule.WeeklyScheduleResponse;
 import com.zikpak.facecheck.requestsResponses.schedule.WorkerHourResponse;
 import com.zikpak.facecheck.requestsResponses.schedule.WorkerSetScheduleRequest;
@@ -10,10 +11,10 @@ import java.time.LocalDate;
 
 public interface WorkerScheduleI {
     WeeklyScheduleResponse findWorkerAllDaysAndAllHours(Authentication authentication, LocalDate weekDate);
-    WorkSchedulerResponse setScheduleForWorkerScenario(Integer workerId, WorkerSetScheduleRequest workerSetScheduleRequest);
+  //  WorkSchedulerResponse setScheduleForWorkerScenario(Integer workerId, WorkerSetScheduleRequest workerSetScheduleRequest);
     WorkerHourResponse calculateWorkerTotalHoursPerWeek(Authentication authentication);
     WorkerHourResponse calculateWorkerTotalHoursForSpecialWeek(Authentication authentication, LocalDate weekDate );
-
-
+     WorkSchedulerResponse getWorkerScheduleTemplate(Integer workerId);
+    WorkSchedulerResponse setScheduleForWorkerScenario2(Integer workerId, WorkerSetScheduleRequest2 request);
 }
 

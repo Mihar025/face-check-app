@@ -65,24 +65,20 @@
               <td>
                 <div class="rate-with-edit">
                   ${{ employee.baseHourlyRate }}
-                  <button class="edit-rate-button" (click)="openChangeRateModal(employee.workerId, employee.baseHourlyRate)">
+                  <button class="edit-rate-button" (click)="openEmployeeModal(employee)">
                     <i class="fas fa-edit"></i>
                   </button>
                 </div>
               </td>
 
               <td class="actions-cell">
-                <button class="action-button info-button" (click)="openEmployeeInfoModal(employee.workerId)">
+                <button class="action-button info-button" (click)="openEmployeeModal(employee)">
                   <i class="fas fa-info-circle"></i> Details
                 </button>
-                <button
-                  *ngIf="employee.enabled === false"
-                  class="action-button info-button"
-                  (click)="moveToVerificationPage(employee.workerId)"
-                >
-                  <i class="fas fa-check-circle"></i> Verificate
+                <button class="action-button schedule-button" (click)="openScheduleModal(employee)">
+                  <i class="fas fa-calendar"></i> Schedule
                 </button>
-                <button class="action-button fire-button" (click)="openFireModal(employee.workerId)">
+                <button class="action-button fire-button" (click)="openDeleteModal(employee)">
                   <i class="fas fa-user-times"></i> Fire
                 </button>
               </td>
@@ -95,11 +91,11 @@
           </div>
 
           <div *ngIf="totalPages > 1" class="pagination">
-            <button [disabled]="page === 0" (click)="changePage(page - 1)" class="pagination-button">
+            <button [disabled]="page === 0" (click)="previousPage()" class="pagination-button">
               Previous
             </button>
             <span class="page-info">Page {{ page + 1 }} of {{ totalPages }}</span>
-            <button [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)" class="pagination-button">
+            <button [disabled]="page >= totalPages - 1" (click)="nextPage()" class="pagination-button">
               Next
             </button>
           </div>
@@ -114,7 +110,7 @@
   <div class="modal-container modal-large">
     <div class="modal-header">
       <h3>Employee Information</h3>
-      <button class="close-button" (click)="closeEmployeeInfoModal()">&times;</button>
+      <button class="close-button" (click)="closeEmployeeModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div *ngIf="loading" class="loading-indicator">
@@ -190,12 +186,12 @@
           </div>
 
           <div class="time-tabs">
-            <button class="tab-button" [class.active]="activeTimeTab === 'updatePunchIn'" (click)="activeTimeTab = 'updatePunchIn'">Update Punch In</button>
-            <button class="tab-button" [class.active]="activeTimeTab === 'changeNewPunchIn'" (click)="activeTimeTab = 'changeNewPunchIn'">Set New Punch In</button>
-            <button class="tab-button" [class.active]="activeTimeTab === 'changeNewPunchOut'" (click)="activeTimeTab = 'changeNewPunchOut'">Set New Punch Out</button>
+            <button class="tab-button" [class.active]="activeTab === 'updatePunchIn'" (click)="activeTab = 'updatePunchIn'">Update Punch In</button>
+            <button class="tab-button" [class.active]="activeTab === 'newPunchIn'" (click)="activeTab = 'newPunchIn'">Set New Punch In</button>
+            <button class="tab-button" [class.active]="activeTab === 'newPunchOut'" (click)="activeTab = 'newPunchOut'">Set New Punch Out</button>
           </div>
 
-          <div *ngIf="activeTimeTab === 'updatePunchIn'" class="time-form">
+          <div *ngIf="activeTab === 'updatePunchIn'" class="time-form">
             <h5>Update Latest Punch In Time</h5>
             <div class="form-group">
               <label for="newCheckInTime">New Check-In Time (ISO Format)</label>
@@ -210,7 +206,7 @@
             </div>
           </div>
 
-          <div *ngIf="activeTimeTab === 'changeNewPunchIn'" class="time-form">
+          <div *ngIf="activeTab === 'newPunchIn'" class="time-form">
             <h5>Set New Punch In</h5>
             <div class="form-group">
               <label for="dateWhenWorkerDidntMakePunchIn">Date When Punch In Was Missed</label>
@@ -237,7 +233,7 @@
             </div>
           </div>
 
-          <div *ngIf="activeTimeTab === 'changeNewPunchOut'" class="time-form">
+          <div *ngIf="activeTab === 'newPunchOut'" class="time-form">
             <h5>Set New Punch Out</h5>
             <div class="form-group">
               <label for="dateWhenWorkerDidntMakePunchOut">Date When Punch Out Was Missed</label>
@@ -265,65 +261,162 @@
           </div>
         </div>
 
-        <div class="schedule-section">
-          <div class="schedule-header">
-            <h4>Work Schedule</h4>
-            <button class="action-button schedule-button" (click)="toggleScheduleForm()">
-              <i class="fas fa-calendar-alt"></i> {{ showScheduleForm ? 'Hide Form' : 'Generate Schedule' }}
-            </button>
+        <div class="employee-info-section">
+          <h4>Update Hourly Rate</h4>
+          <div class="form-group">
+            <label>New Hourly Rate ($)</label>
+            <input type="number" [(ngModel)]="newHourlyRate" min="0" step="0.01" class="form-input">
           </div>
+          <button class="action-button schedule-button" (click)="changeHourlyRate()">
+            <i class="fas fa-dollar-sign"></i> Update Rate
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeEmployeeModal()">Close</button>
+    </div>
+  </div>
+</div>
 
-          <div *ngIf="showScheduleForm" class="schedule-form">
-            <h5>Create New Schedule</h5>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="startHour">Start Time (Hour)</label>
-                <input type="number" id="startHour" [(ngModel)]="startTime.hour" min="0" max="23" placeholder="Hour (0-23)">
-              </div>
-              <div class="form-group">
-                <label for="startMinute">Start Time (Minute)</label>
-                <input type="number" id="startMinute" [(ngModel)]="startTime.minute" min="0" max="59" placeholder="Minute (0-59)">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="endHour">End Time (Hour)</label>
-                <input type="number" id="endHour" [(ngModel)]="endTime.hour" min="0" max="23" placeholder="Hour (0-23)">
-              </div>
-              <div class="form-group">
-                <label for="endMinute">End Time (Minute)</label>
-                <input type="number" id="endMinute" [(ngModel)]="endTime.minute" min="0" max="59" placeholder="Minute (0-59)">
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="action-button schedule-button" (click)="generateScheduleForWorker()">
-                <i class="fas fa-calendar-check"></i> Generate Schedule
-              </button>
+<!-- Schedule Modal -->
+<div class="modal-overlay" *ngIf="showScheduleModal">
+  <div class="modal-container modal-large modal-scrollable">
+    <div class="modal-header">
+      <h3>Work Schedule Management</h3>
+      <button class="close-button" (click)="closeScheduleModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="selectedEmployee" class="schedule-management">
+        <div class="schedule-header">
+          <h4>{{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}</h4>
+          <button *ngIf="hasExistingSchedule" class="action-button fire-button" (click)="deleteExistingSchedule()">
+            <i class="fas fa-trash"></i> Delete Schedule
+          </button>
+        </div>
+
+        <!-- Existing Schedule Display -->
+        <div *ngIf="hasExistingSchedule && employeeGeneratedSchedule && employeeGeneratedSchedule.schedules && employeeGeneratedSchedule.schedules.length > 0" class="generated-schedule">
+          <h5>✅ Current Schedule</h5>
+          <p><strong>Employee:</strong> {{ employeeGeneratedSchedule.workerName }}</p>
+          <div class="schedule-days">
+            <div *ngFor="let schedule of employeeGeneratedSchedule!.schedules!" class="day-schedule">
+              <span class="day-name" [ngClass]="{'day-off': schedule.isDayOff}">
+                {{ schedule.dayOfWeek }}
+              </span>
+              <span *ngIf="!schedule.isDayOff" class="day-time">
+                {{ formatTime(schedule.startTime) }} - {{ formatTime(schedule.endTime) }}
+                <span class="lunch-info" *ngIf="schedule.lunchStart && schedule.lunchEnd">
+                  | Lunch: {{ formatTime(schedule.lunchStart) }} - {{ formatTime(schedule.lunchEnd) }}
+                  <span *ngIf="schedule.isCompanyPayingLunch" class="paid-badge">Paid</span>
+                </span>
+              </span>
+              <span *ngIf="schedule.isDayOff" class="off-badge">Day Off</span>
             </div>
           </div>
+        </div>
 
-          <div *ngIf="employeeGeneratedSchedule" class="generated-schedule">
-            <h5>Current Schedule</h5>
-            <div class="schedule-info">
-              <div class="info-item">
-                <label>Worker ID:</label>
-                <span>{{ employeeGeneratedSchedule.workerId }}</span>
+        <!-- No Schedule Message -->
+        <div *ngIf="!hasExistingSchedule" class="no-schedule-message">
+          <i class="fas fa-calendar-times"></i>
+          <p>No schedule set for this employee. Create one below.</p>
+        </div>
+
+        <!-- Schedule Form -->
+        <div class="schedule-form">
+          <h5>Create/Update Weekly Schedule</h5>
+          <p class="schedule-description">Configure individual working hours for each day of the week with lunch breaks.</p>
+
+          <div class="flexible-schedule">
+            <div *ngFor="let day of flexibleDays; let i = index" class="day-config">
+              <div class="day-header">
+                <h6>
+                  <i class="fas fa-calendar-day"></i>
+                  {{ day.dayLabel }}
+                </h6>
+                <label class="day-off-toggle">
+                  <input type="checkbox" [(ngModel)]="day.isDayOff">
+                  <span>Day Off</span>
+                </label>
               </div>
-              <div class="info-item">
-                <label>Start Time:</label>
-                <span>{{ employeeGeneratedSchedule.startTime?.hour }}:{{ employeeGeneratedSchedule.startTime?.minute || '00' }}</span>
+
+              <div *ngIf="!day.isDayOff" class="day-times">
+                <!-- Working Hours -->
+                <div class="time-section">
+                  <div class="time-section-title">
+                    <i class="fas fa-clock"></i> Working Hours
+                  </div>
+                  <div class="time-input-row">
+                    <div class="form-group">
+                      <label>Start Time</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.startTime.hour" min="0" max="23" placeholder="09">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.startTime.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                    <span class="arrow-separator">→</span>
+                    <div class="form-group">
+                      <label>End Time</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.endTime.hour" min="0" max="23" placeholder="17">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.endTime.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Lunch Break -->
+                <div class="time-section">
+                  <div class="time-section-title">
+                    <i class="fas fa-utensils"></i> Lunch Break
+                  </div>
+                  <div class="time-input-row">
+                    <div class="form-group">
+                      <label>Lunch Start</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.lunchStart.hour" min="0" max="23" placeholder="12">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.lunchStart.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                    <span class="arrow-separator">→</span>
+                    <div class="form-group">
+                      <label>Lunch End</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.lunchEnd.hour" min="0" max="23" placeholder="13">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.lunchEnd.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="day.isCompanyPayingLunch">
+                      <span>Company pays for lunch break</span>
+                    </label>
+                  </div>
+                </div>
               </div>
-              <div class="info-item">
-                <label>End Time:</label>
-                <span>{{ employeeGeneratedSchedule.endTime?.hour }}:{{ employeeGeneratedSchedule.endTime?.minute || '00' }}</span>
+
+              <div *ngIf="day.isDayOff" class="day-off-message">
+                <i class="fas fa-bed"></i>
+                <span>This day is marked as off day</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
     <div class="modal-footer">
-      <button class="cancel-button" (click)="closeEmployeeInfoModal()">Close</button>
+      <button class="cancel-button" (click)="closeScheduleModal()">Cancel</button>
+      <button class="confirm-button" (click)="generateScheduleForWorker()">
+        <i class="fas fa-save"></i> Save Schedule
+      </button>
     </div>
   </div>
 </div>
@@ -569,11 +662,11 @@
 </div>
 
 <!-- Fire Employee Modal -->
-<div class="modal-overlay" *ngIf="showFireModal">
+<div class="modal-overlay" *ngIf="showDeleteModal">
   <div class="modal-container">
     <div class="modal-header">
       <h3>Fire Employee</h3>
-      <button class="close-button" (click)="cancelFireModal()">&times;</button>
+      <button class="close-button" (click)="closeDeleteModal()">&times;</button>
     </div>
     <div class="modal-body">
       <p>Are you sure you want to fire this employee? This action cannot be undone.</p>
@@ -584,28 +677,8 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="cancel-button" (click)="cancelFireModal()">Cancel</button>
-      <button class="confirm-button delete-button" (click)="fireEmployee(selectedEmployeeId)">Fire Employee</button>
-    </div>
-  </div>
-</div>
-
-<!-- Change Rate Modal -->
-<div class="modal-overlay" *ngIf="showRateModal">
-  <div class="modal-container">
-    <div class="modal-header">
-      <h3>Change Hourly Rate</h3>
-      <button class="close-button" (click)="cancelRateModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="newHourlyRate">New Hourly Rate ($)</label>
-        <input type="number" id="newHourlyRate" [(ngModel)]="newHourlyRate" min="0" step="0.01">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="cancel-button" (click)="cancelRateModal()">Cancel</button>
-      <button class="confirm-button" (click)="changeHourlyRate()">Save</button>
+      <button class="cancel-button" (click)="closeDeleteModal()">Cancel</button>
+      <button class="confirm-button delete-button" (click)="deleteEmployee()">Fire Employee</button>
     </div>
   </div>
 </div>

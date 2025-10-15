@@ -1,0 +1,325 @@
+<div class="page">
+
+  <!-- Сайдбар слева -->
+  <aside class="sidebar-left">
+    <app-app-owner-sidebar
+      [userName]="userName"
+      [companyName]="companyName"
+      [userPhotoUrl]="userPhotoUrl">
+    </app-app-owner-sidebar>
+  </aside>
+
+  <!-- Основной контент -->
+  <main class="main-content">
+    <div class="attendance-container">
+
+      <!-- Заголовок -->
+      <div class="header-section">
+        <h1>Employee Attendance</h1>
+        <p class="subtitle">Monitor employee check-ins and check-outs</p>
+      </div>
+
+      <!-- Контроль -->
+      <div class="controls-section">
+        <div class="page-size-control">
+          <label>Show:</label>
+          <select [(ngModel)]="size" (change)="changePageSize(size)" class="page-size-select">
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+          </select>
+        </div>
+        <div class="total-records">
+          Total: <strong>{{ totalElements }}</strong>
+        </div>
+      </div>
+
+      <!-- Сообщения -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="success-message">
+        <i class="fas fa-check-circle"></i>
+        {{ successMessage }}
+      </div>
+
+      <!-- Индикатор загрузки -->
+      <div *ngIf="isLoading" class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading...</p>
+      </div>
+
+      <!-- Таблица -->
+      <div *ngIf="!isLoading && !errorMessage" class="table-container">
+        <table class="attendance-table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Worker</th>
+            <th>Name</th>
+            <th>Company</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Regular</th>
+            <th>Overtime</th>
+            <th>Total</th>
+            <th>Gross Pay</th>
+            <th>Net Pay</th>
+            <th>Period</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let attendance of attendanceList">
+            <td>
+              <span class="id-badge">{{ attendance.attendanceId || 'N/A' }}</span>
+            </td>
+            <td>{{ attendance.workerId }}</td>
+            <td>
+              <div class="worker-name">
+                {{ attendance.firstName }} {{ attendance.lastName }}
+              </div>
+            </td>
+            <td>
+              <span class="company-badge">{{ attendance.companyName }}</span>
+            </td>
+            <td>
+              <div class="time-info">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>{{ formatTime(attendance.checkInTime) }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="time-info" *ngIf="attendance.checkOutTime">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>{{ formatTime(attendance.checkOutTime) }}</span>
+              </div>
+              <span *ngIf="!attendance.checkOutTime" class="status-badge active">Active</span>
+            </td>
+            <td>
+              <span class="hours-badge regular">{{ formatHours(attendance.hoursWorked) }}</span>
+            </td>
+            <td>
+              <span class="hours-badge overtime">{{ formatHours(attendance.overtimeHours) }}</span>
+            </td>
+            <td>
+              <span class="hours-badge total">{{ formatHours((attendance.hoursWorked || 0) + (attendance.overtimeHours || 0)) }}</span>
+            </td>
+            <td>{{ formatCurrency(attendance.grossPayPerDay) }}</td>
+            <td>{{ formatCurrency(attendance.netPay) }}</td>
+            <td>
+              <div class="period-info">
+                {{ formatDateShort(attendance.periodStart) }} - {{ formatDateShort(attendance.periodEnd) }}
+              </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  class="btn-icon"
+                  title="Add Overtime"
+                  (click)="openOvertimeModal(attendance)">
+                  <i class="fas fa-clock"></i>
+                </button>
+                <button
+                  class="btn-icon"
+                  *ngIf="attendance.checkInPhotoUrl"
+                  title="View Photos"
+                  (click)="openPhotoModal(attendance)">
+                  <i class="fas fa-camera"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+
+        <!-- Нет данных -->
+        <div *ngIf="attendanceList.length === 0" class="no-data">
+          <i class="fas fa-inbox"></i>
+          <p>No attendance records found</p>
+        </div>
+      </div>
+
+      <!-- Пагинация -->
+      <div *ngIf="!isLoading && attendanceList.length > 0" class="pagination-section">
+        <div class="pagination-info">
+          {{ page * size + 1 }}-{{ Math.min((page + 1) * size, totalElements) }} of {{ totalElements }}
+        </div>
+
+        <div class="pagination-controls">
+          <button
+            class="pagination-btn"
+            [disabled]="isFirst"
+            (click)="previousPage()">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+
+          <button
+            *ngFor="let pageNum of getPageNumbers()"
+            class="pagination-btn page-number"
+            [class.active]="pageNum === page"
+            (click)="goToPage(pageNum)">
+            {{ pageNum + 1 }}
+          </button>
+
+          <button
+            class="pagination-btn"
+            [disabled]="isLast"
+            (click)="nextPage()">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Overtime Modal -->
+  <div class="modal-overlay" *ngIf="showOvertimeModal" (click)="closeOvertimeModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Overtime</h3>
+        <button class="close-button" (click)="closeOvertimeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="overtime-form">
+          <!-- Worker Info -->
+          <div class="worker-info-card">
+            <div class="info-row">
+              <div class="info-item">
+                <label>Worker:</label>
+                <span>{{ selectedAttendance?.firstName }} {{ selectedAttendance?.lastName }}</span>
+              </div>
+              <div class="info-item">
+                <label>ID:</label>
+                <span class="id-badge">{{ selectedAttendance?.attendanceId }}</span>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-item">
+                <label>Company:</label>
+                <span class="company-badge">{{ selectedAttendance?.companyName }}</span>
+              </div>
+              <div class="info-item">
+                <label>Regular:</label>
+                <span class="hours-badge regular">{{ formatHours(selectedAttendance?.hoursWorked) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Current OT:</label>
+                <span class="hours-badge overtime">{{ formatHours(selectedAttendance?.overtimeHours) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <div class="form-group">
+            <label for="overtimeHours">Overtime Hours <span class="required">*</span></label>
+            <input
+              type="number"
+              id="overtimeHours"
+              [(ngModel)]="overtimeForm.overtimeHours"
+              placeholder="Enter hours"
+              min="0.01"
+              step="0.5"
+              class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label for="reason">Reason <span class="required">*</span></label>
+            <textarea
+              id="reason"
+              [(ngModel)]="overtimeForm.reason"
+              placeholder="Enter reason"
+              rows="3"
+              class="form-textarea"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div class="modal-actions">
+            <button
+              class="btn-secondary"
+              (click)="closeOvertimeModal()">
+              Cancel
+            </button>
+            <button
+              class="btn-primary"
+              (click)="submitOvertime()"
+              [disabled]="isSubmitting || !overtimeForm.overtimeHours || !overtimeForm.reason">
+              <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+              <i class="fas fa-plus-circle" *ngIf="!isSubmitting"></i>
+              {{ isSubmitting ? 'Adding...' : 'Add Overtime' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Modal -->
+  <div class="modal-overlay" *ngIf="showPhotoModal" (click)="closePhotoModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ selectedAttendance?.firstName }} {{ selectedAttendance?.lastName }} - Attendance Photos</h3>
+        <button class="close-button" (click)="closePhotoModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Date Display (Read-only) -->
+        <div class="date-display">
+          <div class="date-info">
+            <i class="fas fa-calendar-day"></i>
+            <span class="date-label">Date:</span>
+            <span class="date-value">{{ formatDate(selectedDate) }}</span>
+          </div>
+          <span class="photo-count">Photos found: {{ photos.length }}</span>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loadingPhotos" class="loading-photos">
+          <div class="spinner"></div>
+          <p>Loading photos...</p>
+        </div>
+
+        <!-- Photos -->
+        <div class="photos-grid" *ngIf="!loadingPhotos && photos.length > 0">
+          <div *ngFor="let photo of photos" class="photo-item">
+            <div class="photo-label">
+            <span class="photo-type" [class.check-in]="photo.type === 'punch-in'">
+              {{ photo.type === 'punch-in' ? 'Check In' : 'Check Out' }}
+            </span>
+              <!-- ✅ Используем photo.time вместо extractTime(photo.url) -->
+              <span class="photo-time">{{ formatTimeOnly(photo.time) }}</span>
+            </div>
+            <img [src]="photo.url"
+                 alt="Attendance photo"
+                 (click)="openFullscreen(photo.url)"
+                 (error)="onImageError($event)">
+          </div>
+        </div>
+
+        <!-- No Photos -->
+        <div class="no-photos" *ngIf="!loadingPhotos && photos.length === 0">
+          <i class="fas fa-camera-retro"></i>
+          <p>No photos for {{ formatDate(selectedDate) }}</p>
+          <small>The employee did not record attendance on this day</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen -->
+  <div class="fullscreen-viewer" *ngIf="fullscreenImage" (click)="closeFullscreen()">
+    <img [src]="fullscreenImage" alt="Photo">
+    <button class="close-fullscreen" (click)="closeFullscreen()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>

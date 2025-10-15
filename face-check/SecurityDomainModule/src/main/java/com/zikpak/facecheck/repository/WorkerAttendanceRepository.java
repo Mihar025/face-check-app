@@ -3,6 +3,8 @@ package com.zikpak.facecheck.repository;
 
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,7 +28,6 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
             List<Integer> workerIds,
             LocalDateTime startDateTime,
             LocalDateTime endDateTime);
-
 
 
     @Query("SELECT wa FROM WorkerAttendance wa " +
@@ -86,6 +87,30 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
     
  """)
     List<Object[]> findAllPhotosUrlRelatedToUser(@Param("workerId") Integer workerId);
+
+
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa WHERE wa.worker.company.id = :companyId
+""")
+    Page<WorkerAttendance> findAllAttendanceByCompanyId(@Param("companyId") Integer companyId, Pageable pageable);
+
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa 
+    WHERE wa.worker.id = :workerId 
+    AND wa.checkInTime >= :startOfDay 
+    AND wa.checkInTime < :endOfDay
+    ORDER BY wa.checkInTime ASC
+""")
+    List<WorkerAttendance> findAllByWorkerIdAndDateRange(  // ✅ Изменили на List!
+                                                           @Param("workerId") Integer workerId,
+                                                           @Param("startOfDay") LocalDateTime startOfDay,
+                                                           @Param("endOfDay") LocalDateTime endOfDay
+    );
+
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa 
+    WHERE wa.id = :attendanceId
+""")
+    Optional<WorkerAttendance> findByAttendanceId(@Param("attendanceId") Integer attendanceId);
+
 }
-
-

@@ -27,6 +27,8 @@ public class WorkSiteMapper {
                 .allowedRadius(foundedWorkSite.getAllowedRadius())
                 .workDayStart(foundedWorkSite.getWorkDayStart())
                 .workDayEnd(foundedWorkSite.getWorkDayEnd())
+                .isActive(foundedWorkSite.getIsActive())
+                .companyName(foundedWorkSite.getCompany().getCompanyName())
                 .build();
     }
 

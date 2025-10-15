@@ -1036,99 +1036,22 @@ body {
   gap: 28px;
 }
 
-.employee-info-header {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  margin-bottom: 32px;
-  padding: 28px;
-  background: linear-gradient(135deg, $primary-subtle, rgba($primary-light, 0.05));
-  border-radius: $border-radius;
-  border: 2px solid rgba($primary-color, 0.1);
-}
-
-.employee-avatar-large {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 4px solid $white;
-  @include shadow-lg;
-  flex-shrink: 0;
-  position: relative;
-  background: linear-gradient(135deg, $primary-color, $primary-light);
-  padding: 4px;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 4px;
-    border-radius: 50%;
-    background: $white;
-    z-index: 1;
-  }
-
-  img {
-    width: calc(100% - 8px);
-    height: calc(100% - 8px);
-    object-fit: cover;
-    position: relative;
-    z-index: 2;
-    border-radius: 50%;
-    margin: 4px;
-  }
-
-  .avatar-placeholder {
-    width: calc(100% - 8px);
-    height: calc(100% - 8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, $primary-color, $primary-light);
-    color: $white;
-    position: relative;
-    z-index: 2;
-    border-radius: 50%;
-    margin: 4px;
-
-    i {
-      font-size: 48px;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
-    }
-  }
-}
-
-.employee-basic-info {
-  flex: 1;
-
-  h3 {
-    margin: 0 0 12px 0;
-    font-size: 28px;
-    font-weight: 800;
-    color: $neutral-900;
-    letter-spacing: -0.02em;
-  }
-
-  .employee-role {
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: $border-radius-sm;
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    @include shadow-sm;
-  }
-}
-
 .employee-info-section,
-.schedule-section,
 .role-management-section {
   background: $white;
   border-radius: $border-radius;
   padding: 28px;
   border: 2px solid $neutral-200;
   @include shadow-sm;
+
+  h4, h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: $neutral-900;
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid $neutral-200;
+  }
 }
 
 .info-grid {
@@ -1241,18 +1164,6 @@ body {
   gap: 24px;
 }
 
-// Enhanced Schedule and Time Management Forms
-.schedule-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid $neutral-200;
-}
-
-.schedule-form,
-.generated-schedule,
 .time-form {
   background: linear-gradient(135deg, $white, rgba($neutral-50, 0.3));
   border: 2px solid rgba($primary-color, 0.1);
@@ -1299,38 +1210,417 @@ body {
   100% { background-position: 200% 0; }
 }
 
-.schedule-info {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.role-management-section {
-  background: $white;
-  border-radius: $border-radius;
-  padding: 28px;
-  border: 2px solid $neutral-200;
-  @include shadow-sm;
-
-  h5 {
-    font-size: 16px;
-    font-weight: 700;
-    color: $neutral-900;
-    margin: 0 0 20px 0;
-    padding-bottom: 12px;
-    border-bottom: 2px solid $neutral-200;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-}
-
 .role-buttons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
+
+.form-actions {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px dashed $neutral-300;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.employee-info {
+  background: $neutral-50;
+  padding: 16px;
+  border-radius: $border-radius;
+  margin-top: 16px;
+  border: 1px solid $neutral-200;
+
+  p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: $neutral-800;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCHEDULE MODAL STYLES
+// ═══════════════════════════════════════════════════════════════
+
+.schedule-management {
+  .schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid $neutral-200;
+
+    h4 {
+      font-size: 20px;
+      font-weight: 700;
+      color: $neutral-900;
+      margin: 0;
+    }
+  }
+
+  .generated-schedule {
+    background: linear-gradient(135deg, $success-light, rgba($success-color, 0.05));
+    border: 2px solid $success-color;
+    border-radius: $border-radius;
+    padding: 28px;
+    margin-bottom: 32px;
+    @include shadow-md;
+
+    h5 {
+      color: darken($success-color, 20%);
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 16px 0;
+    }
+
+    p {
+      margin: 0 0 20px 0;
+      font-size: 14px;
+      color: $neutral-900;
+
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .schedule-days {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .day-schedule {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: $white;
+      border-radius: $border-radius-sm;
+      border: 1px solid rgba($success-color, 0.3);
+      @include smooth-transition;
+
+      &:hover {
+        @include shadow-sm;
+        transform: translateX(4px);
+      }
+
+      .day-name {
+        font-weight: 700;
+        color: $neutral-900;
+        min-width: 120px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+
+        &.day-off {
+          color: $neutral-400;
+        }
+      }
+
+      .day-time {
+        color: $neutral-800;
+        font-size: 14px;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        background: rgba($success-color, 0.1);
+        padding: 6px 14px;
+        border-radius: $border-radius-xs;
+
+        .lunch-info {
+          font-size: 13px;
+          color: $neutral-600;
+          margin-left: 8px;
+
+          .paid-badge {
+            background: $success-color;
+            color: $white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 6px;
+          }
+        }
+      }
+
+      .off-badge {
+        background: $neutral-200;
+        color: $neutral-600;
+        padding: 6px 14px;
+        border-radius: $border-radius-xs;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  .no-schedule-message {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, $warning-light, rgba($warning-color, 0.05));
+    border: 2px dashed $warning-color;
+    border-radius: $border-radius;
+    margin-bottom: 32px;
+
+    i {
+      font-size: 48px;
+      color: $warning-color;
+      margin-bottom: 12px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 16px;
+      color: darken($warning-color, 20%);
+      font-weight: 600;
+    }
+  }
+
+  .schedule-form {
+    background: linear-gradient(135deg, $white, rgba($neutral-50, 0.5));
+    border: 2px solid $neutral-200;
+    border-radius: $border-radius;
+    padding: 28px;
+    @include shadow-sm;
+
+    h5 {
+      font-size: 18px;
+      font-weight: 700;
+      color: $neutral-900;
+      margin: 0 0 12px 0;
+    }
+
+    .schedule-description {
+      font-size: 14px;
+      color: $neutral-600;
+      margin-bottom: 24px;
+      padding: 12px;
+      background: $info-light;
+      border-left: 3px solid $info-color;
+      border-radius: $border-radius-xs;
+    }
+  }
+
+  .flexible-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .day-config {
+    background: $white;
+    border: 2px solid $neutral-200;
+    border-radius: $border-radius-sm;
+    overflow: hidden;
+    @include smooth-transition;
+
+    &:hover {
+      border-color: $primary-color;
+      @include shadow-sm;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, $neutral-50, $white);
+      border-bottom: 2px solid $neutral-200;
+
+      h6 {
+        font-size: 15px;
+        font-weight: 700;
+        color: $neutral-900;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        i {
+          color: $primary-color;
+        }
+      }
+
+      .day-off-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 6px 12px;
+        background: $white;
+        border: 1px solid $neutral-300;
+        border-radius: $border-radius-xs;
+        @include smooth-transition;
+
+        &:hover {
+          border-color: $danger-color;
+          background: $danger-light;
+        }
+
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+        }
+
+        span {
+          font-size: 13px;
+          font-weight: 600;
+          color: $neutral-700;
+        }
+      }
+    }
+
+    .day-times {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .time-section {
+      background: $neutral-50;
+      border: 1px solid $neutral-200;
+      border-radius: $border-radius-xs;
+      padding: 16px;
+
+      .time-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: $neutral-700;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        i {
+          color: $primary-color;
+        }
+      }
+
+      .time-input-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .form-group {
+          flex: 1;
+          min-width: 0;
+
+          label {
+            font-size: 11px;
+            font-weight: 600;
+            color: $neutral-600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+          }
+
+          .time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: $white;
+            border: 2px solid $neutral-200;
+            border-radius: $border-radius-xs;
+            padding: 8px 12px;
+
+            input {
+              width: 45px;
+              border: none;
+              background: transparent;
+              font-size: 16px;
+              font-weight: 700;
+              text-align: center;
+              color: $neutral-900;
+              padding: 0;
+
+              &:focus {
+                outline: none;
+              }
+
+              &::placeholder {
+                color: $neutral-400;
+              }
+            }
+
+            .separator {
+              font-size: 18px;
+              font-weight: 700;
+              color: $neutral-500;
+            }
+          }
+        }
+
+        .arrow-separator {
+          font-size: 20px;
+          color: $primary-color;
+          font-weight: 700;
+          margin: 20px 8px 0;
+        }
+      }
+
+      .checkbox-group {
+        margin-top: 12px;
+
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          padding: 10px 12px;
+          background: $white;
+          border: 2px solid $neutral-200;
+          border-radius: $border-radius-xs;
+          @include smooth-transition;
+
+          &:hover {
+            border-color: $success-color;
+            background: rgba($success-color, 0.05);
+          }
+
+          input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+          }
+
+          span {
+            font-size: 13px;
+            font-weight: 600;
+            color: $neutral-700;
+          }
+        }
+      }
+    }
+
+    .day-off-message {
+      padding: 30px 18px;
+      text-align: center;
+      background: $neutral-50;
+      color: $neutral-500;
+      font-size: 14px;
+      font-weight: 600;
+
+      i {
+        font-size: 28px;
+        color: $neutral-400;
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+// Responsive Design
 @media (max-width: 1200px) {
   .admin-container {
     padding: 28px;
@@ -1392,6 +1682,10 @@ body {
 
   .time-input-row {
     flex-direction: column;
+
+    .arrow-separator {
+      display: none;
+    }
   }
 }
 
@@ -1434,15 +1728,6 @@ body {
     }
   }
 
-  .employee-info-header {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .employee-avatar-large {
-    margin: 0 auto;
-  }
-
   .actions-cell {
     flex-direction: column;
     align-items: stretch;
@@ -1453,16 +1738,70 @@ body {
     }
   }
 
-  .schedule-header {
+  .schedule-management {
+    .schedule-header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+
+      .action-button {
+        width: 100%;
+      }
+    }
+
+    .day-config {
+      .day-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+
+        .day-off-toggle {
+          width: 100%;
+        }
+      }
+
+      .time-section .time-input-row {
+        .form-group {
+          width: 100%;
+        }
+      }
+    }
+
+    .schedule-days .day-schedule {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+
+      .day-name {
+        min-width: auto;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .employees-container {
+    padding: 12px;
+  }
+
+  .modal-header {
+    padding: 16px;
+
+    h3 {
+      font-size: 18px;
+    }
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
+    padding: 16px;
     flex-direction: column;
-    gap: 12px;
 
     button {
       width: 100%;
     }
-  }
-
-  .schedule-info {
-    grid-template-columns: 1fr;
   }
 }

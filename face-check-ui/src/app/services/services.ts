@@ -23,3 +23,5 @@ export { YearToDateCustomReportControllerService } from './services/year-to-date
 export { W2ControllerService } from './services/w-2-controller.service';
 export { TaxesControllerService } from './services/taxes-controller.service';
 export { EFilesControllerService } from './services/e-files-controller.service';
+export { ReportAwsControllerService } from './services/report-aws-controller.service';
+export { CustomErrorControllerService } from './services/custom-error-controller.service';
