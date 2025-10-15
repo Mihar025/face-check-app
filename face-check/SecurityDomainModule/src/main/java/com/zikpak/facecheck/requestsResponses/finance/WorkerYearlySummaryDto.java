@@ -1,12 +1,13 @@
 package com.zikpak.facecheck.requestsResponses.finance;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class WorkerYearlySummaryDto {
 
     private BigDecimal grossPayTotal;

@@ -27,6 +27,10 @@ public class RelatedUserInCompanyResponse {
 
     private String photoUrl;
 
+    private String companyName;
+
+    private String role;
+
     private boolean enabled;
 
 

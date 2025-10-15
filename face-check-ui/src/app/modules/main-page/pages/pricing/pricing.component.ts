@@ -31,7 +31,9 @@ export class PricingComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    window.scrollTo(0, 0);
   }
+
 
   // Modal functions
   openTrialModal(plan?: string): void {

@@ -15,6 +15,9 @@ import { deleteFile } from '../fn/file-controller/delete-file';
 import { DeleteFile$Params } from '../fn/file-controller/delete-file';
 import { getFile } from '../fn/file-controller/get-file';
 import { GetFile$Params } from '../fn/file-controller/get-file';
+import { getWorkersAttendancePhoto } from '../fn/file-controller/get-workers-attendance-photo';
+import { GetWorkersAttendancePhoto$Params } from '../fn/file-controller/get-workers-attendance-photo';
+import { PhotoResponse } from '../models/photo-response';
 import { uploadFile } from '../fn/file-controller/upload-file';
 import { UploadFile$Params } from '../fn/file-controller/upload-file';
 import { uploadPhoto } from '../fn/file-controller/upload-photo';
@@ -123,6 +126,31 @@ export class FileControllerService extends BaseService {
   deleteFile(params: DeleteFile$Params, context?: HttpContext): Observable<void> {
     return this.deleteFile$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `getWorkersAttendancePhoto()` */
+  static readonly GetWorkersAttendancePhotoPath = '/files/worker/{workerId}/photos';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getWorkersAttendancePhoto()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkersAttendancePhoto$Response(params: GetWorkersAttendancePhoto$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<PhotoResponse>>> {
+    return getWorkersAttendancePhoto(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getWorkersAttendancePhoto$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkersAttendancePhoto(params: GetWorkersAttendancePhoto$Params, context?: HttpContext): Observable<Array<PhotoResponse>> {
+    return this.getWorkersAttendancePhoto$Response(params, context).pipe(
+      map((r: StrictHttpResponse<Array<PhotoResponse>>): Array<PhotoResponse> => r.body)
     );
   }
 

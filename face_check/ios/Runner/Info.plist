@@ -18,6 +18,10 @@
 	<string>face_check</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>App needs location access to track work hours</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>App needs location access to track work hours</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
@@ -28,6 +32,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access for profile image capture.</string>
+	<key>NSFaceIDUsageDescription</key>
+    <string>Quick login using Face ID</string>
 	<key>UIBackgroundModes</key>
     <array>
         <string>fetch</string>

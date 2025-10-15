@@ -8,40 +8,55 @@ global:
   smtp_require_tls: true
 
 receivers:
-  # Канал для критических алертов
   - name: 'critical-alerts'
     email_configs:
-      - to: 'mishamay583@gmail.com'  # Куда отправлять
+      - to: 'mishamay583@gmail.com'
         send_resolved: true
         headers:
           Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }} - FaceCheck Production'
         html: |
-          <h2>🚨 Critical Alert</h2>
-          <p><b>Alert:</b> {{ .GroupLabels.alertname }}</p>
-          <p><b>Instance:</b> {{ .CommonLabels.instance }}</p>
-          <p><b>Severity:</b> {{ .CommonLabels.severity }}</p>
-          <h3>Description:</h3>
-          {{ range .Alerts }}
-            <p>{{ .Annotations.description }}</p>
-          {{ end }}
-          <p><b>Time:</b> {{ .Alerts.StartsAt }}</p>
-  
+          <!DOCTYPE html>
+          <html>
+          <body>
+            <h2>🚨 Critical Alert</h2>
+            <p><b>Alert Name:</b> {{ .GroupLabels.alertname | default "Unknown" }}</p>
+            <p><b>Severity:</b> {{ .CommonLabels.severity | default "Unknown" }}</p>
+          
+            <h3>Affected Instances:</h3>
+            <ul>
+            {{ range .Alerts }}
+              <li>
+                <b>Instance:</b> {{ .Labels.instance | default "N/A" }}<br>
+                <b>Status:</b> {{ .Status }}<br>
+                <b>Started:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}<br>
+                {{ if .Annotations.summary }}
+                <b>Summary:</b> {{ .Annotations.summary }}<br>
+                {{ end }}
+                {{ if .Annotations.description }}
+                <b>Description:</b> {{ .Annotations.description }}<br>
+                {{ end }}
+                {{ if .GeneratorURL }}
+                <a href="{{ .GeneratorURL }}">View in Prometheus</a>
+                {{ end }}
+              </li>
+            {{ end }}
+            </ul>
+          </body>
+          </html>
 
-  # Канал для предупреждений
   - name: 'warning-alerts'
     email_configs:
       - to: 'mishamay583@gmail.com'
         send_resolved: true
         headers:
-          Subject: '⚠️ WARNING: {{ .GroupLabels.alertname }} - FaceCheck'
+          Subject: '⚠️ WARNING: {{ .GroupLabels.alertname | default "Alert" }}'
 
-  # Канал для бизнес-алертов
   - name: 'business-alerts'
     email_configs:
-      - to: 'mishamay583@gmail.com@gmail.com'
+      - to: 'mishamay583@gmail.com'  # Исправлен email
         send_resolved: true
         headers:
-          Subject: '📊 Business Alert: {{ .GroupLabels.alertname }}'
+          Subject: '📊 Business Alert: {{ .GroupLabels.alertname | default "Business Issue" }}'
 
 # Настройка маршрутизации алертов
 route:

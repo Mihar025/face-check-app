@@ -23,6 +23,8 @@ import { registerAppowner } from '../fn/authentication/register-appowner';
 import { RegisterAppowner$Params } from '../fn/authentication/register-appowner';
 import { registerCompany } from '../fn/authentication/register-company';
 import { RegisterCompany$Params } from '../fn/authentication/register-company';
+import { registerCompanyAppOwner } from '../fn/authentication/register-company-app-owner';
+import { RegisterCompanyAppOwner$Params } from '../fn/authentication/register-company-app-owner';
 import { registerForeman } from '../fn/authentication/register-foreman';
 import { RegisterForeman$Params } from '../fn/authentication/register-foreman';
 import { resetPassword } from '../fn/authentication/reset-password';
@@ -202,6 +204,31 @@ export class AuthenticationService extends BaseService {
    */
   registerCompany(params: RegisterCompany$Params, context?: HttpContext): Observable<void> {
     return this.registerCompany$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `registerCompanyAppOwner()` */
+  static readonly RegisterCompanyAppOwnerPath = '/auth/register/company-app-owner';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `registerCompanyAppOwner()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  registerCompanyAppOwner$Response(params: RegisterCompanyAppOwner$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return registerCompanyAppOwner(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `registerCompanyAppOwner$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  registerCompanyAppOwner(params: RegisterCompanyAppOwner$Params, context?: HttpContext): Observable<void> {
+    return this.registerCompanyAppOwner$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
   }

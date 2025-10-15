@@ -1,0 +1,936 @@
+<app-app-owner-sidebar
+  [userName]="userName"
+  [companyName]="companyName"
+  [userPhotoUrl]="userPhotoUrl">
+</app-app-owner-sidebar>
+
+<div class="employees-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>All Employees</h1>
+    <div class="header-actions">
+      <span class="total-count">Total: {{ totalElement }}</span>
+      <button class="btn btn-add-admin" (click)="openAddAdminModal()">
+        <i class="fas fa-user-shield"></i> Add Admin
+      </button>
+      <button class="btn btn-add-employee" (click)="openAddEmployeeModal()">
+        <i class="fas fa-user-plus"></i> Add Employee
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-section">
+    <div class="search-bar">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (keyup)="onSearchChange()"
+        placeholder="Search by name, email or company..."
+        class="search-input">
+      <button class="search-button" (click)="searchEmployees()">
+        <i class="fas fa-search"></i> Search
+      </button>
+      <button class="clear-button" *ngIf="searchQuery" (click)="clearSearch()">
+        <i class="fas fa-times"></i> Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="success-message">
+    <i class="fas fa-check-circle"></i> {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Employees Grid -->
+  <div class="employees-grid" *ngIf="filteredEmployees && filteredEmployees.length > 0">
+    <div class="employee-card" *ngFor="let employee of filteredEmployees; trackBy: trackByEmployee">
+      <!-- Header -->
+      <div class="employee-header">
+        <div class="employee-title">
+          <h3>{{ employee.firstName }} {{ employee.lastName }}</h3>
+          <span class="role-badge"
+                [ngClass]="{
+                  'role-admin': employee.role === 'ADMIN',
+                  'role-foreman': employee.role === 'FOREMAN',
+                  'role-user': employee.role === 'USER'
+                }">
+            {{ employee.role || 'USER' }}
+          </span>
+        </div>
+        <span class="employee-id">#{{ employee.workerId }}</span>
+      </div>
+
+      <!-- Info Rows -->
+      <div class="info-row">
+        <span class="label">Email:</span>
+        <span class="value">{{ employee.email || 'No email' }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Company:</span>
+        <span class="value">
+          {{ employee.companyName || 'Not assigned' }}
+        </span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Hourly Rate:</span>
+        <span class="value rate">${{ employee.baseHourlyRate || 0 }}/hr</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Status:</span>
+        <span class="value status" [ngClass]="{ 'active': employee.enabled, 'inactive': !employee.enabled }">
+          {{ employee.enabled ? 'Active' : 'Inactive' }}
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="employee-actions">
+        <button class="btn btn-details" (click)="openEmployeeModal(employee)">
+          <i class="fas fa-info-circle"></i> Details
+        </button>
+        <button class="btn btn-schedule" (click)="openScheduleModal(employee)">
+          <i class="fas fa-calendar"></i> Schedule
+        </button>
+        <button class="btn btn-delete" (click)="openDeleteModal(employee)">
+          <i class="fas fa-trash"></i> Remove
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="no-employees" *ngIf="(!filteredEmployees || filteredEmployees.length === 0) && !loading">
+    <i class="fas fa-users"></i>
+    <p>No employees found</p>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading employees...</p>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="employees && employees.length > 0 && !searchQuery">
+    <button
+      class="pagination-btn"
+      (click)="previousPage()"
+      [disabled]="currentPage === 0">
+      <i class="fas fa-chevron-left"></i> Previous
+    </button>
+
+    <div class="pagination-info">
+      Page {{ currentPage + 1 }} of {{ totalPages }}
+    </div>
+
+    <button
+      class="pagination-btn"
+      (click)="nextPage()"
+      [disabled]="currentPage >= totalPages - 1">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ADD ADMIN MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="showAddAdminModal" (click)="closeAddAdminModal()">
+  <div class="modal-container modal-large modal-scrollable" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-shield"></i> Register New Admin</h3>
+      <button class="close-button" (click)="closeAddAdminModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form class="registration-form">
+        <!-- Personal Information Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-user"></i> Personal Information</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" [(ngModel)]="adminForm.firstName" name="firstName" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" [(ngModel)]="adminForm.lastName" name="lastName" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Middle Initial</label>
+              <input type="text" [(ngModel)]="adminForm.middleInitial" name="middleInitial" class="form-input" maxlength="1">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" [(ngModel)]="adminForm.email" name="email" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Password *</label>
+              <input type="password" [(ngModel)]="adminForm.password" name="password" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Phone Number *</label>
+              <input type="tel" [(ngModel)]="adminForm.phoneNumber" name="phoneNumber" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date of Birth *</label>
+              <input type="date" [(ngModel)]="adminForm.dateOfBirth" name="dateOfBirth" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Gender *</label>
+              <select [(ngModel)]="adminForm.gender" name="gender" class="form-input" required>
+                <option value="">Select Gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>SSN</label>
+              <input type="text" [(ngModel)]="adminForm.ssn_WORKER" name="ssn_WORKER" class="form-input" placeholder="XXX-XX-XXXX">
+            </div>
+          </div>
+        </div>
+
+        <!-- Address Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-map-marker-alt"></i> Address Information</h4>
+
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Home Address *</label>
+              <input type="text" [(ngModel)]="adminForm.homeAddress" name="homeAddress" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Apt/Suite *</label>
+              <input type="text" [(ngModel)]="adminForm.apt" name="apt" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>City *</label>
+              <input type="text" [(ngModel)]="adminForm.city" name="city" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>State *</label>
+              <input type="text" [(ngModel)]="adminForm.state" name="state" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Zip Code *</label>
+              <input type="text" [(ngModel)]="adminForm.zipcode" name="zipcode" class="form-input" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employment Information Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-briefcase"></i> Employment Information</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Employment Type *</label>
+              <select [(ngModel)]="adminForm.employmentType" name="employmentType" class="form-input" required>
+                <option value="W2">W2</option>
+                <option value="CONTRACTOR_1099">Contractor 1099</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Pay Frequency *</label>
+              <select [(ngModel)]="adminForm.payFrequency" name="payFrequency" class="form-input" required>
+                <option value="WEEKLY">Weekly</option>
+                <option value="BIWEEKLY">Biweekly</option>
+                <option value="MONTHLY">Monthly</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>WC Risk Class Code</label>
+              <input type="text" [(ngModel)]="adminForm.wcRiskClassCode" name="wcRiskClassCode" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tax Information Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-file-invoice-dollar"></i> Tax Information</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Filing Status *</label>
+              <select [(ngModel)]="adminForm.filingStatus" name="filingStatus" class="form-input" required>
+                <option value="SINGLE">Single</option>
+                <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
+                <option value="MARRIED_FILLING_SEPARATELY">Married Filing Separately</option>
+                <option value="MARRIED_FILLING_JOINTLY">Married Filing Jointly</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Extra Withholdings</label>
+              <input type="number" [(ngModel)]="adminForm.extraWithHoldings" name="extraWithHoldings" class="form-input" min="0">
+            </div>
+            <div class="form-group">
+              <label>Dependents</label>
+              <input type="number" [(ngModel)]="adminForm.dependents" name="dependents" class="form-input" min="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="adminForm.exemptFromWithholding" name="exemptFromWithholding">
+                Exempt from Withholding
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="adminForm.multipleJobsOrSpouseWorks" name="multipleJobsOrSpouseWorks">
+                Multiple Jobs or Spouse Works
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="adminForm.twoJobsCheckBox" name="twoJobsCheckBox">
+                Two Jobs
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="adminForm.livesInNYC" name="livesInNYC">
+                Lives in NYC
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="closeAddAdminModal()">Cancel</button>
+      <button class="btn btn-save" (click)="createNewAdmin()" [disabled]="loading">
+        <i class="fas fa-user-plus"></i> {{ loading ? 'Registering...' : 'Register Admin' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ADD EMPLOYEE MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="showAddEmployeeModal" (click)="closeAddEmployeeModal()">
+  <div class="modal-container modal-large modal-scrollable" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-plus"></i> Register New Employee</h3>
+      <button class="close-button" (click)="closeAddEmployeeModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form class="registration-form">
+        <!-- Personal Information Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-user"></i> Personal Information</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" [(ngModel)]="employeeForm.firstName" name="firstName" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" [(ngModel)]="employeeForm.lastName" name="lastName" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Middle Initial</label>
+              <input type="text" [(ngModel)]="employeeForm.middleInitial" name="middleInitial" class="form-input" maxlength="1">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" [(ngModel)]="employeeForm.email" name="email" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Password *</label>
+              <input type="password" [(ngModel)]="employeeForm.password" name="password" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Phone Number *</label>
+              <input type="tel" [(ngModel)]="employeeForm.phoneNumber" name="phoneNumber" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date of Birth *</label>
+              <input type="date" [(ngModel)]="employeeForm.dateOfBirth" name="dateOfBirth" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Gender *</label>
+              <select [(ngModel)]="employeeForm.gender" name="gender" class="form-input" required>
+                <option value="">Select Gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>SSN</label>
+              <input type="text" [(ngModel)]="employeeForm.ssn_WORKER" name="ssn_WORKER" class="form-input" placeholder="XXX-XX-XXXX">
+            </div>
+          </div>
+        </div>
+
+        <!-- Address Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-map-marker-alt"></i> Address Information</h4>
+
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Home Address *</label>
+              <input type="text" [(ngModel)]="employeeForm.homeAddress" name="homeAddress" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Apt/Suite *</label>
+              <input type="text" [(ngModel)]="employeeForm.apt" name="apt" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>City *</label>
+              <input type="text" [(ngModel)]="employeeForm.city" name="city" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>State *</label>
+              <input type="text" [(ngModel)]="employeeForm.state" name="state" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Zip Code *</label>
+              <input type="text" [(ngModel)]="employeeForm.zipcode" name="zipcode" class="form-input" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employment Information Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-briefcase"></i> Employment Information</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Company Name *</label>
+              <input type="text" [(ngModel)]="employeeForm.companyName" name="companyName" class="form-input" required readonly>
+            </div>
+            <div class="form-group">
+              <label>Company Address *</label>
+              <input type="text" [(ngModel)]="employeeForm.companyAddress" name="companyAddress" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Employment Type *</label>
+              <select [(ngModel)]="employeeForm.employmentType" name="employmentType" class="form-input" required>
+                <option value="W2">W2</option>
+                <option value="CONTRACTOR_1099">Contractor 1099</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Pay Frequency *</label>
+              <select [(ngModel)]="employeeForm.payFrequency" name="payFrequency" class="form-input" required>
+                <option value="WEEKLY">Weekly</option>
+                <option value="BIWEEKLY">Biweekly</option>
+                <option value="MONTHLY">Monthly</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>WC Risk Class Code *</label>
+              <input type="text" [(ngModel)]="employeeForm.wcRiskClassCode" name="wcRiskClassCode" class="form-input" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tax Information Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-file-invoice-dollar"></i> Tax Information</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Filing Status *</label>
+              <select [(ngModel)]="employeeForm.filingStatus" name="filingStatus" class="form-input" required>
+                <option value="SINGLE">Single</option>
+                <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
+                <option value="MARRIED_FILLING_SEPARATELY">Married Filing Separately</option>
+                <option value="MARRIED_FILLING_JOINTLY">Married Filing Jointly</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Extra Withholdings</label>
+              <input type="number" [(ngModel)]="employeeForm.extraWithHoldings" name="extraWithHoldings" class="form-input" min="0">
+            </div>
+            <div class="form-group">
+              <label>Dependents</label>
+              <input type="number" [(ngModel)]="employeeForm.dependents" name="dependents" class="form-input" min="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.exemptFromWithholding" name="exemptFromWithholding">
+                Exempt from Withholding
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.multipleJobsOrSpouseWorks" name="multipleJobsOrSpouseWorks">
+                Multiple Jobs or Spouse Works
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.twoJobsCheckBox" name="twoJobsCheckBox">
+                Two Jobs
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.livesInNYC" name="livesInNYC">
+                Lives in NYC
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Citizenship Status Section -->
+        <div class="form-section">
+          <h4><i class="fas fa-flag"></i> Citizenship Status</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.isCitizen" name="isCitizen">
+                US Citizen
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.isNonCitizenNationalOfTheUS" name="isNonCitizenNationalOfTheUS">
+                Non-Citizen National of the US
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.isPermanentResident" name="isPermanentResident">
+                Permanent Resident
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="employeeForm.isANonCitizen" name="isANonCitizen">
+                Non-Citizen
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="closeAddEmployeeModal()">Cancel</button>
+      <button class="btn btn-save" (click)="createNewEmployee()" [disabled]="loading">
+        <i class="fas fa-user-plus"></i> {{ loading ? 'Registering...' : 'Register Employee' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- EMPLOYEE DETAILS MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="showEmployeeModal" (click)="closeEmployeeModal()">
+  <div class="modal-container modal-xlarge modal-scrollable" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-circle"></i> Employee Information</h3>
+      <button class="close-button" (click)="closeEmployeeModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="selectedEmployee" class="employee-details">
+        <!-- Personal Information -->
+        <div class="detail-section">
+          <h4><i class="fas fa-id-card"></i> Personal Information</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Employee ID:</label>
+              <span>{{ selectedEmployee.workerId }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Full Name:</label>
+              <span>{{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Email:</label>
+              <span>{{ selectedEmployee.email }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Phone:</label>
+              <span>{{ employeePersonalInfo?.phoneNumber || 'Not provided' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Address:</label>
+              <span>{{ employeePersonalInfo?.address || 'Not provided' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Company:</label>
+              <span>{{ employeePersonalInfo?.companyName || 'Not assigned' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Hourly Rate:</label>
+              <span class="rate-value">${{ selectedEmployee.baseHourlyRate }}/hr</span>
+            </div>
+            <div class="detail-item">
+              <label>Role:</label>
+              <span class="role-badge"
+                    [ngClass]="{
+                      'role-admin': employeePersonalInfo?.role === 'ADMIN',
+                      'role-foreman': employeePersonalInfo?.role === 'FOREMAN',
+                      'role-user': employeePersonalInfo?.role === 'USER'
+                    }">
+                {{ employeePersonalInfo?.role || 'N/A' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Management -->
+        <div class="detail-section">
+          <h4><i class="fas fa-users-cog"></i> Role Management</h4>
+          <div class="role-actions">
+            <ng-container *ngIf="employeePersonalInfo?.role === 'USER'">
+              <button class="btn btn-promote" (click)="promoteToForeman()">
+                <i class="fas fa-arrow-up"></i> Promote to Foreman
+              </button>
+              <button class="btn btn-promote-admin" (click)="promoteToAdmin()">
+                <i class="fas fa-crown"></i> Promote to Admin
+              </button>
+            </ng-container>
+
+            <ng-container *ngIf="employeePersonalInfo?.role === 'FOREMAN'">
+              <button class="btn btn-demote" (click)="demoteToUser()">
+                <i class="fas fa-arrow-down"></i> Demote to User
+              </button>
+              <button class="btn btn-promote-admin" (click)="promoteToAdmin()">
+                <i class="fas fa-crown"></i> Promote to Admin
+              </button>
+            </ng-container>
+
+            <ng-container *ngIf="employeePersonalInfo?.role === 'ADMIN'">
+              <button class="btn btn-demote" (click)="demoteToForeman()">
+                <i class="fas fa-arrow-down"></i> Demote to Foreman
+              </button>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Time Management Tabs -->
+        <div class="detail-section">
+          <h4><i class="fas fa-clock"></i> Time Management</h4>
+          <div class="tabs">
+            <button
+              class="tab-button"
+              [class.active]="activeTab === 'updatePunchIn'"
+              (click)="activeTab = 'updatePunchIn'">
+              <i class="fas fa-edit"></i> Update Punch In
+            </button>
+            <button
+              class="tab-button"
+              [class.active]="activeTab === 'newPunchIn'"
+              (click)="activeTab = 'newPunchIn'">
+              <i class="fas fa-sign-in-alt"></i> New Punch In
+            </button>
+            <button
+              class="tab-button"
+              [class.active]="activeTab === 'newPunchOut'"
+              (click)="activeTab = 'newPunchOut'">
+              <i class="fas fa-sign-out-alt"></i> New Punch Out
+            </button>
+          </div>
+
+          <!-- Update Punch In Tab -->
+          <div *ngIf="activeTab === 'updatePunchIn'" class="tab-content">
+            <div class="form-group">
+              <label>New Check-In Time</label>
+              <input type="datetime-local" [(ngModel)]="newCheckInTime" class="form-input">
+            </div>
+            <button class="btn btn-save" (click)="updatePunchIn()">
+              <i class="fas fa-clock"></i> Update Time
+            </button>
+          </div>
+
+          <!-- New Punch In Tab -->
+          <div *ngIf="activeTab === 'newPunchIn'" class="tab-content">
+            <div class="form-group">
+              <label>Date When Punch In Was Missed</label>
+              <input type="date" [(ngModel)]="dateWhenWorkerDidntMakePunchIn" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>New Punch In Date</label>
+              <input type="date" [(ngModel)]="newPunchInDate" class="form-input">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hour</label>
+                <input type="number" [(ngModel)]="newPunchInTime.hour" min="0" max="23" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Minute</label>
+                <input type="number" [(ngModel)]="newPunchInTime.minute" min="0" max="59" class="form-input">
+              </div>
+            </div>
+            <button class="btn btn-save" (click)="changeNewPunchIn()">
+              <i class="fas fa-sign-in-alt"></i> Set New Punch In
+            </button>
+          </div>
+
+          <!-- New Punch Out Tab -->
+          <div *ngIf="activeTab === 'newPunchOut'" class="tab-content">
+            <div class="form-group">
+              <label>Date When Punch Out Was Missed</label>
+              <input type="date" [(ngModel)]="dateWhenWorkerDidntMakePunchOut" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>New Punch Out Date</label>
+              <input type="date" [(ngModel)]="newPunchOutDate" class="form-input">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hour</label>
+                <input type="number" [(ngModel)]="newPunchOutTime.hour" min="0" max="23" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Minute</label>
+                <input type="number" [(ngModel)]="newPunchOutTime.minute" min="0" max="59" class="form-input">
+              </div>
+            </div>
+            <button class="btn btn-save" (click)="changeNewPunchOut()">
+              <i class="fas fa-sign-out-alt"></i> Set New Punch Out
+            </button>
+          </div>
+        </div>
+
+        <!-- Hourly Rate Update -->
+        <div class="detail-section">
+          <h4><i class="fas fa-dollar-sign"></i> Update Hourly Rate</h4>
+          <div class="form-group">
+            <label>New Hourly Rate ($)</label>
+            <input type="number" [(ngModel)]="newHourlyRate" min="0" step="0.01" class="form-input">
+          </div>
+          <button class="btn btn-save" (click)="changeHourlyRate()">
+            <i class="fas fa-dollar-sign"></i> Update Rate
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="closeEmployeeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- SCHEDULE MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="showScheduleModal" (click)="closeScheduleModal()">
+  <div class="modal-container modal-xlarge modal-scrollable" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-calendar-alt"></i> Work Schedule Management</h3>
+      <button class="close-button" (click)="closeScheduleModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="selectedEmployee" class="schedule-management">
+        <div class="schedule-header-info">
+          <div class="schedule-title-section">
+            <h4>{{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}</h4>
+            <p class="schedule-description">
+              <i class="fas fa-info-circle"></i>
+              Configure individual working hours for each day of the week with lunch breaks.
+            </p>
+          </div>
+          <button *ngIf="hasExistingSchedule" class="btn btn-delete" (click)="deleteExistingSchedule()">
+            <i class="fas fa-trash"></i> Delete Schedule
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoadingSchedule" class="loading-schedule">
+          <div class="spinner"></div>
+          <p>Loading schedule...</p>
+        </div>
+
+        <!-- Existing Schedule Display -->
+        <div *ngIf="!isLoadingSchedule && hasExistingSchedule && employeeGeneratedSchedule && employeeGeneratedSchedule.schedules && employeeGeneratedSchedule.schedules.length > 0" class="generated-schedule">
+          <h5><i class="fas fa-check-circle"></i> Current Schedule</h5>
+          <p class="schedule-employee-name"><strong>Employee:</strong> {{ employeeGeneratedSchedule.workerName }}</p>
+          <div class="schedule-days">
+            <div *ngFor="let schedule of employeeGeneratedSchedule!.schedules!" class="day-schedule">
+              <span class="day-name" [ngClass]="{'day-off': schedule.isDayOff}">
+                {{ schedule.dayOfWeek }}
+              </span>
+              <span *ngIf="!schedule.isDayOff" class="day-time">
+                {{ formatTime(schedule.startTime) }} - {{ formatTime(schedule.endTime) }}
+                <span class="lunch-info" *ngIf="schedule.lunchStart && schedule.lunchEnd">
+                  | Lunch: {{ formatTime(schedule.lunchStart) }} - {{ formatTime(schedule.lunchEnd) }}
+                  <span *ngIf="schedule.isCompanyPayingLunch" class="paid-badge">Paid</span>
+                </span>
+              </span>
+              <span *ngIf="schedule.isDayOff" class="off-badge">Day Off</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Schedule Message -->
+        <div *ngIf="!isLoadingSchedule && !hasExistingSchedule" class="no-schedule-message">
+          <i class="fas fa-calendar-times"></i>
+          <p>No schedule set for this employee. Create one below.</p>
+        </div>
+
+        <!-- Schedule Form -->
+        <div class="schedule-form">
+          <h5><i class="fas fa-calendar-plus"></i> Create/Update Weekly Schedule</h5>
+
+          <div class="flexible-schedule">
+            <div *ngFor="let day of flexibleDays; let i = index" class="day-config">
+              <div class="day-header">
+                <h6>
+                  <i class="fas fa-calendar-day"></i>
+                  {{ day.dayLabel }}
+                </h6>
+                <label class="day-off-toggle">
+                  <input type="checkbox" [(ngModel)]="day.isDayOff">
+                  <span>Day Off</span>
+                </label>
+              </div>
+
+              <div *ngIf="!day.isDayOff" class="day-times">
+                <!-- Working Hours -->
+                <div class="time-section">
+                  <div class="time-section-title">
+                    <i class="fas fa-clock"></i> Working Hours
+                  </div>
+                  <div class="time-inputs-row">
+                    <div class="time-input-group">
+                      <label>Start Time</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.startTime.hour" min="0" max="23" placeholder="09">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.startTime.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                    <span class="arrow-separator">→</span>
+                    <div class="time-input-group">
+                      <label>End Time</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.endTime.hour" min="0" max="23" placeholder="17">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.endTime.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Lunch Break -->
+                <div class="time-section">
+                  <div class="time-section-title">
+                    <i class="fas fa-utensils"></i> Lunch Break
+                  </div>
+                  <div class="time-inputs-row">
+                    <div class="time-input-group">
+                      <label>Lunch Start</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.lunchStart.hour" min="0" max="23" placeholder="12">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.lunchStart.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                    <span class="arrow-separator">→</span>
+                    <div class="time-input-group">
+                      <label>Lunch End</label>
+                      <div class="time-inputs">
+                        <input type="number" [(ngModel)]="day.lunchEnd.hour" min="0" max="23" placeholder="13">
+                        <span class="separator">:</span>
+                        <input type="number" [(ngModel)]="day.lunchEnd.minute" min="0" max="59" placeholder="00">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="day.isCompanyPayingLunch">
+                      <span>Company pays for lunch break</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="day.isDayOff" class="day-off-message">
+                <i class="fas fa-bed"></i>
+                <span>This day is marked as off day</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="closeScheduleModal()">Cancel</button>
+      <button class="btn btn-save" (click)="generateScheduleForWorker()" [disabled]="loading">
+        <i class="fas fa-save"></i> {{ loading ? 'Saving...' : 'Save Schedule' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- DELETE CONFIRMATION MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-exclamation-triangle"></i> Remove Employee</h3>
+      <button class="close-button" (click)="closeDeleteModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <p class="warning-text">Are you sure you want to remove this employee from the system?</p>
+      <div *ngIf="selectedEmployee" class="employee-summary">
+        <p><strong>Name:</strong> {{ selectedEmployee.firstName }} {{ selectedEmployee.lastName }}</p>
+        <p><strong>Email:</strong> {{ selectedEmployee.email }}</p>
+        <p><strong>ID:</strong> #{{ selectedEmployee.workerId }}</p>
+      </div>
+      <p class="warning-note"><i class="fas fa-info-circle"></i> This action cannot be undone.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" (click)="deleteEmployee()" [disabled]="loading">
+        <i class="fas fa-trash"></i> {{ loading ? 'Removing...' : 'Remove Employee' }}
+      </button>
+    </div>
+  </div>
+</div>

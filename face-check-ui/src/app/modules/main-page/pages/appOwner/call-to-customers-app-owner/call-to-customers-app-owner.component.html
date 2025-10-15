@@ -1,0 +1,115 @@
+<div class="page">
+
+  <!-- Сайдбар слева -->
+  <aside class="sidebar-left">
+    <app-app-owner-sidebar
+      [userName]="userName"
+      [companyName]="companyName"
+      [userPhotoUrl]="userPhotoUrl">
+    </app-app-owner-sidebar>
+  </aside>
+
+  <!-- Контент -->
+  <main class="content">
+
+    <!-- Шапка -->
+    <header class="header">
+      <h1 class="title">Contact Forms</h1>
+      <div class="meta">
+        <span class="total">Total: {{ totalElement || 0 }}</span>
+        <span class="page-indicator" *ngIf="totalPages">Page {{ page + 1 }} / {{ totalPages || 1 }}</span>
+      </div>
+    </header>
+
+    <!-- Поиск по ID -->
+    <section class="search card">
+      <div class="row">
+        <div class="field">
+          <label for="formId">Search by ID</label>
+          <input
+            id="formId"
+            type="number"
+            [(ngModel)]="formId"
+            (keyup.enter)="findFormById()"
+            placeholder="Enter form ID…"
+            min="1"
+          />
+        </div>
+
+        <div class="buttons">
+          <button class="btn primary" (click)="findFormById()" [disabled]="!formId">Find</button>
+          <button class="btn ghost"
+                  (click)="formId=0; firstName=''; lastName=''; phoneNumber=''; loadAllCustomersForms()"
+                  [disabled]="!firstName && !lastName && !phoneNumber && formId===0">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Найденная форма (быстрый просмотр) -->
+      <div class="found" *ngIf="firstName || lastName || phoneNumber">
+        <div class="found-title">Found form</div>
+        <div class="found-grid">
+          <div class="pair"><span class="label">ID</span><span class="value">#{{ formId || '—' }}</span></div>
+          <div class="pair"><span class="label">First name</span><span class="value">{{ firstName || '—' }}</span></div>
+          <div class="pair"><span class="label">Last name</span><span class="value">{{ lastName || '—' }}</span></div>
+          <div class="pair"><span class="label">Phone</span><span class="value">{{ phoneNumber || '—' }}</span></div>
+          <div class="actions">
+            <button class="btn danger" (click)="deleteFormById(formId)" [disabled]="!formId">Delete</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TODO-list из форм -->
+    <section class="list card">
+      <ul class="todo-list" *ngIf="contactForms?.length; else emptyState">
+        <li class="todo-item" *ngFor="let f of contactForms">
+          <label class="checkbox">
+            <input type="checkbox" />
+            <span class="checkmark"></span>
+          </label>
+
+          <div class="todo-main">
+            <div class="row1">
+              <span class="todo-id">#{{ f.id }}</span>
+              <span class="todo-name">{{ (f.firstName || '—') + ' ' + (f.lastName || '') }}</span>
+            </div>
+            <div class="row2">
+              <span class="todo-phone">{{ f.phoneNumber || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="todo-actions">
+            <button class="btn ghost sm"
+                    (click)="formId = f.id || 0; findFormById()"
+                    [disabled]="!f.id">
+              View
+            </button>
+            <button class="btn danger sm"
+                    (click)="deleteFormById(f.id!)"
+                    [disabled]="!f.id">
+              Delete
+            </button>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Пагинация -->
+      <div class="pagination">
+        <button class="btn ghost" (click)="previousPage()" [disabled]="page === 0">← Prev</button>
+        <div class="page-info">Page {{ page + 1 }} / {{ totalPages || 1 }}</div>
+        <button class="btn ghost" (click)="nextPage()" [disabled]="page >= (totalPages - 1)">Next →</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Пустое состояние -->
+<ng-template #emptyState>
+  <div class="empty">
+    <div class="empty-title">No forms yet</div>
+    <div class="empty-sub">Try another page or adjust search.</div>
+  </div>
+</ng-template>

@@ -27,4 +27,9 @@ public class WorkSiteResponse {
     private LocalTime workDayStart;
 
     private LocalTime workDayEnd;
+
+    private Boolean isActive;
+
+    private String companyName;
+
 }

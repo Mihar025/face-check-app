@@ -7,8 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -30,6 +30,11 @@ public class WorkerSchedule {
     @JoinColumn(name = "work_site_id")
     private WorkSite workSite;
 
+    // НОВОЕ ПОЛЕ - день недели для шаблона
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_of_week")
+    private DayOfWeek dayOfWeek;
+
     @Column(name = "schedule_date")
     private LocalDate scheduleDate;
 
@@ -46,11 +51,19 @@ public class WorkerSchedule {
     private Boolean isOnDuty;
 
     @Column(name = "start_lunch")
-    private LocalDateTime startLunch;
+    private LocalTime startLunch; // ИЗМЕНЕНО с LocalDateTime на LocalTime
 
     @Column(name = "end_lunch")
-    private LocalDateTime endLunch;
+    private LocalTime endLunch; // ИЗМЕНЕНО с LocalDateTime на LocalTime
 
     @Column(name = "is_company_paying_lunch")
     private Boolean isCompanyPayingLunch;
+
+    // НОВОЕ ПОЛЕ - флаг выходного дня
+    @Column(name = "is_day_off")
+    private Boolean isDayOff;
+
+    // НОВОЕ ПОЛЕ - это шаблон или реальное расписание
+    @Column(name = "is_template")
+    private Boolean isTemplate;
 }

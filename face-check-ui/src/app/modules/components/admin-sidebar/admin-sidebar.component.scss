@@ -1,0 +1,251 @@
+// Premium Colors
+$primary-color: #5B47E0;
+$primary-light: #7B6AEF;
+$primary-dark: #4936C9;
+
+$sidebar-bg: #FFFFFF;
+$sidebar-text: #64748B;
+$sidebar-text-hover: #0F172A;
+$sidebar-border: #E2E8F0;
+
+$success-color: #10B981;
+$danger-color: #EF4444;
+
+$dark-text: #0F172A;
+$medium-text: #64748B;
+$light-text: #94A3B8;
+$white: #FFFFFF;
+
+$sidebar-width: 260px;
+$border-radius: 12px;
+
+// Better Font
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+$font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+@mixin smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@mixin shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+@mixin shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+}
+
+// Sidebar Container
+.sidebar {
+  width: $sidebar-width;
+  background: $sidebar-bg;
+  border-right: 1px solid $sidebar-border;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  font-family: $font-family;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($medium-text, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba($medium-text, 0.3);
+    }
+  }
+}
+
+// Profile Section
+.admin-profile {
+  padding: 32px 20px;
+  border-bottom: 1px solid $sidebar-border;
+  text-align: center;
+}
+
+.avatar-container {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid $primary-color;
+  position: relative;
+  @include shadow-sm;
+  @include smooth-transition;
+
+  &:hover {
+    transform: scale(1.05);
+    @include shadow-md;
+  }
+
+  .status-indicator {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    background: $success-color;
+    border: 3px solid $white;
+    border-radius: 50%;
+    @include shadow-sm;
+  }
+}
+
+.admin-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-info {
+  .admin-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: $dark-text;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+  }
+
+  .admin-company {
+    font-size: 13px;
+    color: $medium-text;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+  }
+}
+
+// Navigation Menu
+.sidebar-menu {
+  padding: 20px 12px;
+  flex: 1;
+
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  li {
+    position: relative;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: $sidebar-text;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    position: relative;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+    @include smooth-transition;
+
+    i {
+      width: 20px;
+      margin-right: 12px;
+      font-size: 16px;
+      @include smooth-transition;
+    }
+
+    span {
+      @include smooth-transition;
+    }
+
+    &:hover {
+      color: $sidebar-text-hover;
+      background: rgba($primary-color, 0.08);
+      transform: translateX(2px);
+
+      i {
+        transform: scale(1.1);
+      }
+    }
+
+    &.active {
+      color: $white;
+      background: $primary-color;
+      @include shadow-sm;
+
+      i {
+        color: $white;
+      }
+
+      &:hover {
+        transform: translateX(0);
+      }
+    }
+  }
+}
+
+// Logout Button
+.sidebar-footer {
+  padding: 16px 12px;
+  border-top: 1px solid $sidebar-border;
+  margin-top: auto;
+
+  .logout-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: $danger-color;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+    @include smooth-transition;
+
+    i {
+      width: 20px;
+      margin-right: 12px;
+      font-size: 16px;
+      @include smooth-transition;
+    }
+
+    &:hover {
+      background: rgba($danger-color, 0.08);
+      transform: translateX(2px);
+
+      i {
+        transform: translateX(2px);
+      }
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+
+    &.active {
+      transform: translateX(0);
+    }
+  }
+}

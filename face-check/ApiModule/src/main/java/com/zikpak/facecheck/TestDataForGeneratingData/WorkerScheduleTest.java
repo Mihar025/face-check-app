@@ -28,7 +28,8 @@ public class WorkerScheduleTest {
         request.setIsCompanyPayingLunch(true);
 
         var user = userRepository.findById(id).orElseThrow();
-        workerScheduleService.setScheduleForWorker(user.getId(), request);
+      //  workerScheduleService.setScheduleForWorkerScenario2(user.getId(), request);
+
     }
 
 

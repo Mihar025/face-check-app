@@ -3,12 +3,16 @@ package com.zikpak.facecheck.controllers;
 
 import com.zikpak.facecheck.requestsResponses.S3FileDTO;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import com.zikpak.facecheck.services.amazonS3Service.PhotoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 
 @RestController
@@ -56,6 +60,12 @@ public class FileController {
             amazonS3Service.deleteAttendancePhoto(fileName);
             return ResponseEntity.ok().build();
             }
+
+    @GetMapping("/worker/{workerId}/photos")
+    public ResponseEntity<List<PhotoResponse>> getWorkersAttendancePhoto(@PathVariable (name = "workerId") Integer workerId) {
+        List<PhotoResponse> foundedPhotos = amazonS3Service.getWorkerPhotos(workerId);
+        return ResponseEntity.ok(foundedPhotos);
+    }
 
 
 

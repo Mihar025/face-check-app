@@ -20,6 +20,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -60,6 +62,26 @@ public class PaymentHistoryService {
         if(payments.isEmpty()) {
             log.info("No employees found for company: {}", foundedCompany.getId());
         }
+        List<PaymentHistoryResponse> paymentsResponse = payments.getContent()
+                .stream()
+                .map(paymentHistoryMapper::toCompanyWorkerResponse)
+                .toList();
+        return new PageResponse<>(
+                paymentsResponse,
+                payments.getNumber(),
+                payments.getSize(),
+                payments.getTotalElements(),
+                payments.getTotalPages(),
+                payments.isFirst(),
+                payments.isLast()
+        );
+    }
+
+
+    public PageResponse<PaymentHistoryResponse> findAllPaymentsForIrsAppOwner(Authentication authentication, int page, int size){
+        checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("paymentDate").descending());
+        Page<PaymentHistoryIrs> payments = paymentHistoryIrsRepository.findAll(pageable);
         List<PaymentHistoryResponse> paymentsResponse = payments.getContent()
                 .stream()
                 .map(paymentHistoryMapper::toCompanyWorkerResponse)
@@ -148,6 +170,17 @@ public class PaymentHistoryService {
 
 
 
+    private User checkIsUserHasAdminRoleAndBusinessOwner(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+
+        boolean isAppOwner = user.getRoles().stream()
+                .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+        if(!user.isAdmin() && !user.isBusinessOwner() && !isAppOwner) {
+            throw new AccessDeniedException("You dont have permission for this operation!");
+        }
+        return user;
+    }
 
 
 

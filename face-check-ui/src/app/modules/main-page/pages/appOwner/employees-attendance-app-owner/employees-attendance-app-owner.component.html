@@ -1,0 +1,194 @@
+<app-app-owner-sidebar
+  [userName]="userName"
+  [companyName]="companyName"
+  [userPhotoUrl]="userPhotoUrl">
+</app-app-owner-sidebar>
+
+<div class="admin-layout">
+  <div class="main-content">
+    <!-- Simple Header -->
+    <div class="top-header">
+      <div class="header-content">
+        <div class="logo-section">
+          <img src="logo.jpg" alt="Facecheck Logo" class="top-logo" />
+          <span class="company-title">FaceCheck Attendance</span>
+        </div>
+        <div class="header-info">
+          <span class="current-date">
+            <i class="fas fa-calendar"></i>
+            {{ formatDate(getCurrentDate()) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Page Title -->
+      <div class="page-header">
+        <h1 class="page-title">Employee Attendance Photos (Global)</h1>
+        <p class="page-description">
+          Click on any employee to view their check-in and check-out photos
+        </p>
+      </div>
+
+      <!-- Simple Stats -->
+      <div class="stats-row" *ngIf="!loading">
+        <div class="stat-box">
+          <span class="stat-value">{{ employees.length }}</span>
+          <span class="stat-label">Total Employees</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value">{{ getTotalPhotosCount() }}</span>
+          <span class="stat-label">Total Photos</span>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading-container" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading employees and photos...</p>
+      </div>
+
+      <!-- Error / Success messages -->
+      <div *ngIf="errorMessage" class="alert alert-error">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
+      </div>
+      <div *ngIf="successMessage" class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        {{ successMessage }}
+      </div>
+
+      <!-- Employees List -->
+      <div class="employees-section" *ngIf="!loading && employees.length > 0">
+        <h2 class="section-title">Employees</h2>
+
+        <div class="employees-list">
+          <div
+            *ngFor="let employee of employees; trackBy: trackByEmployee"
+            class="employee-row"
+            [class.has-photos]="employee.hasPhotos"
+            (click)="openPhotoModal(employee)"
+          >
+            <div class="employee-avatar">
+              <img
+                *ngIf="employee.photoUrl"
+                [src]="employee.photoUrl"
+                [alt]="employee.firstName + ' ' + employee.lastName"
+                (error)="handleImageError($event)"
+              />
+              <div *ngIf="!employee.photoUrl" class="avatar-placeholder">
+                <i class="fas fa-user"></i>
+              </div>
+            </div>
+
+            <div class="employee-info">
+              <div class="employee-name">
+                {{ employee.firstName }} {{ employee.lastName }}
+              </div>
+              <div class="employee-details">
+                <span class="employee-id">ID: #{{ employee.workerId }}</span>
+                <span class="separator">•</span>
+                <span class="employee-role">
+                  {{ getRoleLabel(employee.role || '') }}
+                </span>
+                <span class="separator" *ngIf="employee.companyName">•</span>
+                <span class="employee-company" *ngIf="employee.companyName">
+                  {{ employee.companyName }}
+                </span>
+              </div>
+            </div>
+
+            <div class="photo-count">
+              <i class="fas fa-camera"></i>
+              <span>{{ employee.photosCount || 0 }} photos</span>
+            </div>
+
+            <div class="view-arrow">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Employees -->
+      <div class="no-employees" *ngIf="!loading && employees.length === 0">
+        <i class="fas fa-users"></i>
+        <h3>No employees found</h3>
+        <p>Add employees to start tracking their attendance</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Modal -->
+  <div class="modal-overlay" *ngIf="showPhotoModal" (click)="closeModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          {{ selectedEmployee?.firstName }} {{ selectedEmployee?.lastName }}
+          — Attendance Photos
+        </h3>
+        <button class="close-button" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Date Selector -->
+        <div class="date-selector">
+          <label for="att-date">Select Date:</label>
+          <input
+            id="att-date"
+            type="date"
+            [(ngModel)]="selectedDate"
+            (change)="loadPhotosForDate()"
+            [max]="getCurrentDate()"
+          />
+          <button class="today-btn" (click)="setToday()">Today</button>
+          <span class="photo-count-inline">
+            Photos found:
+            <b>{{ photos.length }}</b>
+          </span>
+        </div>
+
+        <!-- Photos Display -->
+        <div class="photos-grid" *ngIf="photos.length > 0">
+          <div *ngFor="let photo of photos; let i = index" class="photo-item">
+            <div class="photo-label">
+              <span
+                class="photo-type"
+                [class.check-in]="photo.type === 'punch-in'"
+                [class.check-out]="photo.type === 'punch-out'"
+              >
+                {{ photo.type === 'punch-in' ? 'Check In' : (photo.type === 'punch-out' ? 'Check Out' : 'Unknown') }}
+              </span>
+              <span class="photo-time">{{ extractTime(photo.url) }}</span>
+            </div>
+
+            <img
+              [src]="photo.url"
+              alt="Attendance photo"
+              (click)="openFullscreen(photo.url)"
+              (error)="onImageError($event)"
+            />
+          </div>
+        </div>
+
+        <!-- No Photos -->
+        <div class="no-photos" *ngIf="photos.length === 0">
+          <i class="fas fa-camera-retro"></i>
+          <p>No photos for {{ formatDate(selectedDate) }}</p>
+          <small>The employee did not record attendance on this day</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Viewer -->
+  <div class="fullscreen-viewer" *ngIf="fullscreenImage" (click)="closeFullscreen()">
+    <img [src]="fullscreenImage" alt="Enlarged photo" />
+    <button class="close-fullscreen" (click)="closeFullscreen()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>

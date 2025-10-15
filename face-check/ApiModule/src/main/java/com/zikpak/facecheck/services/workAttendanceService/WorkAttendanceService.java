@@ -1,5 +1,6 @@
 package com.zikpak.facecheck.services.workAttendanceService;
 
+import com.zikpak.facecheck.entity.PaymentHistoryIrs;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
@@ -7,6 +8,10 @@ import com.zikpak.facecheck.entity.employee.WorkerPayroll;
 import com.zikpak.facecheck.entity.employee.WorkerSchedule;
 import com.zikpak.facecheck.metrics.MetricsService;
 import com.zikpak.facecheck.repository.*;
+import com.zikpak.facecheck.requestsResponses.AttendanceResponse;
+import com.zikpak.facecheck.requestsResponses.OvertimeResponse;
+import com.zikpak.facecheck.requestsResponses.PageResponse;
+import com.zikpak.facecheck.requestsResponses.WorkerPhotosResponse;
 import com.zikpak.facecheck.requestsResponses.attendance.*;
 import com.zikpak.facecheck.requestsResponses.finance.PayStubResponse;
 import com.zikpak.facecheck.requestsResponses.worker.DailyFinanceInfo;
@@ -14,6 +19,7 @@ import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinance
 import com.zikpak.facecheck.services.workSiteService.WorkSiteService;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import com.zikpak.facecheck.taxesServices.calculators.FinanceCalculator;
+import com.zikpak.facecheck.taxesServices.dto.PaymentHistoryResponse;
 import com.zikpak.facecheck.taxesServices.services.AsyncNotificationService;
 import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationRequest;
 import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationService;
@@ -22,7 +28,12 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Service;
@@ -58,6 +69,7 @@ public class WorkAttendanceService {
         private final SickLeaveService sickLeaveService;
         private final MetricsService metricsService;
         private final AsyncNotificationService notificationService;
+        private final WorkAttendanceMapper workAttendanceMapper;
 
 
 
@@ -461,11 +473,18 @@ public class WorkAttendanceService {
         }
 
 
+        /**
+         * Получает расписание для работника на конкретную дату
+         * Теперь использует шаблоны по дням недели
+         */
         private WorkerSchedule getWorkerScheduleForDate(User worker, LocalDate date) {
-                return workerScheduleRepository.findByWorkerAndScheduleDate(worker, date)
-                        .orElseThrow(() -> new IllegalStateException("No schedule found for worker on date: " + date));
-        }
+                DayOfWeek dayOfWeek = date.getDayOfWeek();
 
+                return workerScheduleRepository.findByWorkerAndDayOfWeekAndIsTemplateTrue(worker, dayOfWeek)
+                        .orElseThrow(() -> new IllegalStateException(
+                                String.format("No schedule template found for worker on %s", dayOfWeek)
+                        ));
+        }
 
         /**
          * Исправленный метод расчета рабочего времени
@@ -475,51 +494,54 @@ public class WorkAttendanceService {
                 LocalDate attendanceDate = attendance.getCheckInTime().toLocalDate();
 
                 WorkerSchedule schedule = getWorkerScheduleForDate(worker, attendanceDate);
-                if (schedule == null) {
-                        log.error("No schedule found for worker ID {} on date {}", worker.getId(), attendanceDate);
-                        throw new IllegalStateException("No schedule found for worker on date: " + attendanceDate);
+
+                if (Boolean.TRUE.equals(schedule.getIsDayOff())) {
+                        log.warn("Worker {} worked on day off: {}", worker.getId(), attendanceDate);
+                        throw new IllegalStateException("Cannot calculate hours for day off");
                 }
 
-                // Получаем запланированное время начала и окончания смены
                 LocalTime scheduleStartTime = schedule.getExpectedStartTime();
                 LocalTime scheduleEndTime = schedule.getExpectedEndTime();
 
-                // Преобразуем в LocalDateTime для конкретной даты
-                LocalDateTime scheduledStart = attendance.getCheckInTime().toLocalDate().atTime(scheduleStartTime);
-                LocalDateTime scheduledEnd = attendance.getCheckInTime().toLocalDate().atTime(scheduleEndTime);
+                LocalDateTime scheduledStart = attendanceDate.atTime(scheduleStartTime);
+                LocalDateTime scheduledEnd = attendanceDate.atTime(scheduleEndTime);
 
-                // Получаем время обеда
-                LocalDateTime lunchStartTime = attendance.getCheckInTime().toLocalDate().atTime(schedule.getStartLunch().toLocalTime());
-                LocalDateTime lunchEndTime = attendance.getCheckInTime().toLocalDate().atTime(schedule.getEndLunch().toLocalTime());
+                LocalTime lunchStartTime = schedule.getStartLunch();
+                LocalTime lunchEndTime = schedule.getEndLunch();
+
+                LocalDateTime lunchStart = attendanceDate.atTime(lunchStartTime);
+                LocalDateTime lunchEnd = attendanceDate.atTime(lunchEndTime);
+
                 boolean isPayingLunch = schedule.getIsCompanyPayingLunch();
-                double lunchDuration = java.time.Duration.between(lunchStartTime, lunchEndTime).toMinutes() / 60.0;
 
                 LocalDateTime actualCheckIn = attendance.getCheckInTime();
                 LocalDateTime actualCheckOut = attendance.getCheckOutTime();
 
-                log.info("Worker {} schedule - Expected hours: {} to {}, Lunch: {} to {}, Paying lunch: {}",
+                log.info("Worker {} schedule for {} - Expected hours: {} to {}, Lunch: {} to {}, Paying lunch: {}",
                         worker.getId(),
+                        attendanceDate.getDayOfWeek(),
                         scheduleStartTime,
                         scheduleEndTime,
-                        schedule.getStartLunch().toLocalTime(),
-                        schedule.getEndLunch().toLocalTime(),
+                        lunchStartTime,
+                        lunchEndTime,
                         isPayingLunch);
 
-                log.info("Worker actual attendance - Check in: {}, Check out: {}",
-                        actualCheckIn, actualCheckOut);
-
+                // ✅ Корректируем check in (если пришёл раньше - считаем с начала графика)
                 LocalDateTime effectiveCheckIn;
                 if (actualCheckIn.isBefore(scheduledStart)) {
                         effectiveCheckIn = scheduledStart;
-                        log.info("Worker checked in early at {}, adjusted to scheduled start: {}", actualCheckIn, effectiveCheckIn);
+                        log.info("Worker checked in early at {}, adjusted to scheduled start: {}",
+                                actualCheckIn, effectiveCheckIn);
                 } else {
                         effectiveCheckIn = actualCheckIn;
                 }
 
+                // ✅ ВАЖНО: Всегда обрезаем до конца графика (НИКАКОГО АВТОМАТИЧЕСКОГО ОВЕРТАЙМА!)
                 LocalDateTime effectiveCheckOut;
                 if (actualCheckOut.isAfter(scheduledEnd)) {
                         effectiveCheckOut = scheduledEnd;
-                        log.info("Worker checked out late at {}, regular hours capped at scheduled end: {}", actualCheckOut, effectiveCheckOut);
+                        log.info("Worker checked out late at {}, but hours capped at scheduled end: {}",
+                                actualCheckOut, effectiveCheckOut);
                 } else {
                         effectiveCheckOut = actualCheckOut;
                 }
@@ -527,34 +549,28 @@ public class WorkAttendanceService {
                 // Обработка обеденного перерыва
                 double totalHours;
 
-                // Случай 1: Работник ушел до начала обеда
-                if (effectiveCheckOut.isBefore(lunchStartTime)) {
-                        // Просто считаем время между входом и выходом
+                if (effectiveCheckOut.isBefore(lunchStart)) {
                         totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
                         log.info("Worker left before lunch break, total hours: {}", totalHours);
                 }
-                // Случай 2: Работник ушел во время обеда и компания не платит за обед
-                else if (effectiveCheckOut.isAfter(lunchStartTime) && effectiveCheckOut.isBefore(lunchEndTime) && !isPayingLunch) {
-                        // Считаем только до начала обеда
-                        totalHours = java.time.Duration.between(effectiveCheckIn, lunchStartTime).toMinutes() / 60.0;
-                        log.info("Worker left during lunch and company doesn't pay lunch, hours counted to lunch start: {}", totalHours);
+                else if (effectiveCheckOut.isAfter(lunchStart) && effectiveCheckOut.isBefore(lunchEnd) && !isPayingLunch) {
+                        totalHours = java.time.Duration.between(effectiveCheckIn, lunchStart).toMinutes() / 60.0;
+                        log.info("Worker left during lunch and company doesn't pay lunch, hours counted to lunch start: {}",
+                                totalHours);
                 }
-                // Случай 3: Работник работал через обед
                 else {
                         if (isPayingLunch) {
-                                // Компания платит за обед, считаем всё время
                                 totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
                                 log.info("Company pays for lunch, counting full time: {}", totalHours);
                         } else {
-                                // Компания не платит за обед, вычитаем время обеда
                                 double hoursBeforeLunch = 0;
-                                if (effectiveCheckIn.isBefore(lunchStartTime)) {
-                                        hoursBeforeLunch = java.time.Duration.between(effectiveCheckIn, lunchStartTime).toMinutes() / 60.0;
+                                if (effectiveCheckIn.isBefore(lunchStart)) {
+                                        hoursBeforeLunch = java.time.Duration.between(effectiveCheckIn, lunchStart).toMinutes() / 60.0;
                                 }
 
                                 double hoursAfterLunch = 0;
-                                if (effectiveCheckOut.isAfter(lunchEndTime)) {
-                                        hoursAfterLunch = java.time.Duration.between(lunchEndTime, effectiveCheckOut).toMinutes() / 60.0;
+                                if (effectiveCheckOut.isAfter(lunchEnd)) {
+                                        hoursAfterLunch = java.time.Duration.between(lunchEnd, effectiveCheckOut).toMinutes() / 60.0;
                                 }
 
                                 totalHours = hoursBeforeLunch + hoursAfterLunch;
@@ -564,65 +580,105 @@ public class WorkAttendanceService {
                 }
 
                 attendance.setHoursWorked(totalHours);
-                log.info("Total regular hours calculated: {}", totalHours);
+                attendance.setOvertimeHours(0.0); // ✅ ВСЕГДА 0! Овертайм только вручную!
 
-                calculateOvertime(attendance, scheduledEnd, actualCheckOut);
+                log.info("Total regular hours calculated: {}, Overtime: 0.0 (manual only)", totalHours);
         }
 
 
-        private void calculateOvertime(WorkerAttendance attendance, LocalDateTime scheduledEnd, LocalDateTime actualCheckOut) {
-                if (actualCheckOut.isAfter(scheduledEnd)) {
-                        double overtimeHours = java.time.Duration.between(scheduledEnd, actualCheckOut).toMinutes() / 60.0;
+        @Transactional
+        public OvertimeResponse addManualOvertime(
+                Integer attendanceId,
+                Double overtimeHours,
+                String reason,
+                Integer adminId
+        ) {
+                Timer.Sample timer = metricsService.startTimer();
 
+                try {
+                        // 1. Получаем attendance
+                        WorkerAttendance attendance = workerAttendanceRepository.findById(attendanceId)
+                                .orElseThrow(() -> new EntityNotFoundException("Attendance not found: " + attendanceId));
+
+                        // 2. Проверяем что есть check out
+                        if (attendance.getCheckOutTime() == null) {
+                                throw new IllegalStateException("Cannot add overtime to active attendance");
+                        }
+
+                        // 3. Валидация овертайма
+                        if (overtimeHours <= 0 || overtimeHours > 8) {
+                                throw new IllegalArgumentException("Overtime hours must be between 0 and 8");
+                        }
+
+                        // 4. Проверяем недельный лимит
                         User worker = attendance.getWorker();
-                        LocalDate today = attendance.getCheckInTime().toLocalDate();
-                        LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-                        LocalDate weekEnd = weekStart.plusDays(6); // Суббота
+                        LocalDate attendanceDate = attendance.getCheckInTime().toLocalDate();
+                        LocalDate weekStart = attendanceDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+                        LocalDate weekEnd = weekStart.plusDays(6);
 
                         List<WorkerAttendance> weekAttendances = workerAttendanceRepository
                                 .findAllByWorkerIdAndCheckInTimeBetween(
                                         worker.getId(),
                                         weekStart.atStartOfDay(),
-                                        weekEnd.atTime(LocalTime.MAX))
-                                .stream()
-                                .filter(a -> !a.getId().equals(attendance.getId())) // Исключаем текущее посещение
-                                .collect(Collectors.toList());
+                                        weekEnd.atTime(LocalTime.MAX));
 
-                        // Считаем суммарные часы за неделю (без текущего дня)
-                        double weeklyHoursWithoutToday = weekAttendances.stream()
+                        double weeklyRegularHours = weekAttendances.stream()
                                 .mapToDouble(a -> a.getHoursWorked() != null ? a.getHoursWorked() : 0.0)
                                 .sum();
 
-                        // Суммарные часы включая текущий день (регулярные, без овертайма)
-                        double totalWeeklyRegularHours = weeklyHoursWithoutToday + attendance.getHoursWorked();
+                        double weeklyOvertimeHours = weekAttendances.stream()
+                                .mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0.0)
+                                .sum();
 
-                        log.info("Weekly hours before today: {}, with today: {}, weekly threshold: 40.0",
-                                weeklyHoursWithoutToday, totalWeeklyRegularHours);
+                        double totalWeeklyHours = weeklyRegularHours + weeklyOvertimeHours;
 
-                        // Учитываем овертайм только если превышен недельный порог в 40 часов
-                        if (totalWeeklyRegularHours > 40.0) {
-                                // Если общее количество часов за неделю превышает 40,
-                                // то овертайм сегодня - это либо все сверхурочные за день,
-                                // либо общее превышение недельного лимита, в зависимости от того, что меньше
+                        log.info("Weekly hours before overtime: regular={}, overtime={}, total={}",
+                                weeklyRegularHours, weeklyOvertimeHours, totalWeeklyHours);
 
-                                double weeklyOvertime = totalWeeklyRegularHours - 40.0;
-                                double dailyOvertime = overtimeHours;
+                        // 5. Устанавливаем овертайм
+                        attendance.setOvertimeHours(overtimeHours);
+                        attendance.setNotes(
+                                (attendance.getNotes() != null ? attendance.getNotes() + "; " : "") +
+                                        String.format("Manual overtime added: %.2f hours. Reason: %s", overtimeHours, reason)
+                        );
 
-                                // Выбираем наименьшее из двух значений
-                                double effectiveOvertimeHours = Math.min(weeklyOvertime, dailyOvertime);
+                        WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
 
-                                attendance.setOvertimeHours(effectiveOvertimeHours);
-                                log.info("Overtime hours (40+ weekly threshold): {}", effectiveOvertimeHours);
-                        } else {
-                                // Если недельный порог не превышен, овертайм не начисляется
-                                attendance.setOvertimeHours(0.0);
-                                log.info("No overtime hours assigned (below 40 hours weekly threshold)");
-                        }
-                } else {
-                        attendance.setOvertimeHours(0.0);
-                        log.info("No overtime (checkout within scheduled time)");
+                        // 6. Пересчитываем payroll
+                        WorkerPayroll payroll = workerPayrollRepository
+                                .findFirstByWorkerAndPeriodStartLessThanEqualAndPeriodEndGreaterThanEqualOrderByPeriodEndDesc(
+                                        worker, attendanceDate, attendanceDate)
+                                .orElseThrow(() -> new IllegalStateException("Payroll not found for date: " + attendanceDate));
+
+                        updatePayrollCalculations(payroll, savedAttendance);
+                        WorkerPayroll savedPayroll = workerPayrollRepository.save(payroll);
+                        distributeOnlyNetPay(savedPayroll);
+
+                        log.info("✅ Manual overtime added: {} hours for attendance {} by admin {}",
+                                overtimeHours, attendanceId, adminId);
+
+                        metricsService.recordOperationTime(timer, "add_manual_overtime");
+
+                        return OvertimeResponse.builder()
+                                .attendanceId(attendanceId)
+                                .workerId(worker.getId())
+                                .workerName(worker.getFirstName() + " " + worker.getLastName())
+                                .date(attendanceDate)
+                                .regularHours(savedAttendance.getHoursWorked())
+                                .overtimeHours(overtimeHours)
+                                .reason(reason)
+                                .approvedBy(adminId)
+                                .message("Overtime successfully added")
+                                .isSuccessful(true)
+                                .build();
+
+                } catch (Exception e) {
+                        metricsService.recordError("add_manual_overtime", e.getMessage(), e);
+                        metricsService.recordOperationTime(timer, "add_manual_overtime_failed");
+                        throw e;
                 }
         }
+
 
 
 
@@ -712,9 +768,16 @@ public class WorkAttendanceService {
 
 
         private void validatePunchInTime(WorkerSchedule schedule) {
+
+                if (Boolean.TRUE.equals(schedule.getIsDayOff())) {
+                        throw new IllegalStateException(
+                                String.format("%s is a day off according to schedule", schedule.getDayOfWeek())
+                        );
+                }
+
                 LocalTime currentTime = LocalTime.now();
                 LocalTime earliestAllowed = schedule.getExpectedStartTime().minusMinutes(30);
-                LocalTime latestAllowed = schedule.getExpectedEndTime(); // НЕ ПОЗЖЕ окончания рабочего дня!
+                LocalTime latestAllowed = schedule.getExpectedEndTime();
 
                 if (currentTime.isBefore(earliestAllowed)) {
                         throw new IllegalStateException(
@@ -732,7 +795,6 @@ public class WorkAttendanceService {
                 log.info("Punch-in time validation passed. Current: {}, Allowed window: {} to {}",
                         currentTime, earliestAllowed, latestAllowed);
         }
-
 
 
 
@@ -1135,7 +1197,6 @@ public class WorkAttendanceService {
                 if (dayAttendances.isEmpty()) {
                         // Нет записей на этот день
                         if (punchType == PunchType.PUNCH_IN) {
-                                // Создаем новый punch in
                                 attendance = WorkerAttendance.builder()
                                         .worker(worker)
                                         .checkInTime(punchDate.atTime(punchTime))
@@ -1143,8 +1204,14 @@ public class WorkAttendanceService {
                                         .notes("Manually added punch in")
                                         .build();
                         } else { // PUNCH_OUT
-                                // Создаем полную запись с предполагаемым punch in по расписанию
+                                // ОБНОВЛЕНО: Получаем шаблон расписания по дню недели
                                 WorkerSchedule schedule = getWorkerScheduleForDate(worker, punchDate);
+
+                                // Проверяем, не выходной ли
+                                if (Boolean.TRUE.equals(schedule.getIsDayOff())) {
+                                        throw new IllegalStateException("Cannot create punch out for day off");
+                                }
+
                                 LocalDateTime scheduledStart = punchDate.atTime(schedule.getExpectedStartTime());
 
                                 attendance = WorkerAttendance.builder()
@@ -1159,13 +1226,11 @@ public class WorkAttendanceService {
                 } else {
                         // Есть запись(и) на этот день
                         if (punchType == PunchType.PUNCH_OUT) {
-                                // Для PUNCH_OUT ищем запись без checkout
                                 attendance = dayAttendances.stream()
                                         .filter(a -> a.getCheckOutTime() == null)
                                         .findFirst()
-                                        .orElse(dayAttendances.get(dayAttendances.size() - 1)); // или берем последнюю
+                                        .orElse(dayAttendances.get(dayAttendances.size() - 1));
 
-                                // Обновляем punch out
                                 attendance.setCheckOutTime(punchDate.atTime(punchTime));
                                 if (attendance.getCheckOutPhotoUrl() == null) {
                                         attendance.setCheckOutPhotoUrl("manual-update");
@@ -1174,7 +1239,6 @@ public class WorkAttendanceService {
                                 attendance.setNotes(notes + "Manually updated punch out");
 
                         } else { // PUNCH_IN
-                                // Для PUNCH_IN проверяем, нет ли уже открытого punch in
                                 boolean hasOpenPunchIn = dayAttendances.stream()
                                         .anyMatch(a -> a.getCheckOutTime() == null);
 
@@ -1182,7 +1246,6 @@ public class WorkAttendanceService {
                                         log.warn("Worker {} already has an open punch in for date {}, updating existing",
                                                 worker.getId(), punchDate);
 
-                                        // Обновляем существующий открытый punch in
                                         attendance = dayAttendances.stream()
                                                 .filter(a -> a.getCheckOutTime() == null)
                                                 .findFirst()
@@ -1195,7 +1258,6 @@ public class WorkAttendanceService {
                                         String notes = attendance.getNotes() != null ? attendance.getNotes() + "; " : "";
                                         attendance.setNotes(notes + "Manually updated punch in time");
                                 } else {
-                                        // Все записи закрыты, создаем новую
                                         attendance = WorkerAttendance.builder()
                                                 .worker(worker)
                                                 .checkInTime(punchDate.atTime(punchTime))
@@ -1206,10 +1268,10 @@ public class WorkAttendanceService {
                         }
                 }
 
-                // Для PUNCH_OUT с ручными часами - устанавливаем их
+                // Для PUNCH_OUT с ручными часами
                 if (punchType == PunchType.PUNCH_OUT && manualHours != null && manualHours > 0) {
                         attendance.setHoursWorked(manualHours);
-                        attendance.setOvertimeHours(0.0); // Будет пересчитано позже
+                        attendance.setOvertimeHours(0.0);
                 }
 
                 return attendance;
@@ -1442,11 +1504,20 @@ public class WorkAttendanceService {
                         }
                 }
 
-                // 5. Проверка существования расписания
+                // 5. ОБНОВЛЕНО: Проверка существования ШАБЛОНА расписания
+                DayOfWeek dayOfWeek = punchDate.getDayOfWeek();
                 WorkerSchedule schedule = workerScheduleRepository
-                        .findByWorkerAndScheduleDate(worker, punchDate)
+                        .findByWorkerAndDayOfWeekAndIsTemplateTrue(worker, dayOfWeek)
                         .orElseThrow(() -> new IllegalStateException(
-                                "No schedule found for worker on date: " + punchDate));
+                                String.format("No schedule template found for %s", dayOfWeek)
+                        ));
+
+                // Проверяем, не выходной ли день
+                if (Boolean.TRUE.equals(schedule.getIsDayOff())) {
+                        // Можно разрешить или запретить punch на выходные
+                        log.warn("Attempting to punch on day off: {}", dayOfWeek);
+                        // throw new IllegalStateException("Cannot punch on day off");
+                }
         }
 
         private void handleOvernightShift(WorkerAttendance attendance) {
@@ -1886,5 +1957,156 @@ public class WorkAttendanceService {
                 WorkerPayroll saved = workerPayrollRepository.save(payroll);
                 distributePayrollToAttendances(saved);
         }
+
+
+
+        public PageResponse<AttendanceResponse> findAllAttendanceAppOwner(Authentication authentication, int page, int size){
+                checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+                Pageable pageable = PageRequest.of(page, size, Sort.by("checkInTime").descending());
+                Page<WorkerAttendance> attendances = workerAttendanceRepository.findAll(pageable);
+                List<AttendanceResponse> attendanceResponses = attendances.getContent()
+                        .stream()
+                        .map(workAttendanceMapper::toCompanyWorkerResponse)
+                        .toList();
+                return new PageResponse<>(
+                        attendanceResponses,
+                        attendances.getNumber(),
+                        attendances.getSize(),
+                        attendances.getTotalElements(),
+                        attendances.getTotalPages(),
+                        attendances.isFirst(),
+                        attendances.isLast()
+                );
+        }
+
+        public PageResponse<AttendanceResponse> findAllAttendanceAdmin (Authentication authentication, int page, int size){
+                User admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+                if(!admin.isAdmin()) {
+                        throw new AccessDeniedException("You dont have permission!");
+                }
+                Pageable pageable = PageRequest.of(page, size, Sort.by("checkInTime").descending());
+                Page<WorkerAttendance> attendance =
+                        workerAttendanceRepository.findAllAttendanceByCompanyId(admin.getCompany().getId(), pageable);
+                List<AttendanceResponse> attendanceResponses = attendance.getContent()
+                        .stream()
+                        .map(workAttendanceMapper::toCompanyWorkerResponse)
+                        .toList();
+                return new PageResponse<>(
+                        attendanceResponses,
+                        attendance.getNumber(),
+                        attendance.getSize(),
+                        attendance.getTotalElements(),
+                        attendance.getTotalPages(),
+                        attendance.isFirst(),
+                        attendance.isLast()
+                );
+        }
+
+        // В WorkAttendanceService
+        public WorkerPhotosResponse getPhotosForWorkerByDate(
+                Integer workerId,
+                LocalDate date) {
+
+                Timer.Sample timer = metricsService.startTimer();
+
+                try {
+                        User worker = userRepository.findById(workerId)
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                        "Worker not found with id: " + workerId));
+
+                        LocalDateTime startOfDay = date.atStartOfDay();
+                        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+                        // ✅ Получаем ВСЕ записи за день
+                        List<WorkerAttendance> attendances = workerAttendanceRepository
+                                .findAllByWorkerIdAndDateRange(workerId, startOfDay, endOfDay);
+
+                        if (attendances.isEmpty()) {
+                                log.info("No attendance found for worker {} on date {}", workerId, date);
+                                return WorkerPhotosResponse.builder()
+                                        .workerId(workerId)
+                                        .workerName(worker.getFirstName() + " " + worker.getLastName())
+                                        .date(date.toString())
+                                        .checkInPhotoUrl(null)
+                                        .checkOutPhotoUrl(null)
+                                        .build();
+                        }
+
+                        // ✅ Берем первую запись (самый ранний check-in)
+                        WorkerAttendance firstAttendance = attendances.get(0);
+
+                        // ✅ Берем последнюю запись (самый поздний check-out)
+                        WorkerAttendance lastAttendance = attendances.get(attendances.size() - 1);
+
+                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+                        metricsService.recordOperationTime(timer, "get_photos_by_date");
+
+                        return WorkerPhotosResponse.builder()
+                                .workerId(workerId)
+                                .workerName(worker.getFirstName() + " " + worker.getLastName())
+                                .date(date.toString())
+                                .checkInPhotoUrl(firstAttendance.getCheckInPhotoUrl())
+                                .checkOutPhotoUrl(lastAttendance.getCheckOutPhotoUrl())
+                                .checkInTime(firstAttendance.getCheckInTime() != null ?
+                                        firstAttendance.getCheckInTime().format(timeFormatter) : null)
+                                .checkOutTime(lastAttendance.getCheckOutTime() != null ?
+                                        lastAttendance.getCheckOutTime().format(timeFormatter) : null)
+                                .build();
+
+                } catch (Exception e) {
+                        metricsService.recordError("get_photos_by_date", e.getMessage(), e);
+                        metricsService.recordOperationTime(timer, "get_photos_by_date_failed");
+                        log.error("Error getting photos for worker {} on date {}", workerId, date, e);
+                        throw e;
+                }
+        }
+
+        // ✅ НОВЫЙ метод для получения фото ПО ATTENDANCE ID
+        public WorkerPhotosResponse getPhotosByAttendanceId(Integer attendanceId) {
+                Timer.Sample timer = metricsService.startTimer();
+
+                try {
+                        WorkerAttendance attendance = workerAttendanceRepository
+                                .findByAttendanceId(attendanceId)
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                        "Attendance not found with id: " + attendanceId));
+
+                        User worker = attendance.getWorker();
+                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+                        metricsService.recordOperationTime(timer, "get_photos_by_attendance_id");
+
+                        return WorkerPhotosResponse.builder()
+                                .workerId(worker.getId())
+                                .workerName(worker.getFirstName() + " " + worker.getLastName())
+                                .date(attendance.getCheckInTime().toLocalDate().toString())
+                                .checkInPhotoUrl(attendance.getCheckInPhotoUrl())
+                                .checkOutPhotoUrl(attendance.getCheckOutPhotoUrl())
+                                .checkInTime(attendance.getCheckInTime() != null ?
+                                        attendance.getCheckInTime().format(timeFormatter) : null)
+                                .checkOutTime(attendance.getCheckOutTime() != null ?
+                                        attendance.getCheckOutTime().format(timeFormatter) : null)
+                                .build();
+
+                } catch (Exception e) {
+                        metricsService.recordError("get_photos_by_attendance_id", e.getMessage(), e);
+                        metricsService.recordOperationTime(timer, "get_photos_by_attendance_id_failed");
+                        log.error("Error getting photos for attendance id {}", attendanceId, e);
+                        throw e;
+                }
+        }
+
+        private User checkIsUserHasAdminRoleAndBusinessOwner(Authentication authentication) {
+                User user = (User) authentication.getPrincipal();
+
+                boolean isAppOwner = user.getRoles().stream()
+                        .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+                if(!user.isAdmin() && !user.isBusinessOwner() && !isAppOwner) {
+                        throw new AccessDeniedException("You dont have permission for this operation!");
+                }
+                return user;
+        }
+
 
 }

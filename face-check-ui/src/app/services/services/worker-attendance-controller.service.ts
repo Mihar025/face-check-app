@@ -15,20 +15,30 @@ import { addManualOvertime } from '../fn/worker-attendance-controller/add-manual
 import { AddManualOvertime$Params } from '../fn/worker-attendance-controller/add-manual-overtime';
 import { DailyEarningResponse } from '../models/daily-earning-response';
 import { FinanceInfoForWeekInFinanceScreenResponse } from '../models/finance-info-for-week-in-finance-screen-response';
+import { getAllAttendanceForAdmin } from '../fn/worker-attendance-controller/get-all-attendance-for-admin';
+import { GetAllAttendanceForAdmin$Params } from '../fn/worker-attendance-controller/get-all-attendance-for-admin';
+import { getAllAttendanceForAppOwner } from '../fn/worker-attendance-controller/get-all-attendance-for-app-owner';
+import { GetAllAttendanceForAppOwner$Params } from '../fn/worker-attendance-controller/get-all-attendance-for-app-owner';
 import { getFinanceInfoForWeek } from '../fn/worker-attendance-controller/get-finance-info-for-week';
 import { GetFinanceInfoForWeek$Params } from '../fn/worker-attendance-controller/get-finance-info-for-week';
 import { getLastPunchTime } from '../fn/worker-attendance-controller/get-last-punch-time';
 import { GetLastPunchTime$Params } from '../fn/worker-attendance-controller/get-last-punch-time';
+import { getPhotosByAttendanceId } from '../fn/worker-attendance-controller/get-photos-by-attendance-id';
+import { GetPhotosByAttendanceId$Params } from '../fn/worker-attendance-controller/get-photos-by-attendance-id';
 import { getWeeklyEarnings } from '../fn/worker-attendance-controller/get-weekly-earnings';
 import { GetWeeklyEarnings$Params } from '../fn/worker-attendance-controller/get-weekly-earnings';
+import { getWorkerPhotosByDate } from '../fn/worker-attendance-controller/get-worker-photos-by-date';
+import { GetWorkerPhotosByDate$Params } from '../fn/worker-attendance-controller/get-worker-photos-by-date';
 import { LastPunchTimeDto } from '../models/last-punch-time-dto';
 import { OvertimeResponse } from '../models/overtime-response';
+import { PageResponseAttendanceResponse } from '../models/page-response-attendance-response';
 import { punchIn } from '../fn/worker-attendance-controller/punch-in';
 import { PunchIn$Params } from '../fn/worker-attendance-controller/punch-in';
 import { PunchInResponse } from '../models/punch-in-response';
 import { punchOut } from '../fn/worker-attendance-controller/punch-out';
 import { PunchOut$Params } from '../fn/worker-attendance-controller/punch-out';
 import { PunchOutResponse } from '../models/punch-out-response';
+import { WorkerPhotosResponse } from '../models/worker-photos-response';
 
 @Injectable({ providedIn: 'root' })
 export class WorkerAttendanceControllerService extends BaseService {
@@ -136,6 +146,56 @@ export class WorkerAttendanceControllerService extends BaseService {
     );
   }
 
+  /** Path part for operation `getWorkerPhotosByDate()` */
+  static readonly GetWorkerPhotosByDatePath = '/attendance/photos/{workerId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getWorkerPhotosByDate()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkerPhotosByDate$Response(params: GetWorkerPhotosByDate$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkerPhotosResponse>> {
+    return getWorkerPhotosByDate(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getWorkerPhotosByDate$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkerPhotosByDate(params: GetWorkerPhotosByDate$Params, context?: HttpContext): Observable<WorkerPhotosResponse> {
+    return this.getWorkerPhotosByDate$Response(params, context).pipe(
+      map((r: StrictHttpResponse<WorkerPhotosResponse>): WorkerPhotosResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getPhotosByAttendanceId()` */
+  static readonly GetPhotosByAttendanceIdPath = '/attendance/photos/attendance/{attendanceId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getPhotosByAttendanceId()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getPhotosByAttendanceId$Response(params: GetPhotosByAttendanceId$Params, context?: HttpContext): Observable<StrictHttpResponse<WorkerPhotosResponse>> {
+    return getPhotosByAttendanceId(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getPhotosByAttendanceId$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getPhotosByAttendanceId(params: GetPhotosByAttendanceId$Params, context?: HttpContext): Observable<WorkerPhotosResponse> {
+    return this.getPhotosByAttendanceId$Response(params, context).pipe(
+      map((r: StrictHttpResponse<WorkerPhotosResponse>): WorkerPhotosResponse => r.body)
+    );
+  }
+
   /** Path part for operation `getLastPunchTime()` */
   static readonly GetLastPunchTimePath = '/attendance/last-punch';
 
@@ -158,6 +218,56 @@ export class WorkerAttendanceControllerService extends BaseService {
   getLastPunchTime(params?: GetLastPunchTime$Params, context?: HttpContext): Observable<LastPunchTimeDto> {
     return this.getLastPunchTime$Response(params, context).pipe(
       map((r: StrictHttpResponse<LastPunchTimeDto>): LastPunchTimeDto => r.body)
+    );
+  }
+
+  /** Path part for operation `getAllAttendanceForAppOwner()` */
+  static readonly GetAllAttendanceForAppOwnerPath = '/attendance/find-all/attendance/app-owner';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getAllAttendanceForAppOwner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getAllAttendanceForAppOwner$Response(params?: GetAllAttendanceForAppOwner$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseAttendanceResponse>> {
+    return getAllAttendanceForAppOwner(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getAllAttendanceForAppOwner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getAllAttendanceForAppOwner(params?: GetAllAttendanceForAppOwner$Params, context?: HttpContext): Observable<PageResponseAttendanceResponse> {
+    return this.getAllAttendanceForAppOwner$Response(params, context).pipe(
+      map((r: StrictHttpResponse<PageResponseAttendanceResponse>): PageResponseAttendanceResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getAllAttendanceForAdmin()` */
+  static readonly GetAllAttendanceForAdminPath = '/attendance/find-all/attendance/admin';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getAllAttendanceForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getAllAttendanceForAdmin$Response(params?: GetAllAttendanceForAdmin$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseAttendanceResponse>> {
+    return getAllAttendanceForAdmin(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getAllAttendanceForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getAllAttendanceForAdmin(params?: GetAllAttendanceForAdmin$Params, context?: HttpContext): Observable<PageResponseAttendanceResponse> {
+    return this.getAllAttendanceForAdmin$Response(params, context).pipe(
+      map((r: StrictHttpResponse<PageResponseAttendanceResponse>): PageResponseAttendanceResponse => r.body)
     );
   }
 

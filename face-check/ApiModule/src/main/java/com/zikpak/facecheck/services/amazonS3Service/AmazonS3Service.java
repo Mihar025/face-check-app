@@ -6,8 +6,10 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.util.IOUtils;
 import com.zikpak.facecheck.metrics.MetricsAmazonS3Service;
+import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
 import com.zikpak.facecheck.requestsResponses.S3FileDTO;
 import com.zikpak.facecheck.repository.UserRepository;
+import com.zikpak.facecheck.services.quartzSchedulerServices.jobs.CheckQuarterlyFutaComplienceJob;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +34,7 @@ public class AmazonS3Service {
     private final AmazonS3 s3Client;
     private final UserRepository userRepository;
     private final MetricsAmazonS3Service metricsAmazonS3Service;
-
+    private final WorkerAttendanceRepository workerAttendanceRepository;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -177,6 +182,35 @@ public class AmazonS3Service {
         }
     }
 
+    public List<PhotoResponse> getWorkerPhotos(Integer workerId){
+
+        List<Object[]> photoUrls = workerAttendanceRepository.findAllPhotosUrlRelatedToUser(workerId);
+
+        List<PhotoResponse> photoResponses = new ArrayList<>();
+
+        for(Object[] photoUrl : photoUrls){
+            String checkIn = (String)photoUrl[0];
+            String checkOut = (String)photoUrl[1];
+
+            if(checkIn != null){
+                photoResponses.add(PhotoResponse.builder()
+                        .workerId(workerId)
+                        .photoUrl(checkIn)
+                        .build()
+                );
+            }
+
+            if(checkOut != null){
+                photoResponses.add(PhotoResponse.builder()
+                        .workerId(workerId)
+                        .photoUrl(checkOut)
+                        .build()
+                );
+            }
+        }
+        return photoResponses;
+    }
+
 
 
 
@@ -215,6 +249,5 @@ public class AmazonS3Service {
             default -> "application/octet-stream";
         };
     }
-
 
 }

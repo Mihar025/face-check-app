@@ -18,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -129,10 +130,38 @@ public class AdminService implements AdminAndForemanFunctionality {
 
 
 
+    public void setUpBudget(Authentication authentication, BigDecimal budget
+    ){
+        User admin = ((User) authentication.getPrincipal());
+        doesHaveAdminRole(admin);
 
+        admin.setActualBudget(budget);
+        userRepository.save(admin);
+    }
 
+    public BigDecimal findCurrentBudget (Authentication authentication){
+        User admin = ((User) authentication.getPrincipal());
+        doesHaveAdminRole(admin);
+        return admin.getActualBudget();
+    }
 
+    public BigDecimal findCurrentExpenses(Authentication authentication){
+        User admin = ((User) authentication.getPrincipal());
+        doesHaveAdminRole(admin);
+        return admin.getExpenses();
+    }
 
+    public BigDecimal findCurrentCostOfSalaries(Authentication authentication){
+        User admin = ((User) authentication.getPrincipal());
+        doesHaveAdminRole(admin);
+        return admin.getCostOfSalaries();
+    }
+
+    public BigDecimal findCurrentProfit(Authentication authentication){
+        User admin = ((User) authentication.getPrincipal());
+        doesHaveAdminRole(admin);
+        return admin.getProfit();
+    }
 
 
 

@@ -43,7 +43,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   late final LocationTrackingService _locationTrackingService;
   final ImagePicker _imagePicker = ImagePicker();
 
-  // ValueNotifiers для оптимизации
   late final ValueNotifier<bool> _isLoading;
   late final ValueNotifier<bool> _hasPunchIn;
   late final ValueNotifier<Position?> _currentPosition;
@@ -52,15 +51,12 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   late final ValueNotifier<bool> _isTrackingActive;
   late final ValueNotifier<int?> _currentUserId;
 
-  // Google Maps Controller
   GoogleMapController? mapController;
 
-  // Кэшированные значения
   late Size _screenSize;
   late bool _isSmallScreen;
   late ThemeData _theme;
 
-  // Константы
   static final tz.Location _ny = tz.getLocation('America/New_York');
   static const double _smallScreenThreshold = 360.0;
 
@@ -69,7 +65,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Инициализация ValueNotifiers
     _isLoading = ValueNotifier<bool>(false);
     _hasPunchIn = ValueNotifier<bool>(false);
     _currentPosition = ValueNotifier<Position?>(null);
@@ -257,18 +252,32 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         _selectedWorkSite.value = sites.first;
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to load work sites: $e');
+      _showErrorSnackBarForLoadWorksite('Failed to load worksites!');
     } finally {
       _isLoading.value = false;
     }
   }
 
+  void _showErrorSnackBarForLoadWorksite(String message){
+    String newMessage = "Failed to load worksites! Please try again!";
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(newMessage),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds:  3),
+      ),
+    );
+  }
+
+
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
 
+
+    String cleanMessage = "Operation failed! Please try again!";
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(cleanMessage),
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 3),
       ),

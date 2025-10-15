@@ -73,14 +73,54 @@
           </div>
 
           <div *ngIf="totalPages > 1" class="pagination">
-            <button [disabled]="page === 0" (click)="changePage(page - 1)" class="pagination-button">
-              Previous
+            <!-- Previous -->
+            <button
+              class="pagination-button"
+              [disabled]="page === 0"
+              (click)="changePage(page - 1)">
+              ‹
             </button>
-            <span class="page-info">Page {{ page + 1 }} of {{ totalPages }}</span>
-            <button [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)" class="pagination-button">
-              Next
+
+            <!-- Первая страница -->
+            <button
+              class="pagination-button"
+              [class.active]="page === 0"
+              (click)="changePage(0)">
+              1
+            </button>
+
+            <!-- Точки слева -->
+            <span class="page-dots" *ngIf="page > 2">...</span>
+
+            <!-- Средние страницы -->
+            <button
+              *ngIf="page > 1 && page < totalPages - 2"
+              class="pagination-button active">
+              {{ page + 1 }}
+            </button>
+
+            <!-- Точки справа -->
+            <span class="page-dots" *ngIf="page < totalPages - 3">...</span>
+
+            <!-- Последняя страница -->
+            <button
+              *ngIf="totalPages > 1"
+              class="pagination-button"
+              [class.active]="page === totalPages - 1"
+              (click)="changePage(totalPages - 1)">
+              {{ totalPages }}
+            </button>
+
+            <!-- Next -->
+            <button
+              class="pagination-button"
+              [disabled]="page >= totalPages - 1"
+              (click)="changePage(page + 1)">
+              ›
             </button>
           </div>
+
+
         </div>
       </div>
     </div>

@@ -6,18 +6,15 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 @Builder
 public class WorkSchedulerResponse {
 
     private Integer workerId;
-
-    private LocalTime startTime;
-
-    private LocalTime endTime;
-    private LocalDateTime startLunch;
-    private LocalDateTime endLunch;
-    private Boolean isCompanyPayingLunch;
+    private String workerName;
+    private List<ScheduleDto> schedules;
+    private String message;
 
 }

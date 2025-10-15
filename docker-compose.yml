@@ -1,0 +1,109 @@
+services:
+  postgresql:
+    container_name: fc_pg_sql
+    image: postgres
+    environment:
+      POSTGRES_USER: misha
+      POSTGRES_PASSWORD: misha
+      POSTGRES_DB: face_check
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5433:5432"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+  mail-dev:
+    container_name: fc-mail-dev
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+
+
+  elated-api:
+    build:
+      context: ./face-check
+      dockerfile: ../docker/backend/Dockerfile
+    image: facecheck-backend:latest
+    container_name: elated-api
+    ports:
+      - "8088:8088"
+    networks:
+      - microservices-net
+    depends_on:
+      - postgresql
+
+
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fc-prometheus
+    volumes:
+      - ./face-check/AppStarterModule/src/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./face-check/AppStarterModule/src/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - microservices-net
+    depends_on:
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: fc-alertmanager
+    volumes:
+      - ./face-check/AppStarterModule/src/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    networks:
+      - microservices-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fc-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: secret
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - microservices-net
+    depends_on:
+      - prometheus
+
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: fc-node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  postgres:
+  grafana-data:
+  prometheus-data:
+  alertmanager-data:

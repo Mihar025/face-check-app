@@ -13,6 +13,7 @@ import com.zikpak.facecheck.repository.WorkerPayrollRepository;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingRequest;
 import com.zikpak.facecheck.requestsResponses.CompanyUpdatingResponse;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
+import com.zikpak.facecheck.requestsResponses.company.CompanyResponse;
 import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
 import com.zikpak.facecheck.requestsResponses.worker.UpdateEmployeeDataRequest;
@@ -58,15 +59,10 @@ public class CompanyService implements CompanyServiceImpl {
          return company.getId();
     }
 
+
     @Override
     public String companyName(Authentication authentication) {
         try {
-            log.info("=== companyName method called ===");
-            log.info("Authentication: {}", authentication);
-            log.info("Authentication class: {}", authentication != null ? authentication.getClass() : "null");
-            log.info("Principal: {}", authentication != null ? authentication.getPrincipal() : "null");
-            log.info("Principal class: {}", authentication != null && authentication.getPrincipal() != null ?
-                    authentication.getPrincipal().getClass() : "null");
 
             if (authentication == null) {
                 log.error("Authentication is null");
@@ -74,8 +70,6 @@ public class CompanyService implements CompanyServiceImpl {
             }
 
             User admin = (User) authentication.getPrincipal();
-            log.info("User email: {}", admin.getEmail());
-            log.info("User company: {}", admin.getCompany());
 
             if (admin.getCompany() == null) {
                 log.error("User has no company associated");
@@ -464,6 +458,89 @@ public class CompanyService implements CompanyServiceImpl {
     }
 
 
+
+    public PageResponse<RelatedUserInCompanyResponse> findAllEmployees(
+            int page,
+            int size,
+            Authentication authentication) {
+
+        User user = ((User) authentication.getPrincipal());
+
+        boolean appOwner = user.getRoles().stream()
+                .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+        if (!user.isAdmin() && !appOwner) {
+            log.warn("Unauthorized access attempt by user: {}", user.getEmail());
+            throw new AccessDeniedException("You do not have permission to view company employees");
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<User> users = userRepository.findAll(pageable);
+
+        log.info("Total users found: {}", users.getTotalElements());
+        log.info("Current page: {}, Size: {}", page, size);
+        log.info("Users on this page: {}", users.getContent().size());
+
+        // Для отладки выведем первого пользователя
+        if (!users.getContent().isEmpty()) {
+            User firstUser = users.getContent().get(0);
+            log.info("First user: {} {}, email: {}",
+                    firstUser.getFirstName(),
+                    firstUser.getLastName(),
+                    firstUser.getEmail());
+        }
+
+        List<RelatedUserInCompanyResponse> responses = users.getContent()
+                .stream()
+                .map(companyMapper::toCompanyWorkerResponse)
+                .toList();
+
+
+        return new PageResponse<>(
+                responses,
+                users.getNumber(),
+                users.getSize(),
+                users.getTotalElements(),
+                users.getTotalPages(),
+                users.isFirst(),
+                users.isLast()
+        );
+    }
+
+
+    public PageResponse<CompanyResponse> findAllCompanies(
+            int page,
+            int size,
+            Authentication authentication) {
+
+        User user = ((User) authentication.getPrincipal());
+
+        boolean appOwner = user.getRoles().stream()
+                .anyMatch(role -> "AppOwner".equals(role.getName()));
+
+        if (!user.isAdmin() && !appOwner) {
+            log.warn("Unauthorized access attempt by user: {}", user.getEmail());
+            throw new AccessDeniedException("You do not have permission to view company employees");
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Company> companies = companyRepository.findAll(pageable);
+
+        List<CompanyResponse> responses = companies.getContent()
+                .stream()
+                .map(companyMapper::toCompany)
+                .toList();
+
+        return new PageResponse<>(
+                responses,
+                companies.getNumber(),
+                companies.getSize(),
+                companies.getTotalElements(),
+                companies.getTotalPages(),
+                companies.isFirst(),
+                companies.isLast()
+        );
+    }
 
     public long findWorkersQuantityInCertainCompany(Integer companyId, Authentication authentication) {
         User user = (User) authentication.getPrincipal();

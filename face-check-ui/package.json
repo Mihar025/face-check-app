@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "api-gen": "ng-openapi-gen --input ./src/openapi/openapi.json --output ./src/app/services"
@@ -20,9 +20,12 @@
     "@angular/platform-browser-dynamic": "^18.0.0",
     "@angular/router": "^18.0.0",
     "@fortawesome/fontawesome-free": "^6.7.2",
+    "@types/leaflet": "^1.9.20",
     "angular-code-input": "^2.0.0",
     "api-gen": "^0.1.3",
     "bootstrap": "^5.3.3",
+    "chart.js": "^4.5.0",
+    "leaflet": "^1.9.4",
     "ng-openapi-gen": "^0.52.0",
     "rxjs": "~7.8.0",
     "swiper": "^11.2.5",

@@ -1,12 +1,9 @@
 package com.zikpak.facecheck.services.termsOfUsageService;
 
 
-import com.zikpak.facecheck.entity.ContactSalesForm;
 import com.zikpak.facecheck.entity.TermsOfUseAgreement;
 import com.zikpak.facecheck.repository.TermOfUsageRepository;
-import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
-import com.zikpak.facecheck.services.contactSalesService.ContactSalesFormResponse;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +12,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.List;
 

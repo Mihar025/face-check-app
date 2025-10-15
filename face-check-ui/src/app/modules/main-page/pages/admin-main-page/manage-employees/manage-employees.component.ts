@@ -4,7 +4,8 @@ import {
   AdminControllerService,
   AuthenticationService,
   CompanyControllerService,
-  UserServiceControllerService, WorkerAttendanceControllerService, WorkScheduleControllerService
+  UserServiceControllerService,
+  WorkScheduleControllerService
 } from "../../../../../services/services";
 import {RelatedUserInCompanyResponse} from "../../../../../services/models/related-user-in-company-response";
 import {GetAllEmployees$Params} from "../../../../../services/fn/company-controller/get-all-employees";
@@ -16,10 +17,8 @@ import {Register$Params} from "../../../../../services/fn/authentication/registe
 import {FireEmployee$Params} from "../../../../../services/fn/company-controller/fire-employee";
 import {Router} from "@angular/router";
 import {UpdateEmployeeRate$Params} from "../../../../../services/fn/company-controller/update-employee-rate";
-import {GetEmployeeRate$Params} from "../../../../../services/fn/company-controller/get-employee-rate";
 import {EmployeeSalaryResponse} from "../../../../../services/models/employee-salary-response";
 import {LocalTime} from "../../../../../services/models/local-time";
-import {SetWorkerSchedule$Params} from "../../../../../services/fn/work-schedule-controller/set-worker-schedule";
 import {WorkSchedulerResponse} from "../../../../../services/models/work-scheduler-response";
 import {
   GetWorkerPersonalInformation$Params
@@ -50,17 +49,29 @@ export class ManageEmployeesComponent implements OnInit {
   companyName = '';
   employeeId: number = 0;
 
+  // Schedule modal states
+  showScheduleModal: boolean = false;
+  hasExistingSchedule: boolean = false;
+  isLoadingSchedule: boolean = false;
+
   loading: boolean = false;
   errorMessage: string = '';
   successMessage: string = '';
 
+  // Search
+  searchQuery: string = '';
+  filteredEmployees: Array<RelatedUserInCompanyResponse> = [];
+
   page: number = 0;
   size: number = 10;
+  currentPage: number = 0;
 
   companyId: number = 0;
   employees: Array<RelatedUserInCompanyResponse> = [];
   totalElements: number = 0;
+  totalElement: number = 0;
   totalPages: number = 0;
+
   // for update in
   newCheckInTime: string = '';
   // for change out
@@ -72,12 +83,15 @@ export class ManageEmployeesComponent implements OnInit {
   newPunchInDate: string = '';
   newPunchInTime: LocalTime = {};
 
-
+  lunchStartTime: LocalTime = { hour: 12, minute: 0 };
+  lunchEndTime: LocalTime = { hour: 13, minute: 0 };
+  isCompanyPayingLunch: boolean = false;
 
   showFireModal: boolean = false;
   showRateModal: boolean = false;
   showAddEmployeeModal: boolean = false;
   showEmployeeInfoModal: boolean = false;
+  showDeleteModal: boolean = false;
   selectedEmployeeId: number = 0;
 
   newHourlyRate: number = 0;
@@ -87,6 +101,7 @@ export class ManageEmployeesComponent implements OnInit {
   employeePersonalInfo: WorkerPersonalInformationResponse | null = null;
   employeeGeneratedSchedule: WorkSchedulerResponse | null = null;
 
+  // Employee form fields
   companyAddress: string = '';
   companyName2: string = '';
   dateOfBirth?: string = '';
@@ -98,7 +113,6 @@ export class ManageEmployeesComponent implements OnInit {
   password: string = '';
   phoneNumber: string = '';
   ssn_WORKER?: string = '';
-  // Обязательные поля (которых у вас еще нет)
   apt: string = '';
   city: string = '';
   state: string = '';
@@ -141,25 +155,104 @@ export class ManageEmployeesComponent implements OnInit {
   workAuthorizationExpiryDate?: string;
   i9Documents?: Array<I9DocumentRequest>;
 
-
-
-
   userPhotoUrl: string = '';
-  activeTimeTab: 'updatePunchIn' | 'changeNewPunchIn' | 'changeNewPunchOut' = 'updatePunchIn';
-
+  activeTab: 'updatePunchIn' | 'newPunchIn' | 'newPunchOut' = 'updatePunchIn';
 
   endTime: LocalTime = {};
   startTime: LocalTime = {};
 
   showScheduleForm: boolean = false;
 
+  // Flexible schedule days
+  flexibleDays: Array<{
+    day: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+    dayLabel: string;
+    startTime: LocalTime;
+    endTime: LocalTime;
+    lunchStart: LocalTime;
+    lunchEnd: LocalTime;
+    isCompanyPayingLunch: boolean;
+    isDayOff: boolean;
+  }> = [
+    {
+      day: 'MONDAY',
+      dayLabel: 'Monday',
+      startTime: { hour: 9, minute: 0 },
+      endTime: { hour: 17, minute: 0 },
+      lunchStart: { hour: 12, minute: 0 },
+      lunchEnd: { hour: 13, minute: 0 },
+      isCompanyPayingLunch: false,
+      isDayOff: false
+    },
+    {
+      day: 'TUESDAY',
+      dayLabel: 'Tuesday',
+      startTime: { hour: 9, minute: 0 },
+      endTime: { hour: 17, minute: 0 },
+      lunchStart: { hour: 12, minute: 0 },
+      lunchEnd: { hour: 13, minute: 0 },
+      isCompanyPayingLunch: false,
+      isDayOff: false
+    },
+    {
+      day: 'WEDNESDAY',
+      dayLabel: 'Wednesday',
+      startTime: { hour: 9, minute: 0 },
+      endTime: { hour: 17, minute: 0 },
+      lunchStart: { hour: 12, minute: 0 },
+      lunchEnd: { hour: 13, minute: 0 },
+      isCompanyPayingLunch: false,
+      isDayOff: false
+    },
+    {
+      day: 'THURSDAY',
+      dayLabel: 'Thursday',
+      startTime: { hour: 9, minute: 0 },
+      endTime: { hour: 17, minute: 0 },
+      lunchStart: { hour: 12, minute: 0 },
+      lunchEnd: { hour: 13, minute: 0 },
+      isCompanyPayingLunch: false,
+      isDayOff: false
+    },
+    {
+      day: 'FRIDAY',
+      dayLabel: 'Friday',
+      startTime: { hour: 9, minute: 0 },
+      endTime: { hour: 17, minute: 0 },
+      lunchStart: { hour: 12, minute: 0 },
+      lunchEnd: { hour: 13, minute: 0 },
+      isCompanyPayingLunch: false,
+      isDayOff: false
+    },
+    {
+      day: 'SATURDAY',
+      dayLabel: 'Saturday',
+      startTime: { hour: 9, minute: 0 },
+      endTime: { hour: 17, minute: 0 },
+      lunchStart: { hour: 12, minute: 0 },
+      lunchEnd: { hour: 13, minute: 0 },
+      isCompanyPayingLunch: false,
+      isDayOff: true
+    },
+    {
+      day: 'SUNDAY',
+      dayLabel: 'Sunday',
+      startTime: { hour: 9, minute: 0 },
+      endTime: { hour: 17, minute: 0 },
+      lunchStart: { hour: 12, minute: 0 },
+      lunchEnd: { hour: 13, minute: 0 },
+      isCompanyPayingLunch: false,
+      isDayOff: true
+    }
+  ];
+
   constructor(
     private authService: AuthService,
     private authenticationControllerService: AuthenticationService,
     private userService: UserServiceControllerService,
     private companyService: CompanyControllerService,
-    private workScheduleController: WorkScheduleControllerService,
-    private adminControllerService:AdminControllerService,
+    private adminControllerService: AdminControllerService,
+    private scheduleService: WorkScheduleControllerService,
     private router: Router,
   ) {}
 
@@ -172,7 +265,6 @@ export class ManageEmployeesComponent implements OnInit {
     const userRole = this.authService.getUserRole();
     if (userRole !== 'ADMIN') {
       let targetURL = '/';
-
       if (userRole === 'USER') {
         targetURL = '/main-page/user';
       }
@@ -186,18 +278,269 @@ export class ManageEmployeesComponent implements OnInit {
     this.getUserPhoto();
   }
 
-  updatePunchIn(){
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SCHEDULE MODAL METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  openScheduleModal(employee: RelatedUserInCompanyResponse) {
+    if (!employee.workerId) {
+      this.errorMessage = "Cannot open schedule: Employee ID is not defined";
+      return;
+    }
+
+    this.selectedEmployee = employee;
+    this.selectedEmployeeId = employee.workerId;
+    this.showScheduleModal = true;
+    this.employeeGeneratedSchedule = null;
+    this.hasExistingSchedule = false;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    // Load existing schedule
+    this.loadExistingSchedule(employee.workerId);
+  }
+
+  closeScheduleModal() {
+    this.showScheduleModal = false;
+    this.selectedEmployee = null;
+    this.employeeGeneratedSchedule = null;
+    this.hasExistingSchedule = false;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.resetScheduleForm();
+  }
+
+  loadExistingSchedule(workerId: number) {
+    this.isLoadingSchedule = true;
+    this.errorMessage = '';
+
+    this.scheduleService.getScheduleTemplate({ workerId: workerId }).subscribe({
+      next: (response: WorkSchedulerResponse) => {
+        this.isLoadingSchedule = false;
+
+        if (response.schedules && response.schedules.length > 0) {
+          this.employeeGeneratedSchedule = response;
+          this.hasExistingSchedule = true;
+          this.populateScheduleForm(response);
+        } else {
+          this.hasExistingSchedule = false;
+          this.resetScheduleForm();
+        }
+      },
+      error: (error) => {
+        this.isLoadingSchedule = false;
+        console.error('Error loading schedule:', error);
+
+        // If schedule not found (404) - it's OK, just no schedule exists
+        if (error.status === 404 || error.status === 0) {
+          this.hasExistingSchedule = false;
+          this.resetScheduleForm();
+        } else {
+          this.errorMessage = 'Failed to load schedule: ' + (error.message || 'Unknown error');
+        }
+      }
+    });
+  }
+
+  populateScheduleForm(scheduleResponse: WorkSchedulerResponse) {
+    if (!scheduleResponse.schedules) return;
+
+    scheduleResponse.schedules.forEach(schedule => {
+      const day = this.flexibleDays.find(d => d.day === schedule.dayOfWeek);
+      if (day) {
+        day.isDayOff = schedule.isDayOff || false;
+
+        if (!day.isDayOff) {
+          day.startTime = schedule.startTime || { hour: 9, minute: 0 };
+          day.endTime = schedule.endTime || { hour: 17, minute: 0 };
+          day.lunchStart = schedule.lunchStart || { hour: 12, minute: 0 };
+          day.lunchEnd = schedule.lunchEnd || { hour: 13, minute: 0 };
+          day.isCompanyPayingLunch = schedule.isCompanyPayingLunch || false;
+        }
+      }
+    });
+  }
+
+  resetScheduleForm() {
+    this.flexibleDays = [
+      {
+        day: 'MONDAY',
+        dayLabel: 'Monday',
+        startTime: { hour: 9, minute: 0 },
+        endTime: { hour: 17, minute: 0 },
+        lunchStart: { hour: 12, minute: 0 },
+        lunchEnd: { hour: 13, minute: 0 },
+        isCompanyPayingLunch: false,
+        isDayOff: false
+      },
+      {
+        day: 'TUESDAY',
+        dayLabel: 'Tuesday',
+        startTime: { hour: 9, minute: 0 },
+        endTime: { hour: 17, minute: 0 },
+        lunchStart: { hour: 12, minute: 0 },
+        lunchEnd: { hour: 13, minute: 0 },
+        isCompanyPayingLunch: false,
+        isDayOff: false
+      },
+      {
+        day: 'WEDNESDAY',
+        dayLabel: 'Wednesday',
+        startTime: { hour: 9, minute: 0 },
+        endTime: { hour: 17, minute: 0 },
+        lunchStart: { hour: 12, minute: 0 },
+        lunchEnd: { hour: 13, minute: 0 },
+        isCompanyPayingLunch: false,
+        isDayOff: false
+      },
+      {
+        day: 'THURSDAY',
+        dayLabel: 'Thursday',
+        startTime: { hour: 9, minute: 0 },
+        endTime: { hour: 17, minute: 0 },
+        lunchStart: { hour: 12, minute: 0 },
+        lunchEnd: { hour: 13, minute: 0 },
+        isCompanyPayingLunch: false,
+        isDayOff: false
+      },
+      {
+        day: 'FRIDAY',
+        dayLabel: 'Friday',
+        startTime: { hour: 9, minute: 0 },
+        endTime: { hour: 17, minute: 0 },
+        lunchStart: { hour: 12, minute: 0 },
+        lunchEnd: { hour: 13, minute: 0 },
+        isCompanyPayingLunch: false,
+        isDayOff: false
+      },
+      {
+        day: 'SATURDAY',
+        dayLabel: 'Saturday',
+        startTime: { hour: 9, minute: 0 },
+        endTime: { hour: 17, minute: 0 },
+        lunchStart: { hour: 12, minute: 0 },
+        lunchEnd: { hour: 13, minute: 0 },
+        isCompanyPayingLunch: false,
+        isDayOff: true
+      },
+      {
+        day: 'SUNDAY',
+        dayLabel: 'Sunday',
+        startTime: { hour: 9, minute: 0 },
+        endTime: { hour: 17, minute: 0 },
+        lunchStart: { hour: 12, minute: 0 },
+        lunchEnd: { hour: 13, minute: 0 },
+        isCompanyPayingLunch: false,
+        isDayOff: true
+      }
+    ];
+  }
+
+  deleteExistingSchedule() {
+    if (!this.selectedEmployee?.workerId) return;
+
+    if (!confirm(`Are you sure you want to delete the schedule for ${this.selectedEmployee.firstName} ${this.selectedEmployee.lastName}?`)) {
+      return;
+    }
+
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
+
+    this.scheduleService.deleteWorkerScheduleTemplate({
+      workerId: this.selectedEmployee.workerId
+    }).subscribe({
+      next: () => {
+        this.loading = false;
+        this.successMessage = 'Schedule deleted successfully!';
+        this.employeeGeneratedSchedule = null;
+        this.hasExistingSchedule = false;
+        this.resetScheduleForm();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = 'Failed to delete schedule: ' + (error.message || 'Unknown error');
+        console.error('Delete schedule error:', error);
+      }
+    });
+  }
+
+  generateScheduleForWorker(): void {
+    if (!this.selectedEmployee?.workerId) return;
+
+    // If schedule already exists - show warning
+    if (this.hasExistingSchedule) {
+      if (!confirm('A schedule already exists. Do you want to overwrite it?')) {
+        return;
+      }
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const weeklySchedule: any = {};
+
+    this.flexibleDays.forEach(day => {
+      weeklySchedule[day.day] = {
+        startTime: { hour: day.startTime.hour ?? 0, minute: day.startTime.minute ?? 0 },
+        endTime: { hour: day.endTime.hour ?? 0, minute: day.endTime.minute ?? 0 },
+        lunchStart: { hour: day.lunchStart.hour ?? 0, minute: day.lunchStart.minute ?? 0 },
+        lunchEnd: { hour: day.lunchEnd.hour ?? 0, minute: day.lunchEnd.minute ?? 0 },
+        isCompanyPayingLunch: day.isCompanyPayingLunch,
+        isDayOff: day.isDayOff
+      };
+    });
+
+    const requestData = { weeklySchedule };
+
+    this.scheduleService.setWeeklySchedule({
+      workerId: this.selectedEmployee.workerId,
+      body: requestData
+    }).subscribe({
+      next: (response) => {
+        this.employeeGeneratedSchedule = response;
+        this.hasExistingSchedule = true;
+        this.successMessage = 'Schedule saved successfully!';
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Schedule error:', error);
+        this.errorMessage = 'Failed to save schedule: ' + (error?.error?.message || error?.message || 'Unknown error');
+        this.loading = false;
+      }
+    });
+  }
+
+  formatTime(time: any): string {
+    if (!time) return '--:--';
+
+    if (typeof time === 'object' && time.hour !== undefined) {
+      const hour = time.hour.toString().padStart(2, '0');
+      const minute = (time.minute || 0).toString().padStart(2, '0');
+      return `${hour}:${minute}`;
+    }
+
+    return '--:--';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PUNCH IN/OUT METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  updatePunchIn() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
     const punchInUpdateRequest: PunchInUpdateRequest = {
       newCheckInTIme: this.newCheckInTime
-    }
+    };
 
     const params: UpdatePunchInTime$Params = {
       workerId: this.selectedEmployeeId,
       body: punchInUpdateRequest
-    }
+    };
 
     this.adminControllerService.updatePunchInTime(params).subscribe(
       () => {
@@ -207,11 +550,9 @@ export class ManageEmployeesComponent implements OnInit {
       error => {
         this.loading = false;
         this.errorMessage = "Failed to update punch time: " + (error.message || 'Unknown error');
-        console.log('Error in method')
       }
-    )
+    );
   }
-
 
   changeNewPunchIn() {
     this.loading = true;
@@ -246,10 +587,10 @@ export class ManageEmployeesComponent implements OnInit {
       error => {
         this.loading = false;
         this.errorMessage = "Failed to change punch time: " + (error.message || 'Unknown error');
-        console.error('Error details:', error);
       }
     );
   }
+
   changeNewPunchOut() {
     this.loading = true;
     this.errorMessage = '';
@@ -283,19 +624,13 @@ export class ManageEmployeesComponent implements OnInit {
       error => {
         this.loading = false;
         this.errorMessage = "Failed to change punch out time: " + (error.message || 'Unknown error');
-        console.error('Error details:', error);
       }
     );
   }
 
-
-
-
-
-  logout() {
-    this.authService.logout();
-  }
-
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EMPLOYEE MANAGEMENT METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
 
   loadAdminName(): void {
     this.userService.findWorkerFullName().subscribe(
@@ -342,7 +677,7 @@ export class ManageEmployeesComponent implements OnInit {
         this.totalElements = response.totalElement || 0;
         this.totalPages = response.totalPages || 0;
         this.loading = false;
-        },
+      },
       error => {
         this.errorMessage = 'Error loading employees: ' + (error.message || 'Unknown Error');
         this.loading = false;
@@ -355,30 +690,36 @@ export class ManageEmployeesComponent implements OnInit {
     this.loadAllEmployeesRelatedToCertainCompany();
   }
 
-  openEmployeeInfoModal(workerId: number | undefined) {
-    if (workerId === undefined) {
+  nextPage(): void {
+    if (this.page < this.totalPages - 1) {
+      this.page++;
+      this.loadAllEmployeesRelatedToCertainCompany();
+    }
+  }
+
+  previousPage(): void {
+    if (this.page > 0) {
+      this.page--;
+      this.loadAllEmployeesRelatedToCertainCompany();
+    }
+  }
+
+  openEmployeeModal(employee: RelatedUserInCompanyResponse) {
+    if (!employee.workerId) {
       this.errorMessage = "Cannot show employee info: Employee ID is not defined";
       return;
     }
 
-    this.selectedEmployeeId = workerId;
-    this.selectedEmployee = this.employees.find(emp => emp.workerId === workerId) || null;
+    this.selectedEmployeeId = employee.workerId;
+    this.selectedEmployee = employee;
     this.showEmployeeInfoModal = true;
-    this.showScheduleForm = false;
 
-    this.findWorkerPersonalInformation(workerId);
+    this.findWorkerPersonalInformation(employee.workerId);
   }
 
-  closeEmployeeInfoModal() {
+  closeEmployeeModal() {
     this.showEmployeeInfoModal = false;
     this.employeePersonalInfo = null;
-    this.employeeGeneratedSchedule = null;
-  }
-
-  toggleScheduleForm() {
-    this.showScheduleForm = !this.showScheduleForm;
-    this.startTime = {};
-    this.endTime = {};
   }
 
   openAddEmployeeModal() {
@@ -387,6 +728,15 @@ export class ManageEmployeesComponent implements OnInit {
   }
 
   closeAddEmployeeModal() {
+    this.showAddEmployeeModal = false;
+  }
+
+  openAddAdminModal() {
+    this.resetForm();
+    this.showAddEmployeeModal = true;
+  }
+
+  closeAddAdminModal() {
     this.showAddEmployeeModal = false;
   }
 
@@ -427,8 +777,6 @@ export class ManageEmployeesComponent implements OnInit {
       isNonCitizenNationalOfTheUS: this.isNonCitizenNationalOfTheUS,
       isPermanentResident: this.isPermanentResident,
       isANonCitizen: this.isANonCitizen,
-
-      // ВСЕ ОПЦИОНАЛЬНЫЕ ПОЛЯ (добавляются только если существуют)
       ...(this.ssn_WORKER && { ssn_WORKER: this.ssn_WORKER }),
       ...(this.middleInitial && { middleInitial: this.middleInitial }),
       ...(this.extraWithHoldings !== undefined && { extraWithHoldings: this.extraWithHoldings }),
@@ -476,61 +824,53 @@ export class ManageEmployeesComponent implements OnInit {
     );
   }
 
-  openFireModal(workerId: number | undefined) {
-    if (workerId === undefined) {
-      this.errorMessage = "Cannot fire employee: Employee ID is not defined";
+  createNewAdmin() {
+    this.createNewEmployee();
+  }
+
+  openDeleteModal(employee: RelatedUserInCompanyResponse) {
+    if (!employee.workerId) {
+      this.errorMessage = "Cannot delete employee: Employee ID is not defined";
       return;
     }
 
-    this.selectedEmployeeId = workerId;
-    this.selectedEmployee = this.employees.find(emp => emp.workerId === workerId) || null;
-    this.showFireModal = true;
+    this.selectedEmployeeId = employee.workerId;
+    this.selectedEmployee = employee;
+    this.showDeleteModal = true;
   }
 
-  cancelFireModal() {
-    this.showFireModal = false;
+  closeDeleteModal() {
+    this.showDeleteModal = false;
   }
 
-  fireEmployee(workerId: number) {
+  deleteEmployee() {
+    if (!this.selectedEmployeeId) return;
+
     this.loading = true;
     this.errorMessage = '';
 
     const params: FireEmployee$Params = {
-      employeeId: workerId
+      employeeId: this.selectedEmployeeId
     };
 
     this.companyService.fireEmployee(params).subscribe(
       () => {
         this.loading = false;
-        this.showFireModal = false;
-        this.successMessage = "Employee fired successfully.";
+        this.showDeleteModal = false;
+        this.successMessage = "Employee removed successfully.";
         this.loadAllEmployeesRelatedToCertainCompany();
       },
       error => {
-        this.errorMessage = 'Cannot fire employee: ' + (error.message || 'Unknown problem');
+        this.errorMessage = 'Cannot remove employee: ' + (error.message || 'Unknown problem');
         this.loading = false;
       }
     );
   }
 
-  openChangeRateModal(workerId: number | undefined, currentRate: number | undefined) {
-    if (workerId === undefined) {
-      this.errorMessage = "Cannot change rate: Employee ID is not defined";
-      return;
-    }
-
-    this.selectedEmployeeId = workerId;
-    this.newHourlyRate = currentRate ?? 0;
-    this.showRateModal = true;
-  }
-
-  cancelRateModal() {
-    this.showRateModal = false;
-  }
-
   changeHourlyRate() {
     this.loading = true;
     this.errorMessage = '';
+
     this.loadAdminsCompanyId().then(companyId => {
       const params: UpdateEmployeeRate$Params = {
         companyId: companyId,
@@ -543,9 +883,8 @@ export class ManageEmployeesComponent implements OnInit {
       this.companyService.updateEmployeeRate(params).subscribe(
         () => {
           this.loading = false;
-          this.showRateModal = false;
           this.successMessage = "Hourly rate updated successfully.";
-          this.loadAllEmployeesRelatedToCertainCompany();
+          this.openEmployeeModal(this.selectedEmployee!);
         },
         error => {
           this.errorMessage = 'Cannot update hourly rate: ' + (error.message || 'Unknown problem');
@@ -554,7 +893,6 @@ export class ManageEmployeesComponent implements OnInit {
       );
     });
   }
-
 
   findWorkerPersonalInformation(workerId: number | undefined) {
     if (workerId === undefined) {
@@ -567,7 +905,7 @@ export class ManageEmployeesComponent implements OnInit {
 
     const params: GetWorkerPersonalInformation$Params = {
       employeeId: workerId
-    }
+    };
 
     this.userService.getWorkerPersonalInformation(params).subscribe(
       (response: WorkerPersonalInformationResponse) => {
@@ -581,46 +919,98 @@ export class ManageEmployeesComponent implements OnInit {
     );
   }
 
-  generateScheduleForWorker() {
-    if (!this.selectedEmployeeId) {
-      this.errorMessage = "Cannot generate schedule: No employee selected";
-      return;
-    }
-
-    if (this.startTime.hour === undefined || this.endTime.hour === undefined) {
-      this.errorMessage = "Please enter valid start and end times";
-      return;
-    }
-
+  promoteToForeman() {
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
 
-    const startTimeStr = `${this.startTime.hour.toString().padStart(2, '0')}:${(this.startTime.minute || 0).toString().padStart(2, '0')}:00`;
-    const endTimeStr = `${this.endTime.hour.toString().padStart(2, '0')}:${(this.endTime.minute || 0).toString().padStart(2, '0')}:00`;
-
-    const data = {
-      startTime: startTimeStr,
-      endTime: endTimeStr
+    const params: PromoteToForeman$Params = {
+      employeeId: this.selectedEmployeeId
     };
 
-    const params: SetWorkerSchedule$Params = {
-      workerId: this.selectedEmployeeId,
-      body: data as any
-    };
-
-    this.workScheduleController.setWorkerSchedule(params).subscribe(
-      (response: WorkSchedulerResponse) => {
-        this.employeeGeneratedSchedule = response;
+    this.companyService.promoteToForeman(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully promoted to FOREMAN role';
+        this.openEmployeeModal(this.selectedEmployee!);
         this.loading = false;
-        this.successMessage = "Schedule generated successfully";
-        this.showScheduleForm = false;
       },
       error => {
-        this.errorMessage = 'Cannot generate Schedule for Employee: ' + (error.message || 'Unknown problem');
+        this.errorMessage = 'Cannot promote to Foreman role: ' + (error.message || 'Unknown problem');
         this.loading = false;
       }
     );
   }
+
+  promoteToAdmin() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const params: PromoteToAdmin$Params = {
+      employeeId: this.selectedEmployeeId
+    };
+
+    this.companyService.promoteToAdmin$Response(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully promoted to ADMIN role';
+        this.openEmployeeModal(this.selectedEmployee!);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot promote to ADMIN role: ' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    );
+  }
+
+  demoteToUser() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const params: DemoteFromForemanToUser$Params = {
+      workerId: this.selectedEmployeeId
+    };
+
+    this.companyService.demoteFromForemanToUser(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully demoted to USER role';
+        this.openEmployeeModal(this.selectedEmployee!);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot demote to User role: ' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    );
+  }
+
+  demoteToForeman() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const params: DemoteFromAdminToForeman$Params = {
+      workerId: this.selectedEmployeeId
+    };
+
+    this.companyService.demoteFromAdminToForeman(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully demoted to FOREMAN role';
+        this.openEmployeeModal(this.selectedEmployee!);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot demote to Foreman role: ' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UTILITY METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
+  showAddAdminModal: boolean = false;
 
   private async loadAdminsCompanyId(): Promise<number> {
     try {
@@ -648,6 +1038,10 @@ export class ManageEmployeesComponent implements OnInit {
     this.password = '';
     this.phoneNumber = '';
     this.ssn_WORKER = '';
+    this.apt = '';
+    this.city = '';
+    this.state = '';
+    this.zipcode = '';
   }
 
   getUserPhoto(): void {
@@ -663,99 +1057,21 @@ export class ManageEmployeesComponent implements OnInit {
     );
   }
 
-  moveToVerificationPage(workerId: number | undefined){
-    if (!workerId) return;
-    this.router.navigate(['verification/employee'], {
-      queryParams: { id: workerId }
-    });
-  }
-
-  promoteToForeman(){
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-    const params: PromoteToForeman$Params = {
-      employeeId: this.selectedEmployeeId
-    }
-    this.companyService.promoteToForeman(params).subscribe(
-      () => {
-        this.successMessage = 'Successfully promoted to FOREMAN role'
-        this.openEmployeeInfoModal(this.selectedEmployeeId);
-        this.loading = false;
-      },
-      error => {
-        this.errorMessage = 'Cannot promote to Foreman role' + (error.message || 'Unknown problem');
-        this.loading = false;
-      }
-    );
-  }
-
-  promoteToAdmin(){
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-    const params: PromoteToAdmin$Params = {
-      employeeId: this.selectedEmployeeId
-    }
-    this.companyService.promoteToAdmin$Response(params).subscribe(
-      () => {
-        this.successMessage = 'Successfully promoted to ADMIN role'
-        this.openEmployeeInfoModal(this.selectedEmployeeId);
-        this.loading = false;
-      },
-      error => {
-        this.errorMessage = 'Cannot promote to ADMIN role' + (error.message || 'Unknown problem');
-        this.loading = false;
-      }
-    );
-  }
-
-  demoteToUser(){
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-    const params: DemoteFromForemanToUser$Params = {
-      workerId: this.selectedEmployeeId
-    }
-    this.companyService.demoteFromForemanToUser(params).subscribe(
-      () => {
-        this.successMessage = 'Successfully demoted to USER role'
-        this.openEmployeeInfoModal(this.selectedEmployeeId);
-        this.loading = false;
-      },
-      error => {
-        this.errorMessage = 'Cannot demote to User role' + (error.message || 'Unknown problem');
-        this.loading = false;
-      }
-    );
-  }
-
-  demoteToForeman(){
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-    const params: DemoteFromAdminToForeman$Params = {
-      workerId: this.selectedEmployeeId
-    }
-    this.companyService.demoteFromAdminToForeman(params).subscribe(
-      () => {
-        this.successMessage = 'Successfully demoted to FOREMAN role'
-        this.openEmployeeInfoModal(this.selectedEmployeeId);
-        this.loading = false;
-      },
-      error => {
-        this.errorMessage = 'Cannot demote to Foreman role' + (error.message || 'Unknown problem');
-        this.loading = false;
-      }
-    );
-  }
-
   handleImageError(event: any): void {
-    // Устанавливаем дефолтное изображение при ошибке
     event.target.style.display = 'none';
     const placeholder = event.target.parentElement.querySelector('.worker-photo-placeholder');
     if (placeholder) {
       placeholder.style.display = 'flex';
     }
+  }
+
+  searchEmployees() {
+    // Implement search functionality
+    this.loadAllEmployeesRelatedToCertainCompany();
+  }
+
+  clearSearch() {
+    // Implement clear search functionality
+    this.loadAllEmployeesRelatedToCertainCompany();
   }
 }

@@ -1,5 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
+import com.zikpak.facecheck.entity.User;
+import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.attendance.*;
 import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinanceScreenResponse;
 import com.zikpak.facecheck.services.workAttendanceService.WorkAttendanceService;
@@ -11,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -67,5 +70,64 @@ public class WorkerAttendanceController {
     }
 
 
+    @PostMapping("/overtime/add")
+    public ResponseEntity<OvertimeResponse> addManualOvertime(
+            Authentication authentication,
+            @Valid @RequestBody AddOvertimeRequest request
+    ) {
+        User admin = (User) authentication.getPrincipal();
+
+        OvertimeResponse response = workAttendanceService.addManualOvertime(
+                request.getAttendanceId(),
+                request.getOvertimeHours(),
+                request.getReason(),
+                admin.getId()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/find-all/attendance/app-owner")
+    public ResponseEntity<PageResponse<AttendanceResponse>> getAllAttendanceForAppOwner(
+            Authentication authentication,
+            @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(name = "size", defaultValue = "10", required = false) int size
+    ) {
+        return ResponseEntity.ok(
+                workAttendanceService.findAllAttendanceAppOwner(authentication, page, size)
+        );
+    }
+
+    @GetMapping("/find-all/attendance/admin")
+    public ResponseEntity<PageResponse<AttendanceResponse>> getAllAttendanceForAdmin(
+            Authentication authentication,
+            @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(name = "size", defaultValue = "10", required = false) int size
+    ) {
+        return ResponseEntity.ok(
+                workAttendanceService.findAllAttendanceAdmin(authentication, page, size)
+        );
+    }
+
+    @GetMapping("/photos/{workerId}")
+    public ResponseEntity<WorkerPhotosResponse> getWorkerPhotosByDate(
+            @PathVariable Integer workerId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        WorkerPhotosResponse response = workAttendanceService
+                .getPhotosForWorkerByDate(workerId, date);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/photos/attendance/{attendanceId}")
+    public ResponseEntity<WorkerPhotosResponse> getPhotosByAttendanceId(
+            @PathVariable Integer attendanceId) {
+
+        WorkerPhotosResponse response = workAttendanceService
+                .getPhotosByAttendanceId(attendanceId);
+
+        return ResponseEntity.ok(response);
+    }
 
 }

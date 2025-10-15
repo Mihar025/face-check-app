@@ -7,6 +7,7 @@ import com.zikpak.facecheck.taxesServices.services.PaymentHistoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -37,6 +38,15 @@ public class PaymentHistoryIrsController {
             @RequestParam(defaultValue = "10") int size
     ) {
         return paymentHistoryService.findAllPaymentsForIrsQuarter(page, size, companyId, year, quarter);
+    }
+
+    @GetMapping("/payments-app-owner")
+    public PageResponse<PaymentHistoryResponse> findAllPaymentsAppOwner(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return paymentHistoryService.findAllPaymentsForIrsAppOwner(authentication,page, size);
     }
 
     @GetMapping("/total")
