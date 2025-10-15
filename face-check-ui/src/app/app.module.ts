@@ -7,11 +7,10 @@ import { HTTP_INTERCEPTORS, HttpClientModule } from "@angular/common/http";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { AuthInterceptor } from "./modules/main-page/additionalServices/auth-interceptor";
 import { SharedModule } from './modules/shared/shared.module';
-import { AppOwnerSidebarComponent } from './modules/components/app-owner-sidebar/app-owner-sidebar.component'; // Импортируем SharedModule
 
 @NgModule({
   declarations: [
-    AppComponent,
+    AppComponent
   ],
   imports: [
     BrowserModule,
@@ -20,7 +19,7 @@ import { AppOwnerSidebarComponent } from './modules/components/app-owner-sidebar
     FormsModule,
     ReactiveFormsModule,
     MainPageModule,
-    SharedModule
+    SharedModule  // ← Уже импортирован SharedModule, этого достаточно!
   ],
   providers: [
     {
@@ -29,9 +28,9 @@ import { AppOwnerSidebarComponent } from './modules/components/app-owner-sidebar
       multi: true
     }
   ],
-  exports: [
-    AppOwnerSidebarComponent
-  ],
+  // exports: [
+  //   AppOwnerSidebarComponent
+  // ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
