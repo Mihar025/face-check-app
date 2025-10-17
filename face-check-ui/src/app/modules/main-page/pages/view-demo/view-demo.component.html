@@ -1,25 +1,11 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Demo - Facecheck</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-
 <!-- Navigation -->
 <nav class="navbar">
   <div class="navbar-container">
-    <div class="logo-container">
+    <div class="logo-container" (click)="navigateToFaceCheck()">
       <div class="logo">
         <img src="logo.jpg" alt="Facecheck Logo" class="logo-img">
       </div>
-      <a (click)="navigateToFaceCheck()" class="brand-name">facecheck</a>
+      <a class="brand-name">facecheck</a>
     </div>
     <div class="nav-links">
       <a (click)="navigateToPricing()" class="nav-link">Pricing</a>
@@ -33,10 +19,8 @@
 <!-- Hero Section with Advanced Animations -->
 <section class="demo-hero">
   <div class="hero-background">
-    <!-- Gradient Base -->
     <div class="gradient-overlay"></div>
 
-    <!-- Animated Grid Lines -->
     <div class="grid-lines">
       <div class="line vertical"></div>
       <div class="line vertical"></div>
@@ -47,23 +31,12 @@
       <div class="line horizontal"></div>
     </div>
 
-    <!-- Sliced Panels Animation -->
-    <div class="sliced-panels">
-      <div class="panel panel-1"></div>
-      <div class="panel panel-2"></div>
-      <div class="panel panel-3"></div>
-      <div class="panel panel-4"></div>
-    </div>
-
-    <!-- Floating Geometric Shapes -->
     <div class="geometric-shapes">
-      <div class="geo-shape triangle"></div>
-      <div class="geo-shape square"></div>
-      <div class="geo-shape hexagon"></div>
       <div class="geo-shape circle"></div>
+      <div class="geo-shape square"></div>
+      <div class="geo-shape triangle"></div>
     </div>
 
-    <!-- Particle Effects -->
     <div class="particles">
       <div class="particle"></div>
       <div class="particle"></div>
@@ -76,17 +49,11 @@
       <div class="particle"></div>
       <div class="particle"></div>
     </div>
-
-    <!-- Glitch Effect Layers -->
-    <div class="glitch-layers">
-      <div class="glitch glitch-1"></div>
-      <div class="glitch glitch-2"></div>
-    </div>
   </div>
 
   <div class="hero-content">
     <div class="badge animate-slide-down">
-      <i class="fas fa-play-circle"></i>
+      <i class="fas fa-rocket"></i>
       <span>Interactive Demo</span>
     </div>
 
@@ -103,30 +70,28 @@
 
     <div class="hero-stats animate-scale-in">
       <div class="stat">
-        <span class="stat-number" data-value="2">0</span>
-        <span class="stat-label">min Setup</span>
+        <span class="stat-number">2min</span>
+        <span class="stat-label">Setup Time</span>
       </div>
       <div class="stat">
-        <span class="stat-number" data-value="99.9">0</span>
-        <span class="stat-label">% Accuracy</span>
+        <span class="stat-number">99.9%</span>
+        <span class="stat-label">Accuracy</span>
       </div>
       <div class="stat">
-        <span class="stat-number" data-value="24">0</span>
-        <span class="stat-label">/7 Support</span>
+        <span class="stat-number">24/7</span>
+        <span class="stat-label">Support</span>
       </div>
     </div>
 
-    <!-- Animated CTA Button -->
     <div class="hero-cta">
-      <button class="cta-button" (click)="scrollToVideo()">
-        <span class="button-text">Watch Demo</span>
+      <button class="cta-button" (click)="scrollToFeatures()">
+        <span class="button-text">Explore Features</span>
         <div class="button-bg"></div>
         <i class="fas fa-arrow-down"></i>
       </button>
     </div>
   </div>
 
-  <!-- Animated Wave Bottom -->
   <div class="wave-bottom">
     <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
       <path d="M0,64 C480,150 960,-30 1440,64 L1440,120 L0,120 Z" fill="#f3f4f6"></path>
@@ -134,120 +99,136 @@
   </div>
 </section>
 
-<!-- Main Video Demo Section -->
-<section class="main-demo-section" id="mainVideoSection">
+<!-- Interactive Screenshots Showcase - Zigzag Layout -->
+<section class="screenshots-showcase" id="featuresSection">
   <div class="container">
     <div class="section-header">
-      <h2>Watch the Complete Overview</h2>
-      <p>See how Facecheck simplifies time tracking in just 3 minutes</p>
+      <h2>See Every Feature in Action</h2>
+      <p>Explore our powerful features with visual examples</p>
     </div>
 
-    <div class="video-container">
-      <div class="video-wrapper">
-        <div class="video-placeholder" (click)="playMainVideo()">
-          <img src="demo-thumbnail.jpg" alt="Demo Video Thumbnail">
-          <div class="play-button">
-            <i class="fas fa-play"></i>
+    <div class="screenshots-zigzag">
+      <!-- Screenshot 1 - Left -->
+      <div class="screenshot-item">
+        <div class="screenshot-visual" (click)="openScreenshot(1)">
+          <div class="screenshot-placeholder">
+            <div class="placeholder-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+          </div>
+          <div class="screenshot-overlay">
+            <i class="fas fa-search-plus"></i>
+            <span>Click to view</span>
           </div>
         </div>
-        <!-- Replace with actual video when clicked -->
-        <video id="mainVideo" controls style="display: none;">
-          <source src="demo-video.mp4" type="video/mp4">
-        </video>
-      </div>
-
-      <div class="video-features">
-        <div class="feature-badge">
-          <i class="fas fa-clock"></i>
-          <span>3 min watch</span>
-        </div>
-        <div class="feature-badge">
-          <i class="fas fa-closed-captioning"></i>
-          <span>Subtitles available</span>
-        </div>
-        <div class="feature-badge">
-          <i class="fas fa-expand"></i>
-          <span>Full HD</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- App Features Showcase -->
-<section class="features-showcase">
-  <div class="container">
-    <div class="section-header">
-      <h2>Key Features Walkthrough</h2>
-      <p>Explore powerful features that make workforce management effortless</p>
-    </div>
-
-    <div class="showcase-grid">
-      <!-- Feature 1 -->
-      <div class="showcase-item">
-        <div class="showcase-content">
+        <div class="screenshot-description">
           <div class="feature-number">01</div>
           <h3>Quick Clock In/Out</h3>
-          <p>Employees can clock in with a simple photo timestamp. No complex biometrics, just visual verification for attendance records.</p>
-          <ul class="feature-list">
-            <li><i class="fas fa-check"></i> One-tap clock in</li>
-            <li><i class="fas fa-check"></i> Photo timestamps</li>
-            <li><i class="fas fa-check"></i> GPS location tracking</li>
-          </ul>
-          <button class="demo-btn" (click)="watchFeatureDemo('clock-in')">
-            <i class="fas fa-play"></i> Watch Demo
-          </button>
-        </div>
-        <div class="showcase-media">
-          <img src="feature-clock-in.jpg" alt="Clock In Feature">
-          <div class="media-overlay">
-            <i class="fas fa-search-plus"></i>
+          <p>Employees can clock in with a simple tap. The system captures a photo timestamp and GPS location automatically, ensuring accurate attendance tracking without complex biometrics.</p>
+          <div class="feature-tags">
+            <span class="tag"><i class="fas fa-check"></i> GPS Tracking</span>
+            <span class="tag"><i class="fas fa-check"></i> Photo Verification</span>
+            <span class="tag"><i class="fas fa-check"></i> One-Tap Access</span>
           </div>
         </div>
       </div>
 
-      <!-- Feature 2 -->
-      <div class="showcase-item reverse">
-        <div class="showcase-content">
+      <!-- Screenshot 2 - Right -->
+      <div class="screenshot-item reverse">
+        <div class="screenshot-visual" (click)="openScreenshot(2)">
+          <div class="screenshot-placeholder">
+            <div class="placeholder-icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+          </div>
+          <div class="screenshot-overlay">
+            <i class="fas fa-search-plus"></i>
+            <span>Click to view</span>
+          </div>
+        </div>
+        <div class="screenshot-description">
           <div class="feature-number">02</div>
           <h3>Real-time Dashboard</h3>
-          <p>Monitor your entire workforce from a single, intuitive dashboard. See who's working, track hours, and manage schedules effortlessly.</p>
-          <ul class="feature-list">
-            <li><i class="fas fa-check"></i> Live attendance tracking</li>
-            <li><i class="fas fa-check"></i> Team analytics</li>
-            <li><i class="fas fa-check"></i> Instant notifications</li>
-          </ul>
-          <button class="demo-btn" (click)="watchFeatureDemo('dashboard')">
-            <i class="fas fa-play"></i> Watch Demo
-          </button>
-        </div>
-        <div class="showcase-media">
-          <img src="feature-dashboard.jpg" alt="Dashboard Feature">
-          <div class="media-overlay">
-            <i class="fas fa-search-plus"></i>
+          <p>Monitor your entire workforce from a single, intuitive dashboard. See who's working, track hours in real-time, and get instant insights into team attendance patterns and productivity.</p>
+          <div class="feature-tags">
+            <span class="tag"><i class="fas fa-check"></i> Live Updates</span>
+            <span class="tag"><i class="fas fa-check"></i> Team Analytics</span>
+            <span class="tag"><i class="fas fa-check"></i> Instant Reports</span>
           </div>
         </div>
       </div>
 
-      <!-- Feature 3 -->
-      <div class="showcase-item">
-        <div class="showcase-content">
-          <div class="feature-number">03</div>
-          <h3>IRS Tax Calculations</h3>
-          <p>Automated tax calculations based on current IRS guidelines. Generate accurate reports for payroll processing and compliance.</p>
-          <ul class="feature-list">
-            <li><i class="fas fa-check"></i> Federal tax calculations</li>
-            <li><i class="fas fa-check"></i> Overtime tracking</li>
-            <li><i class="fas fa-check"></i> Export-ready reports</li>
-          </ul>
-          <button class="demo-btn" (click)="watchFeatureDemo('tax-calc')">
-            <i class="fas fa-play"></i> Watch Demo
-          </button>
-        </div>
-        <div class="showcase-media">
-          <img src="feature-tax-calc.jpg" alt="Tax Calculation Feature">
-          <div class="media-overlay">
+      <!-- Screenshot 3 - Left -->
+      <div class="screenshot-item">
+        <div class="screenshot-visual" (click)="openScreenshot(3)">
+          <div class="screenshot-placeholder">
+            <div class="placeholder-icon">
+              <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+          </div>
+          <div class="screenshot-overlay">
             <i class="fas fa-search-plus"></i>
+            <span>Click to view</span>
+          </div>
+        </div>
+        <div class="screenshot-description">
+          <div class="feature-number">03</div>
+          <h3>Comprehensive Reports</h3>
+          <p>Generate detailed reports with hours worked, overtime calculations, and attendance summaries. Export data in multiple formats for easy processing and record-keeping.</p>
+          <div class="feature-tags">
+            <span class="tag"><i class="fas fa-check"></i> Custom Filters</span>
+            <span class="tag"><i class="fas fa-check"></i> Excel Export</span>
+            <span class="tag"><i class="fas fa-check"></i> PDF Reports</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screenshot 4 - Right -->
+      <div class="screenshot-item reverse">
+        <div class="screenshot-visual" (click)="openScreenshot(4)">
+          <div class="screenshot-placeholder">
+            <div class="placeholder-icon">
+              <i class="fas fa-mobile-alt"></i>
+            </div>
+          </div>
+          <div class="screenshot-overlay">
+            <i class="fas fa-search-plus"></i>
+            <span>Click to view</span>
+          </div>
+        </div>
+        <div class="screenshot-description">
+          <div class="feature-number">04</div>
+          <h3>Mobile App Experience</h3>
+          <p>Empower your team with our native mobile apps for iOS and Android. Full-featured, fast, and works offline - perfect for field workers and remote teams.</p>
+          <div class="feature-tags">
+            <span class="tag"><i class="fas fa-check"></i> iOS & Android</span>
+            <span class="tag"><i class="fas fa-check"></i> Offline Mode</span>
+            <span class="tag"><i class="fas fa-check"></i> Push Notifications</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screenshot 5 - Left -->
+      <div class="screenshot-item">
+        <div class="screenshot-visual" (click)="openScreenshot(5)">
+          <div class="screenshot-placeholder">
+            <div class="placeholder-icon">
+              <i class="fas fa-users-cog"></i>
+            </div>
+          </div>
+          <div class="screenshot-overlay">
+            <i class="fas fa-search-plus"></i>
+            <span>Click to view</span>
+          </div>
+        </div>
+        <div class="screenshot-description">
+          <div class="feature-number">05</div>
+          <h3>Team Management</h3>
+          <p>Organize your workforce efficiently with departments, roles, and custom permissions. Manage employee profiles, schedules, and access levels all in one place.</p>
+          <div class="feature-tags">
+            <span class="tag"><i class="fas fa-check"></i> Role-Based Access</span>
+            <span class="tag"><i class="fas fa-check"></i> Departments</span>
+            <span class="tag"><i class="fas fa-check"></i> Permissions</span>
           </div>
         </div>
       </div>
@@ -255,46 +236,211 @@
   </div>
 </section>
 
-<!-- Mobile App Section -->
-<section class="mobile-app-section">
+<!-- How It Works - Step by Step -->
+<section class="how-it-works">
   <div class="container">
-    <div class="app-content">
-      <div class="app-info">
-        <h2>Mobile App Experience</h2>
-        <p>Empower your team with our intuitive mobile apps for iOS and Android</p>
+    <div class="section-header">
+      <h2>How It Works</h2>
+      <p>Simple 4-step process to track your workforce</p>
+    </div>
 
-        <div class="app-features">
-          <div class="app-feature">
+    <div class="steps-container">
+      <div class="step-item">
+        <div class="step-number">01</div>
+        <div class="step-visual">
+          <div class="visual-placeholder">
+            <i class="fas fa-user-plus"></i>
+          </div>
+        </div>
+        <div class="step-content">
+          <h3>Add Employees</h3>
+          <p>Invite team members via email or SMS. They download the app and create their account in minutes.</p>
+        </div>
+        <div class="step-arrow">
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-number">02</div>
+        <div class="step-visual">
+          <div class="visual-placeholder">
+            <i class="fas fa-camera"></i>
+          </div>
+        </div>
+        <div class="step-content">
+          <h3>Clock In/Out</h3>
+          <p>Employees take a photo when clocking in. GPS location is automatically captured for verification.</p>
+        </div>
+        <div class="step-arrow">
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-number">03</div>
+        <div class="step-visual">
+          <div class="visual-placeholder">
+            <i class="fas fa-desktop"></i>
+          </div>
+        </div>
+        <div class="step-content">
+          <h3>Monitor Dashboard</h3>
+          <p>Track attendance in real-time from your admin dashboard. See who's working and where they are.</p>
+        </div>
+        <div class="step-arrow">
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-number">04</div>
+        <div class="step-visual">
+          <div class="visual-placeholder">
+            <i class="fas fa-file-download"></i>
+          </div>
+        </div>
+        <div class="step-content">
+          <h3>Generate Reports</h3>
+          <p>Export detailed reports with hours worked, overtime, and attendance data for processing.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Before/After Comparison -->
+<section class="before-after">
+  <div class="container">
+    <div class="section-header">
+      <h2>Transform Your Workflow</h2>
+      <p>See the difference Facecheck makes</p>
+    </div>
+
+    <div class="comparison-container">
+      <div class="comparison-side before">
+        <div class="side-label">
+          <i class="fas fa-times-circle"></i>
+          <span>Before Facecheck</span>
+        </div>
+        <ul class="comparison-list">
+          <li>
+            <i class="fas fa-hourglass-half"></i>
+            <div>
+              <strong>Manual Timesheets</strong>
+              <p>Hours spent collecting and verifying paper timesheets</p>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-calculator"></i>
+            <div>
+              <strong>Error-Prone Calculations</strong>
+              <p>Frequent mistakes in hours and overtime calculations</p>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-question-circle"></i>
+            <div>
+              <strong>No Real-time Visibility</strong>
+              <p>Can't see who's working or where they are</p>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-file-alt"></i>
+            <div>
+              <strong>Complex Reporting</strong>
+              <p>Tedious manual report generation takes days</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="comparison-divider">
+        <div class="divider-icon">
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </div>
+
+      <div class="comparison-side after">
+        <div class="side-label">
+          <i class="fas fa-check-circle"></i>
+          <span>With Facecheck</span>
+        </div>
+        <ul class="comparison-list">
+          <li>
+            <i class="fas fa-mobile-alt"></i>
+            <div>
+              <strong>Digital Time Tracking</strong>
+              <p>Automatic clock in/out with photo verification</p>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-robot"></i>
+            <div>
+              <strong>Automated Processing</strong>
+              <p>Accurate calculations happen automatically</p>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-map-marked-alt"></i>
+            <div>
+              <strong>Live Tracking</strong>
+              <p>Real-time dashboard shows who's working and where</p>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-bolt"></i>
+            <div>
+              <strong>Instant Reports</strong>
+              <p>Generate and export reports in seconds</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Mobile App Showcase -->
+<section class="mobile-showcase">
+  <div class="container">
+    <div class="mobile-content">
+      <div class="mobile-info">
+        <h2>Powerful Mobile Apps</h2>
+        <p>Give your team the tools they need on the go</p>
+
+        <div class="mobile-features">
+          <div class="mobile-feature">
             <div class="feature-icon">
-              <i class="fas fa-mobile-alt"></i>
+              <i class="fas fa-tachometer-alt"></i>
             </div>
             <div class="feature-text">
-              <h4>Native Performance</h4>
-              <p>Fast, reliable apps built for iOS and Android</p>
+              <h4>Lightning Fast</h4>
+              <p>Native apps built for performance</p>
             </div>
           </div>
 
-          <div class="app-feature">
+
+          <div class="mobile-feature">
             <div class="feature-icon">
-              <i class="fas fa-wifi"></i>
+              <i class="fas fa-fingerprint"></i>
             </div>
             <div class="feature-text">
-              <h4>Offline Mode</h4>
-              <p>Works even without internet connection</p>
+              <h4>Biometric Login</h4>
+              <p>Secure access with Face ID or Touch ID</p>
             </div>
           </div>
 
-          <div class="app-feature">
+          <div class="mobile-feature">
             <div class="feature-icon">
               <i class="fas fa-bell"></i>
             </div>
             <div class="feature-text">
-              <h4>Smart Notifications</h4>
-              <p>Reminders for clock in/out and breaks</p>
+              <h4>Smart Reminders</h4>
+              <p>Never forget to clock in or out</p>
             </div>
           </div>
         </div>
-
         <div class="app-downloads">
           <button class="store-btn">
             <i class="fab fa-apple"></i>
@@ -313,38 +459,14 @@
         </div>
       </div>
 
-      <div class="app-mockup">
-        <div class="phone-container">
-          <img src="iphone-mockup.png" alt="iPhone App" class="phone-image">
-          <div class="screen-content">
-            <img src="app-screenshot.jpg" alt="App Screenshot">
+      <div class="mobile-mockup">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="screen-placeholder">
+              <i class="fas fa-mobile-alt"></i>
+              <span>Mobile App Preview</span>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Video Gallery -->
-<section class="video-gallery">
-  <div class="container">
-    <div class="section-header">
-      <h2>Tutorial Videos</h2>
-      <p>Learn how to get the most out of Facecheck</p>
-    </div>
-
-    <div class="video-grid">
-      <div class="video-card" *ngFor="let video of tutorialVideos">
-        <div class="video-thumbnail" (click)="playVideo(video.id)">
-          <img [src]="video.thumbnail" [alt]="video.title">
-          <div class="video-duration">{{ video.duration }}</div>
-          <div class="play-overlay">
-            <i class="fas fa-play"></i>
-          </div>
-        </div>
-        <div class="video-info">
-          <h4>{{ video.title }}</h4>
-          <p>{{ video.description }}</p>
         </div>
       </div>
     </div>
@@ -359,7 +481,7 @@
       <p>Join thousands of businesses already using Facecheck</p>
 
       <div class="cta-buttons">
-        <button class="cta-btn primary" (click)="startFreeTrial()">
+        <button class="cta-btn primary" (click)="navigateToPricing()">
           Start Free Trial
           <i class="fas fa-arrow-right"></i>
         </button>
@@ -387,7 +509,7 @@
           <img src="logo.jpg" alt="Facecheck">
           <span>facecheck</span>
         </div>
-        <p>Professional workforce time tracking and calculation platform</p>
+        <p>Professional workforce time tracking platform designed for modern businesses</p>
       </div>
     </div>
 
@@ -395,12 +517,9 @@
       <p>&copy; 2025 Facecheck. All rights reserved.</p>
       <div class="footer-legal">
         <a (click)="navigateToPrivacy()">Privacy Policy</a>
-        <a (click)="navigateToTerms()">Terms of Service</a>
+        <a (click)="navigateToTerms()">Terms of Use</a>
         <a (click)="navigateToRefundPolicy()">Refund Policy</a>
       </div>
     </div>
   </div>
 </footer>
-
-</body>
-</html>
