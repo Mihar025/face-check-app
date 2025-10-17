@@ -2,6 +2,7 @@ package com.zikpak.facecheck.security;
 
 import com.zikpak.facecheck.security.filters.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,12 +21,15 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
+
     private final SqlFilter sqlFilter;
     private final JwtFilter jwtAuthFilter;
     private final XssFilter xssFilter;
@@ -33,71 +37,84 @@ public class SecurityConfig {
     private final RequestSizeLimitFilter requestSizeLimitFilter;
     private final AuthenticationProvider authenticationProvider;
 
+    @Value("${security.require-ssl:false}")
+    private boolean requireSsl;
+
+    // берём список доменов из application.yml:
+    // security.cors.allowed-origins=https://face-check.org,https://другой.домен
+    @Value("${security.cors.allowed-origins}")
+    private String allowedOriginsCsv;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Security Headers через Spring Security (дополнительно к фильтру)
+                // Security Headers (дополнительно к твоему кастомному фильтру)
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.deny())
                         .xssProtection(xss ->
                                 xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)
-                        )                        .contentTypeOptions(contentType -> {})
+                        )
+                        .contentTypeOptions(contentType -> {})
                 )
 
-                .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests
-                                .requestMatchers("/actuator/**").permitAll()
-                                .requestMatchers("/api/v1/actuator/**").permitAll()
-                                .requestMatchers("/auth/**").permitAll()
-                                .requestMatchers("/swagger-ui/**").permitAll()
-                                .requestMatchers("/v3/api-docs/**").permitAll()
-                                .requestMatchers("/error").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        // actuator и error (с учётом context-path /api/v1)
+                        .requestMatchers("/api/v1/actuator/**", "/actuator/**", "/error").permitAll()
 
-                                // aws-reports endpoints
-                                .requestMatchers(HttpMethod.GET, "/aws-reports/download").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/aws-reports/view").permitAll()
-                                .requestMatchers("/sales/**").permitAll()
-                                .requestMatchers("/aws-reports/**").authenticated()
+                        // публичные auth/документация (и с /api/v1, и без — на случай прямых маппингов)
+                        .requestMatchers("/api/v1/auth/**", "/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                                .requestMatchers("/company/**").authenticated()
-                                .requestMatchers("/user/**").authenticated()
-                                .anyRequest().authenticated()
+                        // твои правила для aws-reports/sales
+                        .requestMatchers(HttpMethod.GET, "/api/v1/aws-reports/download", "/aws-reports/download").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/aws-reports/view", "/aws-reports/view").permitAll()
+                        .requestMatchers("/api/v1/sales/**", "/sales/**").permitAll()
+                        .requestMatchers("/api/v1/aws-reports/**", "/aws-reports/**").authenticated()
+
+                        // защищённые области
+                        .requestMatchers("/api/v1/company/**", "/company/**").authenticated()
+                        .requestMatchers("/api/v1/user/**", "/user/**").authenticated()
+
+                        // всё остальное — под аутентификацией
+                        .anyRequest().authenticated()
                 )
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
 
-                // ВАЖНО: Порядок фильтров имеет значение!
-                // 1. Security Headers - первым для всех запросов
-                .addFilterBefore(securityHeadersFilter, SecurityContextHolderFilter.class)
-                // 2. Request Size Limit - проверка размера
-                .addFilterAfter(requestSizeLimitFilter, SecurityHeadersFilter.class)
-                // 3. XSS Filter
-                .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)
-                // 4. SQL Filter
-                .addFilterAfter(sqlFilter, XssFilter.class)
-                // 5. JWT Filter - последним перед аутентификацией
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                // Порядок фильтров
+                .addFilterBefore(securityHeadersFilter, SecurityContextHolderFilter.class)   // 1
+                .addFilterAfter(requestSizeLimitFilter, SecurityHeadersFilter.class)         // 2
+                .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)      // 3
+                .addFilterAfter(sqlFilter, XssFilter.class)                                  // 4
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // 5
+
+        if (requireSsl) {
+            http.requiresChannel(ch -> ch.anyRequest().requiresSecure());
+        }
 
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        List<String> origins = Arrays.stream(allowedOriginsCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(origins); // строгий whitelist из ENV/YAML
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","Origin","X-Requested-With"));
+        cfg.setAllowCredentials(true);
+        cfg.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
+        src.registerCorsConfiguration("/**", cfg);
+        return src;
     }
 }
