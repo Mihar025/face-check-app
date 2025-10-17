@@ -1,7 +1,7 @@
 services:
   postgresql:
     container_name: fc_pg_sql
-    image: postgres
+    image: postgres:16.3
     environment:
       POSTGRES_USER: misha
       POSTGRES_PASSWORD: misha

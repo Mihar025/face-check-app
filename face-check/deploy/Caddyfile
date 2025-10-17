@@ -1,0 +1,8 @@
+{
+  email mishamay583@gmail.com
+}
+
+api.face-check.org {
+  encode gzip zstd
+  reverse_proxy elated-api:8088
+}
