@@ -15,13 +15,16 @@ RUN mvn -q -DskipTests package
 # ===== Run =====
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75 -Duser.timezone=America/New_York"
+
+# утилита для healthcheck
+RUN apt-get update -y && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=20 -XX:InitialRAMPercentage=20 -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=96m -XX:+ExitOnOutOfMemoryError -Duser.timezone=America/New_York"
+
 COPY --from=build /src/target/*.jar app.jar
 
-# твой прод-порт
 EXPOSE 8088
 
-# важный момент: health под контекстом /api/v1
 HEALTHCHECK --interval=30s --timeout=3s --retries=5 \
   CMD curl -fsS http://localhost:8088/api/v1/actuator/health || exit 1
 
