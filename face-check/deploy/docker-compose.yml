@@ -1,0 +1,104 @@
+services:
+  elated-api:
+    build:
+      context: ./face-check              # как у тебя
+      dockerfile: ../docker/backend/Dockerfile
+    image: facecheck-backend:latest
+    container_name: elated-api
+    environment:
+      SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL}"
+      SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME}"
+      SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD}"
+      SERVER_PORT: "8088"
+      # добавь свои JWT/SMTP и т.п. через переменные
+    expose:
+      - "8088"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8088/actuator/health | grep -q 'UP' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [microservices-net]
+    restart: unless-stopped
+
+  # Проксируем API и выдаём HTTPS для api.face-check.org
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: fc-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      elated-api:
+        condition: service_healthy
+    networks: [microservices-net]
+    restart: unless-stopped
+
+  # Ниже — monitoring stack (по желанию). Пока не публикуем наружу.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fc-prometheus
+    volumes:
+      - ./face-check/AppStarterModule/src/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./face-check/AppStarterModule/src/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    expose:
+      - "9090"
+    networks: [microservices-net]
+    depends_on:
+      - alertmanager
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: fc-alertmanager
+    volumes:
+      - ./face-check/AppStarterModule/src/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command: ['--config.file=/etc/alertmanager/alertmanager.yml','--storage.path=/alertmanager']
+    expose:
+      - "9093"
+    networks: [microservices-net]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fc-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: secret
+    volumes:
+      - grafana-data:/var/lib/grafana
+    expose:
+      - "3000"
+    networks: [microservices-net]
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: fc-node-exporter
+    expose:
+      - "9100"
+    networks: [microservices-net]
+    restart: unless-stopped
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  alertmanager-data:
+  caddy-data:
+  caddy-config:
