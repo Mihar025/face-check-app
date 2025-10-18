@@ -174,4 +174,25 @@ AND u.id IN (
                                          @Param("roleName") String roleName);
 
     List<User> findAllByCompanyIdIn(Collection<Integer> companyIds);
+
+    @Query("""
+    
+    SELECT DISTINCT u FROM User u
+    LEFT JOIN FETCH u.payrolls p
+    LEFT JOIN FETCH u.company c 
+    WHERE u.company.id = :companyId
+    ORDER BY u.id DESC
+    
+""")
+    List<User> findAllEmployeesInCompanyWithDetails(@Param("companyId") Integer companyId);
+
+
+    @Query("""
+    
+    SELECT DISTINCT u FROM User u
+    LEFT JOIN FETCH u.payrolls p
+    LEFT JOIN FETCH u.company c 
+    ORDER BY u.id DESC
+""")
+    List<User> findAllEmployeesForAppOwner();
 }
