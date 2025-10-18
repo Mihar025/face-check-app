@@ -422,6 +422,8 @@ public class CompanyService implements CompanyServiceImpl {
                                         return companyMapper.toCompanyWorkerResponse(foundedEmployee);
                         }
 
+
+
     public PageResponse<RelatedUserInCompanyResponse> findAllEmployeesInCertainCompany(
             int page,
             int size,
@@ -438,22 +440,25 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("You do not have permission to view company employees");
         }
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<User> users = userRepository.findAllEmployeesInCompany(pageable, companyId);
+        List<User> allUsers = userRepository.findAllEmployeesInCompanyWithDetails(companyId);
 
-        List<RelatedUserInCompanyResponse> responses = users.getContent()
+        int start = page * size;
+        int end = Math.min(start + size, allUsers.size());
+        List<User> pagedUsers = allUsers.subList(start, end);
+
+        List<RelatedUserInCompanyResponse> responses = pagedUsers
                 .stream()
                 .map(companyMapper::toCompanyWorkerResponse)
                 .toList();
 
         return new PageResponse<>(
                 responses,
-                users.getNumber(),
-                users.getSize(),
-                users.getTotalElements(),
-                users.getTotalPages(),
-                users.isFirst(),
-                users.isLast()
+                page,
+                size,
+                allUsers.size(),
+                (int) Math.ceil((double) allUsers.size() / size),
+                page == 0,
+                end >= allUsers.size()
         );
     }
 
@@ -474,36 +479,48 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("You do not have permission to view company employees");
         }
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<User> users = userRepository.findAll(pageable);
+        // ✅ ИСПОЛЬЗУЕМ JOIN FETCH
+        List<User> allUsers = userRepository.findAllEmployeesForAppOwner();
 
-        log.info("Total users found: {}", users.getTotalElements());
+        log.info("Total users found: {}", allUsers.size());
         log.info("Current page: {}, Size: {}", page, size);
-        log.info("Users on this page: {}", users.getContent().size());
 
-        // Для отладки выведем первого пользователя
-        if (!users.getContent().isEmpty()) {
-            User firstUser = users.getContent().get(0);
+        // ✅ Пагинация вручную
+        int start = page * size;
+        int end = Math.min(start + size, allUsers.size());
+
+        if (start > allUsers.size()) {
+            start = 0;
+            end = 0;
+        }
+
+        List<User> pagedUsers = start < end ? allUsers.subList(start, end) : List.of();
+
+        log.info("Users on this page: {}", pagedUsers.size());
+
+        if (!pagedUsers.isEmpty()) {
+            User firstUser = pagedUsers.get(0);
             log.info("First user: {} {}, email: {}",
                     firstUser.getFirstName(),
                     firstUser.getLastName(),
                     firstUser.getEmail());
         }
 
-        List<RelatedUserInCompanyResponse> responses = users.getContent()
+        List<RelatedUserInCompanyResponse> responses = pagedUsers
                 .stream()
                 .map(companyMapper::toCompanyWorkerResponse)
                 .toList();
 
+        int totalPages = (int) Math.ceil((double) allUsers.size() / size);
 
         return new PageResponse<>(
                 responses,
-                users.getNumber(),
-                users.getSize(),
-                users.getTotalElements(),
-                users.getTotalPages(),
-                users.isFirst(),
-                users.isLast()
+                page,
+                size,
+                allUsers.size(),
+                totalPages,
+                page == 0,
+                end >= allUsers.size()
         );
     }
 
