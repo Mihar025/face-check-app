@@ -23,7 +23,11 @@ public interface WorkerScheduleRepository extends JpaRepository<WorkerSchedule, 
     AND ws.scheduleDate BETWEEN :startDate AND :endDate
     ORDER BY ws.scheduleDate
     """)
-    List<WorkerSchedule> findByWorkerAndScheduleDateBetween(User worker, LocalDate startOfWeek, LocalDate endOfWeek);
+    List<WorkerSchedule> findByWorkerAndScheduleDateBetween(
+            @Param("worker") User worker,
+            @Param("startDate") LocalDate startOfWeek,  // ← ДОБАВИТЬ!
+            @Param("endDate") LocalDate endOfWeek       // ← ДОБАВИТЬ!
+    );
 
 
 
