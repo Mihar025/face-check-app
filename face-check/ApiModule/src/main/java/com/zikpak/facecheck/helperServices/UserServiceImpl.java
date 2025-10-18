@@ -17,6 +17,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,7 +28,14 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+
+
+
+
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void updateEmail( String email, Authentication authentication) {
         if(email == null  || email.isBlank()){
             throw new IllegalArgumentException("Email cannot be empty");
@@ -43,6 +54,9 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void updatePassword( String password, Authentication authentication) {
         if(password == null || password.isBlank()){
             throw new IllegalArgumentException("Password cannot be empty");
@@ -63,6 +77,9 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
 
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void updatePhone( String phone, Authentication authentication) {
         if(phone == null || phone.isBlank()){
 
@@ -85,6 +102,9 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
 
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void updateHomeAddress( String homeAddress, Authentication authentication) {
         if(homeAddress == null || homeAddress.isBlank()){
 
@@ -106,6 +126,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'userFullName_' + #authentication.principal.id"
+    )
     public UserFullNameResponse findWorkerFullName(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -120,6 +144,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'userEmail_' + #authentication.principal.id"
+    )
     public UserEmailResponse findWorkerEmail(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -134,6 +162,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'userPhone_' + #authentication.principal.id"
+    )
     public UserPhoneNumberResponse findWorkerPhoneNumber(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -147,6 +179,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'userHomeAddress_' + #authentication.principal.id"
+    )
     public UserHomeAddressResponse findWorkerHomeAddress(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -159,6 +195,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'userFullContact_' + #authentication.principal.id"
+    )
     public UserFullContactInformation findWorkerFullContactInformation(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -167,6 +207,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'userCompanyName_' + #authentication.principal.id"
+    )
     public UserCompanyNameInformation findUserCompanyName(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -183,7 +227,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
         return userMapper.toUserCompanyNameResponse(savedCompanyName);
     }
 
-
+    @Cacheable(
+            value = "users",
+            key = "'userCompanyAddress_' + #authentication.principal.id"
+    )
     public UserCompanyAddressResponse findUserCompanyAddress(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -199,7 +246,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
         log.info("Company name was founded: !" + savedCompanyName);
         return userMapper.toUserCompanyAddressResponse(savedCompanyName);
     }
-
+    @Cacheable(
+            value = "users",
+            key = "'userCompanyPhone_' + #authentication.principal.id"
+    )
     public UserCompanyPhoneNumberResponse findUserCompanyPhoneNumber(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -216,6 +266,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
         return userMapper.toUserCompanyPhoneNumberResponse(savedCompanyPhone);
     }
 
+    @Cacheable(
+            value = "users",
+            key = "'userCompanyEmail_' + #authentication.principal.id"
+    )
     public UserCompanyEmailResponse findUserCompanyEmail(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -233,7 +287,10 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
 
 
     }
-
+    @Cacheable(
+            value = "users",
+            key = "'userCompanyId_' + #authentication.principal.id"
+    )
     public WorkerCompanyIdByAuthenticationResponse findCompanyByWorkerAuthentication(Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
@@ -244,6 +301,11 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
         }
         return userMapper.toWorkerCompanyIdByAuthenticationResponse(foundedCompanyId);
     }
+
+    @Cacheable(
+            value = "users",
+            key = "'workerPersonalInfo_' + #employeeId"
+    )
 
     public WorkerPersonalInformationResponse findWorkerPersonInformation(Authentication authentication, Integer employeeId) {
         User admin = ((User) authentication.getPrincipal());

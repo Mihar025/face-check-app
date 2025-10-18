@@ -8,7 +8,6 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      # Оптимизация для Neon serverless - не держим постоянные соединения
       minimum-idle: 0
       maximum-pool-size: 5
       idle-timeout: 30000
@@ -20,14 +19,52 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    # Отключаем Open-in-View для более коротких транзакций
     open-in-view: false
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
 
-# Отключаем постоянную проверку БД в health check
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=1h
+    cache-names:
+      - workSites
+      - workSite
+      - userProfile
+      - workerAttendance
+      - users
+      - usersPhoto
+      - s3Photos
+
+
+
 management:
   health:
     db:
       enabled: false
+
+logging:
+  level:
+    com.zikpak: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.cache: INFO

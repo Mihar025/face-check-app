@@ -17,6 +17,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -38,6 +42,8 @@ public class AmazonS3Service {
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
+
+
 
     public String uploadAttendancePhoto(String base64Photo,
                                         String email,
@@ -75,6 +81,10 @@ public class AmazonS3Service {
     }
 
 
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true),  // ← Очищаем кеш users
+            @CacheEvict(value = "s3Photos", allEntries = true)
+    })
     public String uploadPhotoForProfile(MultipartFile base64Photo,
                                         String email,
                                         String prefix) {
@@ -122,6 +132,11 @@ public class AmazonS3Service {
     }
 
 
+    @Cacheable(
+            value = "s3Photos",
+            key = "'photo_' + #fileName",
+            unless = "#result == null"
+    )
     public S3FileDTO downloadAttendancePhoto(String fileName) {
         Timer.Sample timer = metricsAmazonS3Service.startTimer();
 
@@ -147,7 +162,9 @@ public class AmazonS3Service {
 
 
 
-
+    @Caching(evict = {
+            @CacheEvict(value = "s3Photos", allEntries = true)
+    })
     public void deleteAttendancePhoto(String fileName) {
         Timer.Sample timer = metricsAmazonS3Service.startTimer();
         try {
@@ -182,6 +199,12 @@ public class AmazonS3Service {
         }
     }
 
+
+    @Cacheable(
+            value = "s3Photos",
+            key = "'workerPhotos_' + #workerId",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<PhotoResponse> getWorkerPhotos(Integer workerId){
 
         List<Object[]> photoUrls = workerAttendanceRepository.findAllPhotosUrlRelatedToUser(workerId);
