@@ -8,12 +8,26 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:10}
-      minimum-idle: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:2}
-      connection-timeout: ${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:20000}
+      # Оптимизация для Neon serverless - не держим постоянные соединения
+      minimum-idle: 0
+      maximum-pool-size: 2
+      idle-timeout: 30000
+      max-lifetime: 60000
+      keepalive-time: 0
+      connection-timeout: 30000
+      leak-detection-threshold: 30000
+
   jpa:
     hibernate:
       ddl-auto: validate
+    # Отключаем Open-in-View для более коротких транзакций
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Отключаем постоянную проверку БД в health check
+management:
+  health:
+    db:
+      enabled: false
