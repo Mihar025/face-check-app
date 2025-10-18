@@ -17,11 +17,29 @@ import java.util.Optional;
 @Repository
 public interface PaymentHistoryIrsRepository extends JpaRepository<PaymentHistoryIrs, Integer> {
 
-    Optional<PaymentHistoryIrs> findPaymentHistoryIrsByPaymentDate(LocalDate date);
+    @Query("""
+    
+    SELECT phi FROM PaymentHistoryIrs phi
+    LEFT JOIN FETCH phi.company c 
+    WHERE phi.paymentDate = :date
+""")
+    Optional<PaymentHistoryIrs> findPaymentHistoryIrsByPaymentDate(@Param("date") LocalDate date);
 
+    @Query("""
+    
+    SELECT phi FROM PaymentHistoryIrs phi
+    LEFT JOIN FETCH phi.company c
+    WHERE c.id = :companyId
+""")
+    Page<PaymentHistoryIrs> findAllByCompany_Id(@Param("companyId") Integer companyId, Pageable pageable);
 
-    Page<PaymentHistoryIrs> findAllByCompany_Id(Integer companyId, Pageable pageable);
-
+    @Query("""
+    SELECT phi FROM PaymentHistoryIrs phi
+    LEFT JOIN FETCH phi.company c
+    WHERE c.id = :companyId
+    AND phi.year = :year
+    AND phi.quarter = :quarter
+""")
     Page<PaymentHistoryIrs> findAllByCompany_IdAndYearAndQuarter(
             Integer companyId,
             int year,
@@ -51,13 +69,25 @@ public interface PaymentHistoryIrsRepository extends JpaRepository<PaymentHistor
 
 
 
+
+
+    @Query("""
+    SELECT phi FROM PaymentHistoryIrs phi
+    LEFT JOIN FETCH phi.company c
+    WHERE c.id = :companyId
+    AND phi.paymentDate = :paymentDate
+    AND phi.year = :year
+    AND phi.quarter = :quarter
+    AND phi.paymentTypeEnum = :paymentTypeEnum
+""")
     Optional<PaymentHistoryIrs> findByCompany_IdAndPaymentDateAndYearAndQuarterAndPaymentTypeEnum(
-            Integer companyId,
-            LocalDate paymentDate,
-            int year,
-            int quarter,
-            PaymentType paymentTypeEnum
+            @Param("companyId") Integer companyId,
+            @Param("paymentDate") LocalDate paymentDate,
+            @Param("year") int year,
+            @Param("quarter") int quarter,
+            @Param("paymentTypeEnum") PaymentType paymentTypeEnum
     );
+
 
     @Query("""
     SELECT COALESCE(SUM(p.amount), 0)
@@ -136,28 +166,6 @@ public interface PaymentHistoryIrsRepository extends JpaRepository<PaymentHistor
     """)
     BigDecimal getTotalPaidForQuarter941(Integer companyId, int quarter, int year);
 
-    @Query("""
-    SELECT COALESCE(SUM(p.amount), 0)
-      FROM PaymentHistoryIrs p
-     WHERE p.company.id = :companyId
-       AND p.quarter = :quarter
-       AND p.year = :year
-       AND p.paymentTypeEnum = com.zikpak.facecheck.entity.PaymentType.WC_Payment
-    """)
-    BigDecimal getTotalPaidForWCByQuarter(  @Param("companyId") Integer companyId,
-                                            @Param("quarter") int quarter,
-                                            @Param("year") int year);
-
-    @Query("""
-    SELECT COALESCE(SUM(p.amount), 0)
-      FROM PaymentHistoryIrs p
-     WHERE p.company.id = :companyId
-       AND p.year = :year
-       AND p.paymentTypeEnum = com.zikpak.facecheck.entity.PaymentType.WC_Payment
-    """)
-    BigDecimal getTotalPaidForWCPerYear(  @Param("companyId") Integer companyId,
-                                          @Param("year") int year);
-
 
     @Query("""
   SELECT COALESCE(SUM(p.amount),0)
@@ -177,5 +185,10 @@ public interface PaymentHistoryIrsRepository extends JpaRepository<PaymentHistor
     );
 
 
-    List<PaymentHistoryIrs> findAllPaymentsByCompanyId(Integer id);
+    @Query("""
+    SELECT phi FROM PaymentHistoryIrs phi
+    LEFT JOIN FETCH phi.company c
+    WHERE c.id = :companyId
+""")
+    List<PaymentHistoryIrs> findAllPaymentsByCompanyId(@Param("companyId") Integer companyId);
 }

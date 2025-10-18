@@ -57,8 +57,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     public WorkSiteResponse findWorkSiteById(Integer id) {
         Timer.Sample timer = metric.startTimer();
         try {
-            // var foundedWorkSite = findWorkSiteBySpecialId(id);
-            var foundedWorkSite = workSiteRepository.findById(id)
+            var foundedWorkSite = workSiteRepository.findByIdWithCompany(id)
                     .orElseThrow(() -> new EntityNotFoundException("Work site not found"));
             metric.recordWorkSiteById(foundedWorkSite.getSiteName(), foundedWorkSite.getId(), true);
             metric.recordOperationTime(timer, "find_worksite_success");
@@ -804,11 +803,16 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                 results.isLast()
         );
     }
+
+
     @Transactional(rollbackOn = Exception.class)
     public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
+
         var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var company = admin.getCompany();
-        var workSite = findWorkSiteBySpecialId(workSiteId);
+     //   var workSite = findWorkSiteBySpecialId(workSiteId);
+            var workSite = workSiteRepository.findByIdWithUsers(workSiteId)
+                    .orElseThrow(() -> new EntityNotFoundException("Cannot find WorkSIte"));
 
         for(User user: new HashSet<>(workSite.getUsers())){
             workSite.removeUser(user);
@@ -853,7 +857,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     private WorkSite findWorkSiteBySpecialId(Integer workSiteId){
-        return workSiteRepository.findById(workSiteId)
+        return workSiteRepository.findByIdWithCompany(workSiteId)
                 .orElseThrow(() -> new EntityNotFoundException("Cannot find WorkSite!"));
     }
 

@@ -18,7 +18,15 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-    Optional<User> findByEmail(String username);
+
+    @Query("""
+    
+    SELECT u FROM User u 
+    LEFT JOIN FETCH u.company c 
+    LEFT JOIN FETCH u.workSites ws 
+    WHERE u.email = :email
+""")
+    Optional<User> findByEmail(@Param("email") String email);
 
 
 
@@ -115,20 +123,24 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("""
 SELECT DISTINCT u FROM User u 
-JOIN u.workSites w 
-WHERE w.id = :workSiteId 
+LEFT JOIN FETCH u.workSites ws
+LEFT JOIN FETCH u.attendances a
+LEFT JOIN FETCH u.company c
+WHERE :workSiteId MEMBER OF u.workSites
 AND u.company.id = :companyId
 AND EXISTS (
-    SELECT 1 FROM WorkerAttendance a 
-    WHERE a.worker = u 
-    AND a.checkInTime IS NOT NULL 
-    AND a.checkOutTime IS NULL
-    AND FUNCTION('DATE', a.checkInTime) = FUNCTION('CURRENT_DATE')
+    SELECT 1 FROM WorkerAttendance att 
+    WHERE att.worker = u 
+    AND att.checkInTime IS NOT NULL 
+    AND att.checkOutTime IS NULL
+    AND FUNCTION('DATE', att.checkInTime) = FUNCTION('CURRENT_DATE')
 )
+ORDER BY u.createdDate DESC
 """)
-    Page<User> findAllWorkerInWorkSite(Pageable pageable,
-                                       @Param("workSiteId") Integer workSiteId,
-                                       @Param("companyId") Integer companyId);
+    List<User> findAllWorkerInWorkSite(
+            @Param("workSiteId") Integer workSiteId,
+            @Param("companyId") Integer companyId
+    );
 
     @Query("""
 SELECT DISTINCT u, wa
@@ -195,4 +207,12 @@ AND u.id IN (
     ORDER BY u.id DESC
 """)
     List<User> findAllEmployeesForAppOwner();
+
+    @Query("""
+
+    SELECT u FROM User u 
+    LEFT JOIN FETCH u.company c
+    WHERE u.id = :employeeId
+""")
+    Optional<User> findByIdPersonalInfo(@Param("employeeId") Integer employeeId);
 }

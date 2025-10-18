@@ -19,7 +19,8 @@ public interface WorkerSiteRepository extends JpaRepository<WorkSite, Integer> {
     @Query(
             """
     SELECT ws FROM WorkSite ws
-    WHERE ws.company.id = :companyId
+    LEFT JOIN FETCH ws.company c
+    WHERE c.id = :companyId
 """
     )
     Page<WorkSite> findAllByCompanyId(@Param("companyId") Integer companyId, Pageable pageable);
@@ -28,9 +29,27 @@ public interface WorkerSiteRepository extends JpaRepository<WorkSite, Integer> {
     @Query(
             """
     SELECT ws FROM WorkSite ws
-    WHERE ws.company.id = :companyId
+    LEFT JOIN FETCH ws.company c
+    WHERE c.id = :companyId
 """
     )
     List<WorkSite> findAllByCompanyId(@Param("companyId") Integer companyId);
+
+
+    @Query("""
+    SELECT ws FROM WorkSite ws
+    LEFT JOIN FETCH ws.company c
+    LEFT JOIN FETCH ws.users u
+    WHERE ws.id = :workSiteId
+    """)
+    Optional<WorkSite> findByIdWithUsers(@Param("workSiteId") Integer workSiteId);
+
+
+    @Query("""
+    SELECT ws FROM WorkSite ws
+    LEFT JOIN FETCH ws.company c
+    WHERE ws.id = :id
+    """)
+    Optional<WorkSite> findByIdWithCompany(@Param("id") Integer id);
 
 }

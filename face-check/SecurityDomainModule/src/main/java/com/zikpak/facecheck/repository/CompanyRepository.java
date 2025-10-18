@@ -15,7 +15,12 @@ import java.util.Optional;
 @Repository
 public interface CompanyRepository extends JpaRepository<Company, Integer> {
 
+    @Query("""
+    SELECT c FROM Company c
+    WHERE c.companyName= :companyName
+""")
     Optional<Company> findByCompanyName(String companyName);
+
 
     @Modifying
     @Query("UPDATE Company c SET c.workersQuantity = c.workersQuantity + 1 WHERE c.companyName = :companyName")
