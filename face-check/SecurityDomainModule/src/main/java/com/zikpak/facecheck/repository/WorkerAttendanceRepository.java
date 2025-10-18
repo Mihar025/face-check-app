@@ -14,41 +14,95 @@ import java.nio.channels.FileChannel;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ListResourceBundle;
 import java.util.Optional;
 
 @Repository
 public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendance, Integer> {
 
+    @Query("""
+       SELECT wa FROM WorkerAttendance wa
+        LEFT JOIN FETCH wa.worker w
+        LEFT JOIN FETCH w.company c
+        WHERE wa.worker = :worker
+        AND wa.checkOutTime IS NULL
+        ORDER BY wa.checkInTime DESC
+        LIMIT 1
+""")
     Optional<WorkerAttendance> findFirstByWorkerAndCheckOutTimeIsNullOrderByCheckInTimeDesc(User worker);
 
-    List<WorkerAttendance> findAllByWorkerIdAndCheckInTimeBetween(Integer workerId, LocalDateTime localDateTime, LocalDateTime localDateTime1);
 
 
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH w.company c
+    WHERE wa.worker.id = :workerId
+    AND wa.checkInTime BETWEEN :startTime AND :endTime
+    ORDER BY wa.checkInTime
+    """)
+    List<WorkerAttendance> findAllByWorkerIdAndCheckInTimeBetween(
+            @Param("workerId") Integer workerId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
+    );
+
+
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH w.company c
+    WHERE wa.worker.id IN :workerIds
+    AND wa.checkInTime BETWEEN :startDateTime AND :endDateTime
+    ORDER BY wa.checkInTime
+    """)
     List<WorkerAttendance> findAllByWorkerIdInAndCheckInTimeBetween(
-            List<Integer> workerIds,
-            LocalDateTime startDateTime,
-            LocalDateTime endDateTime);
+            @Param("workerIds") List<Integer> workerIds,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
 
 
-    @Query("SELECT wa FROM WorkerAttendance wa " +
-            "WHERE wa.worker = :worker " +
-            "AND wa.checkInTime >= :startOfDay " +
-            "AND wa.checkInTime <= :endOfDay " +
-            "AND wa.checkOutTime IS NULL")
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH w.company c
+    LEFT JOIN FETCH w.wcRiskClass wcr
+    WHERE wa.worker = :worker
+    AND wa.checkInTime >= :startOfDay
+    AND wa.checkInTime <= :endOfDay
+    AND wa.checkOutTime IS NULL
+    ORDER BY wa.checkInTime DESC
+    """)
     Optional<WorkerAttendance> findTodayActivePunchIn(
             @Param("worker") User worker,
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay
     );
 
-    Optional<WorkerAttendance> findFirstByWorkerAndCheckOutTimeIsNotNullOrderByCheckOutTimeDesc(User worker);
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa
+    LEFT JOIN FETCH wa.worker w
+    WHERE wa.worker = :worker
+    AND wa.checkOutTime IS NOT NULL
+    ORDER BY wa.checkOutTime DESC
+    LIMIT 1
+    """)
+    Optional<WorkerAttendance> findFirstByWorkerAndCheckOutTimeIsNotNullOrderByCheckOutTimeDesc(@Param("worker") User worker);
 
-    @Query("SELECT wa FROM WorkerAttendance wa WHERE wa.worker.id = :workerId " +
-            "ORDER BY wa.checkInTime DESC LIMIT 1")
+
+
+
+
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH w.company c
+    WHERE wa.worker.id = :workerId
+    ORDER BY wa.checkInTime DESC
+    LIMIT 1
+    """)
     Optional<WorkerAttendance> findLatestAttendanceByWorkerId(@Param("workerId") Integer workerId);
-
-
-    Optional<WorkerAttendance> findTopByWorkerOrderByCheckInTimeDesc(User worker);
 
 
     @Query("""
@@ -89,28 +143,49 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
     List<Object[]> findAllPhotosUrlRelatedToUser(@Param("workerId") Integer workerId);
 
 
-    @Query("""
-    SELECT wa FROM WorkerAttendance wa WHERE wa.worker.company.id = :companyId
-""")
-    Page<WorkerAttendance> findAllAttendanceByCompanyId(@Param("companyId") Integer companyId, Pageable pageable);
 
     @Query("""
-    SELECT wa FROM WorkerAttendance wa 
-    WHERE wa.worker.id = :workerId 
-    AND wa.checkInTime >= :startOfDay 
+    SELECT wa FROM WorkerAttendance  wa 
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH wa.worker.company c
+    WHERE c.id = :companyId
+    
+""")
+    List<WorkerAttendance> findAllAttendanceByCompanyId(@Param("companyId") Integer companyId);
+
+    @Query("""
+    SELECT wa FROM WorkerAttendance wa
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH w.company c
+    WHERE wa.worker.id = :workerId
+    AND wa.checkInTime >= :startOfDay
     AND wa.checkInTime < :endOfDay
     ORDER BY wa.checkInTime ASC
-""")
-    List<WorkerAttendance> findAllByWorkerIdAndDateRange(  // ✅ Изменили на List!
+    """)
+
+    List<WorkerAttendance> findAllByWorkerIdAndDateRange(
                                                            @Param("workerId") Integer workerId,
                                                            @Param("startOfDay") LocalDateTime startOfDay,
                                                            @Param("endOfDay") LocalDateTime endOfDay
     );
 
+
+
+
     @Query("""
     SELECT wa FROM WorkerAttendance wa 
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH wa.worker.company c
     WHERE wa.id = :attendanceId
 """)
     Optional<WorkerAttendance> findByAttendanceId(@Param("attendanceId") Integer attendanceId);
 
+
+    @Query("""
+    
+    SELECT  DISTINCT wa FROM WorkerAttendance wa 
+    LEFT JOIN FETCH wa.worker w
+    LEFT JOIN FETCH wa.worker.company c
+""")
+    List<WorkerAttendance> findAllWithDetails();
 }

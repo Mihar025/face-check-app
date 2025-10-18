@@ -39,42 +39,47 @@ public class ForemanAndAdminService implements AdminAndForemanFunctionality {
 
 
 
-    //todo uncoment tommorow and check test again!
     @Override
-    public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(int page,
-                                                                         int size,
-                                                                         Integer workSiteId,
-                                                                         Authentication authentication){
+    public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(
+            int page,
+            int size,
+            Integer workSiteId,
+            Authentication authentication) {
+
         User user = ((User) authentication.getPrincipal());
 
         var foundedWorkSite = workerSiteRepository.findById(workSiteId)
                 .orElseThrow(() -> new EntityNotFoundException("Work site with provided id, wasn't found"));
-/*
-        if (!foundedWorkSite.getCompanies().stream()
-                .map(Company::getId)
-                .anyMatch(companyId -> companyId.equals(user.getCompany().getId()))) {
-            throw new AccessDeniedException("Company ID wrong!");
-        }
 
- */
+        List<User> allUsers = userRepository.findAllWorkerInWorkSite(
+                foundedWorkSite.getId(),
+                user.getCompany().getId()
+        );
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
-        Page<User> allWorkersInWorkSite  = userRepository.findAllWorkerInWorkSite(pageable, foundedWorkSite.getId(), user.getCompany().getId());
-        List<WorksiteWorkerResponse> workerResponses = allWorkersInWorkSite.stream()
+        int start = page * size;
+        int end = Math.min(start + size, allUsers.size());
+        List<User> pagedUsers = start < end ? allUsers.subList(start, end) : List.of();
+
+        List<WorksiteWorkerResponse> workerResponses = pagedUsers.stream()
                 .map(userMapper::toUserWorkSiteResponse)
                 .toList();
+
         log.info("Workers received for worksite {}: {}", workSiteId, workerResponses.size());
+
+        int totalPages = (int) Math.ceil((double) allUsers.size() / size);
 
         return new PageResponse<>(
                 workerResponses,
-                allWorkersInWorkSite.getNumber(),
-                allWorkersInWorkSite.getSize(),
-                allWorkersInWorkSite.getTotalElements(),
-                allWorkersInWorkSite.getTotalPages(),
-                allWorkersInWorkSite.isFirst(),
-                allWorkersInWorkSite.isLast()
+                page,
+                size,
+                allUsers.size(),
+                totalPages,
+                page == 0,
+                end >= allUsers.size()
         );
     }
+
+
     @Transactional(rollbackOn = Exception.class)
     public UpdatePunchInForWorkerResponse updateLatestPunchInForWorkerResponse(Authentication authentication,
                                                                                Integer workerId,

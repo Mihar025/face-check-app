@@ -250,7 +250,7 @@ public class UserServiceImpl extends BaseUserService implements UserOperations {
         if(!admin.isAdmin()){
             throw new AccessDeniedException("You dont have permission for this operation!");
         }
-        var foundedUser = userRepository.findById(employeeId)
+        var foundedUser = userRepository.findByIdPersonalInfo(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException("User with id " + employeeId + " not found"));
         return userMapper.toWorkerPersonalInformationResponse(foundedUser);
     }

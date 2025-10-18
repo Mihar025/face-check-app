@@ -16,20 +16,24 @@ import java.util.Optional;
 public interface LocationRecordRepository extends JpaRepository<LocationRecord, Integer> {
 
 
-    List<LocationRecord> findByUserOrderByTimestampAsc(User user);
-
-
-    List<LocationRecord> findByUserAndTimestampBetweenOrderByTimestampAsc(
-            User user,
-            Instant from,
-            Instant to
+    @Query("""
+    SELECT lr FROM LocationRecord lr
+    LEFT JOIN FETCH lr.user u
+    WHERE lr.user.id = :userId
+    AND DATE(lr.timestamp) = :date
+    ORDER BY lr.timestamp ASC
+    """)
+    List<LocationRecord> findByUserAndDate(
+            @Param("userId") Integer userId,
+            @Param("date") LocalDate date
     );
 
-    @Query(value = "SELECT * FROM location_record WHERE user_id = :userId " +
-            "AND DATE(timestamp) = :date ORDER BY timestamp ASC",
-            nativeQuery = true)
-    List<LocationRecord> findByUserAndDate(@Param("userId") Integer userId,
-                                           @Param("date") LocalDate date);
-
+    @Query("""
+    SELECT lr FROM LocationRecord lr
+    LEFT JOIN FETCH lr.user u
+    WHERE lr.user = :user
+    ORDER BY lr.timestamp DESC
+    LIMIT 1
+    """)
     Optional<LocationRecord> findTopByUserOrderByTimestampDesc(User user);
 }

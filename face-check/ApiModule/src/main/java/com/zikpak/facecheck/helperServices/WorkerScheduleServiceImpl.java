@@ -333,13 +333,6 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
     }
 
 
-    private void checkIsPersonHasAdminAndBusinessOwnerRoleAuthenticatedAndFindHim(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        if(!user.isAdmin() && !user.isBusinessOwner()){
-            throw new AccessDeniedException("You dont have permission to do this operation");
-        }
-    }
-
     private User checkIsUserAuthenticatedAndFindHim(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         if (user.getId() == null) {

@@ -45,16 +45,6 @@ public class CompanyMapper {
                 .build();
     }
 
-    public EmployeeSalaryResponse toEmployeeBaseHourRate(WorkerPayroll workerPayroll) {
-        return EmployeeSalaryResponse.builder()
-                .employeeId(workerPayroll.getWorker().getId())
-                .firstName(workerPayroll.getWorker().getFirstName())
-                .lastName(workerPayroll.getWorker().getLastName())
-                .email(workerPayroll.getWorker().getEmail())
-                .baseHourlyRate(workerPayroll.getBaseHourlyRate())
-                .build();
-    }
-
     public CompanyTaxCalculationResponse toCountedTaxesResponse(CompanyTaxCalculationResponse countedTaxes) {
         return CompanyTaxCalculationResponse.builder()
                 .companyId(countedTaxes.getCompanyId())
@@ -116,29 +106,6 @@ public class CompanyMapper {
                 .build();
     }
 
-    public WorkerPayrollResponse toWorkerPayrollResponse(WorkerPayroll payroll) {
-        return WorkerPayrollResponse.builder()
-                .workerId(payroll.getWorker().getId())
-                .workerFullName(payroll.getWorker().getFirstName() + " " + payroll.getWorker().getLastName())
-                .periodStart(payroll.getPeriodStart())
-                .periodEnd(payroll.getPeriodEnd())
-                .regularHours(payroll.getRegularHours())
-                .overtimeHours(payroll.getOvertimeHours())
-                .totalHours(payroll.getTotalHours())
-                .regularPay(payroll.getRegularPay())
-                .overtimePay(payroll.getOvertimePay())
-                .grossPay(payroll.getGrossPay())
-                .medicare(payroll.getMedicare())
-                .socialSecurity(payroll.getSocialSecurityEmployee())
-                .federalWithholding(payroll.getFederalWithholding())
-                .stateWithholding(payroll.getNyStateWithholding())
-                .localWithholding(payroll.getNyLocalWithholding())
-                .disability(payroll.getNyDisabilityWithholding())
-                .paidFamilyLeave(payroll.getNyPaidFamilyLeave())
-                .totalDeductions(payroll.getTotalDeductions())
-                .netPay(payroll.getNetPay())
-                .build();
-    }
 
     public CompanyResponse toCompany(Company company) {
         return CompanyResponse.builder()

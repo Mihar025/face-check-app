@@ -1960,22 +1960,40 @@ public class WorkAttendanceService {
 
 
 
-        public PageResponse<AttendanceResponse> findAllAttendanceAppOwner(Authentication authentication, int page, int size){
+        public PageResponse<AttendanceResponse> findAllAttendanceAppOwner(
+                Authentication authentication,
+                int page,
+                int size) {
+
                 checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-                Pageable pageable = PageRequest.of(page, size, Sort.by("checkInTime").descending());
-                Page<WorkerAttendance> attendances = workerAttendanceRepository.findAll(pageable);
-                List<AttendanceResponse> attendanceResponses = attendances.getContent()
-                        .stream()
+
+                // ✅ ЗАГРУЖАЕМ ВСЁ С JOIN FETCH
+                List<WorkerAttendance> allAttendances = workerAttendanceRepository.findAllWithDetails();
+
+                // Сортируем и делаем пагинацию вручную
+                List<WorkerAttendance> sorted = allAttendances.stream()
+                        .sorted((a1, a2) -> a2.getCheckInTime().compareTo(a1.getCheckInTime()))
+                        .toList();
+
+                int start = page * size;
+                int end = Math.min(start + size, sorted.size());
+                List<WorkerAttendance> pagedAttendances = start < end ? sorted.subList(start, end) : List.of();
+
+                // ✅ Теперь mapper НЕ вызовет N+1!
+                List<AttendanceResponse> attendanceResponses = pagedAttendances.stream()
                         .map(workAttendanceMapper::toCompanyWorkerResponse)
                         .toList();
+
+                int totalPages = (int) Math.ceil((double) sorted.size() / size);
+
                 return new PageResponse<>(
                         attendanceResponses,
-                        attendances.getNumber(),
-                        attendances.getSize(),
-                        attendances.getTotalElements(),
-                        attendances.getTotalPages(),
-                        attendances.isFirst(),
-                        attendances.isLast()
+                        page,
+                        size,
+                        sorted.size(),
+                        totalPages,
+                        page == 0,
+                        end >= sorted.size()
                 );
         }
 
@@ -1984,21 +2002,31 @@ public class WorkAttendanceService {
                 if(!admin.isAdmin()) {
                         throw new AccessDeniedException("You dont have permission!");
                 }
-                Pageable pageable = PageRequest.of(page, size, Sort.by("checkInTime").descending());
-                Page<WorkerAttendance> attendance =
-                        workerAttendanceRepository.findAllAttendanceByCompanyId(admin.getCompany().getId(), pageable);
-                List<AttendanceResponse> attendanceResponses = attendance.getContent()
-                        .stream()
+
+                List<WorkerAttendance> allAttendances = workerAttendanceRepository.findAllAttendanceByCompanyId(admin.getCompany().getId());
+
+                List<WorkerAttendance> sorted = allAttendances.stream()
+                        .sorted((a1, a2) -> a2.getCheckInTime().compareTo(a1.getCheckInTime()))
+                        .toList();
+
+                int start = page * size;
+                int end = Math.min(start + size, sorted.size());
+                List<WorkerAttendance> pagedAttendances = start < end ? sorted.subList(start, end) : List.of();
+
+                List<AttendanceResponse> attendanceResponses = pagedAttendances.stream()
                         .map(workAttendanceMapper::toCompanyWorkerResponse)
                         .toList();
+
+                int totalPages = (int) Math.ceil((double) sorted.size() / size);
+
                 return new PageResponse<>(
                         attendanceResponses,
-                        attendance.getNumber(),
-                        attendance.getSize(),
-                        attendance.getTotalElements(),
-                        attendance.getTotalPages(),
-                        attendance.isFirst(),
-                        attendance.isLast()
+                        page,
+                        size,
+                        sorted.size(),
+                        totalPages,
+                        page == 0,
+                        end >= sorted.size()
                 );
         }
 
