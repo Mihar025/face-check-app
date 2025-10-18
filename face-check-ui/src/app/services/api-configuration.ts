@@ -16,7 +16,7 @@ export class ApiConfiguration {
   rootUrl: string = environment.apiUrl;
 
   // For Prod
-//  rootUrl: string = environment.production;
+  //rootUrl: string = environment.production;
 
 }
 
