@@ -10,11 +10,11 @@ spring:
     hikari:
       # Оптимизация для Neon serverless - не держим постоянные соединения
       minimum-idle: 0
-      maximum-pool-size: 2
+      maximum-pool-size: 5
       idle-timeout: 30000
       max-lifetime: 60000
       keepalive-time: 0
-      connection-timeout: 30000
+      connection-timeout: 60000
       leak-detection-threshold: 30000
 
   jpa:
