@@ -16,8 +16,7 @@ import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.requestsResponses.company.CompanyResponse;
 import com.zikpak.facecheck.requestsResponses.company.finance.*;
 import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyResponse;
-import com.zikpak.facecheck.requestsResponses.worker.UpdateEmployeeDataRequest;
-import com.zikpak.facecheck.requestsResponses.worker.UpdatedEmployeeDataResponse;
+
 import com.zikpak.facecheck.taxesServices.pdfServices.W2OfficialPDFService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -30,6 +29,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -52,7 +55,10 @@ public class CompanyService implements CompanyServiceImpl {
     private final W2OfficialPDFService w2OfficialPDFService;
 
 
-
+    @Cacheable(
+            value = "users",
+            key = "'companyId_' + #authentication.principal.company.id"
+    )
     public Integer findCompanyId(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         Company company  =  companyRepository.findById(admin.getCompany().getId()).orElseThrow(EntityNotFoundException::new);
@@ -61,6 +67,10 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'companyName_' + #authentication.principal.company.id"
+    )
     public String companyName(Authentication authentication) {
         try {
 
@@ -94,6 +104,10 @@ public class CompanyService implements CompanyServiceImpl {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'companyAddress_' + #authentication.principal.company.id"
+    )
     public String companyAddress(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
@@ -102,6 +116,10 @@ public class CompanyService implements CompanyServiceImpl {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'companyPhone_' + #authentication.principal.company.id"
+    )
     public String companyPhone(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
@@ -113,6 +131,10 @@ public class CompanyService implements CompanyServiceImpl {
     }
 
     @Override
+    @Cacheable(
+            value = "users",
+            key = "'companyEmail_' + #authentication.principal.company.id"
+    )
     public String companyEmail(Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
@@ -122,6 +144,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public UpdateCompanyNameResponse updateCompanyName(UpdateCompanyNameRequest request, Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
 
@@ -137,6 +162,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public UpdateCompanyAddressResponse updateCompanyAddress(UpdateCompanyAddressRequest request, Authentication authentication) {
 
         User admin = (User) authentication.getPrincipal();
@@ -152,6 +180,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public UpdateCompanyPhoneNumberResponse updateCompanyPhoneNumber(UpdateCompanyPhoneNumberRequest request, Authentication authentication) {
 
         User admin = (User) authentication.getPrincipal();
@@ -168,6 +199,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public UpdateCompanyEmailResponse updateCompanyEmail(UpdateCompanyEmailRequest request, Authentication authentication) {
         User admin = (User) authentication.getPrincipal();
         var company = companyRepository.findById(admin.getCompany().getId())
@@ -183,8 +217,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
 
-
-
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public CompanyUpdatingResponse updateCompany(CompanyUpdatingRequest companyUpdatingRequest, Integer companyId, Authentication authentication) throws AccessDeniedException {
 
             User user = ((User) authentication.getPrincipal());
@@ -400,7 +435,10 @@ public class CompanyService implements CompanyServiceImpl {
 
                         }
 
-
+    @Cacheable(
+            value = "users",
+            key = "'employee_' + #workerId + '_company_' + #companyId"
+    )
                         public RelatedUserInCompanyResponse findEmployeeInCertainCompany(Integer workerId, Integer companyId, Authentication authentication) throws AccessDeniedException {
 
                             User user = ((User) authentication.getPrincipal());
@@ -423,7 +461,11 @@ public class CompanyService implements CompanyServiceImpl {
                         }
 
 
-
+    @Cacheable(
+            value = "users",
+            key = "'companyEmployees_' + #companyId + '_page_' + #page + '_size_' + #size",
+            unless = "#result == null || #result.content.isEmpty()"
+    )
     public PageResponse<RelatedUserInCompanyResponse> findAllEmployeesInCertainCompany(
             int page,
             int size,
@@ -463,7 +505,11 @@ public class CompanyService implements CompanyServiceImpl {
     }
 
 
-
+    @Cacheable(
+            value = "users",
+            key = "'allEmployees_page_' + #page + '_size_' + #size",
+            unless = "#result == null || #result.content.isEmpty()"
+    )
     public PageResponse<RelatedUserInCompanyResponse> findAllEmployees(
             int page,
             int size,
@@ -524,7 +570,11 @@ public class CompanyService implements CompanyServiceImpl {
         );
     }
 
-
+    @Cacheable(
+            value = "users",
+            key = "'allCompanies_page_' + #page + '_size_' + #size",
+            unless = "#result == null || #result.content.isEmpty()"
+    )
     public PageResponse<CompanyResponse> findAllCompanies(
             int page,
             int size,
@@ -559,6 +609,10 @@ public class CompanyService implements CompanyServiceImpl {
         );
     }
 
+    @Cacheable(
+            value = "users",
+            key = "'workersQuantity_company_' + #companyId"  // ← ИСПРАВЬ!
+    )
     public long findWorkersQuantityInCertainCompany(Integer companyId, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
 
@@ -682,6 +736,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional(rollbackOn = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void raiseToForemanRoleInCompany(Integer workerId, Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         if (!user.isAdmin() && !user.isBusinessOwner()) {
@@ -714,6 +771,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional(rollbackOn = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void raiseToAdminRoleInCompany(Integer workerId, Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
 
@@ -745,6 +805,9 @@ public class CompanyService implements CompanyServiceImpl {
                 userRepository.save(foundedWorker);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
         public void demoteFromAdminToForeman(Integer workerId, Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         if (!user.isAdmin() && !user.isBusinessOwner()) {
@@ -775,6 +838,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional(rollbackOn = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void demoteFromForemanToUser(Integer workerId, Authentication authentication) {
         User user = ((User) authentication.getPrincipal());
         if (!user.isAdmin()) {
@@ -809,6 +875,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional(rollbackOn = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public void fireEmployee(Integer workerId, Authentication authentication) throws AccessDeniedException {
             User user = ((User) authentication.getPrincipal());
             if(!user.isAdmin() && !user.isBusinessOwner()){
@@ -840,6 +909,9 @@ public class CompanyService implements CompanyServiceImpl {
 
 
             @Transactional(rollbackOn = Exception.class)
+            @Caching(evict = {
+                    @CacheEvict(value = "users", allEntries = true)
+            })
             public void deleteCompany(Integer companyId, Authentication authentication) throws AccessDeniedException {
             User user = ((User) authentication.getPrincipal());
             if(!user.isAdmin() && !user.isBusinessOwner()){

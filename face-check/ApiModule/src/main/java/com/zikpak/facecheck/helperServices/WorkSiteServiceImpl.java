@@ -33,6 +33,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -54,6 +58,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     @Override
+    @Cacheable(
+            value = "workSite",
+            key = "#id",
+            unless = "#result == null"
+    )
     public WorkSiteResponse findWorkSiteById(Integer id) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -73,6 +82,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     @Override
+    @Cacheable(
+            value = "workSites",
+            key = "#authentication.principal.company.id + '_page_' + #page + '_size_' + #size",
+            unless = "#result == null || #result.content.isEmpty()"
+    )
     public PageResponse<WorkSiteResponse> findAllWorkSites(Authentication authentication, int page, int size) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -108,6 +122,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
 
+    @Cacheable(
+            value = "workSites",
+            key = "'all_companies_page_' + #page + '_size_' + #size",
+            unless = "#result == null || #result.content.isEmpty()"
+    )
     public PageResponse<WorkSiteResponse> findAllWorkSitesFromAllCompanies(Authentication authentication, int page, int size) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -148,6 +167,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     @Transactional
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", allEntries = true)
+    })
     public WorkSiteResponse createWorkSite(Authentication authentication, WorkSiteRequest request) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -225,6 +248,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public SetNewCustomRadiusForWorkerInSpecialWorkSiteResponse setNewCustomRadiusForWorker(
             Integer workSiteId,
             Integer workerId,
@@ -299,6 +326,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public SetNewCustomRadiusResponse setCustomRadiusForWorkSite(Authentication authentication,
                                                                  Integer workSiteId,
                                                                  SetNewCustomRadiusRequest customRadius) {
@@ -346,6 +377,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public WorkSiteUpdateNameResponse updateWorkSiteName(Authentication authentication,
                                                          Integer workSiteId,
                                                          UpdateNameRequest request) {
@@ -370,6 +405,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public WorkSiteUpdateAddressResponse updateWorkSiteAddress(Authentication authentication, Integer workSiteId, UpdateWorkSiteAddress updateWorkSiteAddress) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -392,6 +431,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public WorkSiteUpdateWorkingHoursResponse updateWorkingHours(Authentication authentication, Integer workSiteId, WorkSiteUpdateWorkingHoursRequest request) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -414,6 +457,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public WorkSiteUpdateLocationResponse updateWorkSiteLocation(Authentication authentication, Integer workSiteId, WorkSiteUpdateLocationRequest request) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -446,6 +493,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public void setWorkSiteActiveOrNotActive(Authentication authentication, Integer workSiteId, UpdateStatusWorkSiteRequest updateStatusWorkSiteRequest) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -477,6 +528,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public ScheduleInactiveDayResponse scheduleInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest inactiveDate) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
@@ -508,6 +563,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public ScheduleInactiveDayResponse removeInactiveDay(Authentication authentication, Integer workSiteId, ScheduleInactiveDayRequest inactiveDate) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var foundedWorkSite = findWorkSiteBySpecialId(workSiteId);
@@ -532,6 +591,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+
     public boolean isWorkSiteActive(Integer workSiteId) {
         Timer.Sample timer = metric.startTimer();
         try {
@@ -732,6 +792,11 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+    @Cacheable(
+            value = "workSite",
+            key = "'closedDays_' + #workSiteId",
+            unless = "#result == null"
+    )
     public PageResponse<WorkSiteClosedDaysResponse> findWorkSiteClosedDays(Integer workSiteId, int page, int size, Authentication authentication) {
 
         var workSite = findWorkSiteBySpecialId(workSiteId);
@@ -760,6 +825,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
+
     public PageResponse<WorkerCurrentlyWorkingInWorkSite> findAllWorkerInWorkSiteRelated(Integer workSiteId,
                                                                                          int page,
                                                                                          int size,
@@ -806,6 +872,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
 
     @Transactional(rollbackOn = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(value = "workSites", allEntries = true),
+            @CacheEvict(value = "workSite", key = "#workSiteId")
+    })
     public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
 
         var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
@@ -821,11 +891,17 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         workSiteRepository.deleteById(workSite.getId());
     }
 
+    @Cacheable(
+            value = "workSite",
+            key = "'allInfo_' + #workSiteId",  // ← ИСПРАВЬ!
+            unless = "#result == null"
+    )
     public WorkSiteAllInformationResponse findWorkSiteAllInformationById(Authentication authentication, Integer workSiteId) {
         checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var workSite = findWorkSiteBySpecialId(workSiteId);
         return workSiteMapper.toWorkSiteAllInformationResponse(workSite);
     }
+
 
     public Integer countAllWorksitesRelatedToTheCompany(Authentication authentication) {
         var admin = (User) authentication.getPrincipal();
