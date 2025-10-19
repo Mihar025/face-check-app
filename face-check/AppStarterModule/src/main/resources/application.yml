@@ -1,4 +1,12 @@
 spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+      accept-single-value-as-array: true
+    time-zone: America/New_York
+    date-format: com.fasterxml.jackson.databind.util.StdDateFormat
   mvc:
     throw-exception-if-no-handler-found: true
     dispatch-options-request: false
