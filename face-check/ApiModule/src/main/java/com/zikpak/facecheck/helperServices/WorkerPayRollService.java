@@ -94,24 +94,33 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
 
     @Override
     public double findWorkerWorkedHoursTotalPerWeek(Authentication authentication) {
-        var foundedUser = findUserAndPayroll(authentication);
-        var latestPayroll = getLatestPayroll(foundedUser);
+        Integer userId = ((User) authentication.getPrincipal()).getId();
 
-        log.info("Latest payroll period: {} to {}",
-                latestPayroll.getPeriodStart(),
-                latestPayroll.getPeriodEnd());
-        log.info("Current date: {}", LocalDate.now());
-        log.info("Total hours in payroll: {}", latestPayroll.getTotalHours());
+        var latestOpt = workerPayrollRepository
+                .findFirstByWorkerIdAndPeriodEndIsNotNullOrderByPeriodEndDesc(userId);
 
-        // Проверяем, актуален ли payroll для текущей недели
-        LocalDate now = LocalDate.now();
-        if (now.isBefore(latestPayroll.getPeriodStart()) ||
-                now.isAfter(latestPayroll.getPeriodEnd())) {
-            log.warn("Payroll is not for current week!");
+        if (latestOpt.isEmpty()) {
+            log.warn("No closed payrolls for userId={}", userId);
+            return 0.0;
         }
 
-        return latestPayroll.getTotalHours();
+        var latest = latestOpt.get();
+        LocalDate now = LocalDate.now();
+
+        log.info("Latest payroll period: {}..{} (userId={})",
+                latest.getPeriodStart(), latest.getPeriodEnd(), userId);
+        log.info("Now: {}", now);
+        log.info("Total hours in payroll: {}", latest.getTotalHours());
+
+        // Проверяем «эта ли неделя»
+        if (now.isBefore(latest.getPeriodStart()) || now.isAfter(latest.getPeriodEnd())) {
+            log.warn("Latest payroll is not for current week (userId={})", userId);
+            return 0.0; // не 500 — просто нет данных на текущую неделю
+        }
+
+        return latest.getTotalHours() != null ? latest.getTotalHours() : 0.0;
     }
+
 
     @Override
     public BigDecimal countSalaryPerMontGross(Authentication authentication) {
