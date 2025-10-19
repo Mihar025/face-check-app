@@ -12,8 +12,8 @@ import java.util.Map;
 
 @Data
 @Builder
-@NoArgsConstructor  // ДОБАВЬ ЭТО!
-@AllArgsConstructor // ДОБАВЬ ЭТО!
+@NoArgsConstructor
+@AllArgsConstructor
 public class WorkerSetScheduleRequest2 {
 
     // График по дням недели
@@ -23,6 +23,8 @@ public class WorkerSetScheduleRequest2 {
     // Вложенный класс для расписания одного дня
     @Data
     @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class DaySchedule {
         @NotNull(message = "Start time cannot be null")
         private LocalTime startTime;
