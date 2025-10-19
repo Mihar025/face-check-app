@@ -43,6 +43,22 @@ public interface WorkerPayrollRepository extends JpaRepository<WorkerPayroll, In
     );
 
 
+
+    Optional<WorkerPayroll> findFirstByWorkerIdAndPeriodEndIsNotNullOrderByPeriodEndDesc(Integer userId);
+
+    // (опционально) проверить, есть ли запись, перекрывающая текущую неделю
+    @Query("""
+        select case when count(p) > 0 then true else false end
+        from WorkerPayroll p
+        where p.worker.id = :userId
+          and p.periodStart <= :weekEnd
+          and p.periodEnd   >= :weekStart
+    """)
+    boolean existsForWeek(@Param("userId") Integer userId,
+                          @Param("weekStart") LocalDate weekStart,
+                          @Param("weekEnd")   LocalDate weekEnd);
+
+
     @Query("""
     SELECT new com.zikpak.facecheck.requestsResponses.YearToDateForWorkerResponse(
         COALESCE(SUM(wp.netPay), 0.0),
