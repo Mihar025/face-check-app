@@ -13,6 +13,7 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WorkerScheduleServiceImpl implements WorkerScheduleI {
     private final WorkerScheduleRepository workerScheduleRepository;
     private final UserRepository userRepository;
@@ -155,8 +157,12 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
         User worker = userRepository.findById(workerId)
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
 
-        // 3. Удаляем старые ШАБЛОНЫ расписания
-        workerScheduleRepository.deleteByWorkerAndIsTemplateTrue(worker);
+        List<WorkerSchedule> existingTemplates = workerScheduleRepository.findByWorkerAndIsTemplateTrue(worker);
+        if (!existingTemplates.isEmpty()) {
+            // Если шаблон уже есть, сначала удаляем старый
+            workerScheduleRepository.deleteAll(existingTemplates);
+            log.info("Deleted {} existing schedule templates for worker {}", existingTemplates.size(), workerId);
+        }
 
         // 4. Создаём новые шаблоны для каждого дня недели
         List<WorkerSchedule> schedules = new ArrayList<>();
