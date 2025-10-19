@@ -530,18 +530,13 @@ public class WorkAttendanceService {
                 LocalDateTime effectiveCheckIn;
                 if (actualCheckIn.isBefore(scheduledStart)) {
                         effectiveCheckIn = scheduledStart;
-                        log.info("Worker checked in early at {}, adjusted to scheduled start: {}",
-                                actualCheckIn, effectiveCheckIn);
                 } else {
                         effectiveCheckIn = actualCheckIn;
                 }
 
-                // ✅ ВАЖНО: Всегда обрезаем до конца графика (НИКАКОГО АВТОМАТИЧЕСКОГО ОВЕРТАЙМА!)
                 LocalDateTime effectiveCheckOut;
                 if (actualCheckOut.isAfter(scheduledEnd)) {
                         effectiveCheckOut = scheduledEnd;
-                        log.info("Worker checked out late at {}, but hours capped at scheduled end: {}",
-                                actualCheckOut, effectiveCheckOut);
                 } else {
                         effectiveCheckOut = actualCheckOut;
                 }
@@ -549,42 +544,70 @@ public class WorkAttendanceService {
                 // Обработка обеденного перерыва
                 double totalHours;
 
-                if (effectiveCheckOut.isBefore(lunchStart)) {
+                // Если работник пришел ПОСЛЕ обеда и ушел тоже ПОСЛЕ обеда
+                if (effectiveCheckIn.isAfter(lunchEnd) && effectiveCheckOut.isAfter(lunchEnd)) {
+                        // Просто считаем время между check in и check out
                         totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
-                        log.info("Worker left before lunch break, total hours: {}", totalHours);
+                        log.info("Worker arrived after lunch, calculating direct hours: {}", totalHours);
                 }
-                else if (effectiveCheckOut.isAfter(lunchStart) && effectiveCheckOut.isBefore(lunchEnd) && !isPayingLunch) {
-                        totalHours = java.time.Duration.between(effectiveCheckIn, lunchStart).toMinutes() / 60.0;
-                        log.info("Worker left during lunch and company doesn't pay lunch, hours counted to lunch start: {}",
-                                totalHours);
+                // Если пришел ДО обеда и ушел ДО обеда
+                else if (effectiveCheckIn.isBefore(lunchStart) && effectiveCheckOut.isBefore(lunchStart)) {
+                        totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
+                        log.info("Worker left before lunch, total hours: {}", totalHours);
                 }
-                else {
+                // Если пришел ДО обеда и ушел ПОСЛЕ обеда
+                else if (effectiveCheckIn.isBefore(lunchStart) && effectiveCheckOut.isAfter(lunchEnd)) {
                         if (isPayingLunch) {
                                 totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
                                 log.info("Company pays for lunch, counting full time: {}", totalHours);
                         } else {
-                                double hoursBeforeLunch = 0;
-                                if (effectiveCheckIn.isBefore(lunchStart)) {
-                                        hoursBeforeLunch = java.time.Duration.between(effectiveCheckIn, lunchStart).toMinutes() / 60.0;
-                                }
-
-                                double hoursAfterLunch = 0;
-                                if (effectiveCheckOut.isAfter(lunchEnd)) {
-                                        hoursAfterLunch = java.time.Duration.between(lunchEnd, effectiveCheckOut).toMinutes() / 60.0;
-                                }
-
+                                double hoursBeforeLunch = java.time.Duration.between(effectiveCheckIn, lunchStart).toMinutes() / 60.0;
+                                double hoursAfterLunch = java.time.Duration.between(lunchEnd, effectiveCheckOut).toMinutes() / 60.0;
                                 totalHours = hoursBeforeLunch + hoursAfterLunch;
-                                log.info("Company doesn't pay for lunch, hours calculated: before lunch {}, after lunch {}, total {}",
+                                log.info("Excluding lunch: before={}, after={}, total={}",
                                         hoursBeforeLunch, hoursAfterLunch, totalHours);
                         }
                 }
+                // Если пришел ПОСЛЕ обеда начала, но ДО конца обеда
+                else if (effectiveCheckIn.isAfter(lunchStart) && effectiveCheckIn.isBefore(lunchEnd)) {
+                        if (effectiveCheckOut.isAfter(lunchEnd)) {
+                                // Считаем только после обеда
+                                totalHours = java.time.Duration.between(lunchEnd, effectiveCheckOut).toMinutes() / 60.0;
+                                log.info("Worker came during lunch, counting only after lunch: {}", totalHours);
+                        } else {
+                                // Работал только во время обеда
+                                totalHours = isPayingLunch ?
+                                        java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0 : 0.0;
+                                log.info("Worker only worked during lunch: {}", totalHours);
+                        }
+                }
+                else if (effectiveCheckIn.isBefore(lunchStart) &&
+                        effectiveCheckOut.isAfter(lunchStart) &&
+                        effectiveCheckOut.isBefore(lunchEnd)) {
+                        // Пришел до обеда, ушел во время обеда
+                        double hoursBeforeLunch = java.time.Duration.between(effectiveCheckIn, lunchStart).toMinutes() / 60.0;
+                        if (isPayingLunch) {
+                                // Если обед оплачивается, добавляем время в обеде
+                                double hoursInLunch = java.time.Duration.between(lunchStart, effectiveCheckOut).toMinutes() / 60.0;
+                                totalHours = hoursBeforeLunch + hoursInLunch;
+                        } else {
+                                // Если обед не оплачивается, считаем только до обеда
+                                totalHours = hoursBeforeLunch;
+                        }
+                        log.info("Worker left during lunch: hours before lunch={}, total={}",
+                                hoursBeforeLunch, totalHours);
+                }
+                // Другие случаи
+                else {
+                        totalHours = java.time.Duration.between(effectiveCheckIn, effectiveCheckOut).toMinutes() / 60.0;
+                        log.info("Default case, direct calculation: {}", totalHours);
+                }
 
                 attendance.setHoursWorked(totalHours);
-                attendance.setOvertimeHours(0.0); // ✅ ВСЕГДА 0! Овертайм только вручную!
+                attendance.setOvertimeHours(0.0);
 
-                log.info("Total regular hours calculated: {}, Overtime: 0.0 (manual only)", totalHours);
+                log.info("Final hours calculated: regular={}, overtime=0.0", totalHours);
         }
-
 
         @Transactional
         public OvertimeResponse addManualOvertime(
