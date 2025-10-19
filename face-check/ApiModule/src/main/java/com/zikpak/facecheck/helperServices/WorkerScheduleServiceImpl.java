@@ -232,18 +232,54 @@ public class WorkerScheduleServiceImpl implements WorkerScheduleI {
 
     // НОВЫЙ МЕТОД - Получить шаблон расписания работника
     public WorkSchedulerResponse getWorkerScheduleTemplate(Integer workerId) {
+        log.info("=== START getWorkerScheduleTemplate for worker ID: {} ===", workerId);
+
         User worker = userRepository.findById(workerId)
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
 
+        log.info("Found worker: ID={}, FirstName={}, LastName={}",
+                worker.getId(), worker.getFirstName(), worker.getLastName());
+
+        // Проверим, что передаем в запрос
+        log.info("Calling findByWorkerAndIsTemplateTrue with worker.getId()={}", worker.getId());
+
         List<WorkerSchedule> templates = workerScheduleRepository.findByWorkerAndIsTemplateTrue(worker);
+
+        log.info("Query returned {} templates", templates.size());
+
+        if (templates.isEmpty()) {
+            // Дополнительная проверка - попробуем простой запрос
+            log.warn("No templates found! Trying alternative query...");
+
+            // Попробуем нативный запрос для диагностики
+            List<WorkerSchedule> allSchedules = workerScheduleRepository.findAll();
+            long templatesCount = allSchedules.stream()
+                    .filter(s -> s.getWorker() != null &&
+                            s.getWorker().getId().equals(workerId) &&
+                            Boolean.TRUE.equals(s.getIsTemplate()))
+                    .count();
+
+            log.info("Alternative check: found {} templates for worker {} in all schedules",
+                    templatesCount, workerId);
+        }
+
+        templates.forEach(t -> {
+            log.info("Template: id={}, day={}, isTemplate={}, isDayOff={}, start={}, end={}",
+                    t.getId(), t.getDayOfWeek(), t.getIsTemplate(), t.getIsDayOff(),
+                    t.getExpectedStartTime(), t.getExpectedEndTime());
+        });
+
+        List<ScheduleDto> scheduleDtos = templates.stream()
+                .map(this::convertToScheduleDto)
+                .collect(Collectors.toList());
+
+        log.info("=== END getWorkerScheduleTemplate: returning {} schedules ===", scheduleDtos.size());
 
         return WorkSchedulerResponse.builder()
                 .workerId(workerId)
                 .workerName(worker.getFirstName() + " " + worker.getLastName())
-                .schedules(templates.stream()
-                        .map(this::convertToScheduleDto)
-                        .collect(Collectors.toList()))
-                .message("Schedule template retrieved successfully")
+                .schedules(scheduleDtos)
+                .message(templates.isEmpty() ? "No schedule template found" : "Schedule template retrieved successfully")
                 .build();
     }
 
