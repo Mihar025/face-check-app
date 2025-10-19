@@ -1,14 +1,19 @@
 package com.zikpak.facecheck.helperServices;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Map;
 
 @Data
 @Builder
+@NoArgsConstructor  // ДОБАВЬ ЭТО!
+@AllArgsConstructor // ДОБАВЬ ЭТО!
 public class WorkerSetScheduleRequest2 {
 
     // График по дням недели
