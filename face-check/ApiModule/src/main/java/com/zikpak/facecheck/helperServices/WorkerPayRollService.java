@@ -96,6 +96,20 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
     public double findWorkerWorkedHoursTotalPerWeek(Authentication authentication) {
         var foundedUser = findUserAndPayroll(authentication);
         var latestPayroll = getLatestPayroll(foundedUser);
+
+        log.info("Latest payroll period: {} to {}",
+                latestPayroll.getPeriodStart(),
+                latestPayroll.getPeriodEnd());
+        log.info("Current date: {}", LocalDate.now());
+        log.info("Total hours in payroll: {}", latestPayroll.getTotalHours());
+
+        // Проверяем, актуален ли payroll для текущей недели
+        LocalDate now = LocalDate.now();
+        if (now.isBefore(latestPayroll.getPeriodStart()) ||
+                now.isAfter(latestPayroll.getPeriodEnd())) {
+            log.warn("Payroll is not for current week!");
+        }
+
         return latestPayroll.getTotalHours();
     }
 
