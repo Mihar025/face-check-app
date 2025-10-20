@@ -1,4 +1,5 @@
 import 'package:face_check/screens/main_menu/main_menu_punch_screen/punch_success_dialo.dart';
+import 'package:face_check/screens/main_menu/main_menu_punch_screen/retry-interceptor.dart';
 import 'package:face_check/services/time_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -184,24 +185,131 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
   void _initializeDio() {
     dio = Dio(BaseOptions(
-      baseUrl: 'http://192.168.1.194:8088/api/v1/',
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 30),
+      baseUrl: 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1/',
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 45),
+      sendTimeout: const Duration(seconds: 15),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      validateStatus: (status) {
+        // Принимаем все статусы < 500 для обработки
+        return status != null && status < 500;
+      },
+    ));
+
+    // Добавляем логирование для дебага
+    dio.interceptors.add(LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
     ));
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await ApiService.instance.getAuthToken();
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+        try {
+          final token = await ApiService.instance.getAuthToken();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+
+          print('🔵 REQUEST: ${options.method} ${options.path}');
+          print('🔵 Headers: ${options.headers}');
+          print('🔵 Data: ${options.data}');
+
+          return handler.next(options);
+        } catch (e) {
+          print('❌ Error in request interceptor: $e');
+          return handler.next(options);
         }
-        return handler.next(options);
+      },
+      onResponse: (response, handler) {
+        print('✅ RESPONSE [${response.statusCode}]: ${response.requestOptions.path}');
+        print('✅ Response data: ${response.data}');
+        return handler.next(response);
       },
       onError: (DioException e, handler) {
-        print('Dio Error: ${e.message}');
-        return handler.next(e);
+        print('❌ ERROR TYPE: ${e.type}');
+        print('❌ ERROR MESSAGE: ${e.message}');
+        print('❌ ERROR RESPONSE: ${e.response?.data}');
+        print('❌ ERROR STATUS CODE: ${e.response?.statusCode}');
+        print('❌ ERROR PATH: ${e.requestOptions.path}');
+        print('❌ ERROR HEADERS: ${e.requestOptions.headers}');
+
+        String errorMessage = 'Network error occurred';
+
+        if (e.response != null) {
+          print('❌ Server responded with error: ${e.response?.statusCode}');
+
+          switch (e.response?.statusCode) {
+            case 400:
+              errorMessage = 'Bad request. Please check your input.';
+              break;
+            case 401:
+              errorMessage = 'Unauthorized. Please login again.';
+              // Можно добавить автоматический редирект на логин
+              break;
+            case 403:
+              errorMessage = 'Access forbidden.';
+              break;
+            case 404:
+              errorMessage = 'Resource not found.';
+              break;
+            case 500:
+              errorMessage = 'Server error. Please try again later.';
+              break;
+            case 502:
+              errorMessage = 'Bad gateway. Server is unavailable.';
+              break;
+            case 503:
+              errorMessage = 'Service unavailable. Please try again later.';
+              break;
+            default:
+              errorMessage = 'Error: ${e.response?.statusCode}';
+          }
+
+          // Пробуем извлечь сообщение от сервера
+          if (e.response?.data != null) {
+            if (e.response?.data is Map) {
+              final serverMessage = e.response?.data['message'] ??
+                  e.response?.data['error'] ??
+                  e.response?.data['detail'];
+              if (serverMessage != null) {
+                errorMessage = serverMessage.toString();
+              }
+            }
+          }
+        } else if (e.type == DioExceptionType.connectionTimeout) {
+          errorMessage = 'Connection timeout. Check your internet connection.';
+        } else if (e.type == DioExceptionType.receiveTimeout) {
+          errorMessage = 'Server is taking too long to respond.';
+        } else if (e.type == DioExceptionType.sendTimeout) {
+          errorMessage = 'Request timeout. Please try again.';
+        } else if (e.type == DioExceptionType.cancel) {
+          errorMessage = 'Request was cancelled.';
+        } else if (e.type == DioExceptionType.unknown) {
+          errorMessage = 'Network error: ${e.message ?? "Unknown error"}';
+        }
+
+        // Создаем новую ошибку с понятным сообщением
+        final newError = DioException(
+          requestOptions: e.requestOptions,
+          response: e.response,
+          type: e.type,
+          error: errorMessage,
+          message: errorMessage,
+        );
+
+        return handler.next(newError);
       },
     ));
+
+    // Добавляем retry interceptor
+    dio.interceptors.add(RetryInterceptor(dio: dio));
   }
 
   bool _isSameDayNY(DateTime aUtc, DateTime bUtc) {
@@ -326,8 +434,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   Future<String?> _captureImage() async {
     try {
       final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
+          source: ImageSource.camera,
+          imageQuality: 50,
+          maxWidth: 1024,
+          maxHeight: 1024
       );
 
       if (image != null) {
@@ -812,3 +922,4 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     );
   }
 }
+

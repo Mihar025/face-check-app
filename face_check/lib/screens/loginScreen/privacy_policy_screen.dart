@@ -203,7 +203,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                   decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
-                                  ..onTap = () => _openUrl('http://localhost:4200/terms-of-service'),
+                                  ..onTap = () => _openUrl('https://face-check.org/terms-of-service'),
                               ),
                             ],
                           ),
@@ -249,7 +249,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                   decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
-                                  ..onTap = () => _openUrl('http://localhost:4200/privacy-policy'),
+                                  ..onTap = () => _openUrl('https://face-check.org/privacy-policy'),
                               ),
                             ],
                           ),

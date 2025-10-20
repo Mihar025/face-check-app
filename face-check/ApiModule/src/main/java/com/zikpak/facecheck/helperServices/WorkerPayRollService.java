@@ -70,14 +70,56 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
         User user = ((User) authentication.getPrincipal());
         var foundedUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new RuntimeException("User with id " + user.getId() + " not found"));
-        return getBaseRateDirectFromPayroll(foundedUser);
-    }
 
+        // Используем Optional для безопасной обработки
+        var latestPayrollOpt = workerPayrollRepository
+                .findFirstByWorkerIdAndPeriodEndIsNotNullOrderByPeriodEndDesc(foundedUser.getId());
+
+        if (latestPayrollOpt.isEmpty()) {
+            log.warn("No closed payrolls for userId={}, returning default base rate", foundedUser.getId());
+            return BigDecimal.ZERO; // или можете вернуть default rate, например BigDecimal.valueOf(25.00)
+        }
+
+        var latestPayroll = latestPayrollOpt.get();
+        log.info("Getting base rate from payroll for user {}: {}",
+                foundedUser.getEmail(), latestPayroll.getBaseHourlyRate());
+
+        return latestPayroll.getBaseHourlyRate() != null
+                ? latestPayroll.getBaseHourlyRate()
+                : BigDecimal.ZERO;
+    }
 
     @Override
     public BigDecimal countSalaryPerWeekGross(Authentication authentication) {
-        var foundedUser = findUserAndPayroll(authentication);
-        return getGrossPayDirectFromPayroll(foundedUser);
+        User user = ((User) authentication.getPrincipal());
+        var foundedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("User with id " + user.getId() + " not found"));
+
+        var latestPayrollOpt = workerPayrollRepository
+                .findFirstByWorkerIdAndPeriodEndIsNotNullOrderByPeriodEndDesc(foundedUser.getId());
+
+        if (latestPayrollOpt.isEmpty()) {
+            log.warn("No closed payrolls for userId={}, returning ZERO gross pay", foundedUser.getId());
+            return BigDecimal.ZERO;
+        }
+
+        var latestPayroll = latestPayrollOpt.get();
+        LocalDate now = LocalDate.now();
+
+        log.info("Latest payroll period: {}..{} (userId={})",
+                latestPayroll.getPeriodStart(), latestPayroll.getPeriodEnd(), foundedUser.getId());
+        log.info("Now: {}", now);
+        log.info("Gross pay in payroll: {}", latestPayroll.getGrossPay());
+
+        // Проверяем «эта ли неделя»
+        if (now.isBefore(latestPayroll.getPeriodStart()) || now.isAfter(latestPayroll.getPeriodEnd())) {
+            log.warn("Latest payroll is not for current week (userId={}), returning ZERO", foundedUser.getId());
+            return BigDecimal.ZERO;
+        }
+
+        return latestPayroll.getGrossPay() != null
+                ? latestPayroll.getGrossPay()
+                : BigDecimal.ZERO;
     }
 
     @Override
@@ -281,9 +323,11 @@ public class WorkerPayRollService implements UserFinanceNetGrossTaxCalculator {
     }
 
     private WorkerPayroll getLatestPayroll(User user) {
-        return user.getPayrolls().stream()
-                .max(Comparator.comparing(WorkerPayroll::getPeriodEnd))
-                .orElseThrow(() -> new RuntimeException("Payrolls is empty"));
+        var latestPayrollOpt = workerPayrollRepository
+                .findFirstByWorkerIdAndPeriodEndIsNotNullOrderByPeriodEndDesc(user.getId());
+
+        return latestPayrollOpt.orElseThrow(() ->
+                new RuntimeException("No closed payrolls found for user: " + user.getEmail()));
     }
 
     private List<WorkerAttendance> getWeeklyAttendance(User user) {

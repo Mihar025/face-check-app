@@ -1,13 +1,18 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../../../../models/daily_finance_info.dart';
 import '../../../../models/finance_info_response.dart';
 import '../../../../services/pdf_service.dart';
 import '../../../../services/ApiService.dart';
 import '../../../../providers/localization_provider.dart';
+
+/// Глобальная константа основного цвета (видна во всех виджетах файла)
+const Color kFinancePrimary = Color(0xFF2D3748);
 
 class FinanceScreen extends StatefulWidget {
   const FinanceScreen({super.key});
@@ -17,68 +22,62 @@ class FinanceScreen extends StatefulWidget {
 }
 
 class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateMixin {
-  late ApiService _apiService;
-  late AnimationController _animationController;
-  late AnimationController _slideController;
+  late final ApiService _apiService;
+  late final AnimationController _fadeController;
 
-  // ValueNotifiers для оптимизации перерисовок
+  // ValueNotifiers
   late final ValueNotifier<DateTime> _currentWeekStart;
   late final ValueNotifier<FinanceInfoResponse?> _financeInfo;
   late final ValueNotifier<bool> _isLoading;
 
-  // Кэшированные значения MediaQuery
+  // Screen metrics cache
   late Size _screenSize;
-  late bool _isSmallScreen;
+  late bool _isSmall;
+  late bool _isMedium; // планшеты
+  late bool _isWide;   // web/desktop и большие планшеты landscape
 
-  // Константы для производительности
-  static const double _smallScreenThreshold = 360.0;
-  static const Color _primaryColor = Color(0xFF2D3748);
-  static const Color _backgroundColor = Color(0xFFF7FAFC);
-  static const Color _errorColor = Color(0xFFE53E3E);
-  static const Color _successColor = Color(0xFF48BB78);
+  // Цвета
+  static const Color _bg = Color(0xFFF7FAFC);
+  static const Color _error = Color(0xFFE53E3E);
+  static const Color _success = Color(0xFF48BB78);
 
   @override
   void initState() {
     super.initState();
     _apiService = ApiService.instance;
 
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 450),
       vsync: this,
     );
 
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-
-    // Инициализация ValueNotifiers
-    _currentWeekStart = ValueNotifier<DateTime>(
-      DateTime.now().subtract(
-        Duration(days: DateTime.now().weekday),
-      ),
-    );
+    // Неделя с воскресенья (или понедельника — универсально/устойчиво)
+    final now = DateTime.now();
+    final start = now.subtract(Duration(days: now.weekday % 7));
+    _currentWeekStart = ValueNotifier<DateTime>(DateTime(start.year, start.month, start.day));
     _financeInfo = ValueNotifier<FinanceInfoResponse?>(null);
     _isLoading = ValueNotifier<bool>(false);
 
     fetchFinanceInfo();
   }
 
-  @override
-  void didChangeDependencies() {
+  @override  void didChangeDependencies() {
     super.didChangeDependencies();
-    _updateScreenMetrics();
+    _updateMetrics();
   }
 
-  void _updateScreenMetrics() {
-    _screenSize = MediaQuery.of(context).size;
-    _isSmallScreen = _screenSize.width < _smallScreenThreshold;
+  void _updateMetrics() {
+    final size = MediaQuery.of(context).size;
+    _screenSize = size;
+    final w = size.width;
+    _isSmall = w < 380;                // узкие телефоны
+    _isMedium = w >= 380 && w < 900;   // обычные телефоны / компактные планшеты
+    _isWide = w >= 900;                // планшеты и desktop/web
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _slideController.dispose();
+    _fadeController.dispose();
     _currentWeekStart.dispose();
     _financeInfo.dispose();
     _isLoading.dispose();
@@ -90,41 +89,37 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     try {
       final response = await _apiService.getFinanceInfo(_currentWeekStart.value);
       if (!mounted) return;
-
       _financeInfo.value = response;
-      _animationController.forward(from: 0.0);
-      _slideController.forward(from: 0.0);
+      _fadeController.forward(from: 0);
     } catch (e) {
-      if (mounted) {
-        final l10n = context.read<LocalizationProvider>().localizations;
-        _showModernSnackBar(
-          '${l10n.get('finance.errorLoadingData')}: $e',
-          isError: true,
-        );
-      }
+      if (!mounted) return;
+      final l10n = context.read<LocalizationProvider>().localizations;
+      _showSnack('${l10n.get('finance.errorLoadingData')}: $e', isError: true);
     } finally {
-      if (mounted) {
-        _isLoading.value = false;
-      }
+      if (mounted) _isLoading.value = false;
     }
   }
 
-  void _showModernSnackBar(String message, {bool isError = false}) {
-    if (!mounted) return;
+  void changeWeek(int days) {
+    if (!kIsWeb) HapticFeedback.lightImpact();
+    _currentWeekStart.value = _currentWeekStart.value.add(Duration(days: days));
+    fetchFinanceInfo();
+  }
 
+  String $$(double amount) => '\$${amount.toStringAsFixed(2)}';
+
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
-            ),
+            Icon(isError ? Icons.error_outline : Icons.check_circle_outline, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: isError ? _errorColor : _successColor,
+        backgroundColor: isError ? _error : _success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(20),
@@ -133,422 +128,296 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  void changeWeek(int days) {
-    HapticFeedback.lightImpact();
-    _currentWeekStart.value = _currentWeekStart.value.add(Duration(days: days));
-    fetchFinanceInfo();
-  }
-
-  String formatMoney(double amount) {
-    return '\$${amount.toStringAsFixed(2)}';
-  }
-
-  // TODO: Раскомментировать когда понадобятся налоги
-  // double calculateTaxes() {
-  //   final info = _financeInfo.value;
-  //   if (info == null) return 0.0;
-  //   return info.totalGrossPay - info.totalNetPay;
-  // }
-
   Future<void> _downloadFinanceReport() async {
     final info = _financeInfo.value;
-    if (info != null) {
-      final l10n = context.read<LocalizationProvider>().localizations;
-      HapticFeedback.mediumImpact();
+    if (info == null) return;
+    final l10n = context.read<LocalizationProvider>().localizations;
+    if (!kIsWeb) HapticFeedback.mediumImpact();
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: _primaryColor,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 3,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  l10n.get('finance.downloadPdfReport'),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _ProgressDialog(title: 'Preparing PDF...'),
+    );
 
-      try {
-        await FinancePdfService.generateFinanceReport(info);
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        _showModernSnackBar(
-          l10n.get('finance.reportDownloadedSuccessfully'),
-          isError: false,
-        );
-      } catch (e) {
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        _showModernSnackBar(
-          '${l10n.get('finance.errorDownloadingReport')}: $e',
-          isError: true,
-        );
-      }
+    try {
+      await FinancePdfService.generateFinanceReport(info);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      _showSnack(l10n.get('finance.reportDownloadedSuccessfully'));
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      _showSnack('${l10n.get('finance.errorDownloadingReport')}: $e', isError: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    _updateScreenMetrics();
+    _updateMetrics();
     final l10n = context.read<LocalizationProvider>().localizations;
+    // Мягко ограничим экстремальные системные масштабы шрифтов, чтобы не ломать сетку
+    final media = MediaQuery.of(context);
+    final clampedTextScale = media.textScaleFactor.clamp(0.9, 1.25);
 
-    return Scaffold(
-      backgroundColor: _backgroundColor,
-      body: ValueListenableBuilder<DateTime>(
-        valueListenable: _currentWeekStart,
-        builder: (context, currentWeekStart, _) {
-          String periodText = '${DateFormat('MM/dd/yy').format(currentWeekStart)} - '
-              '${DateFormat('MM/dd/yy').format(currentWeekStart.add(const Duration(days: 6)))}';
+    return MediaQuery(
+      data: media.copyWith(textScaleFactor: clampedTextScale),
+      child: ScrollConfiguration(
+        behavior: const _NoGlowBehavior(),
+        child: Scaffold(
+          backgroundColor: _bg,
+          body: ValueListenableBuilder<DateTime>(
+            valueListenable: _currentWeekStart,
+            builder: (context, weekStart, _) {
+              final periodText =
+                  '${DateFormat('MM/dd/yy').format(weekStart)} - ${DateFormat('MM/dd/yy').format(weekStart.add(const Duration(days: 6)))}';
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // Minimalist App Bar
-              SliverAppBar(
-                expandedHeight: 140,
-                floating: false,
-                pinned: true,
-                elevation: 0,
-                backgroundColor: Colors.white,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    color: Colors.white,
-                    child: SafeArea(
-                      child: Column(
-                        children: [
-                          // Top Actions Row
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              return RefreshIndicator(
+                onRefresh: fetchFinanceInfo,
+                color: kFinancePrimary,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  slivers: [
+                    SliverAppBar(
+                      expandedHeight: _isWide ? 160 : 140,
+                      pinned: true,
+                      elevation: 0,
+                      backgroundColor: Colors.white,
+                      flexibleSpace: FlexibleSpaceBar(
+                        background: SafeArea(
+                          bottom: false,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: _isWide ? 24 : 16),
+                            child: Column(
                               children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.arrow_back_ios_new,
-                                    color: _primaryColor,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
+                                const SizedBox(height: 8),
+                                // Top Row
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _buildActionButton(
-                                      Icons.download_rounded,
-                                      _downloadFinanceReport,
-                                      l10n.get('finance.downloadTooltip'),
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back_ios_new, color: kFinancePrimary, size: 20),
+                                      onPressed: () {
+                                        if (!kIsWeb) HapticFeedback.lightImpact();
+                                        Navigator.of(context).maybePop();
+                                      },
                                     ),
-                                    const SizedBox(width: 8),
-                                    _buildActionButton(
-                                      Icons.share_rounded,
-                                          () {
-                                        HapticFeedback.lightImpact();
-                                        final info = _financeInfo.value;
-                                        if (info != null) {
+                                    Row(
+                                      children: [
+                                        _actionBtn(Icons.download_rounded, _downloadFinanceReport, l10n.get('finance.downloadTooltip')),
+                                        const SizedBox(width: 8),
+                                        _actionBtn(Icons.share_rounded, () {
+                                          if (!kIsWeb) HapticFeedback.lightImpact();
+                                          final info = _financeInfo.value;
+                                          if (info == null) return;
                                           Share.share(
                                             '${l10n.get('finance.shareTitle')} ($periodText):\n'
                                                 '${l10n.get('finance.totalHours')}: ${info.totalHoursWorked.toStringAsFixed(1)}\n'
-                                                '${l10n.get('finance.totalGrossPay')}: ${formatMoney(info.totalGrossPay)}',
-                                            // TODO: Раскомментировать когда понадобятся налоги
-                                            // '${l10n.get('finance.totalNetPay')}: ${formatMoney(info.totalNetPay)}\n'
-                                            // '${l10n.get('finance.totalTaxes')}: ${formatMoney(calculateTaxes())}',
+                                                '${l10n.get('finance.totalGrossPay')}: ${$$(info.totalGrossPay)}',
                                           );
-                                        }
-                                      },
-                                      l10n.get('finance.shareTooltip'),
+                                        }, l10n.get('finance.shareTooltip')),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                          // Centered Title and Date
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  l10n.get('finance.title'),
-                                  style: const TextStyle(
-                                    color: _primaryColor,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  periodText,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Week Navigation
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.all(16),
-                  child: _buildWeekNavigation(l10n, _isSmallScreen, currentWeekStart),
-                ),
-              ),
-
-              // Summary Cards - ТОЛЬКО HOURS И GROSS
-              ValueListenableBuilder<bool>(
-                valueListenable: _isLoading,
-                builder: (context, isLoading, _) {
-                  return ValueListenableBuilder<FinanceInfoResponse?>(
-                    valueListenable: _financeInfo,
-                    builder: (context, financeInfo, _) {
-                      if (!isLoading && financeInfo != null) {
-                        return SliverToBoxAdapter(
-                          child: Container(
-                            height: 180,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              children: [
-                                _buildModernSummaryCard(
-                                  l10n.get('finance.hours'),
-                                  '${financeInfo.totalHoursWorked.toStringAsFixed(1)}',
-                                  Icons.schedule_rounded,
-                                  const [Color(0xFF4A5568), _primaryColor],
-                                  0,
-                                ),
-                                _buildModernSummaryCard(
-                                  l10n.get('finance.gross'),
-                                  formatMoney(financeInfo.totalGrossPay),
-                                  Icons.trending_up_rounded,
-                                  const [Color(0xFF48BB78), Color(0xFF38A169)],
-                                  1,
-                                ),
-                                // TODO: Раскомментировать когда понадобятся налоги
-                                // _buildModernSummaryCard(
-                                //   l10n.get('finance.net'),
-                                //   formatMoney(financeInfo.totalNetPay),
-                                //   Icons.account_balance_wallet_rounded,
-                                //   const [Color(0xFF4299E1), Color(0xFF3182CE)],
-                                //   2,
-                                // ),
-                                // _buildModernSummaryCard(
-                                //   l10n.get('finance.totalTaxes'),
-                                //   formatMoney(calculateTaxes()),
-                                //   Icons.receipt_long_rounded,
-                                //   const [Color(0xFFED8936), Color(0xFFDD6B20)],
-                                //   3,
-                                // ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                      return const SliverToBoxAdapter(child: SizedBox.shrink());
-                    },
-                  );
-                },
-              ),
-
-              // Daily Breakdown Title
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    'Daily Breakdown',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Content with ValueListenableBuilders
-              ValueListenableBuilder<bool>(
-                valueListenable: _isLoading,
-                builder: (context, isLoading, _) {
-                  if (isLoading) {
-                    return SliverFillRemaining(
-                      child: Center(
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: _primaryColor,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _primaryColor.withOpacity(0.2),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ValueListenableBuilder<FinanceInfoResponse?>(
-                    valueListenable: _financeInfo,
-                    builder: (context, financeInfo, _) {
-                      if (financeInfo?.dailyInfo.isEmpty ?? true) {
-                        return SliverFillRemaining(
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 100,
-                                  height: 100,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.grey.shade300,
-                                        Colors.grey.shade400,
-                                      ],
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.event_busy_rounded,
-                                    size: 50,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  l10n.get('finance.noDataForPeriod'),
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey.shade700,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    HapticFeedback.lightImpact();
-                                    fetchFinanceInfo();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _primaryColor,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
+                                // Title + Period
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.refresh_rounded),
-                                      SizedBox(width: 8),
-                                      Text('Refresh'),
+                                      Text(
+                                        l10n.get('finance.title'),
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: kFinancePrimary,
+                                          fontSize: _isWide ? 36 : 32,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        periodText,
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: _isWide ? 16 : 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        );
-                      }
+                        ),
+                      ),
+                    ),
 
-                      return SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                            if (index == financeInfo!.dailyInfo.length) {
-                              return _buildTotalRow(l10n, financeInfo);
+                    // Week navigation
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(_isWide ? 24 : 16, 16, _isWide ? 24 : 16, 8),
+                        child: _weekNav(l10n, weekStart),
+                      ),
+                    ),
+
+                    // Responsive Summary Grid (Hours / Gross)
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _isLoading,
+                      builder: (_, isLoading, __) {
+                        return ValueListenableBuilder<FinanceInfoResponse?>(
+                          valueListenable: _financeInfo,
+                          builder: (_, info, __) {
+                            if (isLoading || info == null) {
+                              return const SliverToBoxAdapter(child: SizedBox.shrink());
+                            }
+                            final cards = <_SummaryCardData>[
+                              _SummaryCardData(
+                                label: l10n.get('finance.hours'),
+                                value: info.totalHoursWorked.toStringAsFixed(1),
+                                icon: Icons.schedule_rounded,
+                                colors: const [Color(0xFF4A5568), kFinancePrimary],
+                              ),
+                              _SummaryCardData(
+                                label: l10n.get('finance.gross'),
+                                value: $$(info.totalGrossPay),
+                                icon: Icons.trending_up_rounded,
+                                colors: const [Color(0xFF48BB78), Color(0xFF38A169)],
+                              ),
+                            ];
+
+                            final crossAxisCount = _isWide ? 4 : (_isMedium ? 3 : 2);
+                            final spacing = _isWide ? 16.0 : 12.0;
+
+                            return SliverPadding(
+                              padding: EdgeInsets.symmetric(horizontal: _isWide ? 24 : 16),
+                              sliver: SliverGrid(
+                                delegate: SliverChildBuilderDelegate(
+                                      (context, i) => _summaryCard(cards[i]),
+                                  childCount: cards.length,
+                                ),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: spacing,
+                                  mainAxisSpacing: spacing,
+                                  // Делаем плитки выше → исключаем переполнение
+                                  childAspectRatio: _isWide ? 1.45 : (_isSmall ? 0.85 : 1.0),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    // Daily Breakdown title
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(_isWide ? 24 : 16, 16, _isWide ? 24 : 16, 8),
+                        child: Text(
+                          l10n.get('finance.dailyBreakdown'),
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: _isWide ? 22 : 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Content
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _isLoading,
+                      builder: (_, isLoading, __) {
+                        if (isLoading) {
+                          return SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: kFinancePrimary,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: kFinancePrimary.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return ValueListenableBuilder<FinanceInfoResponse?>(
+                          valueListenable: _financeInfo,
+                          builder: (_, info, __) {
+                            final items = info?.dailyInfo ?? const <DailyFinanceInfo>[];
+                            if (items.isEmpty) {
+                              return SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _EmptyState(
+                                  title: l10n.get('finance.noDataForPeriod'),
+                                  onRefresh: fetchFinanceInfo,
+                                ),
+                              );
                             }
 
-                            final daily = financeInfo.dailyInfo[index];
-                            return _buildDailyCard(daily, index);
+                            return SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                  if (index == items.length) {
+                                    return Padding(
+                                      padding: EdgeInsets.fromLTRB(_isWide ? 24 : 16, 16, _isWide ? 24 : 16, 16),
+                                      child: _totalsCard(l10n, info!),
+                                    );
+                                  }
+                                  final daily = items[index];
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: _isWide ? 24 : 16, vertical: 6),
+                                    child: FadeTransition(
+                                      opacity: CurvedAnimation(
+                                        parent: _fadeController,
+                                        curve: Interval(0.05 * index, 0.35 + 0.05 * index, curve: Curves.easeOut),
+                                      ),
+                                      child: _dailyCard(daily),
+                                    ),
+                                  );
+                                },
+                                childCount: items.length + 1,
+                              ),
+                            );
                           },
-                          childCount: financeInfo!.dailyInfo.length + 1,
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+                        );
+                      },
+                    ),
 
-              // Bottom Padding
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
-              ),
-            ],
-          );
-        },
+                    const SliverToBoxAdapter(child: SizedBox(height: 96)),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, VoidCallback onPressed, String tooltip) {
+  // ————— Widgets
+
+  Widget _actionBtn(IconData icon, VoidCallback onTap, String tooltip) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onPressed,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Tooltip(
           message: tooltip,
@@ -557,146 +426,69 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
             decoration: BoxDecoration(
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.grey[300]!,
-                width: 1,
-              ),
+              border: Border.all(color: Colors.grey[300]!, width: 1),
             ),
-            child: Icon(
-              icon,
-              color: _primaryColor,
-              size: 22,
-            ),
+            child: Icon(icon, color: kFinancePrimary, size: 22),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildWeekNavigation(dynamic l10n, bool isSmallScreen, DateTime currentWeekStart) {
+  Widget _weekNav(dynamic l10n, DateTime currentWeekStart) {
+    final subtitleStyle = TextStyle(fontSize: _isWide ? 13 : 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600);
+
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Row(
         children: [
-          // Previous Week Button
+          // Prev
           Expanded(
             flex: 2,
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
-                onTap: () => changeWeek(-7),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: _primaryColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.chevron_left_rounded,
-                        color: _primaryColor,
-                        size: 22,
-                      ),
-                      Text(
-                        l10n.get('finance.previous'),
-                        style: const TextStyle(
-                          color: _primaryColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Current Period Display
-          Expanded(
-            flex: 3,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
+            child: _pillButton(
+              onTap: () => changeWeek(-7),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    l10n.get('finance.weekPeriod').toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    DateFormat('MMM d').format(currentWeekStart),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: _primaryColor,
-                    ),
-                  ),
-                  Text(
-                    'to ${DateFormat('MMM d, yyyy').format(currentWeekStart.add(const Duration(days: 6)))}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
+                  const Icon(Icons.chevron_left_rounded, color: kFinancePrimary, size: 22),
+                  Text(l10n.get('finance.previous'), style: const TextStyle(color: kFinancePrimary, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
           ),
-          // Next Week Button
+          // Center period
+          Expanded(
+            flex: 3,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: [
+                  Text(l10n.get('finance.weekPeriod').toUpperCase(),
+                      style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                  const SizedBox(height: 6),
+                  Text(DateFormat('MMM d').format(currentWeekStart),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kFinancePrimary)),
+                  Text('to ${DateFormat('MMM d, yyyy').format(currentWeekStart.add(const Duration(days: 6)))}', style: subtitleStyle),
+                ],
+              ),
+            ),
+          ),
+          // Next
           Expanded(
             flex: 2,
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
-                onTap: () => changeWeek(7),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: _primaryColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        l10n.get('finance.next'),
-                        style: const TextStyle(
-                          color: _primaryColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: _primaryColor,
-                        size: 22,
-                      ),
-                    ],
-                  ),
-                ),
+            child: _pillButton(
+              onTap: () => changeWeek(7),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(l10n.get('finance.next'), style: const TextStyle(color: kFinancePrimary, fontWeight: FontWeight.w700)),
+                  const Icon(Icons.chevron_right_rounded, color: kFinancePrimary, size: 22),
+                ],
               ),
             ),
           ),
@@ -705,77 +497,223 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildModernSummaryCard(
-      String label,
-      String value,
-      IconData icon,
-      List<Color> gradientColors,
-      int index,
-      ) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _pillButton({required VoidCallback onTap, required Widget child}) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(color: kFinancePrimary.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+          child: child,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.first.withOpacity(0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => HapticFeedback.lightImpact(),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 24,
+    );
+  }
+
+  /// Карточка-резюме: адаптивная.
+  /// Компактный режим включается при h < 104 (горизонтальная раскладка), что гарантированно снимает overflow.
+  Widget _summaryCard(_SummaryCardData data) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final h = constraints.maxHeight;
+
+        // Компактный режим — горизонтальная раскладка, минимальные размеры
+        if (h < 104) {
+          final pad = 8.0;
+          final iconSize = 22.0;
+          final labelSize = 10.5;
+          final valueSize = 16.5;
+
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: data.colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: data.colors.first.withOpacity(0.22), blurRadius: 10, offset: const Offset(0, 5))],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () => !kIsWeb ? HapticFeedback.lightImpact() : null,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: EdgeInsets.all(pad),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: iconSize + 10,
+                        height: iconSize + 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(data.icon, color: Colors.white, size: iconSize),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              data.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: labelSize,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                data.value,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: valueSize,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Column(
+              ),
+            ),
+          );
+        }
+
+        // Обычный (вертикальный) режим — «резиновый», безопасен по высоте
+        final pad = (h * 0.12).clamp(8.0, 14.0);
+        final contentH = h - 2 * pad;
+
+        final iconBox = (contentH * 0.42).clamp(28.0, 50.0);
+        final labelSize = (contentH * 0.18).clamp(10.0, 12.0);
+        final valueSize = (contentH * 0.34).clamp(17.0, 22.0);
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: data.colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: data.colors.first.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6))],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            child: InkWell(
+              onTap: () => !kIsWeb ? HapticFeedback.lightImpact() : null,
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: EdgeInsets.all(pad),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      height: iconBox,
+                      width: iconBox,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(data.icon, color: Colors.white, size: iconBox * 0.55),
+                    ),
+                    const Spacer(),
                     Text(
-                      label,
+                      data.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontSize: labelSize,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        data.value,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: valueSize,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _dailyCard(DailyFinanceInfo daily) {
+    final hasData = daily.hoursWorked > 0;
+    final badgeColor = hasData ? kFinancePrimary : Colors.grey.shade200;
+    final textColor = hasData ? Colors.white : Colors.grey.shade600;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: hasData ? [BoxShadow(color: Colors.grey.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))] : [],
+        border: Border.all(color: hasData ? Colors.transparent : Colors.grey.shade200, width: 1),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: hasData ? () => !kIsWeb ? HapticFeedback.lightImpact() : null : null,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: EdgeInsets.all(_isWide ? 18 : 16),
+            child: Row(
+              children: [
+                // Date badge
+                Container(
+                  width: _isWide ? 68 : 60,
+                  height: _isWide ? 68 : 60,
+                  decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(12)),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(DateFormat('EEE').format(daily.date).toUpperCase(),
+                          style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                      const SizedBox(height: 2),
+                      Text(DateFormat('dd').format(daily.date),
+                          style: TextStyle(color: textColor, fontSize: _isWide ? 22 : 20, fontWeight: FontWeight.w800)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Data
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _dataItem(Icons.schedule, '${daily.hoursWorked.toStringAsFixed(1)}h', hasData),
+                      _dataItem(Icons.attach_money, $$(daily.grossPay), hasData),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -785,134 +723,17 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildDailyCard(DailyFinanceInfo daily, int index) {
-    final bool hasData = daily.hoursWorked > 0;
-
-    return FadeTransition(
-      opacity: Tween<double>(
-        begin: 0,
-        end: 1,
-      ).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(
-            index * 0.05,
-            0.3 + index * 0.05,
-            curve: Curves.easeOut,
-          ),
-        ),
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: hasData
-              ? [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ]
-              : [],
-          border: Border.all(
-            color: hasData ? Colors.transparent : Colors.grey.shade200,
-            width: 1,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            onTap: hasData ? () => HapticFeedback.lightImpact() : null,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Date Badge
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: hasData
-                          ? _primaryColor
-                          : Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          DateFormat('EEE').format(daily.date).toUpperCase(),
-                          style: TextStyle(
-                            color: hasData ? Colors.white : Colors.grey.shade500,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          DateFormat('dd').format(daily.date),
-                          style: TextStyle(
-                            color: hasData ? Colors.white : Colors.grey.shade500,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Data - ТОЛЬКО HOURS И GROSS
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildDataItem(
-                          Icons.schedule,
-                          '${daily.hoursWorked.toStringAsFixed(1)}h',
-                          hasData,
-                        ),
-                        _buildDataItem(
-                          Icons.attach_money,
-                          formatMoney(daily.grossPay),
-                          hasData,
-                        ),
-                        // TODO: Раскомментировать когда понадобится net pay
-                        // _buildDataItem(
-                        //   Icons.account_balance_wallet,
-                        //   formatMoney(daily.netPay),
-                        //   hasData,
-                        // ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDataItem(IconData icon, String value, bool hasData) {
+  Widget _dataItem(IconData icon, String value, bool hasData) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: hasData ? _primaryColor : Colors.grey.shade400,
-        ),
+        Icon(icon, size: 18, color: hasData ? kFinancePrimary : Colors.grey.shade400),
         const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: hasData ? FontWeight.w600 : FontWeight.normal,
+            fontSize: _isWide ? 15 : 14,
+            fontWeight: hasData ? FontWeight.w700 : FontWeight.w500,
             color: hasData ? Colors.grey.shade800 : Colors.grey.shade400,
           ),
         ),
@@ -920,81 +741,31 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildTotalRow(dynamic l10n, FinanceInfoResponse financeInfo) {
+  Widget _totalsCard(dynamic l10n, FinanceInfoResponse info) {
+    final divider = Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2));
     return Container(
-      margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            _primaryColor,
-            Color(0xFF4A5568),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: const LinearGradient(colors: [kFinancePrimary, Color(0xFF4A5568)], begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: _primaryColor.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: kFinancePrimary.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(_isWide ? 22 : 20),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.assessment_rounded,
-                  color: Colors.white.withOpacity(0.9),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.get('finance.totals').toUpperCase(),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.assessment_rounded, color: Colors.white.withOpacity(0.9), size: 20),
+              const SizedBox(width: 8),
+              Text(l10n.get('finance.totals').toUpperCase(),
+                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+            ]),
+            const SizedBox(height: 18),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildTotalItem(
-                  Icons.schedule_rounded,
-                  '${financeInfo.totalHoursWorked.toStringAsFixed(1)}',
-                  'hours',
-                ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.white.withOpacity(0.2),
-                ),
-                _buildTotalItem(
-                  Icons.trending_up_rounded,
-                  formatMoney(financeInfo.totalGrossPay),
-                  'gross',
-                ),
-                // TODO: Раскомментировать когда понадобится net
-                // Container(
-                //   width: 1,
-                //   height: 40,
-                //   color: Colors.white.withOpacity(0.2),
-                // ),
-                // _buildTotalItem(
-                //   Icons.account_balance_wallet_rounded,
-                //   formatMoney(financeInfo.totalNetPay),
-                //   'net',
-                // ),
+                _totalItem(Icons.schedule_rounded, info.totalHoursWorked.toStringAsFixed(1), l10n.get('finance.hours')),
+                divider,
+                _totalItem(Icons.trending_up_rounded, $$(info.totalGrossPay), l10n.get('finance.gross')),
               ],
             ),
           ],
@@ -1003,40 +774,106 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildTotalItem(IconData icon, String value, String label) {
+  Widget _totalItem(IconData icon, String value, String label) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 18,
-          ),
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
+          child: Icon(icon, color: Colors.white, size: 18),
         ),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.5,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 11,
-            letterSpacing: 0.5,
-          ),
-        ),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 11, letterSpacing: 0.4)),
       ],
+    );
+  }
+}
+
+// ——— Helpers / stateless bits
+
+class _SummaryCardData {
+  final String label;
+  final String value;
+  final IconData icon;
+  final List<Color> colors;
+  const _SummaryCardData({required this.label, required this.value, required this.icon, required this.colors});
+}
+
+class _NoGlowBehavior extends ScrollBehavior {
+  const _NoGlowBehavior();
+  @override
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) => child;
+}
+
+class _ProgressDialog extends StatelessWidget {
+  final String title;
+  const _ProgressDialog({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 48),
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 18, offset: const Offset(0, 8))],
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(color: kFinancePrimary, borderRadius: BorderRadius.circular(15)),
+            child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+          ),
+          const SizedBox(height: 18),
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String title;
+  final VoidCallback onRefresh;
+  const _EmptyState({required this.title, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400]),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.event_busy_rounded, size: 54, color: Colors.white),
+          ),
+          const SizedBox(height: 22),
+          Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 18, color: Colors.grey.shade700, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Refresh'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kFinancePrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }

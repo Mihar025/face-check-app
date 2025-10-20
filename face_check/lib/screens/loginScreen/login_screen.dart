@@ -451,7 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildBottomActions() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         TextButton(
           onPressed: () => Navigator.of(context).pushNamed('forgot-password'),
@@ -461,23 +461,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: const Text('Forgot password?'),
         ),
-        IconButton(
-          onPressed: _authenticateWithBiometrics,
-          tooltip: 'Login with biometrics',
-          icon: const Icon(Icons.fingerprint, size: 28),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.black.withOpacity(0.06),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
       ],
     );
   }
+
 }
 
-// ============= ОТДЕЛЬНЫЕ ОПТИМИЗИРОВАННЫЕ ВИДЖЕТЫ =============
 
 // Фоновое изображение (изолировано от перерисовок)
 class _BackgroundImage extends StatelessWidget {

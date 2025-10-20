@@ -93,18 +93,6 @@ class FinancePdfService {
                       headerStyle,
                       contentStyle,
                     ),
-                    _buildSummaryItem(
-                      'Total Net',
-                      '\$${financeInfo.totalNetPay.toStringAsFixed(2)}',
-                      headerStyle,
-                      contentStyle,
-                    ),
-                    _buildSummaryItem(
-                      'Total Taxes',
-                      '\$${(financeInfo.totalGrossPay - financeInfo.totalNetPay).toStringAsFixed(2)}',
-                      headerStyle,
-                      contentStyle,
-                    ),
                   ],
                 ),
               ),
@@ -116,7 +104,6 @@ class FinancePdfService {
                   0: const pw.FlexColumnWidth(2),
                   1: const pw.FlexColumnWidth(1),
                   2: const pw.FlexColumnWidth(1.5),
-                  3: const pw.FlexColumnWidth(1.5),
                 },
                 children: [
                   pw.TableRow(
@@ -133,10 +120,6 @@ class FinancePdfService {
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
                         child: pw.Text('Gross', style: headerStyle),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('Net', style: headerStyle),
                       ),
                     ],
                   ),
@@ -162,13 +145,6 @@ class FinancePdfService {
                         padding: const pw.EdgeInsets.all(8),
                         child: pw.Text(
                           daily.hoursWorked.toStringAsFixed(1),
-                          style: contentStyle,
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          '\$${daily.grossPay.toStringAsFixed(2)}',
                           style: contentStyle,
                         ),
                       ),
