@@ -1,31 +1,308 @@
 import 'dart:async';
-import 'package:face_check/screens/main_menu/view-details/view_details_screen.dart';
-import 'package:face_check/widgets/weather_widget.dart';
-import 'package:flutter/cupertino.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../api_client/api/authentication_api.dart';
 import '../../../providers/localization_provider.dart';
 import '../../../services/pivacy_policy_service.dart';
-import '../../../utils/date_time_formatter.dart';
 import '../../../services/ApiService.dart';
+import '../../../services/time_service.dart';
 import '../../loginScreen/privacy_policy_screen.dart';
 import '../components/custom_drawer.dart';
-import '../components/face_check_button.dart';
-import '../components/time_circle.dart';
+import '../view-details/view_details_screen.dart';
 
-import 'package:timezone/data/latest.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
+// Notification для перезагрузки данных (из drawer и из punch screen)
+class MainScreenReloadNotification extends Notification {}
 
-import 'package:dio/dio.dart';
-import 'package:face_check/services/time_service.dart';
+// Cache Manager для хранения данных
+class CacheManager {
+  static const String _workedHoursKey = 'cached_worked_hours';
+  static const String _lastPunchDateKey = 'cached_last_punch_date';
+  static const String _lastPunchTimeKey = 'cached_last_punch_time';
+  static const String _cacheTimestampKey = 'cache_timestamp';
+  static const int _cacheValidityMinutes = 5;
 
+  static Future<Map<String, dynamic>?> getCachedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timestamp = prefs.getInt(_cacheTimestampKey) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      if (now - timestamp > _cacheValidityMinutes * 60 * 1000) {
+        return null;
+      }
+
+      return {
+        'workedHours': prefs.getDouble(_workedHoursKey) ?? 0.0,
+        'lastPunchDate': prefs.getString(_lastPunchDateKey) ?? '--/--/----',
+        'lastPunchTime': prefs.getString(_lastPunchTimeKey) ?? '--:--',
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> saveCachedData({
+    required double workedHours,
+    required String lastPunchDate,
+    required String lastPunchTime,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await Future.wait([
+        prefs.setDouble(_workedHoursKey, workedHours),
+        prefs.setString(_lastPunchDateKey, lastPunchDate),
+        prefs.setString(_lastPunchTimeKey, lastPunchTime),
+        prefs.setInt(_cacheTimestampKey, DateTime.now().millisecondsSinceEpoch),
+      ]);
+    } catch (e) {
+      // Silent fail
+    }
+  }
+
+  static Future<void> clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await Future.wait([
+        prefs.remove(_workedHoursKey),
+        prefs.remove(_lastPunchDateKey),
+        prefs.remove(_lastPunchTimeKey),
+        prefs.remove(_cacheTimestampKey),
+      ]);
+    } catch (e) {
+      // Silent fail
+    }
+  }
+}
+
+// Красивый виджет для часов
+class WeeklyHoursCircle extends StatefulWidget {
+  final double hours;
+  final String period;
+  final String thisWeekText;
+
+  const WeeklyHoursCircle({
+    Key? key,
+    required this.hours,
+    required this.period,
+    required this.thisWeekText,
+  }) : super(key: key);
+
+  @override
+  State<WeeklyHoursCircle> createState() => _WeeklyHoursCircleState();
+}
+
+class _WeeklyHoursCircleState extends State<WeeklyHoursCircle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _animation = Tween<double>(
+      begin: 0,
+      end: widget.hours,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+    _animationController.forward();
+  }
+
+  @override
+  void didUpdateWidget(WeeklyHoursCircle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hours != widget.hours) {
+      _animation = Tween<double>(
+        begin: oldWidget.hours,
+        end: widget.hours,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ));
+      _animationController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size.width;
+    final isSmall = size < 360;
+
+    final circleSize = isSmall ? 180.0 : 220.0;
+
+    return Container(
+      width: circleSize,
+      height: circleSize,
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          final hours = _animation.value.floor();
+          final minutes = ((_animation.value - hours) * 60).round();
+
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                size: Size(circleSize, circleSize),
+                painter: CircularProgressPainter(
+                  progress: _animation.value / 40,
+                  backgroundColor: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  progressColor: _getProgressColor(_animation.value),
+                  strokeWidth: isSmall ? 12 : 14,
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: hours.toString(),
+                          style: TextStyle(
+                            fontSize: isSmall ? 42 : 48,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'h ',
+                          style: TextStyle(
+                            fontSize: isSmall ? 18 : 20,
+                            fontWeight: FontWeight.normal,
+                            color: (isDark ? Colors.white : Colors.black87).withOpacity(0.6),
+                          ),
+                        ),
+                        TextSpan(
+                          text: minutes.toString().padLeft(2, '0'),
+                          style: TextStyle(
+                            fontSize: isSmall ? 28 : 32,
+                            fontWeight: FontWeight.w500,
+                            color: (isDark ? Colors.white : Colors.black87).withOpacity(0.8),
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'm',
+                          style: TextStyle(
+                            fontSize: isSmall ? 16 : 18,
+                            fontWeight: FontWeight.normal,
+                            color: (isDark ? Colors.white : Colors.black87).withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getProgressColor(_animation.value).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      widget.thisWeekText,
+                      style: TextStyle(
+                        fontSize: 10,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w600,
+                        color: _getProgressColor(_animation.value),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.period,
+                    style: TextStyle(
+                      fontSize: isSmall ? 11 : 12,
+                      color: (isDark ? Colors.white : Colors.black87).withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Color _getProgressColor(double hours) {
+    if (hours < 10) return Colors.red;
+    if (hours < 20) return Colors.orange;
+    if (hours < 30) return Colors.amber;
+    if (hours < 40) return Colors.blue;
+    return Colors.green;
+  }
+}
+
+class CircularProgressPainter extends CustomPainter {
+  final double progress;
+  final Color backgroundColor;
+  final Color progressColor;
+  final double strokeWidth;
+
+  CircularProgressPainter({
+    required this.progress,
+    required this.backgroundColor,
+    required this.progressColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    final backgroundPaint = Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    canvas.drawCircle(center, radius, backgroundPaint);
+
+    final progressPaint = Paint()
+      ..color = progressColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final progressAngle = 2 * math.pi * progress.clamp(0.0, 1.0);
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      progressAngle,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Оптимизированный MainMenuScreen
 class MainMenuScreen extends StatefulWidget {
   final AuthenticationApi authenticationApi;
 
@@ -38,924 +315,607 @@ class MainMenuScreen extends StatefulWidget {
   State<MainMenuScreen> createState() => _MainMenuScreenState();
 }
 
-class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
-  final String currentDate;
-  final String currentTime;
-  final VoidCallback onMenuPressed;
-
-  const CustomAppBar({
-    super.key,
-    required this.currentDate,
-    required this.currentTime,
-    required this.onMenuPressed,
-  });
-
-  @override
-  Size get preferredSize => const Size.fromHeight(80);
-
-  @override
-  State<CustomAppBar> createState() => _CustomAppBarState();
-}
-
-class _CustomAppBarState extends State<CustomAppBar> {
-  // ValueNotifier для оптимизации
-  late final ValueNotifier<int> _notificationCount;
-
-  @override
-  void initState() {
-    super.initState();
-    _notificationCount = ValueNotifier<int>(0);
-    _loadNotifications();
-  }
-
-  @override
-  void dispose() {
-    _notificationCount.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadNotifications() async {
-    final notifications = await FlutterLocalNotificationsPlugin()
-        .pendingNotificationRequests();
-    _notificationCount.value = notifications.length;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Container(
-          height: 80,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Menu Button
-              Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.grey.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.menu_rounded,
-                    color: theme.iconTheme.color,
-                    size: 26,
-                  ),
-                  onPressed: widget.onMenuPressed,
-                ),
-              ),
-
-              // Logo
-              Container(
-                height: 55,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.grey.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Image.asset(
-                  'assets/images/logo.jpg',
-                  fit: BoxFit.contain,
-                ),
-              ),
-
-              // Notification Button с ValueListenableBuilder
-              Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.grey.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Stack(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.notifications_outlined,
-                        color: theme.iconTheme.color,
-                        size: 26,
-                      ),
-                      onPressed: () => Navigator.pushNamed(context, '/notifications')
-                          .then((_) => _loadNotifications()),
-                    ),
-                    ValueListenableBuilder<int>(
-                      valueListenable: _notificationCount,
-                      builder: (context, count, _) {
-                        if (count == 0) return const SizedBox.shrink();
-
-                        return Positioned(
-                          right: 6,
-                          top: 6,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade500,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(0.3),
-                                  blurRadius: 4,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 18,
-                              minHeight: 18,
-                            ),
-                            child: Text(
-                              count > 9 ? '9+' : count.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // ValueNotifiers для оптимизации перерисовок
-  late final ValueNotifier<String> _currentDate;
+  // ValueNotifiers
   late final ValueNotifier<String> _currentTime;
+  late final ValueNotifier<String> _currentDate;
+  late final ValueNotifier<double> _workedHours;
   late final ValueNotifier<String> _lastPunchDate;
   late final ValueNotifier<String> _lastPunchTime;
-  late final ValueNotifier<double> _workedHours;
-  late final ValueNotifier<String> _currentPeriod;
+  late final ValueNotifier<bool> _isPunchedIn;
+  late final ValueNotifier<String> _weekPeriod;
 
+  // Services
   late final TimeService _timeService;
-  StreamSubscription<tz.TZDateTime>? _nySub;
+  StreamSubscription<tz.TZDateTime>? _timeSub;
 
-  // Кэшированные значения
-  late ThemeData _theme;
-  late bool _isDark;
+  // Dio instance
+  late final Dio _dio;
 
-  // Константы для производительности
-  static const EdgeInsets _standardPadding = EdgeInsets.symmetric(horizontal: 16);
-  static const EdgeInsets _bottomPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 16);
-  bool _privacyCheckCompleted = false;
+  // Flags
+  bool _isInitialized = false;
   int? _currentUserId;
+  bool _privacyPolicyChecked = false;
+  bool _canLoadData = false;
 
   @override
   void initState() {
     super.initState();
+
     tzdata.initializeTimeZones();
 
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
-
-
-    // Инициализация ValueNotifiers
-    _currentDate = ValueNotifier<String>('');
-    _currentTime = ValueNotifier<String>('');
-    _lastPunchDate = ValueNotifier<String>('DD/MM/YYYY');
-    _lastPunchTime = ValueNotifier<String>('--:--');
+    _currentTime = ValueNotifier<String>(DateFormat('HH:mm').format(DateTime.now()));
+    _currentDate = ValueNotifier<String>(DateFormat('EEEE, MMMM d').format(DateTime.now()));
     _workedHours = ValueNotifier<double>(0.0);
-    _currentPeriod = ValueNotifier<String>('');
+    _lastPunchDate = ValueNotifier<String>('--/--/----');
+    _lastPunchTime = ValueNotifier<String>('--:--');
+    _isPunchedIn = ValueNotifier<bool>(false);
 
-    final dio = Dio(BaseOptions(
-      baseUrl: 'http://192.168.1.194:8088/api/v1/',
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+    _weekPeriod = ValueNotifier<String>(
+        '${DateFormat('MMM d').format(startOfWeek)} - ${DateFormat('MMM d').format(endOfWeek)}'
+    );
+
+    _dio = Dio(BaseOptions(
+      baseUrl: 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1/',
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 30),
     ));
 
-    dio.interceptors.add(InterceptorsWrapper(
+    _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await ApiService.instance.getAuthToken();
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
+        if (token != null) options.headers['Authorization'] = 'Bearer $token';
         return handler.next(options);
       },
-      onError: (e, handler) => handler.next(e),
     ));
 
-    _timeService = TimeService(dio);
-    _bootstrapTimeAndData();
+    _timeService = TimeService(_dio);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeUserAndCheckPrivacy();
-    });
-  }
-
-  Future<void> _initializeUserAndCheckPrivacy() async {
-    try {
-      // Сначала пытаемся получить userId из кэша
-      final prefs = await SharedPreferences.getInstance();
-      _currentUserId = prefs.getInt('user_id');
-
-      // Если в кэше нет, получаем с сервера
-      if (_currentUserId == null || _currentUserId == 0) {
-        print('📱 Fetching user ID from server...');
-
-        // Используем тот же dio что уже инициализировали
-        final dio = Dio(BaseOptions(
-          baseUrl: 'http://192.168.1.194:8088/api/v1/',
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 30),
-        ));
-
-        dio.interceptors.add(InterceptorsWrapper(
-          onRequest: (options, handler) async {
-            final token = await ApiService.instance.getAuthToken();
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
-            }
-            return handler.next(options);
-          },
-        ));
-
-        final response = await dio.get('user/find-user-id');
-
-        if (response.statusCode == 200 && response.data != null) {
-          final userId = response.data['userId'];
-
-          if (userId != null) {
-            _currentUserId = userId;
-            await prefs.setInt('user_id', userId);
-            print('✅ User ID fetched and saved: $userId');
-          }
-        }
-      } else {
-        print('📦 Using cached user ID: $_currentUserId');
-      }
-
-      // Если userId получен, проверяем Privacy Policy
-      if (_currentUserId != null && _currentUserId != 0) {
-        await _checkPrivacyPolicy(_currentUserId!);
-      } else {
-        print('⚠️ No user ID available, skipping privacy check');
-        setState(() {
-          _privacyCheckCompleted = true;
-        });
-      }
-    } catch (e) {
-      print('❌ Error in initialization: $e');
-      setState(() {
-        _privacyCheckCompleted = true;
-      });
-    }
-  }
-
-  // МЕТОД ПРОВЕРКИ PRIVACY POLICY
-  Future<void> _checkPrivacyPolicy(int userId) async {
-    try {
-      print('🔍 Checking privacy policy for user: $userId');
-
-      // Проверяем статус принятия Privacy Policy
-      final hasAccepted = await PrivacyPolicyService.instance
-          .hasAcceptedPrivacyPolicy(userId);
-
-      print('Privacy policy accepted: $hasAccepted');
-
-      setState(() {
-        _privacyCheckCompleted = true;
-      });
-
-      // Если не принял - показываем экран Privacy Policy
-      if (!hasAccepted && mounted) {
-        // Небольшая задержка для плавного перехода
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        if (!mounted) return;
-
-        // Показываем экран Privacy Policy
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PrivacyPolicyScreen(
-              userId: userId,
-              onAccepted: () {
-                Navigator.pop(context);
-                _onPrivacyPolicyAccepted();
-              },
-            ),
-            fullscreenDialog: true, // Модальное окно
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ Error checking privacy policy: $e');
-      setState(() {
-        _privacyCheckCompleted = true;
-      });
-    }
-  }
-
-  // CALLBACK ПОСЛЕ ПРИНЯТИЯ PRIVACY POLICY
-  void _onPrivacyPolicyAccepted() {
-    print('✅ Privacy Policy accepted by user: $_currentUserId');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Welcome to FaceCheck!'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-
-    // Перезагружаем данные если нужно
-    _loadLastPunchTime();
-    _loadWorkedHours();
-  }
-
-
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateCachedValues();
-  }
-
-  void _updateCachedValues() {
-    _theme = Theme.of(context);
-    _isDark = _theme.brightness == Brightness.dark;
-  }
-
-  Future<void> _bootstrapTimeAndData() async {
-    await _timeService.sync();
-
-    _nySub = _timeService.nyTicker().listen((nyNow) {
-      _currentDate.value = DateFormat('MMM dd').format(nyNow);
-      _currentTime.value = DateFormat('HH:mm').format(nyNow);
-      _updateCurrentPeriod(nyNow);
-    });
-
-    _loadLastPunchTime();
-    _loadWorkedHours();
-  }
-
-  void _updateCurrentPeriod(tz.TZDateTime nyNow) {
-    final startOfWeek = nyNow.subtract(Duration(days: nyNow.weekday % 7));
-    final endOfWeek = startOfWeek.add(const Duration(days: 6));
-
-    String fmt(tz.TZDateTime d) =>
-        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-
-    _currentPeriod.value = '${fmt(startOfWeek)} - ${fmt(endOfWeek)}';
+    _fastInitialize();
   }
 
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: SystemUiOverlay.values);
-    _nySub?.cancel();
-
-    // Dispose ValueNotifiers
-    _currentDate.dispose();
+    _timeSub?.cancel();
     _currentTime.dispose();
+    _currentDate.dispose();
+    _workedHours.dispose();
     _lastPunchDate.dispose();
     _lastPunchTime.dispose();
-    _workedHours.dispose();
-    _currentPeriod.dispose();
-
+    _isPunchedIn.dispose();
+    _weekPeriod.dispose();
     super.dispose();
   }
 
-  Future<void> _loadLastPunchTime() async {
+  Future<void> _fastInitialize() async {
+    await _loadCachedData();
+    setState(() => _isInitialized = true);
+    _timeService.sync().then((_) => _startTimeTicker());
+    _checkPunchStatus();
+    await _initializeUserAndPrivacy();
+    if (_canLoadData) {
+      await _loadFreshData();
+    }
+  }
+
+  Future<void> _loadCachedData() async {
     try {
-      final punchInfo = await ApiService.instance.getLastPunchTime();
+      final cached = await CacheManager.getCachedData();
+      if (cached != null) {
+        _workedHours.value = cached['workedHours'];
+        _lastPunchDate.value = cached['lastPunchDate'];
+        _lastPunchTime.value = cached['lastPunchTime'];
+      }
+    } catch (e) {
+      print('Error loading cached data: $e');
+    }
+  }
+
+  Future<void> _loadFreshData() async {
+    if (_currentUserId == null || !_canLoadData) {
+      print('Cannot load data: userId=$_currentUserId, canLoadData=$_canLoadData');
+      return;
+    }
+
+    try {
+      print('Loading fresh data for userId: $_currentUserId');
+
+      final token = await ApiService.instance.getAuthToken();
+      if (token == null) {
+        print('No auth token available, skipping data load');
+        return;
+      }
+
+      double hours = _workedHours.value;
+      dynamic punchInfo;
+
+      try {
+        hours = await ApiService.instance.getTotalWorkedHoursPerWeek();
+        print('Successfully loaded worked hours: $hours');
+      } catch (e) {
+        print('Error loading worked hours (likely server issue): $e');
+      }
+
+      try {
+        punchInfo = await ApiService.instance.getLastPunchTime();
+        print('Successfully loaded last punch info');
+      } catch (e) {
+        print('Error loading last punch time: $e');
+        punchInfo = {'date': _lastPunchDate.value, 'time': _lastPunchTime.value};
+      }
+
+      _workedHours.value = hours;
       _lastPunchDate.value = punchInfo.date;
       _lastPunchTime.value = punchInfo.time;
+
+      await CacheManager.saveCachedData(
+        workedHours: hours,
+        lastPunchDate: punchInfo.date,
+        lastPunchTime: punchInfo.time,
+      );
+
+      print('Data loaded and cached successfully');
     } catch (e) {
-      print('Error loading last punch time: $e');
+      print('Unexpected error loading fresh data: $e');
     }
   }
 
-  Future<void> _loadWorkedHours() async {
+  void _startTimeTicker() {
+    _timeSub = _timeService.nyTicker().listen((nyTime) {
+      _currentTime.value = DateFormat('HH:mm').format(nyTime);
+      _currentDate.value = DateFormat('EEEE, MMMM d').format(nyTime);
+
+      final startOfWeek = nyTime.subtract(Duration(days: nyTime.weekday % 7));
+      final endOfWeek = startOfWeek.add(const Duration(days: 6));
+      _weekPeriod.value =
+      '${DateFormat('MMM d').format(startOfWeek)} - ${DateFormat('MMM d').format(endOfWeek)}';
+    });
+  }
+
+  Future<void> _initializeUserAndPrivacy() async {
     try {
-      final hours = await ApiService.instance.getTotalWorkedHoursPerWeek();
-      _workedHours.value = hours;
+      final prefs = await SharedPreferences.getInstance();
+      _currentUserId = prefs.getInt('user_id');
+
+      if (_currentUserId == null) {
+        print('No cached userId, fetching from API...');
+        final response = await _dio.get('user/find-user-id');
+        if (response.statusCode == 200 && response.data != null) {
+          _currentUserId = response.data['userId'];
+          if (_currentUserId != null) {
+            await prefs.setInt('user_id', _currentUserId!);
+            print('User ID obtained and saved: $_currentUserId');
+          }
+        }
+      } else {
+        print('User ID loaded from cache: $_currentUserId');
+      }
+
+      if (_currentUserId != null) {
+        await _checkPrivacyPolicy(_currentUserId!);
+      } else {
+        print('Warning: No userId available for privacy policy check');
+        _canLoadData = false;
+      }
     } catch (e) {
-      print('Error loading worked hours: $e');
+      print('Error initializing user: $e');
+      _canLoadData = false;
     }
   }
 
-  void _navigateToPunch() {
-    Navigator.pushNamed(context, '/punch');
+  Future<void> _checkPrivacyPolicy(int userId) async {
+    try {
+      print('Checking privacy policy for userId: $userId');
+
+      final hasAccepted = await PrivacyPolicyService.instance
+          .hasAcceptedPrivacyPolicy(userId);
+
+      _privacyPolicyChecked = true;
+
+      if (!hasAccepted) {
+        print('Privacy policy not accepted, showing screen');
+        _canLoadData = false;
+
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PrivacyPolicyScreen(
+                  userId: userId,
+                  onAccepted: () async {
+                    print('Privacy policy accepted');
+                    Navigator.pop(context);
+                    _canLoadData = true;
+                    await _loadFreshData();
+                  },
+                ),
+                fullscreenDialog: true,
+              ),
+            );
+          });
+        }
+      } else {
+        print('Privacy policy already accepted');
+        _canLoadData = true;
+      }
+    } catch (e) {
+      print('Error checking privacy policy: $e');
+      _canLoadData = true;
+    }
+  }
+
+  Future<void> _checkPunchStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _isPunchedIn.value = prefs.getBool('isPunchedInToday') ?? false;
+    } catch (e) {
+      print('Error checking punch status: $e');
+    }
+  }
+
+  // Полная перезагрузка данных
+  Future<void> _fullReloadData() async {
+    print('Starting full reload...');
+
+    // Очищаем кеш
+    await CacheManager.clearCache();
+
+    // Сбрасываем значения на дефолтные
+    _workedHours.value = 0.0;
+    _lastPunchDate.value = '--/--/----';
+    _lastPunchTime.value = '--:--';
+
+    // Перезагружаем userId и privacy policy
+    await _initializeUserAndPrivacy();
+
+    // Загружаем свежие данные
+    if (_canLoadData && _currentUserId != null) {
+      await Future.wait([
+        _loadFreshData(),
+        _checkPunchStatus(),
+      ]);
+    }
+
+    print('Full reload completed');
+  }
+
+  // Pull to refresh
+  Future<void> _onRefresh() async {
+    await _fullReloadData();
   }
 
   @override
   Widget build(BuildContext context) {
-    _updateCachedValues();
+    final size = MediaQuery.of(context).size;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final l10n = context.watch<LocalizationProvider>().localizations;
-    if (!_privacyCheckCompleted) {
-      return Scaffold(
-        backgroundColor: _theme.scaffoldBackgroundColor,
-        body: Center(
+
+    final isSmall = size.width < 360;
+    final basePadding = isSmall ? 12.0 : 16.0;
+    final cardRadius = isSmall ? 12.0 : 16.0;
+    final mainFontSize = isSmall ? 14.0 : 16.0;
+    final titleFontSize = isSmall ? 18.0 : 20.0;
+
+    return NotificationListener<MainScreenReloadNotification>(
+      onNotification: (notification) {
+        _fullReloadData();
+        return true;
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: isDark ? Colors.black : const Color(0xFFF5F5F5),
+        drawer: const CustomDrawer(),
+        body: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Логотип или иконка
+              // HEADER
               Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.blue.withOpacity(0.1),
+                height: 60,
+                padding: EdgeInsets.symmetric(horizontal: basePadding),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.menu, size: 28),
+                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                    ),
+                    Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      child: Image.asset(
+                        'assets/images/logo.jpg',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.notifications_none_rounded, size: 28),
+                      onPressed: () => Navigator.pushNamed(context, '/notifications'),
+                    ),
+                  ],
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.security_rounded,
-                    size: 50,
-                    color: Colors.blue.shade600,
+              ),
+
+              // MAIN CONTENT с Pull to Refresh
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  color: Colors.blue,
+                  child: ListView(
+                    padding: EdgeInsets.all(basePadding),
+                    children: [
+                      // DATE & TIME CARD
+                      Container(
+                        padding: EdgeInsets.all(basePadding),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[900] : Colors.white,
+                          borderRadius: BorderRadius.circular(cardRadius),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ValueListenableBuilder<String>(
+                                  valueListenable: _currentDate,
+                                  builder: (_, date, __) => Text(
+                                    date,
+                                    style: TextStyle(
+                                      fontSize: mainFontSize - 2,
+                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    ),
+                                  ),
+                                ),
+                                ValueListenableBuilder<String>(
+                                  valueListenable: _currentTime,
+                                  builder: (_, time, __) => Text(
+                                    time,
+                                    style: TextStyle(
+                                      fontSize: titleFontSize + 4,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            ValueListenableBuilder<bool>(
+                              valueListenable: _isPunchedIn,
+                              builder: (_, punched, __) => Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: basePadding,
+                                  vertical: basePadding / 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: punched
+                                      ? Colors.green.withOpacity(0.1)
+                                      : Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: punched ? Colors.green : Colors.red,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: punched ? Colors.green : Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      punched ? l10n.get('active') : l10n.get('inactive'),
+                                      style: TextStyle(
+                                        fontSize: mainFontSize - 2,
+                                        fontWeight: FontWeight.w600,
+                                        color: punched ? Colors.green : Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: basePadding),
+
+                      // HOURS CIRCLE
+                      Container(
+                        padding: EdgeInsets.all(basePadding * 1.5),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[900] : Colors.white,
+                          borderRadius: BorderRadius.circular(cardRadius),
+                        ),
+                        child: Center(
+                          child: ValueListenableBuilder<double>(
+                            valueListenable: _workedHours,
+                            builder: (_, hours, __) => ValueListenableBuilder<String>(
+                              valueListenable: _weekPeriod,
+                              builder: (_, period, __) => WeeklyHoursCircle(
+                                hours: hours,
+                                period: period,
+                                thisWeekText: l10n.get('thisWeek'),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: basePadding),
+
+                      // LAST PUNCH CARD
+                      Container(
+                        padding: EdgeInsets.all(basePadding * 1.2),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[900] : Colors.white,
+                          borderRadius: BorderRadius.circular(cardRadius),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(basePadding * 0.8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.history,
+                                color: Colors.blue,
+                                size: isSmall ? 24 : 28,
+                              ),
+                            ),
+                            SizedBox(width: basePadding),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.get('lastPunch'),
+                                    style: TextStyle(
+                                      fontSize: mainFontSize - 2,
+                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      ValueListenableBuilder<String>(
+                                        valueListenable: _lastPunchDate,
+                                        builder: (_, date, __) => Text(
+                                          date,
+                                          style: TextStyle(
+                                            fontSize: mainFontSize,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 8),
+                                      ValueListenableBuilder<String>(
+                                        valueListenable: _lastPunchTime,
+                                        builder: (_, time, __) => Text(
+                                          time,
+                                          style: TextStyle(
+                                            fontSize: mainFontSize,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: basePadding),
+
+                      // VIEW DETAILS BUTTON
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: isSmall ? 48 : 56,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ViewDetailsScreen(
+                                        workedHours: _workedHours.value,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue.withOpacity(0.1),
+                                  foregroundColor: Colors.blue,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(cardRadius - 4),
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.get('viewDetails'),
+                                  style: TextStyle(
+                                    fontSize: mainFontSize,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: basePadding * 2),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              CircularProgressIndicator(
-                color: Colors.blue.shade600,
-                strokeWidth: 3,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Initializing...',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: _theme.textTheme.bodyLarge?.color,
+
+              // BOTTOM PUNCH BUTTON
+              Container(
+                padding: EdgeInsets.all(basePadding),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[900] : Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: isSmall ? 54 : 60,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pushNamed(context, '/punch'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(cardRadius),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.fingerprint, size: isSmall ? 26 : 30),
+                        SizedBox(width: basePadding / 2),
+                        Text(
+                          l10n.get('punch'),
+                          style: TextStyle(
+                            fontSize: titleFontSize - 2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      );
-    }
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: _theme.scaffoldBackgroundColor,
-        statusBarIconBrightness: _isDark ? Brightness.light : Brightness.dark,
-        systemNavigationBarIconBrightness: _isDark ? Brightness.light : Brightness.dark,
-      ),
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: _theme.scaffoldBackgroundColor,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(80),
-          child: ValueListenableBuilder<String>(
-            valueListenable: _currentDate,
-            builder: (context, date, _) {
-              return ValueListenableBuilder<String>(
-                valueListenable: _currentTime,
-                builder: (context, time, _) {
-                  return CustomAppBar(
-                    currentDate: date,
-                    currentTime: time,
-                    onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        drawer: const CustomDrawer(),
-        body: Column(
-          children: [
-            // Info Bar
-            Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: _isDark
-                        ? Colors.black.withOpacity(0.2)
-                        : Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  height: 70,
-                  child: Row(
-                    children: [
-                      // Weather Section
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.location_on_outlined,
-                                size: 14,
-                                color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                              ),
-                              const SizedBox(height: 2),
-                              WeatherWidget(),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Vertical Divider
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: _isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.grey.withOpacity(0.2),
-                      ),
-
-                      // Date Section с ValueListenableBuilder
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: 20,
-                              color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                            ),
-                            const SizedBox(height: 6),
-                            ValueListenableBuilder<String>(
-                              valueListenable: _currentDate,
-                              builder: (context, date, _) {
-                                return Text(
-                                  date,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: _theme.textTheme.bodyLarge?.color,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Vertical Divider
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: _isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.grey.withOpacity(0.2),
-                      ),
-
-                      // Time Section с ValueListenableBuilder
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.access_time_rounded,
-                              size: 20,
-                              color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                            ),
-                            const SizedBox(height: 6),
-                            ValueListenableBuilder<String>(
-                              valueListenable: _currentTime,
-                              builder: (context, time, _) {
-                                return Text(
-                                  time,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: _theme.textTheme.bodyLarge?.color,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Main Content Area
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: _standardPadding,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-
-                      const SizedBox(height: 15),
-
-                      // Time Circle с ValueListenableBuilder
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.1),
-                              blurRadius: 30,
-                              spreadRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: ValueListenableBuilder<double>(
-                          valueListenable: _workedHours,
-                          builder: (context, hours, _) {
-                            return TimeCircle(
-                              time: _formatHoursToTimeString(hours),
-                              workedHours: hours,
-                            );
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Period Card с ValueListenableBuilder
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _isDark
-                              ? Colors.white.withOpacity(0.05)
-                              : Colors.blue.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(
-                            color: _isDark
-                                ? Colors.white.withOpacity(0.1)
-                                : Colors.blue.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.date_range_rounded,
-                              size: 18,
-                              color: Colors.blue.shade400,
-                            ),
-                            const SizedBox(width: 8),
-                            ValueListenableBuilder<String>(
-                              valueListenable: _currentPeriod,
-                              builder: (context, period, _) {
-                                return Text(
-                                  period,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: _theme.textTheme.bodyLarge?.color,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // View Details Button
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ViewDetailsScreen(
-                                  workedHours: _workedHours.value,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade600,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-                            elevation: 0,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                l10n.get('viewDetails'),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Bottom Section с ValueListenableBuilders
-            Container(
-              decoration: BoxDecoration(
-                color: _isDark
-                    ? Colors.white.withOpacity(0.03)
-                    : Colors.grey.withOpacity(0.05),
-                boxShadow: [
-                  BoxShadow(
-                    color: _isDark
-                        ? Colors.black.withOpacity(0.2)
-                        : Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Container(
-                  padding: _bottomPadding,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Last Punch Info Card
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: _isDark
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: _isDark
-                                  ? Colors.white.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.history_rounded,
-                                    size: 18,
-                                    color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    l10n.get('lastPunch'),
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: _theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              ValueListenableBuilder<String>(
-                                valueListenable: _lastPunchDate,
-                                builder: (context, date, _) {
-                                  return Text(
-                                    date,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: _theme.textTheme.bodyLarge?.color,
-                                    ),
-                                  );
-                                },
-                              ),
-                              ValueListenableBuilder<String>(
-                                valueListenable: _lastPunchTime,
-                                builder: (context, time, _) {
-                                  return Text(
-                                    time,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue.shade600,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      // Face Check Button
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.green.withOpacity(0.3),
-                              blurRadius: 20,
-                              spreadRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: Transform.scale(
-                          scale: 1.1,
-                          child: FaceCheckButton(
-                            onPressed: _navigateToPunch,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
-  }
-
-  String _formatHoursToTimeString(double hours) {
-    int totalMinutes = (hours * 60).round();
-    int displayHours = totalMinutes ~/ 60;
-    int displayMinutes = totalMinutes % 60;
-
-    return '${displayHours.toString().padLeft(2, '0')}:${displayMinutes.toString().padLeft(2, '0')}';
   }
 }

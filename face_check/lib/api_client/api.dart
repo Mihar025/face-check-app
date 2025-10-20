@@ -20,7 +20,10 @@ import 'serializers.dart';
 
 class ApiClient {
  // static const String basePath = r'http://localhost:8088/api/v1';
-  static const String basePath = r'http://192.168.1.194:8088/api/v1';
+  //static const String basePath = r'http://192.168.1.194:8088/api/v1';
+  static const String basePath = r'https://face-check-prod-drgsy.ondigitalocean.app/api/v1';
+
+
   final Dio dio;
   final Serializers serializers;
 

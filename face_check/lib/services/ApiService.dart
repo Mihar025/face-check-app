@@ -13,6 +13,7 @@ import '../api_client/api/authentication_api.dart';
 import '../api_client/api/file_controller_api.dart';
 import '../api_client/api/user_service_controller_api.dart';
 import '../api_client/api/worker_attendance_controller_api.dart';
+import '../api_client/model/user_full_contact_information.dart';
 import '../api_client/serializers.dart';
 import '../models/daily_earnings.dart';
 import '../models/finance_info_response.dart';
@@ -33,7 +34,8 @@ class ApiService {
     _dio = Dio(
       BaseOptions(
         //baseUrl: 'http://localhost:8088/api/v1/',
-        baseUrl: 'http://192.168.1.194:8088/api/v1/',
+        //baseUrl: 'http://192.168.1.194:8088/api/v1/',
+          baseUrl:'https://face-check-prod-drgsy.ondigitalocean.app/api/v1/',
         connectTimeout: Duration(seconds: 5),
         receiveTimeout: Duration(seconds: 3),
         contentType: 'application/json',

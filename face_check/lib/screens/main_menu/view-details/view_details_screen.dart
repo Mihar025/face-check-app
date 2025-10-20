@@ -2,12 +2,102 @@ import 'package:face_check/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:async';
 import '../../../models/daily_earnings.dart';
 import '../../../providers/localization_provider.dart';
 import '../../../services/ApiService.dart';
 import 'components/info_row.dart';
 import 'components/progress_circle/progress_circle.dart';
 import 'utils/date_formatter.dart';
+
+// Менеджер кеша для ViewDetails
+class ViewDetailsCacheManager {
+  static const String _baseRateKey = 'view_details_base_rate';
+  static const String _grossAmountKey = 'view_details_gross_amount';
+  static const String _weeklyEarningsKey = 'view_details_weekly_earnings';
+  static const String _cacheTimestampKey = 'view_details_cache_timestamp';
+  static const int _cacheValidityMinutes = 30;
+
+  static Future<Map<String, dynamic>?> getCachedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timestamp = prefs.getInt(_cacheTimestampKey) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      if (now - timestamp > _cacheValidityMinutes * 60 * 1000) {
+        await clearCache();
+        return null;
+      }
+
+      final earningsJson = prefs.getString(_weeklyEarningsKey);
+      List<DailyEarning> earnings = [];
+
+      if (earningsJson != null) {
+        final List<dynamic> decodedList = json.decode(earningsJson);
+        earnings = decodedList.map((e) => DailyEarning.fromJson(e)).toList();
+      }
+
+      return {
+        'baseRate': prefs.getDouble(_baseRateKey) ?? 0.0,
+        'grossAmount': prefs.getDouble(_grossAmountKey) ?? 0.0,
+        'weeklyEarnings': earnings,
+        'timestamp': timestamp,
+      };
+    } catch (e) {
+      print('Error loading cached data: $e');
+      return null;
+    }
+  }
+
+  static Future<void> saveCachedData({
+    required double baseRate,
+    required double grossAmount,
+    required List<DailyEarning> weeklyEarnings,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final earningsJson = json.encode(
+          weeklyEarnings.map((e) => e.toJson()).toList()
+      );
+
+      await Future.wait([
+        prefs.setDouble(_baseRateKey, baseRate),
+        prefs.setDouble(_grossAmountKey, grossAmount),
+        prefs.setString(_weeklyEarningsKey, earningsJson),
+        prefs.setInt(_cacheTimestampKey, DateTime.now().millisecondsSinceEpoch),
+      ]);
+    } catch (e) {
+      print('Error saving cached data: $e');
+    }
+  }
+
+  static Future<void> clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await Future.wait([
+        prefs.remove(_baseRateKey),
+        prefs.remove(_grossAmountKey),
+        prefs.remove(_weeklyEarningsKey),
+        prefs.remove(_cacheTimestampKey),
+      ]);
+    } catch (e) {
+      print('Error clearing cache: $e');
+    }
+  }
+
+  static Future<bool> isCacheValid() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timestamp = prefs.getInt(_cacheTimestampKey) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      return (now - timestamp) <= (_cacheValidityMinutes * 60 * 1000);
+    } catch (e) {
+      return false;
+    }
+  }
+}
 
 class ViewDetailsScreen extends StatefulWidget {
   final double workedHours;
@@ -22,18 +112,15 @@ class ViewDetailsScreen extends StatefulWidget {
 }
 
 class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProviderStateMixin {
-  // Animation controllers
   late AnimationController _fadeController;
   late AnimationController _slideController;
 
-  // ValueNotifiers для оптимизации перерисовок
   late final ValueNotifier<bool> _isLoading;
   late final ValueNotifier<double> _baseHourRate;
   late final ValueNotifier<double> _weekGrossAmount;
   late final ValueNotifier<List<DailyEarning>> _weeklyEarnings;
   late final ValueNotifier<bool> _hasCurrentPeriodData;
 
-  // Кэшированные значения
   late Size _screenSize;
   late bool _isSmallScreen;
   late double _padding;
@@ -42,13 +129,13 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
   late ThemeData _theme;
   late bool _isDark;
 
-  // Кэшированные вычисления
   double? _cachedOvertimeHours;
   double? _cachedMissedHours;
   double? _cachedMaxEarning;
   String? _cachedPeriod;
 
-  // Предопределенные константы
+  bool _isDataFromCache = false;
+
   static const double _largeSpacing = 40.0;
   static const double _smallSpacing = 30.0;
   static const double _smallScreenThreshold = 400.0;
@@ -57,7 +144,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
   void initState() {
     super.initState();
 
-    // Инициализация анимаций
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -67,17 +153,16 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
       vsync: this,
     );
 
-    // Инициализация ValueNotifiers
     _isLoading = ValueNotifier<bool>(true);
     _baseHourRate = ValueNotifier<double>(0.0);
     _weekGrossAmount = ValueNotifier<double>(0.0);
     _weeklyEarnings = ValueNotifier<List<DailyEarning>>([]);
     _hasCurrentPeriodData = ValueNotifier<bool>(false);
 
-    // Кэшируем период один раз
     _cachedPeriod = DateFormatter.getCurrentPeriod();
 
-    _loadData();
+    _initializeData();
+
     _fadeController.forward();
     _slideController.forward();
   }
@@ -89,11 +174,15 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
   }
 
   void _updateCachedValues() {
-    _screenSize = MediaQuery.of(context).size;
+    _screenSize = MediaQuery
+        .of(context)
+        .size;
     _isSmallScreen = _screenSize.width < _smallScreenThreshold;
     _padding = _isSmallScreen ? 12.0 : 16.0;
     _sectionSpacing = _isSmallScreen ? _smallSpacing : _largeSpacing;
-    _l10n = context.read<LocalizationProvider>().localizations;
+    _l10n = context
+        .read<LocalizationProvider>()
+        .localizations;
     _theme = Theme.of(context);
     _isDark = _theme.brightness == Brightness.dark;
   }
@@ -114,11 +203,9 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
     if (earnings.isEmpty) return false;
 
     final now = DateTime.now();
-    // Получаем начало текущей недели (воскресенье)
     final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-    // Проверяем, есть ли хотя бы одна запись за текущую неделю
     return earnings.any((earning) {
       final date = earning.date;
       return date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
@@ -126,39 +213,275 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
     });
   }
 
-  Future<void> _loadData() async {
+  Future<void> _initializeData() async {
+    final stopwatch = Stopwatch()
+      ..start();
+
+    final cachedData = await ViewDetailsCacheManager.getCachedData();
+
+    if (cachedData != null && mounted) {
+      final earnings = cachedData['weeklyEarnings'] as List<DailyEarning>;
+      final baseRate = cachedData['baseRate'] as double;
+
+      if (earnings.isNotEmpty || baseRate > 0) {
+        _baseHourRate.value = baseRate;
+        _weekGrossAmount.value = cachedData['grossAmount'];
+        _weeklyEarnings.value = earnings;
+
+        final isCurrentPeriod = _isCurrentPeriodData(earnings);
+        _hasCurrentPeriodData.value = isCurrentPeriod;
+
+        if (!isCurrentPeriod) {
+          _weekGrossAmount.value = 0.0;
+        }
+
+        _updateCachedMaxEarning();
+        _isLoading.value = false;
+        _isDataFromCache = true;
+
+        print('Cache loaded in ${stopwatch.elapsedMilliseconds}ms');
+
+        final cacheAge = DateTime
+            .now()
+            .millisecondsSinceEpoch - cachedData['timestamp'];
+        if (cacheAge > 5 * 60 * 1000) {
+          _loadDataInBackground();
+        }
+      } else {
+        await _loadData();
+      }
+    } else {
+      await _loadData();
+    }
+
+    stopwatch.stop();
+  }
+
+  Future<void> _loadDataInBackground() async {
     try {
-      final futures = await Future.wait([
-        ApiService.instance.userApi.findWorkerBaseHourRate(),
-        ApiService.instance.userApi.findWorkerSalaryPerWeekGross(),
-        ApiService.instance.getWeeklyEarnings(),
-      ]);
+      final stopwatch = Stopwatch()..start();
+
+      // Создаём безопасные обёртки для каждого запроса
+      Future<dynamic> safeBaseRate() async {
+        try {
+          return await ApiService.instance.userApi.findWorkerBaseHourRate();
+        } catch (e) {
+          print('Background: baseRate error: $e');
+          return null;
+        }
+      }
+
+      Future<dynamic> safeGrossAmount() async {
+        try {
+          return await ApiService.instance.userApi.findWorkerSalaryPerWeekGross();
+        } catch (e) {
+          print('Background: grossAmount error: $e');
+          return null;
+        }
+      }
+
+      Future<List<DailyEarning>> safeWeeklyEarnings() async {
+        try {
+          return await ApiService.instance.getWeeklyEarnings();
+        } catch (e) {
+          print('Background: weeklyEarnings error: $e');
+          return <DailyEarning>[];
+        }
+      }
+
+      final results = await Future.wait([
+        safeBaseRate(),
+        safeGrossAmount(),
+        safeWeeklyEarnings(),
+      ]).timeout(
+        const Duration(seconds: 8),
+        onTimeout: () => [null, null, <DailyEarning>[]],
+      );
 
       if (!mounted) return;
 
-      _baseHourRate.value = (futures[0] as dynamic).data?.toDouble() ?? 0.0;
+      final baseRateResponse = results[0];
+      final grossAmountResponse = results[1];
+      final earningsResponse = results[2];
 
-      final earnings = futures[2] as List<DailyEarning>;
-      _weeklyEarnings.value = earnings;
+      final newBaseRate = baseRateResponse != null
+          ? (baseRateResponse as dynamic).data?.toDouble() ?? _baseHourRate.value
+          : _baseHourRate.value;
 
-      // Проверяем актуальность данных
-      final isCurrentPeriod = _isCurrentPeriodData(earnings);
-      _hasCurrentPeriodData.value = isCurrentPeriod;
+      final earnings = earningsResponse is List<DailyEarning>
+          ? earningsResponse
+          : <DailyEarning>[];
 
-      // Если данные актуальны, используем их, иначе обнуляем
-      if (isCurrentPeriod) {
-        _weekGrossAmount.value = (futures[1] as dynamic).data?.toDouble() ?? 0.0;
-      } else {
-        _weekGrossAmount.value = 0.0;
+      final isCurrentPeriod = earnings.isNotEmpty ? _isCurrentPeriodData(earnings) : false;
+
+      double newGrossAmount = 0.0;
+      if (isCurrentPeriod && grossAmountResponse != null) {
+        newGrossAmount = (grossAmountResponse as dynamic).data?.toDouble() ?? 0.0;
       }
 
-      // Кэшируем максимальное значение после загрузки
-      _updateCachedMaxEarning();
+      bool hasChanges = false;
+
+      if (_baseHourRate.value != newBaseRate) {
+        _baseHourRate.value = newBaseRate;
+        hasChanges = true;
+      }
+
+      if (_weekGrossAmount.value != newGrossAmount) {
+        _weekGrossAmount.value = newGrossAmount;
+        hasChanges = true;
+      }
+
+      if (_weeklyEarnings.value.length != earnings.length ||
+          (earnings.isNotEmpty && _weeklyEarnings.value.isNotEmpty &&
+              earnings.first.netPay != _weeklyEarnings.value.first.netPay)) {
+        _weeklyEarnings.value = earnings;
+        _hasCurrentPeriodData.value = isCurrentPeriod;
+        _updateCachedMaxEarning();
+        hasChanges = true;
+      }
+
+      if (hasChanges && (newBaseRate > 0 || earnings.isNotEmpty)) {
+        await ViewDetailsCacheManager.saveCachedData(
+          baseRate: newBaseRate,
+          grossAmount: newGrossAmount,
+          weeklyEarnings: earnings,
+        );
+
+        if (_isDataFromCache && mounted) {
+          setState(() => _isDataFromCache = false);
+        }
+
+        print('Background update completed in ${stopwatch.elapsedMilliseconds}ms');
+      }
+
+      stopwatch.stop();
+    } catch (e) {
+      print('Error loading data in background: $e');
+    }
+  }
+
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    final stopwatch = Stopwatch()..start();
+
+    if (forceRefresh) {
+      await ViewDetailsCacheManager.clearCache();
+    }
+
+    try {
+      // Безопасные обёртки
+      Future<dynamic> safeBaseRate() async {
+        try {
+          return await ApiService.instance.userApi.findWorkerBaseHourRate();
+        } catch (e) {
+          print('LoadData: baseRate error: $e');
+          return null;
+        }
+      }
+
+      Future<dynamic> safeGrossAmount() async {
+        try {
+          return await ApiService.instance.userApi.findWorkerSalaryPerWeekGross();
+        } catch (e) {
+          print('LoadData: grossAmount error (500 expected): $e');
+          return null;
+        }
+      }
+
+      Future<List<DailyEarning>> safeWeeklyEarnings() async {
+        try {
+          return await ApiService.instance.getWeeklyEarnings();
+        } catch (e) {
+          print('LoadData: weeklyEarnings error: $e');
+          return <DailyEarning>[];
+        }
+      }
+
+      final results = await Future.wait([
+        safeBaseRate(),
+        safeGrossAmount(),
+        safeWeeklyEarnings(),
+      ]).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => [null, null, <DailyEarning>[]],
+      );
+
+      if (!mounted) return;
+
+      final baseRateResponse = results[0];
+      final grossAmountResponse = results[1];
+      final earningsResponse = results[2];
+
+      final baseRate = baseRateResponse != null
+          ? (baseRateResponse as dynamic).data?.toDouble() ?? 0.0
+          : 0.0;
+
+      final earnings = earningsResponse is List<DailyEarning>
+          ? earningsResponse
+          : <DailyEarning>[];
+
+      final hasValidData = baseRate > 0 || earnings.isNotEmpty;
+
+      if (hasValidData) {
+        _baseHourRate.value = baseRate;
+        _weeklyEarnings.value = earnings;
+
+        final isCurrentPeriod = _isCurrentPeriodData(earnings);
+        _hasCurrentPeriodData.value = isCurrentPeriod;
+
+        if (isCurrentPeriod && grossAmountResponse != null) {
+          _weekGrossAmount.value = (grossAmountResponse as dynamic).data?.toDouble() ?? 0.0;
+        } else {
+          _weekGrossAmount.value = 0.0;
+        }
+
+        _updateCachedMaxEarning();
+
+        await ViewDetailsCacheManager.saveCachedData(
+          baseRate: _baseHourRate.value,
+          grossAmount: _weekGrossAmount.value,
+          weeklyEarnings: earnings,
+        );
+
+        print('Data loaded (grossAmount: ${grossAmountResponse != null ? "OK" : "FAILED"}) in ${stopwatch.elapsedMilliseconds}ms');
+      } else {
+        _hasCurrentPeriodData.value = false;
+        print('No valid data received');
+      }
 
       _isLoading.value = false;
+      _isDataFromCache = false;
+      stopwatch.stop();
+
     } catch (e) {
+      print('Error loading data: $e (took ${stopwatch.elapsedMilliseconds}ms)');
+      stopwatch.stop();
+
       if (mounted) {
         _isLoading.value = false;
+
+        final cachedData = await ViewDetailsCacheManager.getCachedData();
+        if (cachedData != null &&
+            (cachedData['baseRate'] > 0 || (cachedData['weeklyEarnings'] as List).isNotEmpty)) {
+
+          _baseHourRate.value = cachedData['baseRate'];
+          _weekGrossAmount.value = cachedData['grossAmount'];
+          _weeklyEarnings.value = cachedData['weeklyEarnings'];
+
+          final isCurrentPeriod = _isCurrentPeriodData(cachedData['weeklyEarnings']);
+          _hasCurrentPeriodData.value = isCurrentPeriod;
+          _isDataFromCache = true;
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Using cached data'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          _hasCurrentPeriodData.value = false;
+        }
       }
     }
   }
@@ -190,7 +513,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
   Widget build(BuildContext context) {
     _updateCachedValues();
 
-    // Цвета в зависимости от темы
     final backgroundColor = _isDark ? Colors.grey[900]! : Colors.grey[50]!;
     final cardColor = _isDark ? Colors.grey[850]! : Colors.white;
     final textColor = _isDark ? Colors.grey[100]! : Colors.grey[900]!;
@@ -216,6 +538,16 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
           icon: Icon(Icons.arrow_back_ios_new, color: textColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: textColor),
+            onPressed: () async {
+              setState(() => _isLoading.value = true);
+              await _loadData(forceRefresh: true);
+            },
+            tooltip: 'Refresh data',
+          ),
+        ],
       ),
       body: ValueListenableBuilder<bool>(
         valueListenable: _isLoading,
@@ -242,88 +574,109 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
           return ValueListenableBuilder<bool>(
             valueListenable: _hasCurrentPeriodData,
             builder: (context, hasData, _) {
-              // Если нет данных за текущий период, показываем сообщение
               if (!hasData) {
                 return _buildNoDataView(textColor, subtitleColor);
               }
 
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: EdgeInsets.all(_padding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // HERO SECTION - Combined Stats
-                      SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, -0.2),
-                          end: Offset.zero,
-                        ).animate(CurvedAnimation(
-                          parent: _slideController,
-                          curve: Curves.easeOutCubic,
-                        )),
-                        child: _buildHeroSection(),
-                      ),
-
-                      SizedBox(height: _sectionSpacing),
-
-                      // PRODUCTIVITY METRICS
-                      FadeTransition(
-                        opacity: _fadeController,
-                        child: _buildProductivityMetrics(textColor, subtitleColor, cardColor),
-                      ),
-
-                      SizedBox(height: _sectionSpacing),
-
-                      // EARNINGS OVERVIEW
-                      ValueListenableBuilder<double>(
-                        valueListenable: _baseHourRate,
-                        builder: (context, baseRate, _) {
-                          return ValueListenableBuilder<double>(
-                            valueListenable: _weekGrossAmount,
-                            builder: (context, grossAmount, _) {
-                              return FadeTransition(
-                                opacity: _fadeController,
-                                child: _buildEarningsOverview(
-                                  baseRate,
-                                  grossAmount,
-                                  cardColor,
-                                  textColor,
-                                  subtitleColor,
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-
-                      SizedBox(height: _sectionSpacing),
-
-                      // WEEKLY PERFORMANCE CHART
-                      ValueListenableBuilder<List<DailyEarning>>(
-                        valueListenable: _weeklyEarnings,
-                        builder: (context, earnings, _) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.2),
-                              end: Offset.zero,
-                            ).animate(CurvedAnimation(
-                              parent: _slideController,
-                              curve: Curves.easeOutCubic,
-                            )),
-                            child: _buildWeeklyPerformance(
-                              earnings,
-                              cardColor,
-                              textColor,
-                              subtitleColor,
+              return RefreshIndicator(
+                onRefresh: () => _loadData(forceRefresh: true),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: EdgeInsets.all(_padding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_isDataFromCache)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange.withOpacity(0.3)),
                             ),
-                          );
-                        },
-                      ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Showing cached data. Pull to refresh.',
+                                    style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
-                      const SizedBox(height: 30),
-                    ],
+                        SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, -0.2),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: _slideController,
+                            curve: Curves.easeOutCubic,
+                          )),
+                          child: _buildHeroSection(),
+                        ),
+
+                        SizedBox(height: _sectionSpacing),
+
+                        FadeTransition(
+                          opacity: _fadeController,
+                          child: _buildProductivityMetrics(textColor, subtitleColor, cardColor),
+                        ),
+
+                        SizedBox(height: _sectionSpacing),
+
+                        ValueListenableBuilder<double>(
+                          valueListenable: _baseHourRate,
+                          builder: (context, baseRate, _) {
+                            return ValueListenableBuilder<double>(
+                              valueListenable: _weekGrossAmount,
+                              builder: (context, grossAmount, _) {
+                                return FadeTransition(
+                                  opacity: _fadeController,
+                                  child: _buildEarningsOverview(
+                                    baseRate,
+                                    grossAmount,
+                                    cardColor,
+                                    textColor,
+                                    subtitleColor,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+
+                        SizedBox(height: _sectionSpacing),
+
+                        ValueListenableBuilder<List<DailyEarning>>(
+                          valueListenable: _weeklyEarnings,
+                          builder: (context, earnings, _) {
+                            return SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.2),
+                                end: Offset.zero,
+                              ).animate(CurvedAnimation(
+                                parent: _slideController,
+                                curve: Curves.easeOutCubic,
+                              )),
+                              child: _buildWeeklyPerformance(
+                                earnings,
+                                cardColor,
+                                textColor,
+                                subtitleColor,
+                              ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -348,7 +701,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
             ),
             const SizedBox(height: 24),
             Text(
-              'No Data for Current Period',
+              _l10n.get('noDataForCurrentPeriod'),
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -357,7 +710,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
             ),
             const SizedBox(height: 12),
             Text(
-              'Period: $_cachedPeriod',
+              '${_l10n.get('period')}: $_cachedPeriod',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: subtitleColor,
@@ -365,7 +718,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
             ),
             const SizedBox(height: 8),
             Text(
-              'No hours recorded for this week',
+              _l10n.get('noHoursRecordedThisWeek'),
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: subtitleColor,
@@ -375,7 +728,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.arrow_back),
-              label: const Text('Go Back'),
+              label: Text(_l10n.get('goBack')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade600,
                 foregroundColor: Colors.white,
@@ -391,7 +744,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
     );
   }
 
-  // HERO SECTION с ключевыми метриками
   Widget _buildHeroSection() {
     final displayHours = _hasCurrentPeriodData.value ? widget.workedHours : 0.0;
 
@@ -432,7 +784,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
           const SizedBox(height: 20),
           Row(
             children: [
-              // Worked Hours Circle
               Expanded(
                 child: Column(
                   children: [
@@ -462,7 +813,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
                               ),
                             ),
                             Text(
-                              'Hours',
+                              _l10n.get('hours'),
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 color: Colors.grey[600]!,
@@ -476,29 +827,28 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
                 ),
               ),
               const SizedBox(width: 20),
-              // Stats Column
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStatRow(
                       icon: Icons.trending_up,
-                      label: 'Overtime',
+                      label: _l10n.get('overtime'),
                       value: '${overtimeHours.toStringAsFixed(1)}h',
                       color: Colors.green,
                     ),
                     const SizedBox(height: 12),
                     _buildStatRow(
                       icon: Icons.trending_down,
-                      label: 'Missed',
+                      label: _l10n.get('missedHours'),
                       value: '${missedHours.toStringAsFixed(1)}h',
                       color: Colors.orange,
                     ),
                     const SizedBox(height: 12),
                     _buildStatRow(
                       icon: Icons.check_circle,
-                      label: 'Status',
-                      value: displayHours >= 40 ? 'Complete' : 'In Progress',
+                      label: _l10n.get('status'),
+                      value: displayHours >= 40 ? _l10n.get('complete') : _l10n.get('inProgress'),
                       color: displayHours >= 40 ? Colors.green : Colors.blue,
                     ),
                   ],
@@ -554,7 +904,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
     );
   }
 
-  // PRODUCTIVITY METRICS
   Widget _buildProductivityMetrics(Color textColor, Color subtitleColor, Color cardColor) {
     final displayHours = _hasCurrentPeriodData.value ? widget.workedHours : 0.0;
     final productivity = (displayHours / 40 * 100).clamp(0, 150);
@@ -566,7 +915,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Productivity Metrics',
+          _l10n.get('productivityMetrics'),
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -578,7 +927,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
           children: [
             Expanded(
               child: _buildMetricCard(
-                title: 'Productivity',
+                title: _l10n.get('productivity'),
                 value: '${productivity.toStringAsFixed(0)}%',
                 icon: Icons.speed,
                 color: Colors.purple,
@@ -590,7 +939,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
-                title: 'Efficiency',
+                title: _l10n.get('efficiency'),
                 value: '${efficiency.toStringAsFixed(0)}%',
                 icon: Icons.insights,
                 color: Colors.indigo,
@@ -675,7 +1024,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
     );
   }
 
-  // EARNINGS OVERVIEW
   Widget _buildEarningsOverview(
       double baseRate,
       double grossAmount,
@@ -718,7 +1066,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
               ),
               const SizedBox(width: 12),
               Text(
-                'Earnings Overview',
+                _l10n.get('earningsOverview'),
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -729,12 +1077,11 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
           ),
           const SizedBox(height: 20),
 
-          // Key Metrics
           Row(
             children: [
               Expanded(
                 child: _buildEarningMetric(
-                  label: 'Hourly Rate',
+                  label: _l10n.get('hourlyRate'),
                   value: _formatCurrency(baseRate),
                   icon: Icons.schedule,
                   color: Colors.blue,
@@ -745,7 +1092,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
               const SizedBox(width: 16),
               Expanded(
                 child: _buildEarningMetric(
-                  label: 'Week Total',
+                  label: _l10n.get('weekTotal'),
                   value: _formatCurrency(grossAmount),
                   icon: Icons.account_balance_wallet,
                   color: Colors.green,
@@ -758,7 +1105,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
 
           const SizedBox(height: 20),
 
-          // Progress Bar
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -766,14 +1112,14 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Earning Progress',
+                    _l10n.get('earningProgress'),
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: subtitleColor,
                     ),
                   ),
                   Text(
-                    '${actualVsProjected.toStringAsFixed(0)}% of target',
+                    '${actualVsProjected.toStringAsFixed(0)}% ${_l10n.get('ofTarget')}',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -851,7 +1197,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
     );
   }
 
-  // WEEKLY PERFORMANCE
   Widget _buildWeeklyPerformance(
       List<DailyEarning> earnings,
       Color cardColor,
@@ -888,7 +1233,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
               ),
               const SizedBox(width: 12),
               Text(
-                'Weekly Performance',
+                _l10n.get('weeklyPerformance'),
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -908,7 +1253,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
                     Icon(Icons.info_outline, size: 48, color: subtitleColor.withOpacity(0.5)),
                     const SizedBox(height: 12),
                     Text(
-                      'No data available',
+                      _l10n.get('noDataAvailable'),
                       style: GoogleFonts.poppins(
                         color: subtitleColor,
                         fontSize: 14,
@@ -933,7 +1278,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final barWidth = (width / earnings.length) * 0.6;
-        final spacing = (width / earnings.length) * 0.4;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -991,7 +1335,15 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
   }
 
   String _formatDayLabel(DateTime date) {
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final days = [
+      _l10n.get('mon'),
+      _l10n.get('tue'),
+      _l10n.get('wed'),
+      _l10n.get('thu'),
+      _l10n.get('fri'),
+      _l10n.get('sat'),
+      _l10n.get('sun'),
+    ];
     return days[date.weekday - 1];
   }
 }

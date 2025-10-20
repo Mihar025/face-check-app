@@ -208,24 +208,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Column(
         children: [
-          _buildSettingTile(
-            icon: Icons.access_time,
-            title: l10n.get('timeFormat'),
-            subtitle: is24HourFormat ? '24-hour' : '12-hour',
-            onTap: () {
-              setState(() {
-                is24HourFormat = !is24HourFormat;
-                _saveTimeFormat(is24HourFormat);
-              });
-            },
-            trailing: Switch.adaptive(
-              value: is24HourFormat,
-              onChanged: _saveTimeFormat,
-              activeColor: theme.primaryColor,
-            ),
-            theme: theme,
-            isSmallScreen: isSmallScreen,
-          ),
           _buildDivider(theme),
           _buildSettingTile(
             icon: isDarkTheme ? Icons.dark_mode : Icons.light_mode,

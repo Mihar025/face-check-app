@@ -16,7 +16,7 @@ class WorkSiteService {
 
   Future<List<WorkSiteResponse>> loadWorkSites() async {
     try {
-      final response = await dio.get('http://192.168.1.194:8088/api/v1/workSite', queryParameters: {
+      final response = await dio.get('https://face-check-prod-drgsy.ondigitalocean.app/api/v1/workSite', queryParameters: {
         'page': 0,
         'size': 10,
       });
