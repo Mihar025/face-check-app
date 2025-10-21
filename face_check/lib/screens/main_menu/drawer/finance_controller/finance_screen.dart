@@ -195,13 +195,8 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back_ios_new, color: kFinancePrimary, size: 20),
-                                      onPressed: () {
-                                        if (!kIsWeb) HapticFeedback.lightImpact();
-                                        Navigator.of(context).maybePop();
-                                      },
-                                    ),
+                                    const SizedBox(width: 48),
+                                    const Spacer(),
                                     Row(
                                       children: [
                                         _actionBtn(Icons.download_rounded, _downloadFinanceReport, l10n.get('finance.downloadTooltip')),
