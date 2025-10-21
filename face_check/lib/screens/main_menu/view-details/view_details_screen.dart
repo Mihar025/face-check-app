@@ -587,29 +587,6 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (_isDataFromCache)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.info_outline, size: 16, color: Colors.orange),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Showing cached data. Pull to refresh.',
-                                    style: TextStyle(fontSize: 12, color: Colors.orange[700]),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
                         SlideTransition(
                           position: Tween<Offset>(
                             begin: const Offset(0, -0.2),
@@ -620,9 +597,7 @@ class _ViewDetailsScreenState extends State<ViewDetailsScreen> with TickerProvid
                           )),
                           child: _buildHeroSection(),
                         ),
-
                         SizedBox(height: _sectionSpacing),
-
                         FadeTransition(
                           opacity: _fadeController,
                           child: _buildProductivityMetrics(textColor, subtitleColor, cardColor),
