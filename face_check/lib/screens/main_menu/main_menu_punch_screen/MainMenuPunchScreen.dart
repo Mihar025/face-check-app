@@ -122,6 +122,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   }
 
   void _initializeDependencies() async {
+    _isLoading.value = true; // ← ✅ Включаем загрузку СРАЗУ!
+
     _initializeDio();
     timeService = TimeService(dio);
     locationService = LocationService();
@@ -129,15 +131,24 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     attendanceApi = WorkerAttendanceControllerApi(dio, serializers);
     _locationTrackingService = LocationTrackingService(dio);
 
-    // Получаем userId при инициализации
-    await _fetchAndSaveUserId();
+    try {
+      // ✅ ПАРАЛЛЕЛЬНАЯ загрузка данных!
+      await Future.wait([
+        _fetchAndSaveUserId(),
+        timeService.sync(),
+        _getCurrentLocation(),
+        _loadWorkSites(),
+      ]);
 
-    // Последовательно загружаем данные
-    await timeService.sync();
-    await _getCurrentLocation();
-    await _loadWorkSites();
-    await _checkTodayPunchStatus();
-    await _checkTrackingStatus();
+      // Эти зависят от предыдущих, делаем последовательно
+      await _checkTodayPunchStatus();
+      await _checkTrackingStatus();
+
+    } catch (e) {
+      print('❌ Error during initialization: $e');
+    } finally {
+      _isLoading.value = false; // ← ✅ Отключаем загрузку
+    }
   }
 
   Future<void> _fetchAndSaveUserId() async {
