@@ -38,7 +38,6 @@ public class ForemanAndAdminService implements AdminAndForemanFunctionality {
     private final UserMapper userMapper;
 
 
-
     @Override
     public PageResponse<WorksiteWorkerResponse> findAllWorkersInWorkSite(
             int page,

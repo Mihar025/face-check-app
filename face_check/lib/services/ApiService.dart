@@ -1,30 +1,31 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:face_check/screens/theme/page_response.dart';
 import 'package:face_check/models/update_punch_in_response.dart';
 import 'package:face_check/models/worksite_worker_response.dart';
 import 'package:face_check/services/jwt_service.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../api_client/api/authentication_api.dart';
 import '../api_client/api/file_controller_api.dart';
 import '../api_client/api/user_service_controller_api.dart';
 import '../api_client/api/worker_attendance_controller_api.dart';
 import '../api_client/model/user_full_contact_information.dart';
+import '../api_client/model/worker_currently_working_in_work_site.dart';
 import '../api_client/serializers.dart';
+
 import '../models/daily_earnings.dart';
 import '../models/finance_info_response.dart';
 import '../models/last_punch_info.dart';
-
-
 
 class ApiService {
   static ApiService? _instance;
   late final Dio _dio;
   final _storage = const FlutterSecureStorage();
+
   late WorkerAttendanceControllerApi workerAttendanceApi;
   late final AuthenticationApi authenticationApi;
   late final UserServiceControllerApi userApi;
@@ -33,43 +34,68 @@ class ApiService {
   ApiService._() {
     _dio = Dio(
       BaseOptions(
-        //baseUrl: 'http://localhost:8088/api/v1/',
-        //baseUrl: 'http://192.168.1.194:8088/api/v1/',
-          baseUrl:'https://face-check-prod-drgsy.ondigitalocean.app/api/v1/',
-        connectTimeout: Duration(seconds: 5),
-        receiveTimeout: Duration(seconds: 3),
+        // baseUrl: 'http://localhost:8088/api/v1/',
+        // baseUrl: 'http://192.168.1.194:8088/api/v1/',
+        baseUrl: 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1/',
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(seconds: 20),
         contentType: 'application/json',
+        // 5xx бросаем как ошибку Dio, 4xx оставляем на обработку в коде
+        validateStatus: (s) => s != null && s < 500,
       ),
     );
 
+    // ВАЖНО: сначала чистим, потом добавляем нужные перехватчики
+    _dio.interceptors.clear();
 
+    // Логгер (оставляем включенным)
     _dio.interceptors.add(LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        requestHeader: true,
-        responseHeader: true,
-        request: true,
-        error: true,
-        logPrint: (object) {
-          print('DIO LOG: $object');
-        }
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: false,
+      responseBody: true,
+      error: true,
+      logPrint: (object) {
+        print('DIO LOG: $object');
+      },
     ));
 
-    _dio.interceptors.clear();
+    // Токен + ретраи на таймауты
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          if (options.path.contains('/auth/authenticate')) {
-            return handler.next(options);
-          }
-
-          final token = await _storage.read(key: 'auth_token');
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+          // Токен добавляем для всех, кроме явной аутентификации (если нужно)
+          if (!options.path.contains('/auth/authenticate')) {
+            final token = await _storage.read(key: 'auth_token');
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
           }
           return handler.next(options);
         },
         onError: (error, handler) async {
+          // Простой ретрай на сетевые таймауты (до 2 попыток)
+          final ro = error.requestOptions;
+          final retry = (ro.extra['retry'] ?? 0) as int;
+          final isTimeout =
+              error.type == DioExceptionType.receiveTimeout ||
+                  error.type == DioExceptionType.connectionTimeout ||
+                  error.type == DioExceptionType.sendTimeout;
+
+          if (isTimeout && retry < 2) {
+            await Future.delayed(const Duration(milliseconds: 800));
+            ro.extra['retry'] = retry + 1;
+            try {
+              final resp = await _dio.fetch(ro);
+              return handler.resolve(resp);
+            } catch (e) {
+              // упадём в общий обработчик ниже
+            }
+          }
+
+          // Если упало на /auth/authenticate с 500 — разлогиниваемся
           if (error.response?.statusCode == 500 &&
               error.requestOptions.path.contains('/auth/authenticate')) {
             await logout();
@@ -80,6 +106,7 @@ class ApiService {
       ),
     );
 
+    // OpenAPI клиенты (если используешь)
     authenticationApi = AuthenticationApi(_dio, standardSerializers);
     userApi = UserServiceControllerApi(_dio, standardSerializers);
     fileApi = FileControllerApi(_dio, standardSerializers);
@@ -92,52 +119,15 @@ class ApiService {
     return _instance!;
   }
 
-  Future<LastPunchInfo> getLastPunchTime() async {
-    try {
-      final response = await _dio.get('attendance/last-punch');
-      print("API Response: ${response.data}");
-      if (response.data != null) {
-        return LastPunchInfo.fromJson(response.data);
-      }
-      return LastPunchInfo(date: 'DD/MM/YYYY', time: '--:--');
-    } catch (e) {
-      print('Error getting last punch time: $e');
-      return LastPunchInfo(date: 'DD/MM/YYYY', time: '--:--');
-    }
-  }
+  Dio get dio => _dio;
 
-  Future<List<DailyEarning>> getWeeklyEarnings() async {
-    try {
-      final response = await _dio.get('/attendance/week');
-      print("Weekly Earnings Response: ${response.data}");
-
-      if (response.data != null) {
-        return (response.data as List)
-            .map((item) => DailyEarning.fromJson(item))
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error getting weekly earnings: $e');
-      return [];
-    }
-  }
+  // ===================== AUTH / UTILS =====================
 
   Future<void> logout() async {
     await _storage.delete(key: 'auth_token');
     await _storage.delete(key: 'refresh_token');
     await JwtService.clearRole();
     _dio.options.headers.remove('Authorization');
-  }
-
-  Future<num> findWorkerBaseHourRate() async {
-    try {
-      final response = await userApi.findWorkerBaseHourRate();
-      return response.data ?? 0;
-    } catch (e) {
-      print('Error in findWorkerBaseHourRate: $e');
-      throw e;
-    }
   }
 
   Future<void> setAuthToken(String token, String? refreshToken) async {
@@ -176,10 +166,77 @@ class ApiService {
     return await _storage.read(key: 'auth_token');
   }
 
+  // ===================== DOMAIN CALLS =====================
+
+  Future<LastPunchInfo> getLastPunchTime() async {
+    try {
+      final response = await _dio.get('attendance/last-punch');
+      print("API Response: ${response.data}");
+      if (response.data != null) {
+        return LastPunchInfo.fromJson(response.data);
+      }
+      return LastPunchInfo(date: 'DD/MM/YYYY', time: '--:--');
+    } catch (e) {
+      print('Error getting last punch time: $e');
+      return LastPunchInfo(date: 'DD/MM/YYYY', time: '--:--');
+    }
+  }
+
+  /// GET /workSite/{workSiteId}/active-workers?page=&size=
+  Future<PageResponse<WorkerCurrentlyWorkingInWorkSite>> getActiveWorkersInWorksite({
+    required int worksiteId,
+    required int page,
+  }) async {
+    final res = await _dio.get(
+      '/workSite/$worksiteId/active-workers',
+      queryParameters: {'page': page, 'size': 20},
+    );
+
+    return PageResponse.fromJson(
+      res.data as Map<String, dynamic>,
+          (obj) {
+        final map = obj as Map<String, dynamic>;
+        final model = standardSerializers.deserializeWith(
+          WorkerCurrentlyWorkingInWorkSite.serializer,
+          map,
+        );
+        return model!;
+      },
+    );
+  }
+
+
+  Future<List<DailyEarning>> getWeeklyEarnings() async {
+    try {
+      final response = await _dio.get('/attendance/week');
+      print("Weekly Earnings Response: ${response.data}");
+
+      if (response.data != null) {
+        return (response.data as List)
+            .map((item) => DailyEarning.fromJson(item))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error getting weekly earnings: $e');
+      return [];
+    }
+  }
+
+  Future<num> findWorkerBaseHourRate() async {
+    try {
+      final response = await userApi.findWorkerBaseHourRate();
+      return response.data ?? 0;
+    } catch (e) {
+      print('Error in findWorkerBaseHourRate: $e');
+      throw e;
+    }
+  }
+
   Future<double> getTotalWorkedHoursPerWeek() async {
     try {
       final response = await _dio.get('/user/total-hours-perWeek');
-      return response.data.toDouble();
+      return (response.data as num).toDouble();
     } catch (e) {
       print('Error getting total worked hours per week: $e');
       return 0.0;
@@ -201,13 +258,12 @@ class ApiService {
         return FinanceInfoResponse.fromJson(response.data);
       }
 
-
       return FinanceInfoResponse(
         totalHoursWorked: 0.0,
         totalGrossPay: 0.0,
         totalNetPay: 0.0,
         periodStart: weekStart,
-        periodEnd: weekStart.add(Duration(days: 6)),
+        periodEnd: weekStart.add(const Duration(days: 6)),
         dailyInfo: [],
       );
     } catch (e) {
@@ -216,11 +272,9 @@ class ApiService {
     }
   }
 
-
   Future<void> sendEmail(String email) async {
     try {
-      print(
-          'Attempting to send email reset request for: $email');
+      print('Attempting to send email reset request for: $email');
       final Map<String, dynamic> emailRequest = {
         'email': email,
       };
@@ -240,7 +294,6 @@ class ApiService {
 
       print('Response status: ${response.statusCode}');
       print('Response data: ${response.data}');
-
     } on DioError catch (e) {
       print('DioError occurred:');
       print('  Status code: ${e.response?.statusCode}');
@@ -260,11 +313,7 @@ class ApiService {
   Future<void> verifyCode(String email, String code) async {
     try {
       await _dio.post('/auth/forgot-password/verify',
-          data: {
-            'email': email,
-            'code': code
-          }
-      );
+          data: {'email': email, 'code': code});
     } on DioError catch (e) {
       if (e.response?.statusCode == 400) {
         throw 'Not correct code';
@@ -273,8 +322,8 @@ class ApiService {
     }
   }
 
-  Future<void> resetPassword(String email, String newPassword,
-      String confirmPassword, String verificationCode) async {
+  Future<void> resetPassword(
+      String email, String newPassword, String confirmPassword, String verificationCode) async {
     try {
       await _dio.post('/auth/forgot-password',
           data: {
@@ -282,8 +331,7 @@ class ApiService {
             'newPassword': newPassword,
             'confirmNewPassword': confirmPassword,
             'code': verificationCode
-          }
-      );
+          });
     } on DioError catch (e) {
       if (e.response?.statusCode == 400) {
         throw 'Passwords not match';
@@ -294,10 +342,10 @@ class ApiService {
     }
   }
 
-  Dio get dio => _dio;
+  // ===================== АДМИН-ЭНДПОИНТЫ (оставил, если где-то ещё нужны) =====================
 
-
-
+  /// Старый список работников в ворксайте (полный), по /admin/employee
+  /// Оставил на месте, вдруг используешь для других экранов.
   Future<PageResponse<WorksiteWorkerResponse>> getWorkersInWorksite({
     required int worksiteId,
     required int page,
@@ -316,25 +364,28 @@ class ApiService {
 
       if (response.data['content'] == null) {
         return PageResponse(
-            content: [],
-            pageNumber: response.data['number'] ?? 0,
-            pageSize: response.data['size'] ?? 20,
-            totalElements: response.data['totalElement'] ?? 0,
-            totalPages: response.data['totalPages'] ?? 0,
-            first: response.data['first'] ?? true,
-            last: response.data['last'] ?? true
+          content: [],
+          pageNumber: response.data['number'] ?? 0,
+          pageSize: response.data['size'] ?? 20,
+          // ВАЖНО: у тебя на бэке — totalElement (без "s")
+          totalElements: response.data['totalElement'] ?? 0,
+          totalPages: response.data['totalPages'] ?? 0,
+          first: response.data['first'] ?? true,
+          last: response.data['last'] ?? true,
         );
       }
 
       return PageResponse.fromJson(
-        response.data,
-            (json) => WorksiteWorkerResponse.fromJson(json as Map<String, dynamic>),
+        response.data as Map<String, dynamic>,
+            (json) =>
+            WorksiteWorkerResponse.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
       debugPrint('Error getting workers in worksite: $e');
       rethrow;
     }
   }
+
   Future<void> deleteWorkerPunchIn(int workerId) async {
     try {
       await _dio.delete('/admin/workers/$workerId/punch-in');
@@ -346,11 +397,10 @@ class ApiService {
 
   Future<UpdatePunchInForWorkerResponse?> updatePunchInTime(
       int workerId,
-      DateTime newPunchInTime,
-      {int? punchInId}
-      ) async {
+      DateTime newPunchInTime, {
+        int? punchInId,
+      }) async {
     try {
-
       final String formattedDateTime =
           "${newPunchInTime.year.toString().padLeft(4, '0')}-"
           "${newPunchInTime.month.toString().padLeft(2, '0')}-"
@@ -360,7 +410,8 @@ class ApiService {
           "${newPunchInTime.second.toString().padLeft(2, '0')}";
 
       final Map<String, dynamic> requestData = {
-        'newCheckInTIme': formattedDateTime
+        // остался твой ключ, если на бэке именно так:
+        'newCheckInTIme': formattedDateTime,
       };
       if (punchInId != null) {
         requestData['punchInId'] = punchInId;
@@ -384,7 +435,6 @@ class ApiService {
       print('Response data: ${e.response?.data}');
       print('Response status: ${e.response?.statusCode}');
 
-
       if (e.response?.statusCode == 400 &&
           e.response!.data.toString().contains('LocalDateTime')) {
         print('Date parsing error occurred, but operation may have succeeded');
@@ -400,10 +450,4 @@ class ApiService {
       throw 'Unexpected error';
     }
   }
-
-
-
 }
-
-
-
