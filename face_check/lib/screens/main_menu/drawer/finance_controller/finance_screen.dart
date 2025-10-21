@@ -33,11 +33,12 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
   // Screen metrics cache
   late Size _screenSize;
   late bool _isSmall;
-  late bool _isMedium; // планшеты
-  late bool _isWide;   // web/desktop и большие планшеты landscape
+  late bool _isMedium;
+  late bool _isWide;
 
   // Цвета
-  static const Color _bg = Color(0xFFF7FAFC);
+  static const Color _bgLight = Color(0xFFF7FAFC);
+  static const Color _bgDark = Color(0xFF1A202C);
   static const Color _error = Color(0xFFE53E3E);
   static const Color _success = Color(0xFF48BB78);
 
@@ -46,21 +47,11 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     super.initState();
     _apiService = ApiService.instance;
 
-    // ✅ ИСПРАВЛЕНИЕ: Устанавливаем светлую системную панель (статус бар)
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark, // ✅ Тёмные иконки (время, батарея)
-        statusBarBrightness: Brightness.light,    // ✅ Для iOS
-      ),
-    );
-
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 450),
       vsync: this,
     );
 
-    // Неделя с воскресенья (или понедельника — универсально/устойчиво)
     final now = DateTime.now();
     final start = now.subtract(Duration(days: now.weekday % 7));
     _currentWeekStart = ValueNotifier<DateTime>(DateTime(start.year, start.month, start.day));
@@ -80,16 +71,13 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     final size = MediaQuery.of(context).size;
     _screenSize = size;
     final w = size.width;
-    _isSmall = w < 380;                // узкие телефоны
-    _isMedium = w >= 380 && w < 900;   // обычные телефоны / компактные планшеты
-    _isWide = w >= 900;                // планшеты и desktop/web
+    _isSmall = w < 380;
+    _isMedium = w >= 380 && w < 900;
+    _isWide = w >= 900;
   }
 
   @override
   void dispose() {
-    // ✅ ИСПРАВЛЕНИЕ: Восстанавливаем тему адаптивно (не трогаем системную панель)
-    // SystemChrome не вызываем - пусть другие экраны сами управляют своей темой
-
     _fadeController.dispose();
     _currentWeekStart.dispose();
     _financeInfo.dispose();
@@ -169,7 +157,17 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     _updateMetrics();
     final l10n = context.read<LocalizationProvider>().localizations;
-    // Мягко ограничим экстремальные системные масштабы шрифтов, чтобы не ломать сетку
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+    );
+
     final media = MediaQuery.of(context);
     final clampedTextScale = media.textScaleFactor.clamp(0.9, 1.25);
 
@@ -178,7 +176,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
       child: ScrollConfiguration(
         behavior: const _NoGlowBehavior(),
         child: Scaffold(
-          backgroundColor: _bg,
+          backgroundColor: isDark ? _bgDark : _bgLight,
           body: ValueListenableBuilder<DateTime>(
             valueListenable: _currentWeekStart,
             builder: (context, weekStart, _) {
@@ -195,16 +193,14 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                       expandedHeight: _isWide ? 160 : 140,
                       pinned: true,
                       elevation: 0,
-                      backgroundColor: Colors.white,
-                      // ✅ ИСПРАВЛЕНИЕ: Тёмная иконка назад
-                      iconTheme: const IconThemeData(
-                        color: kFinancePrimary, // ✅ Чёрная стрелка
+                      backgroundColor: isDark ? _bgDark : Colors.white,
+                      iconTheme: IconThemeData(
+                        color: isDark ? Colors.white : kFinancePrimary,
                       ),
-                      // ✅ ИСПРАВЛЕНИЕ: Светлая системная панель
-                      systemOverlayStyle: const SystemUiOverlayStyle(
+                      systemOverlayStyle: SystemUiOverlayStyle(
                         statusBarColor: Colors.transparent,
-                        statusBarIconBrightness: Brightness.dark, // ✅ Тёмные иконки
-                        statusBarBrightness: Brightness.light,
+                        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
                       ),
                       flexibleSpace: FlexibleSpaceBar(
                         background: SafeArea(
@@ -214,7 +210,6 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                             child: Column(
                               children: [
                                 const SizedBox(height: 8),
-                                // Top Row
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -222,9 +217,9 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                     const Spacer(),
                                     Row(
                                       children: [
-                                        _actionBtn(Icons.download_rounded, _downloadFinanceReport, l10n.get('finance.downloadTooltip')),
+                                        _actionBtn(isDark, Icons.download_rounded, _downloadFinanceReport, l10n.get('finance.downloadTooltip')),
                                         const SizedBox(width: 8),
-                                        _actionBtn(Icons.share_rounded, () {
+                                        _actionBtn(isDark, Icons.share_rounded, () {
                                           if (!kIsWeb) HapticFeedback.lightImpact();
                                           final info = _financeInfo.value;
                                           if (info == null) return;
@@ -238,7 +233,6 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                     ),
                                   ],
                                 ),
-                                // Title + Period
                                 Expanded(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -247,7 +241,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                         l10n.get('finance.title'),
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: kFinancePrimary,
+                                          color: isDark ? Colors.white : kFinancePrimary,
                                           fontSize: _isWide ? 36 : 32,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: -0.5,
@@ -257,7 +251,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                       Text(
                                         periodText,
                                         style: TextStyle(
-                                          color: Colors.grey[600],
+                                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                                           fontSize: _isWide ? 16 : 15,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -272,15 +266,13 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                       ),
                     ),
 
-                    // Week navigation
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(_isWide ? 24 : 16, 16, _isWide ? 24 : 16, 8),
-                        child: _weekNav(l10n, weekStart),
+                        child: _weekNav(isDark, l10n, weekStart),
                       ),
                     ),
 
-                    // Responsive Summary Grid (Hours / Gross)
                     ValueListenableBuilder<bool>(
                       valueListenable: _isLoading,
                       builder: (_, isLoading, __) {
@@ -319,7 +311,6 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                   crossAxisCount: crossAxisCount,
                                   crossAxisSpacing: spacing,
                                   mainAxisSpacing: spacing,
-                                  // Делаем плитки выше → исключаем переполнение
                                   childAspectRatio: _isWide ? 1.45 : (_isSmall ? 0.85 : 1.0),
                                 ),
                               ),
@@ -329,14 +320,13 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                       },
                     ),
 
-                    // Daily Breakdown title
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(_isWide ? 24 : 16, 16, _isWide ? 24 : 16, 8),
                         child: Text(
                           l10n.get('finance.dailyBreakdown'),
                           style: TextStyle(
-                            color: Colors.black87,
+                            color: isDark ? Colors.white : Colors.black87,
                             fontSize: _isWide ? 22 : 20,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.3,
@@ -345,7 +335,6 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                       ),
                     ),
 
-                    // Content
                     ValueListenableBuilder<bool>(
                       valueListenable: _isLoading,
                       builder: (_, isLoading, __) {
@@ -395,7 +384,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                   if (index == items.length) {
                                     return Padding(
                                       padding: EdgeInsets.fromLTRB(_isWide ? 24 : 16, 16, _isWide ? 24 : 16, 16),
-                                      child: _totalsCard(l10n, info!),
+                                      child: _totalsCard(isDark, l10n, info!),
                                     );
                                   }
                                   final daily = items[index];
@@ -406,7 +395,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                                         parent: _fadeController,
                                         curve: Interval(0.05 * index, 0.35 + 0.05 * index, curve: Curves.easeOut),
                                       ),
-                                      child: _dailyCard(daily),
+                                      child: _dailyCard(isDark, daily),
                                     ),
                                   );
                                 },
@@ -429,9 +418,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  // ————— Widgets
-
-  Widget _actionBtn(IconData icon, VoidCallback onTap, String tooltip) {
+  Widget _actionBtn(bool isDark, IconData icon, VoidCallback onTap, String tooltip) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -442,44 +429,53 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!, width: 1),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.2) : Colors.grey[300]!,
+                width: 1,
+              ),
             ),
-            child: Icon(icon, color: kFinancePrimary, size: 22),
+            child: Icon(icon, color: isDark ? Colors.white : kFinancePrimary, size: 22),
           ),
         ),
       ),
     );
   }
 
-  Widget _weekNav(dynamic l10n, DateTime currentWeekStart) {
-    final subtitleStyle = TextStyle(fontSize: _isWide ? 13 : 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600);
+  Widget _weekNav(bool isDark, dynamic l10n, DateTime currentWeekStart) {
+    final subtitleStyle = TextStyle(
+      fontSize: _isWide ? 13 : 12,
+      color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+      fontWeight: FontWeight.w600,
+    );
 
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 3))],
+        boxShadow: isDark
+            ? []
+            : [BoxShadow(color: Colors.grey.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 3))],
+        border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
       ),
       child: Row(
         children: [
-          // Prev
           Expanded(
             flex: 2,
             child: _pillButton(
+              isDark,
               onTap: () => changeWeek(-7),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.chevron_left_rounded, color: kFinancePrimary, size: 22),
-                  Text(l10n.get('finance.previous'), style: const TextStyle(color: kFinancePrimary, fontWeight: FontWeight.w700)),
+                  Icon(Icons.chevron_left_rounded, color: isDark ? Colors.white : kFinancePrimary, size: 22),
+                  Text(l10n.get('finance.previous'), style: TextStyle(color: isDark ? Colors.white : kFinancePrimary, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
           ),
-          // Center period
           Expanded(
             flex: 3,
             child: Padding(
@@ -487,25 +483,25 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
               child: Column(
                 children: [
                   Text(l10n.get('finance.weekPeriod').toUpperCase(),
-                      style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                      style: TextStyle(fontSize: 10, color: isDark ? Colors.grey.shade600 : Colors.grey.shade500, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
                   const SizedBox(height: 6),
                   Text(DateFormat('MMM d').format(currentWeekStart),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kFinancePrimary)),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : kFinancePrimary)),
                   Text('to ${DateFormat('MMM d, yyyy').format(currentWeekStart.add(const Duration(days: 6)))}', style: subtitleStyle),
                 ],
               ),
             ),
           ),
-          // Next
           Expanded(
             flex: 2,
             child: _pillButton(
+              isDark,
               onTap: () => changeWeek(7),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(l10n.get('finance.next'), style: const TextStyle(color: kFinancePrimary, fontWeight: FontWeight.w700)),
-                  const Icon(Icons.chevron_right_rounded, color: kFinancePrimary, size: 22),
+                  Text(l10n.get('finance.next'), style: TextStyle(color: isDark ? Colors.white : kFinancePrimary, fontWeight: FontWeight.w700)),
+                  Icon(Icons.chevron_right_rounded, color: isDark ? Colors.white : kFinancePrimary, size: 22),
                 ],
               ),
             ),
@@ -515,7 +511,7 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  Widget _pillButton({required VoidCallback onTap, required Widget child}) {
+  Widget _pillButton(bool isDark, {required VoidCallback onTap, required Widget child}) {
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(12),
@@ -524,21 +520,21 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(color: kFinancePrimary.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.05) : kFinancePrimary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: child,
         ),
       ),
     );
   }
 
-  /// Карточка-резюме: адаптивная.
-  /// Компактный режим включается при h < 104 (горизонтальная раскладка), что гарантированно снимает overflow.
   Widget _summaryCard(_SummaryCardData data) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final h = constraints.maxHeight;
 
-        // Компактный режим — горизонтальная раскладка, минимальные размеры
         if (h < 104) {
           final pad = 8.0;
           final iconSize = 22.0;
@@ -614,7 +610,6 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
           );
         }
 
-        // Обычный (вертикальный) режим — «резиновый», безопасен по высоте
         final pad = (h * 0.12).clamp(8.0, 14.0);
         final contentH = h - 2 * pad;
 
@@ -684,17 +679,20 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  Widget _dailyCard(DailyFinanceInfo daily) {
+  Widget _dailyCard(bool isDark, DailyFinanceInfo daily) {
     final hasData = daily.hoursWorked > 0;
-    final badgeColor = hasData ? kFinancePrimary : Colors.grey.shade200;
-    final textColor = hasData ? Colors.white : Colors.grey.shade600;
+    final badgeColor = hasData ? kFinancePrimary : (isDark ? Colors.grey.shade800 : Colors.grey.shade200);
+    final textColor = hasData ? Colors.white : (isDark ? Colors.grey.shade500 : Colors.grey.shade600);
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: hasData ? [BoxShadow(color: Colors.grey.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))] : [],
-        border: Border.all(color: hasData ? Colors.transparent : Colors.grey.shade200, width: 1),
+        boxShadow: hasData && !isDark ? [BoxShadow(color: Colors.grey.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))] : [],
+        border: Border.all(
+          color: hasData ? Colors.transparent : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200),
+          width: 1,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -706,7 +704,6 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
             padding: EdgeInsets.all(_isWide ? 18 : 16),
             child: Row(
               children: [
-                // Date badge
                 Container(
                   width: _isWide ? 68 : 60,
                   height: _isWide ? 68 : 60,
@@ -723,13 +720,12 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Data
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _dataItem(Icons.schedule, '${daily.hoursWorked.toStringAsFixed(1)}h', hasData),
-                      _dataItem(Icons.attach_money, $$(daily.grossPay), hasData),
+                      _dataItem(isDark, Icons.schedule, '${daily.hoursWorked.toStringAsFixed(1)}h', hasData),
+                      _dataItem(isDark, Icons.attach_money, $$(daily.grossPay), hasData),
                     ],
                   ),
                 ),
@@ -741,25 +737,25 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     );
   }
 
-  Widget _dataItem(IconData icon, String value, bool hasData) {
+  Widget _dataItem(bool isDark, IconData icon, String value, bool hasData) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 18, color: hasData ? kFinancePrimary : Colors.grey.shade400),
+        Icon(icon, size: 18, color: hasData ? kFinancePrimary : (isDark ? Colors.grey.shade700 : Colors.grey.shade400)),
         const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
             fontSize: _isWide ? 15 : 14,
             fontWeight: hasData ? FontWeight.w700 : FontWeight.w500,
-            color: hasData ? Colors.grey.shade800 : Colors.grey.shade400,
+            color: hasData ? (isDark ? Colors.white : Colors.grey.shade800) : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
           ),
         ),
       ],
     );
   }
 
-  Widget _totalsCard(dynamic l10n, FinanceInfoResponse info) {
+  Widget _totalsCard(bool isDark, dynamic l10n, FinanceInfoResponse info) {
     final divider = Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2));
     return Container(
       decoration: BoxDecoration(
@@ -808,8 +804,6 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
   }
 }
 
-// ——— Helpers / stateless bits
-
 class _SummaryCardData {
   final String label;
   final String value;
@@ -830,13 +824,15 @@ class _ProgressDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 48),
       backgroundColor: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF2D3748) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 18, offset: const Offset(0, 8))],
         ),
@@ -848,7 +844,14 @@ class _ProgressDialog extends StatelessWidget {
             child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
           ),
           const SizedBox(height: 18),
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
         ]),
       ),
     );
@@ -862,6 +865,8 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -870,13 +875,25 @@ class _EmptyState extends StatelessWidget {
             width: 110,
             height: 110,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400]),
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [Colors.grey.shade800, Colors.grey.shade700]
+                    : [Colors.grey.shade300, Colors.grey.shade400],
+              ),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.event_busy_rounded, size: 54, color: Colors.white),
           ),
           const SizedBox(height: 22),
-          Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 18, color: Colors.grey.shade700, fontWeight: FontWeight.w600)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 14),
           ElevatedButton.icon(
             onPressed: onRefresh,

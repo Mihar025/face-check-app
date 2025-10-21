@@ -567,8 +567,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       print('Error checking punch status: $e');
     }
   }
-
-  // Полная перезагрузка данных
+// Полная перезагрузка данных
   Future<void> _fullReloadData() async {
     print('Starting full reload...');
 
@@ -583,12 +582,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     // Перезагружаем userId и privacy policy
     await _initializeUserAndPrivacy();
 
+    // ✅ ВАЖНО: Обновляем статус punch in/out
+    await _checkPunchStatus();
+
     // Загружаем свежие данные
     if (_canLoadData && _currentUserId != null) {
-      await Future.wait([
-        _loadFreshData(),
-        _checkPunchStatus(),
-      ]);
+      await _loadFreshData();
     }
 
     print('Full reload completed');
