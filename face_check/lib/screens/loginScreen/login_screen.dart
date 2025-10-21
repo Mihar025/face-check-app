@@ -291,26 +291,20 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.black.withOpacity(0.18),
           ),
 
-          // Основной контент
+          // ✅ ИСПРАВЛЕННЫЙ layout - форма по центру
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    _screenHeight * 0.35,
-                    16,
-                    _keyboardHeight > 0 ? _keyboardHeight + 16 : 24,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: _maxFormWidth),
-                      child: _buildLoginForm(),
-                    ),
-                  ),
-                );
-              },
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: _keyboardHeight > 0 ? 16 : 24,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: _maxFormWidth),
+                  child: _buildLoginForm(),
+                ),
+              ),
             ),
           ),
         ],
@@ -464,7 +458,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ],
     );
   }
-
 }
 
 
@@ -594,7 +587,11 @@ class _EmailField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: 'Email',
         hintText: 'email@gmail.com',
-        prefixIcon: const Icon(Icons.alternate_email),
+        prefixIcon: const Icon(
+          Icons.alternate_email,
+          color: Colors.black87,
+          size: 20,
+        ),
         filled: true,
         fillColor: const Color(0xFFFAFAFA),
         contentPadding: EdgeInsets.symmetric(
@@ -664,12 +661,18 @@ class _PasswordField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: 'Password',
         hintText: 'Your password',
-        prefixIcon: const Icon(Icons.lock_outline),
+        prefixIcon: const Icon(
+          Icons.lock_outline,
+          color: Colors.black87,
+          size: 20,
+        ),
         suffixIcon: IconButton(
           tooltip: obscurePassword ? 'Show password' : 'Hide password',
           onPressed: onToggleObscure,
           icon: Icon(
             obscurePassword ? Icons.visibility_off : Icons.visibility,
+            color: Colors.black87,
+            size: 20,
           ),
         ),
         filled: true,
