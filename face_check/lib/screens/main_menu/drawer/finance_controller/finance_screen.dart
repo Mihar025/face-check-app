@@ -46,6 +46,15 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     super.initState();
     _apiService = ApiService.instance;
 
+    // ✅ ИСПРАВЛЕНИЕ: Устанавливаем светлую системную панель (статус бар)
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // ✅ Тёмные иконки (время, батарея)
+        statusBarBrightness: Brightness.light,    // ✅ Для iOS
+      ),
+    );
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 450),
       vsync: this,
@@ -61,7 +70,8 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     fetchFinanceInfo();
   }
 
-  @override  void didChangeDependencies() {
+  @override
+  void didChangeDependencies() {
     super.didChangeDependencies();
     _updateMetrics();
   }
@@ -77,6 +87,9 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
 
   @override
   void dispose() {
+    // ✅ ИСПРАВЛЕНИЕ: Восстанавливаем тему адаптивно (не трогаем системную панель)
+    // SystemChrome не вызываем - пусть другие экраны сами управляют своей темой
+
     _fadeController.dispose();
     _currentWeekStart.dispose();
     _financeInfo.dispose();
@@ -183,6 +196,16 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                       pinned: true,
                       elevation: 0,
                       backgroundColor: Colors.white,
+                      // ✅ ИСПРАВЛЕНИЕ: Тёмная иконка назад
+                      iconTheme: const IconThemeData(
+                        color: kFinancePrimary, // ✅ Чёрная стрелка
+                      ),
+                      // ✅ ИСПРАВЛЕНИЕ: Светлая системная панель
+                      systemOverlayStyle: const SystemUiOverlayStyle(
+                        statusBarColor: Colors.transparent,
+                        statusBarIconBrightness: Brightness.dark, // ✅ Тёмные иконки
+                        statusBarBrightness: Brightness.light,
+                      ),
                       flexibleSpace: FlexibleSpaceBar(
                         background: SafeArea(
                           bottom: false,
