@@ -507,9 +507,9 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       return;
     }
 
-    try {
-      _isLoading.value = true;
+    _isLoading.value = true; // ✅ Начало загрузки
 
+    try {
       final Map<String, dynamic> requestData = {
         'workSiteId': _selectedWorkSite.value?.workSiteId,
         'photoBase64': photoBase64,
@@ -522,8 +522,12 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         data: requestData,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        _isLoading.value = false;
+        return;
+      }
 
+      // Проверяем статус код
       if (response.statusCode! >= 200 && response.statusCode! < 300) {
         final prefs = await SharedPreferences.getInstance();
         final nowUtcIso = timeService.nowUtc().toIso8601String();
@@ -548,23 +552,49 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           }
         }
 
-        _isLoading.value = false;
         _hasPunchIn.value = true;
         _isTrackingActive.value = true;
+        _isLoading.value = false; // ✅ Успех - сброс загрузки
 
         final currentTime = _getCurrentFormattedTime();
         _showSuccessDialog(true, currentTime);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Location tracking started for user: $userId'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Location tracking started for user: $userId'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // ✅ Статус код не 2xx - это ошибка
+        _isLoading.value = false;
+
+        // Извлекаем сообщение об ошибке из ответа
+        String errorMessage = 'Punch in failed';
+
+        if (response.data != null && response.data is Map) {
+         final rawMessage= errorMessage = response.data['message'] ??
+              response.data['error'] ??
+              'Server returned error: ${response.statusCode}';
+          errorMessage = _cleanErrorMessage(rawMessage.toString());
+        }
+
+        if (mounted) {
+          _showErrorDialog(
+            title: 'Punch In Failed',
+            message: errorMessage,
+            details: _isDebugMode() ? 'Status: ${response.statusCode}\nData: ${response.data}' : null,
+            onRetry: () => _handlePunchInWithCamera(),
+          );
+        }
       }
     } catch (e) {
-      if (!mounted) return;
+      // ✅ КРИТИЧНО: Всегда сбрасываем загрузку при ошибке
       _isLoading.value = false;
+
+      if (!mounted) return;
 
       final errorMessage = ErrorHandler.getErrorMessage(e);
 
@@ -605,9 +635,9 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       return;
     }
 
-    try {
-      _isLoading.value = true;
+    _isLoading.value = true; // ✅ Начало загрузки
 
+    try {
       final Map<String, dynamic> requestData = {
         'workSiteId': _selectedWorkSite.value?.workSiteId,
         'photoBase64': photoBase64,
@@ -620,8 +650,12 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         data: requestData,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        _isLoading.value = false; // ✅ Сброс при unmount
+        return;
+      }
 
+      // Проверяем статус код
       if (response.statusCode! >= 200 && response.statusCode! < 300) {
         print('🛑 Stopping location tracking for user ID: ${_currentUserId.value}');
         await _locationTrackingService.stopTracking();
@@ -632,23 +666,49 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         await prefs.setString('lastPunchOutDate', nowUtcIso);
         await prefs.setBool('isPunchedInToday', false);
 
-        _isLoading.value = false;
         _hasPunchIn.value = false;
         _isTrackingActive.value = false;
+        _isLoading.value = false; // ✅ Успех - сброс загрузки
 
         final currentTime = _getCurrentFormattedTime();
         _showSuccessDialog(false, currentTime);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Location tracking stopped for user: ${_currentUserId.value}'),
-            backgroundColor: Colors.blue,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Location tracking stopped for user: ${_currentUserId.value}'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+      } else {
+        // ✅ Статус код не 2xx - это ошибка
+        _isLoading.value = false;
+
+        // Извлекаем сообщение об ошибке из ответа
+        String errorMessage = 'Punch out failed';
+
+        if (response.data != null && response.data is Map) {
+          final rawMessage = errorMessage = response.data['message'] ??
+              response.data['error'] ??
+              'Server returned error: ${response.statusCode}';
+          errorMessage = _cleanErrorMessage(rawMessage.toString());
+        }
+
+        if (mounted) {
+          _showErrorDialog(
+            title: 'Punch Out Failed',
+            message: errorMessage,
+            details: _isDebugMode() ? 'Status: ${response.statusCode}\nData: ${response.data}' : null,
+            onRetry: () => _handlePunchOutWithCamera(),
+          );
+        }
       }
     } catch (e) {
-      if (!mounted) return;
+      // ✅ КРИТИЧНО: Всегда сбрасываем загрузку при ошибке
       _isLoading.value = false;
+
+      if (!mounted) return;
 
       final errorMessage = ErrorHandler.getErrorMessage(e);
 
@@ -660,7 +720,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       );
     }
   }
-
   void _showErrorDialog({
     required String title,
     required String message,
@@ -678,6 +737,11 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         onRetry: onRetry,
       ),
     );
+  }
+
+  String _cleanErrorMessage(String message) {
+    final regex = RegExp(r'(\d{2}:\d{2}:\d{2})\.\d+');
+    return message.replaceAllMapped(regex, (match) => match.group(1)!);
   }
 
   bool _isDebugMode() {
