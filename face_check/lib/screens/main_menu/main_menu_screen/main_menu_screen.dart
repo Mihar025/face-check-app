@@ -344,6 +344,15 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   void initState() {
     super.initState();
 
+    // ✅ ИСПРАВЛЕНИЕ: Устанавливаем светлые иконки для тёмной темы
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light, // ✅ СВЕТЛЫЕ иконки (для тёмного фона)
+        statusBarBrightness: Brightness.dark,      // ✅ Для iOS
+      ),
+    );
+
     tzdata.initializeTimeZones();
 
     _currentTime = ValueNotifier<String>(DateFormat('HH:mm').format(DateTime.now()));
@@ -747,7 +756,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               builder: (_, period, __) => WeeklyHoursCircle(
                                 hours: hours,
                                 period: period,
-                                thisWeekText: l10n.get('thisWeek'),
+                                thisWeekText: l10n.get('thisWeekText'),
                               ),
                             ),
                           ),
