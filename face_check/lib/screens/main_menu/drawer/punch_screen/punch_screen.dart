@@ -109,6 +109,8 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   }
 
   void _initializeDependencies() async {
+    _isLoading.value = true; // ← ✅ Включаем загрузку СРАЗУ!
+
     _initializeDio();
     timeService = TimeService(dio);
     locationService = LocationService();
@@ -116,15 +118,24 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     attendanceApi = WorkerAttendanceControllerApi(dio, serializers);
     _locationTrackingService = LocationTrackingService(dio);
 
-    await _fetchAndSaveUserId();
+    try {
+      // ✅ ПАРАЛЛЕЛЬНАЯ загрузка данных!
+      await Future.wait([
+        _fetchAndSaveUserId(),
+        timeService.sync(),
+        _getCurrentLocation(),
+        _loadWorkSites(),
+      ]);
 
-    await Future.wait([
-      timeService.sync(),
-      _getCurrentLocation(),
-      _loadWorkSites(),
-      _checkTodayPunchStatus(),
-      _checkTrackingStatus(),
-    ]);
+      // Эти зависят от предыдущих, делаем последовательно
+      await _checkTodayPunchStatus();
+      await _checkTrackingStatus();
+
+    } catch (e) {
+      print('❌ Error during initialization: $e');
+    } finally {
+      _isLoading.value = false; // ← ✅ Отключаем загрузку
+    }
   }
 
   Future<void> _fetchAndSaveUserId() async {
