@@ -4,9 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../providers/localization_provider.dart';
 import '../../../../services/ApiService.dart';
-import '../../../../models/worksite_worker_response.dart';
+import '../../../../api_client/model/worker_currently_working_in_work_site.dart';
 
 class WorksiteEmployeesScreen extends StatefulWidget {
   final int worksiteId;
@@ -24,7 +25,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
   final ApiService _apiService = ApiService.instance;
   bool isLoading = true;
   String? error;
-  List<WorksiteWorkerResponse> workers = [];
+  List<WorkerCurrentlyWorkingInWorkSite> workers = [];
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -46,13 +47,13 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
         error = null;
       });
 
-      final response = await _apiService.getWorkersInWorksite(
+      final page = await _apiService.getActiveWorkersInWorksite(
         worksiteId: widget.worksiteId,
         page: 0,
       );
 
       setState(() {
-        workers = response.content ?? [];
+        workers = page.content ?? [];
         isLoading = false;
       });
     } catch (e) {
@@ -63,17 +64,20 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     }
   }
 
-  Widget _buildWorkerItem(WorksiteWorkerResponse worker) {
+  // ----------------- UI BUILDERS -----------------
+
+  Widget _buildWorkerItem(WorkerCurrentlyWorkingInWorkSite worker) {
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
-    final initials = _getInitials(worker.firstName, worker.lastName);
+    final fullName = worker.workerFullName ?? '';
+    final initials = _initialsFromFullName(fullName);
     final avatarColor = _getAvatarColor(worker.workerId);
 
     return Card(
       margin: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 16 : 20,
-          vertical: isSmallScreen ? 6 : 8
+        horizontal: isSmallScreen ? 16 : 20,
+        vertical: isSmallScreen ? 6 : 8,
       ),
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -88,30 +92,27 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header (аватар + имя + ID)
             Row(
               children: [
-                // Avatar with initials
                 CircleAvatar(
                   radius: isSmallScreen ? 22 : 26,
                   backgroundColor: avatarColor,
                   child: Text(
                     initials,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: isSmallScreen ? 16 : 18,
                     ),
                   ),
                 ),
                 SizedBox(width: isSmallScreen ? 12 : 16),
-
-                // Name and ID
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${worker.firstName} ${worker.lastName}',
+                        fullName.isEmpty ? '—' : fullName,
                         style: GoogleFonts.poppins(
                           fontSize: isSmallScreen ? 16 : 18,
                           fontWeight: FontWeight.w600,
@@ -123,8 +124,8 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                         Container(
                           margin: EdgeInsets.only(top: isSmallScreen ? 3 : 4),
                           padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen ? 8 : 10,
-                              vertical: isSmallScreen ? 2 : 3
+                            horizontal: isSmallScreen ? 8 : 10,
+                            vertical: isSmallScreen ? 2 : 3,
                           ),
                           decoration: BoxDecoration(
                             color: Theme.of(context).primaryColor.withOpacity(0.1),
@@ -147,16 +148,55 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
 
             SizedBox(height: isSmallScreen ? 16 : 20),
 
-            // Contact info and status
-            _buildInfoSection(worker),
+            // Инфо (телефон, адрес, время прихода)
+            if ((worker.workerPhoneNumber ?? '').isNotEmpty)
+              _buildInfoRow(
+                icon: Icons.phone_rounded,
+                label: worker.workerPhoneNumber!,
+                iconColor: Colors.green,
+                isSmallScreen: isSmallScreen,
+              ),
+
+            if ((worker.workSiteAddress ?? '').isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
+                child: _buildInfoRow(
+                  icon: Icons.location_on_rounded,
+                  label: worker.workSiteAddress!,
+                  iconColor: Colors.orangeAccent,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+
+            if (worker.punchedIn != null)
+              Container(
+                margin: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 10 : 12,
+                  vertical: isSmallScreen ? 8 : 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: _buildInfoRow(
+                  icon: Icons.login_rounded,
+                  label: 'Время прихода: ${_formatDateTime(worker.punchedIn, includeDate: true)}',
+                  iconColor: Theme.of(context).primaryColor,
+                  isSmallScreen: isSmallScreen,
+                  textStyle: GoogleFonts.poppins(
+                    fontSize: isSmallScreen ? 12 : 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
 
             SizedBox(height: isSmallScreen ? 12 : 16),
-
-            // Divider before actions
             const Divider(height: 1),
 
-            // Action buttons
-            if (worker.punchIn != null)
+            // Кнопки действий
+            if (worker.workerId != null)
               Padding(
                 padding: EdgeInsets.only(top: isSmallScreen ? 12 : 16),
                 child: Row(
@@ -187,58 +227,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     );
   }
 
-  Widget _buildInfoSection(WorksiteWorkerResponse worker) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
-    return Column(
-      children: [
-        if (worker.phoneNumber != null)
-          _buildInfoRow(
-            icon: Icons.phone_rounded,
-            label: worker.phoneNumber!,
-            iconColor: Colors.green,
-            isSmallScreen: isSmallScreen,
-          ),
-
-        if (worker.workSiteAddress != null)
-          Padding(
-            padding: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
-            child: _buildInfoRow(
-              icon: Icons.location_on_rounded,
-              label: worker.workSiteAddress!,
-              iconColor: Colors.orangeAccent,
-              isSmallScreen: isSmallScreen,
-            ),
-          ),
-
-        if (worker.punchIn != null)
-          Container(
-            margin: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
-            padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 10 : 12,
-                vertical: isSmallScreen ? 8 : 10
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: _buildInfoRow(
-              icon: Icons.login_rounded,
-              label: 'Время прихода: ${_formatDateTime(worker.punchIn!)}',
-              iconColor: Theme.of(context).primaryColor,
-              isSmallScreen: isSmallScreen,
-              textStyle: GoogleFonts.poppins(
-                fontSize: isSmallScreen ? 12 : 14,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   Widget _buildInfoRow({
     required IconData icon,
     required String label,
@@ -249,20 +237,17 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: isSmallScreen ? 18 : 20,
-          color: iconColor,
-        ),
+        Icon(icon, size: isSmallScreen ? 18 : 20, color: iconColor),
         SizedBox(width: isSmallScreen ? 8 : 10),
         Expanded(
           child: Text(
             label,
-            style: textStyle ?? GoogleFonts.poppins(
-              fontSize: isSmallScreen ? 12 : 14,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-              height: 1.3,
-            ),
+            style: textStyle ??
+                GoogleFonts.poppins(
+                  fontSize: isSmallScreen ? 12 : 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  height: 1.3,
+                ),
           ),
         ),
       ],
@@ -275,8 +260,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     required Color color,
     required VoidCallback onPressed,
   }) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
 
     return ElevatedButton.icon(
       onPressed: onPressed,
@@ -300,6 +284,8 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     );
   }
 
+  // ----------------- DIALOGS / ACTIONS -----------------
+
   Future<DateTime?> showTimeInputDialog(
       BuildContext context, {
         DateTime? initialTime,
@@ -307,16 +293,17 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
 
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
 
-    final initialHour = initialTime != null ? initialTime.hour : now.hour;
-    final initialMinute = initialTime != null ? initialTime.minute : now.minute;
+    final initialHour = initialTime?.hour ?? now.hour;
+    final initialMinute = initialTime?.minute ?? now.minute;
 
     final displayHour = initialHour > 12 ? initialHour - 12 : (initialHour == 0 ? 12 : initialHour);
 
-    final TextEditingController hourController = TextEditingController(text: displayHour.toString().padLeft(2, '0'));
-    final TextEditingController minuteController = TextEditingController(text: initialMinute.toString().padLeft(2, '0'));
+    final TextEditingController hourController =
+    TextEditingController(text: displayHour.toString().padLeft(2, '0'));
+    final TextEditingController minuteController =
+    TextEditingController(text: initialMinute.toString().padLeft(2, '0'));
 
     bool isAM = initialHour < 12;
 
@@ -337,15 +324,11 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
 
             return Theme(
               data: ThemeData.dark().copyWith(
-                primaryColor: primaryColorMuted,
                 colorScheme: ColorScheme.dark(
                   primary: primaryColorMuted,
                   secondary: primaryColorMuted,
                 ),
                 inputDecorationTheme: InputDecorationTheme(
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey[700]!),
-                  ),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey[600]!),
                   ),
@@ -370,7 +353,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Hour input
                         SizedBox(
                           width: isSmallScreen ? 50 : 60,
                           child: TextField(
@@ -383,29 +365,23 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               hintText: '00',
-                              hintStyle: TextStyle(color: Colors.grey[500]),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: isSmallScreen ? 8 : 12,
-                                  horizontal: isSmallScreen ? 6 : 8
-                              ),
                             ),
                             onChanged: (value) {
                               if (value.length == 2) {
                                 minuteFocus.requestFocus();
                               }
                             },
-                            inputFormatters: [
+                            inputFormatters:  [
                               LengthLimitingTextInputFormatter(2),
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                           ),
                         ),
-
                         Padding(
                           padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen ? 6 : 10
+                            horizontal: isSmallScreen ? 6 : 10,
                           ),
                           child: Text(
                             ':',
@@ -416,8 +392,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                             ),
                           ),
                         ),
-
-                        // Minute input
                         SizedBox(
                           width: isSmallScreen ? 50 : 60,
                           child: TextField(
@@ -430,21 +404,15 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               hintText: '00',
-                              hintStyle: TextStyle(color: Colors.grey[500]),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: isSmallScreen ? 8 : 12,
-                                  horizontal: isSmallScreen ? 6 : 8
-                              ),
                             ),
-                            inputFormatters: [
+                            inputFormatters:  [
                               LengthLimitingTextInputFormatter(2),
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                           ),
                         ),
-
                         SizedBox(width: isSmallScreen ? 10 : 15),
                         Column(
                           mainAxisSize: MainAxisSize.min,
@@ -456,26 +424,21 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: isAM
-                                    ? primaryColorMuted
-                                    : Colors.grey[700],
+                                backgroundColor:
+                                isAM ? primaryColorMuted : Colors.grey[700],
                                 foregroundColor: Colors.white70,
-                                minimumSize: Size(isSmallScreen ? 40 : 50, isSmallScreen ? 32 : 36),
+                                minimumSize: Size(
+                                    isSmallScreen ? 40 : 50, isSmallScreen ? 32 : 36),
                                 padding: EdgeInsets.symmetric(
-                                    horizontal: isSmallScreen ? 4 : 8,
-                                    vertical: 0
-                                ),
+                                    horizontal: isSmallScreen ? 4 : 8, vertical: 0),
                                 elevation: isAM ? 1 : 0,
                               ),
                               child: Text(
                                 'AM',
-                                style: TextStyle(
-                                    fontSize: isSmallScreen ? 11 : 13
-                                ),
+                                style: TextStyle(fontSize: isSmallScreen ? 11 : 13),
                               ),
                             ),
                             SizedBox(height: isSmallScreen ? 6 : 8),
-
                             ElevatedButton(
                               onPressed: () {
                                 setState(() {
@@ -483,22 +446,18 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: !isAM
-                                    ? primaryColorMuted
-                                    : Colors.grey[700],
+                                backgroundColor:
+                                !isAM ? primaryColorMuted : Colors.grey[700],
                                 foregroundColor: Colors.white70,
-                                minimumSize: Size(isSmallScreen ? 40 : 50, isSmallScreen ? 32 : 36),
+                                minimumSize: Size(
+                                    isSmallScreen ? 40 : 50, isSmallScreen ? 32 : 36),
                                 padding: EdgeInsets.symmetric(
-                                    horizontal: isSmallScreen ? 4 : 8,
-                                    vertical: 0
-                                ),
+                                    horizontal: isSmallScreen ? 4 : 8, vertical: 0),
                                 elevation: !isAM ? 1 : 0,
                               ),
                               child: Text(
                                 'PM',
-                                style: TextStyle(
-                                    fontSize: isSmallScreen ? 11 : 13
-                                ),
+                                style: TextStyle(fontSize: isSmallScreen ? 11 : 13),
                               ),
                             ),
                           ],
@@ -531,21 +490,15 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-
-                      int hour;
-                      int minute;
-
                       try {
-                        hour = int.parse(hourController.text);
-                        minute = int.parse(minuteController.text);
-
+                        int hour = int.parse(hourController.text);
+                        int minute = int.parse(minuteController.text);
 
                         if (hour < 1 || hour > 12) {
-                          throw FormatException('Wrong hour format');
+                          throw const FormatException('Wrong hour format');
                         }
-
                         if (minute < 0 || minute > 59) {
-                          throw FormatException('Wrong minute format');
+                          throw const FormatException('Wrong minute format');
                         }
 
                         if (hour == 12) {
@@ -563,7 +516,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                         );
 
                         Navigator.of(context).pop();
-                      } catch (e) {
+                      } catch (_) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -582,8 +535,7 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(
                           horizontal: isSmallScreen ? 12 : 16,
-                          vertical: isSmallScreen ? 6 : 8
-                      ),
+                          vertical: isSmallScreen ? 6 : 8),
                     ),
                     child: Text(
                       'Ok',
@@ -609,14 +561,9 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     return result;
   }
 
-
-
-
-
-  Future<void> _confirmDeletePunchIn(WorksiteWorkerResponse worker) async {
+  Future<void> _confirmDeletePunchIn(WorkerCurrentlyWorkingInWorkSite worker) async {
     if (worker.workerId == null) return;
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
 
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -656,8 +603,8 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
               padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 12 : 16,
-                  vertical: isSmallScreen ? 8 : 10
+                horizontal: isSmallScreen ? 12 : 16,
+                vertical: isSmallScreen ? 8 : 10,
               ),
             ),
             child: Text(
@@ -670,7 +617,8 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
           ),
         ],
       ),
-    ) ?? false;
+    ) ??
+        false;
 
     if (shouldDelete) {
       try {
@@ -683,13 +631,13 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     }
   }
 
-  Future<void> _updatePunchInTime(WorksiteWorkerResponse worker) async {
+  Future<void> _updatePunchInTime(WorkerCurrentlyWorkingInWorkSite worker) async {
     if (worker.workerId == null) return;
 
     try {
       final pickedDateTime = await showTimeInputDialog(
         context,
-        initialTime: worker.punchIn,
+        initialTime: worker.punchedIn,
       );
 
       if (pickedDateTime != null) {
@@ -699,7 +647,9 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
         );
 
         if (response != null) {
-          _showSuccessSnackBar('Time updated: ${_formatDateTime(response.newPunchInTime, includeDate: true)}');
+          _showSuccessSnackBar(
+            'Time updated: ${_formatDateTime(response.newPunchInTime, includeDate: true)}',
+          );
         } else {
           _showSuccessSnackBar('Time successfully updated');
         }
@@ -710,213 +660,10 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     }
   }
 
-  void _showSuccessSnackBar(String message) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
+  // ----------------- HELPERS -----------------
 
-    final snackBar = SnackBar(
-      content: Row(
-        children: [
-          Icon(Icons.check_circle_outline,
-              color: Colors.white,
-              size: isSmallScreen ? 18 : 20),
-          SizedBox(width: isSmallScreen ? 8 : 12),
-          Expanded(
-            child: Text(
-              message,
-              style: GoogleFonts.poppins(
-                fontSize: isSmallScreen ? 12 : 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  void _showErrorSnackBar(String message) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
-    final snackBar = SnackBar(
-      content: Row(
-        children: [
-          Icon(Icons.error_outline,
-              color: Colors.white,
-              size: isSmallScreen ? 18 : 20),
-          SizedBox(width: isSmallScreen ? 8 : 12),
-          Expanded(
-            child: Text(
-              message,
-              style: GoogleFonts.poppins(
-                fontSize: isSmallScreen ? 12 : 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: Colors.redAccent,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  Widget _buildEmptyState() {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
-    return Center(
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Padding(
-          padding: EdgeInsets.all(isSmallScreen ? 24.0 : 30.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/images/empty_state.png',
-                height: isSmallScreen ? 150 : 180,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.people_alt_outlined,
-                  size: isSmallScreen ? 100 : 120,
-                  color: Colors.grey,
-                ),
-              ),
-              SizedBox(height: isSmallScreen ? 24 : 32),
-              Text(
-                'Nobody did Punch In',
-                style: GoogleFonts.poppins(
-                  fontSize: isSmallScreen ? 18 : 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: isSmallScreen ? 8 : 12),
-              Text(
-                'Persons whose did Punch In, will be displayed here.',
-                style: GoogleFonts.poppins(
-                  fontSize: isSmallScreen ? 14 : 16,
-                  color: Colors.grey[600],
-                  height: 1.5,
-                ),
-                textAlign: TextAlign
-                    .center,
-              ),
-              SizedBox(height: isSmallScreen ? 24 : 30),
-              ElevatedButton.icon(
-                onPressed: _refreshWorkersList,
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  size: isSmallScreen ? 18 : 20,
-                ),
-                label: Text(
-                  'Refresh',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w500,
-                    fontSize: isSmallScreen ? 12 : 14,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 20 : 24,
-                      vertical: isSmallScreen ? 10 : 12
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(isSmallScreen ? 24.0 : 30.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.cloud_off_rounded,
-              size: isSmallScreen ? 65 : 80,
-              color: Colors.grey,
-            ),
-            SizedBox(height: isSmallScreen ? 20 : 24),
-            Text(
-              'Something went wrong',
-              style: GoogleFonts.poppins(
-                fontSize: isSmallScreen ? 18 : 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: isSmallScreen ? 8 : 12),
-            Text(
-              error ?? 'Cannot load the data! Try again.',
-              style: GoogleFonts.poppins(
-                fontSize: isSmallScreen ? 14 : 16,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: isSmallScreen ? 24 : 30),
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  workers.clear();
-                });
-                _loadWorkers();
-              },
-              icon: Icon(
-                Icons.refresh_rounded,
-                size: isSmallScreen ? 18 : 20,
-              ),
-              label: Text(
-                'Try again',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: isSmallScreen ? 12 : 14,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 20 : 24,
-                    vertical: isSmallScreen ? 10 : 12
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDateTime(DateTime dateTime, {bool includeDate = false}) {
+  String _formatDateTime(DateTime? dateTime, {bool includeDate = false}) {
+    if (dateTime == null) return '--:--';
     if (includeDate) {
       final DateFormat formatter = DateFormat('dd.MM.yyyy HH:mm');
       return formatter.format(dateTime);
@@ -925,19 +672,17 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
     }
   }
 
-  String _getInitials(String? firstName, String? lastName) {
-    String firstInitial = (firstName?.isNotEmpty == true) ? firstName![0].toUpperCase() : '';
-    String lastInitial = (lastName?.isNotEmpty == true) ? lastName![0].toUpperCase() : '';
-
-    if (firstInitial.isEmpty && lastInitial.isEmpty) {
-      return '?';
-    } else if (firstInitial.isEmpty) {
-      return lastInitial;
-    } else if (lastInitial.isEmpty) {
-      return firstInitial;
-    } else {
-      return '$firstInitial$lastInitial';
-    }
+  String _initialsFromFullName(String fullName) {
+    if (fullName.trim().isEmpty) return '?';
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    final first = parts.isNotEmpty ? parts.first : '';
+    final last = parts.length > 1 ? parts.last : '';
+    final fi = first.isNotEmpty ? first[0].toUpperCase() : '';
+    final li = last.isNotEmpty ? last[0].toUpperCase() : '';
+    final both = (fi + li);
+    if (both.isNotEmpty) return both;
+    if (fi.isNotEmpty) return fi;
+    return '?';
   }
 
   Color _getAvatarColor(int? id) {
@@ -951,7 +696,6 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
       Colors.pinkAccent,
       Colors.indigoAccent,
     ];
-
     if (id == null) return colors[0];
     return colors[id % colors.length];
   }
@@ -1043,8 +787,8 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.only(
-              top: isSmallScreen ? 8 : 12,
-              bottom: isSmallScreen ? 20 : 24
+            top: isSmallScreen ? 8 : 12,
+            bottom: isSmallScreen ? 20 : 24,
           ),
           itemCount: workers.length,
           itemBuilder: (context, index) {
@@ -1057,13 +801,202 @@ class _WorksiteEmployeesScreenState extends State<WorksiteEmployeesScreen> {
 
   void _refreshWorkersList() {
     if (isLoading) return;
-
     setState(() {
       workers.clear();
       isLoading = true;
       error = null;
     });
-
     _loadWorkers();
+  }
+
+
+  void _showSuccessSnackBar(String message) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+          SizedBox(width: isSmallScreen ? 8 : 12),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.poppins(fontSize: isSmallScreen ? 12 : 14),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.green,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  void _showErrorSnackBar(String message) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.white, size: 20),
+          SizedBox(width: isSmallScreen ? 8 : 12),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.poppins(fontSize: isSmallScreen ? 12 : 14),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.redAccent,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+
+  Widget _buildEmptyState() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    return Center(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: EdgeInsets.all(isSmallScreen ? 24.0 : 30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/empty_state.png',
+                height: isSmallScreen ? 150 : 180,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  Icons.people_alt_outlined,
+                  size: isSmallScreen ? 100 : 120,
+                  color: Colors.grey,
+                ),
+              ),
+              SizedBox(height: isSmallScreen ? 24 : 32),
+              Text(
+                'Nobody did Punch In',
+                style: GoogleFonts.poppins(
+                  fontSize: isSmallScreen ? 18 : 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: isSmallScreen ? 8 : 12),
+              Text(
+                'Persons whose did Punch In, will be displayed here.',
+                style: GoogleFonts.poppins(
+                  fontSize: isSmallScreen ? 14 : 16,
+                  color: Colors.grey[600],
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: isSmallScreen ? 24 : 30),
+              ElevatedButton.icon(
+                onPressed: _refreshWorkersList,
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  size: isSmallScreen ? 18 : 20,
+                ),
+                label: Text(
+                  'Refresh',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isSmallScreen ? 12 : 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 20 : 24,
+                    vertical: isSmallScreen ? 10 : 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 24.0 : 30.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              size: isSmallScreen ? 65 : 80,
+              color: Colors.grey,
+            ),
+            SizedBox(height: isSmallScreen ? 20 : 24),
+            Text(
+              'Something went wrong',
+              style: GoogleFonts.poppins(
+                fontSize: isSmallScreen ? 18 : 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isSmallScreen ? 8 : 12),
+            Text(
+              error ?? 'Cannot load the data! Try again.',
+              style: GoogleFonts.poppins(
+                fontSize: isSmallScreen ? 14 : 16,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isSmallScreen ? 24 : 30),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  workers.clear();
+                });
+                _loadWorkers();
+              },
+              icon: Icon(
+                Icons.refresh_rounded,
+                size: isSmallScreen ? 18 : 20,
+              ),
+              label: Text(
+                'Try again',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: isSmallScreen ? 12 : 14,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 20 : 24,
+                  vertical: isSmallScreen ? 10 : 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
