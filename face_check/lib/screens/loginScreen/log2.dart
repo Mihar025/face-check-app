@@ -222,50 +222,43 @@ class _LoginScreenState extends State<LoginScreen> {
             child: _BackgroundImage(),
           ),
 
-          // Основной контент
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
+          // ✅ ИСПРАВЛЕННЫЙ layout - форма по центру
+          Center(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: _keyboardHeight > 0 ? 16 : 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Форма логина
+                  _buildLoginForm(),
+
+                  const SizedBox(height: 16),
+
+                  // Кнопка логина
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _isLoading,
+                    builder: (context, isLoading, child) {
+                      return _LoginButton(
+                        isLoading: isLoading,
+                        onPressed: isLoading ? null : _handleLogin,
+                        screenWidth: _screenWidth,
+                        isSmallScreen: _isSmallScreen,
+                      );
+                    },
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        // Адаптивная высота
-                        SizedBox(height: _screenHeight * 0.35),
 
-                        // Форма логина
-                        _buildLoginForm(),
+                  const SizedBox(height: 16),
 
-                        SizedBox(height: _screenHeight * 0.02),
-
-                        // Кнопка логина
-                        ValueListenableBuilder<bool>(
-                          valueListenable: _isLoading,
-                          builder: (context, isLoading, child) {
-                            return _LoginButton(
-                              isLoading: isLoading,
-                              onPressed: isLoading ? null : _handleLogin,
-                              screenWidth: _screenWidth,
-                              isSmallScreen: _isSmallScreen,
-                            );
-                          },
-                        ),
-
-                        SizedBox(height: _screenHeight * 0.02),
-
-                        // Дополнительные ссылки
-                        _AdditionalLinks(isSmallScreen: _isSmallScreen),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+                  // Дополнительные ссылки
+                  _AdditionalLinks(isSmallScreen: _isSmallScreen),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -327,8 +320,8 @@ class _BackgroundImage extends StatelessWidget {
   }
 }
 
-// Оптимизированное поле ввода
-class _InputField extends StatelessWidget {
+// Оптимизированное поле ввода С ЧЁРНЫМИ ИКОНКАМИ
+class _InputField extends StatefulWidget {
   final String label;
   final String hint;
   final TextEditingController controller;
@@ -350,35 +343,84 @@ class _InputField extends StatelessWidget {
   });
 
   @override
+  State<_InputField> createState() => _InputFieldState();
+}
+
+class _InputFieldState extends State<_InputField> {
+  bool _obscureText = true;
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 10 : 15,
-        vertical: isSmallScreen ? 5 : 7.5,
+        horizontal: widget.isSmallScreen ? 10 : 15,
+        vertical: widget.isSmallScreen ? 5 : 7.5,
       ),
       child: TextField(
-        controller: controller,
-        obscureText: isPassword,
-        keyboardType: keyboardType ?? TextInputType.text,
-        textInputAction: textInputAction,
-        onSubmitted: onSubmitted,
+        controller: widget.controller,
+        obscureText: widget.isPassword ? _obscureText : false,
+        keyboardType: widget.keyboardType ?? TextInputType.text,
+        textInputAction: widget.textInputAction,
+        onSubmitted: widget.onSubmitted,
         style: const TextStyle(color: Colors.black),
         decoration: InputDecoration(
           border: const OutlineInputBorder(),
-          labelText: label,
-          hintText: hint,
+          labelText: widget.label,
+          hintText: widget.hint,
           labelStyle: TextStyle(
-            fontSize: isSmallScreen ? 14 : 16,
+            fontSize: widget.isSmallScreen ? 14 : 16,
+            color: Colors.black87,
           ),
           hintStyle: TextStyle(
-            fontSize: isSmallScreen ? 12 : 14,
+            fontSize: widget.isSmallScreen ? 12 : 14,
+            color: Colors.black54,
           ),
           contentPadding: EdgeInsets.symmetric(
             horizontal: 12,
-            vertical: isSmallScreen ? 12 : 16,
+            vertical: widget.isSmallScreen ? 12 : 16,
           ),
           filled: true,
           fillColor: Colors.white,
+
+          // ✅ ЧЁРНАЯ ИКОНКА СЛЕВА
+          prefixIcon: Icon(
+            widget.isPassword ? Icons.lock_outline : Icons.alternate_email,
+            color: Colors.black87,
+            size: 20,
+          ),
+
+          // ✅ ЧЁРНЫЙ ГЛАЗИК ДЛЯ ПАРОЛЯ
+          suffixIcon: widget.isPassword
+              ? IconButton(
+            icon: Icon(
+              _obscureText ? Icons.visibility_off : Icons.visibility,
+              color: Colors.black87,
+              size: 20,
+            ),
+            onPressed: () {
+              setState(() {
+                _obscureText = !_obscureText;
+              });
+            },
+            tooltip: _obscureText ? 'Show password' : 'Hide password',
+          )
+              : null,
+
+          // ✅ Чёрные границы
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(
+              color: Colors.black38,
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(
+              color: Colors.black,
+              width: 1.5,
+            ),
+          ),
         ),
       ),
     );
@@ -402,10 +444,9 @@ class _LoginButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: isSmallScreen ? 55 : 65,
+      height: isSmallScreen ? 50 : 55,
       width: screenWidth * 0.85,
       constraints: const BoxConstraints(maxWidth: 360),
-      padding: EdgeInsets.only(top: isSmallScreen ? 15.0 : 20.0),
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -497,43 +538,5 @@ class _LinkButton extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-// ============= ДОПОЛНИТЕЛЬНЫЕ HELPER КЛАССЫ =============
-
-// Класс для адаптивных размеров (можно использовать во всем приложении)
-class AdaptiveSize {
-  static double fontSize(BuildContext context, {
-    required double mobile,
-    double? tablet,
-    double? desktop,
-  }) {
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 1024) return desktop ?? tablet ?? mobile;
-    if (width >= 600) return tablet ?? mobile;
-    return mobile;
-  }
-
-  static EdgeInsets padding(BuildContext context, {
-    required EdgeInsets mobile,
-    EdgeInsets? tablet,
-    EdgeInsets? desktop,
-  }) {
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 1024) return desktop ?? tablet ?? mobile;
-    if (width >= 600) return tablet ?? mobile;
-    return mobile;
-  }
-
-  static double spacing(BuildContext context, {
-    required double mobile,
-    double? tablet,
-    double? desktop,
-  }) {
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 1024) return desktop ?? tablet ?? mobile;
-    if (width >= 600) return tablet ?? mobile;
-    return mobile;
   }
 }
