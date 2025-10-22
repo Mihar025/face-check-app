@@ -1,3 +1,4 @@
+import 'package:face_check/screens/main_menu/main_menu_punch_screen/punch-status-checker.dart';
 import 'package:face_check/screens/main_menu/main_menu_punch_screen/punch_success_dialo.dart';
 import 'package:face_check/screens/main_menu/main_menu_punch_screen/retry-interceptor.dart';
 import 'package:face_check/services/time_service.dart';
@@ -117,10 +118,12 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      timeService.sync().then((_) => _checkTodayPunchStatus());
+      // Когда приложение возвращается - обновляем принудительно
+      timeService.sync().then((_) {
+        _refreshPunchStatus(); // ← Изменено с _checkTodayPunchStatus()
+      });
     }
   }
-
   void _initializeDependencies() async {
     _isLoading.value = true; // ← ✅ Включаем загрузку СРАЗУ!
 
@@ -336,48 +339,50 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
   Future<void> _checkTodayPunchStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      print('🔍 Checking today\'s punch status...');
 
-      // Быстрый флаг
-      final bool? flag = prefs.getBool('isPunchedInToday');
-      if (flag != null) {
-        _hasPunchIn.value = flag;
+      // Если нет userId - не можем проверить
+      if (_currentUserId.value == null) {
+        print('⚠️ Cannot check punch status: userId is null');
+        _hasPunchIn.value = false;
+        return;
       }
 
-      final String? inStr  = prefs.getString('lastPunchInDate');
-      final String? outStr = prefs.getString('lastPunchOutDate');
+      // Используем PunchStatusChecker с кешированием на 10 минут
+      final hasPunchIn = await PunchStatusChecker.checkPunchInStatus(
+        workerId: _currentUserId.value!,
+        forceRefresh: false, // Используем кеш если есть
+      );
 
-      final DateTime nowUtc = timeService.nowUtc();
+      _hasPunchIn.value = hasPunchIn;
 
-      final DateTime? inUtc  = (inStr  != null && inStr.isNotEmpty)  ? DateTime.tryParse(inStr )?.toUtc() : null;
-      final DateTime? outUtc = (outStr != null && outStr.isNotEmpty) ? DateTime.tryParse(outStr)?.toUtc() : null;
-
-      DateTime? effectiveOutUtc = outUtc;
-      if (effectiveOutUtc != null && !_isSameDayNY(effectiveOutUtc, nowUtc)) {
-        effectiveOutUtc = null;
+      if (hasPunchIn) {
+        print('✅ User HAS punch in today');
+      } else {
+        print('❌ User does NOT have punch in today');
       }
 
-      bool? derived;
-
-      if (inUtc != null && effectiveOutUtc == null && _isSameDayNY(inUtc, nowUtc)) {
-        derived = true;
-      } else if (inUtc != null && effectiveOutUtc != null) {
-        final bool inToday  = _isSameDayNY(inUtc, nowUtc);
-        final bool outToday = _isSameDayNY(effectiveOutUtc, nowUtc);
-
-        if (inToday || outToday) {
-          derived = effectiveOutUtc.isAfter(inUtc) ? false : true;
-        }
-      } else if (inUtc == null && effectiveOutUtc != null) {
-        derived = false;
-      }
-
-      if (derived != null) {
-        _hasPunchIn.value = derived;
-        await prefs.setBool('isPunchedInToday', _hasPunchIn.value);
-      }
     } catch (e) {
-      print('Error checking punch status: $e');
+      print('❌ Error checking punch status: $e');
+      _hasPunchIn.value = false;
+    }
+  }
+
+  Future<void> _refreshPunchStatus() async {
+    if (_currentUserId.value == null) return;
+
+    print('🔄 Force refreshing punch status...');
+
+    try {
+      final hasPunchIn = await PunchStatusChecker.checkPunchInStatus(
+        workerId: _currentUserId.value!,
+        forceRefresh: true, // Принудительно с сервера, игнорируя кеш
+      );
+
+      _hasPunchIn.value = hasPunchIn;
+      print('✅ Punch status refreshed: $hasPunchIn');
+    } catch (e) {
+      print('❌ Error refreshing punch status: $e');
     }
   }
 
@@ -397,6 +402,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       _showErrorSnackBar('Failed to load work sites: $e');
     }
   }
+
+
 
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
@@ -564,6 +571,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         }
 
         _hasPunchIn.value = true;
+        await PunchStatusChecker.updateCacheAfterPunchIn();
         _isTrackingActive.value = true;
         _isLoading.value = false; // ✅ Успех - сброс загрузки
 
@@ -586,7 +594,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         String errorMessage = 'Punch in failed';
 
         if (response.data != null && response.data is Map) {
-         final rawMessage= errorMessage = response.data['message'] ??
+          final rawMessage= errorMessage = response.data['message'] ??
               response.data['error'] ??
               'Server returned error: ${response.statusCode}';
           errorMessage = _cleanErrorMessage(rawMessage.toString());
@@ -678,6 +686,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         await prefs.setBool('isPunchedInToday', false);
 
         _hasPunchIn.value = false;
+        await PunchStatusChecker.updateCacheAfterPunchOut();
         _isTrackingActive.value = false;
         _isLoading.value = false; // ✅ Успех - сброс загрузки
 
@@ -861,53 +870,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
                 ),
 
                 SizedBox(height: _isSmallScreen ? 16 : 20),
-
-                // Debug tracking status
-                if (_isDebugMode())
-                  ValueListenableBuilder<bool>(
-                    valueListenable: _isTrackingActive,
-                    builder: (context, isActive, _) {
-                      if (!isActive) return const SizedBox.shrink();
-
-                      return ValueListenableBuilder<int?>(
-                        valueListenable: _currentUserId,
-                        builder: (context, userId, _) {
-                          if (userId == null) return const SizedBox.shrink();
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.green.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.location_on,
-                                    color: Colors.green,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Tracking active for user: $userId',
-                                    style: const TextStyle(
-                                      color: Colors.green,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
               ],
             ),
           ),
@@ -996,5 +958,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       ),
     );
   }
+
+
 }
 

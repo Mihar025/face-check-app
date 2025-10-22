@@ -130,4 +130,10 @@ public class WorkerAttendanceController {
         return ResponseEntity.ok(response);
     }
 
+
+    @GetMapping("/has-punch-in/{workerId}")
+    public ResponseEntity<Boolean> hasPunchIn(@PathVariable(name = "workerId") Integer workerId,  Authentication authentication) {
+        return ResponseEntity.ok(workAttendanceService.isWorkerHasPunchInToday(workerId, authentication));
+    }
+
 }
