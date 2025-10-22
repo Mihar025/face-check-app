@@ -1,8 +1,29 @@
-<div class="sidebar">
+<!-- Mobile Menu Button (hamburger) -->
+<button class="mobile-menu-btn"
+        [class.active]="isSidebarOpen"
+        (click)="toggleSidebar()"
+        aria-label="Toggle menu">
+  <div class="hamburger">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</button>
+
+<!-- Overlay (затемнённый фон при открытом меню) -->
+<div class="sidebar-overlay"
+     [class.active]="isSidebarOpen"
+     (click)="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" [class.active]="isSidebarOpen">
   <!-- Profile Section -->
   <div class="admin-profile">
     <div class="avatar-container">
-      <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'" alt="Admin Avatar" class="admin-avatar">
+      <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'"
+           alt="Admin Avatar"
+           class="admin-avatar"
+           loading="lazy">
       <div class="status-indicator"></div>
     </div>
     <div class="admin-info">
@@ -17,63 +38,72 @@
       <li>
         <a routerLink="/main-page/admin"
            routerLinkActive="active"
-           [routerLinkActiveOptions]="{exact: true}">
+           [routerLinkActiveOptions]="{exact: true}"
+           (click)="onNavItemClick()">
           <i class="fas fa-home"></i>
           <span>Dashboard</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/company-information"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fas fa-building"></i>
           <span>Company</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/manage-worksites"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fas fa-map-marked-alt"></i>
           <span>Worksites</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/manage-employees"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fas fa-users"></i>
           <span>Employees</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/finance"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fas fa-chart-line"></i>
           <span>Finance</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/location-tracking"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fas fa-map-pin"></i>
           <span>Location</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/employee-attendance"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fas fa-clock"></i>
           <span>Attendance</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/attendance-statistic"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fa-solid fa-calendar-days"></i>
           <span>Attendance Statistic</span>
         </a>
       </li>
       <li>
         <a routerLink="/main-page/admin/settings"
-           routerLinkActive="active">
+           routerLinkActive="active"
+           (click)="onNavItemClick()">
           <i class="fas fa-cog"></i>
           <span>Settings</span>
         </a>

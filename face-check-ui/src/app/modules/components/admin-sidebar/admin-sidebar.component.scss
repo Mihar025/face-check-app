@@ -36,6 +36,114 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
+@mixin shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+// Mobile Menu Button
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 150;
+  width: 48px;
+  height: 48px;
+  background: $white;
+  border: 1px solid $sidebar-border;
+  border-radius: 12px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  @include shadow-md;
+  @include smooth-transition;
+
+  &:hover {
+    background: rgba($primary-color, 0.05);
+    border-color: $primary-color;
+    @include shadow-lg;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  .hamburger {
+    width: 24px;
+    height: 18px;
+    position: relative;
+    transform: rotate(0deg);
+    transition: 0.5s ease-in-out;
+
+    span {
+      display: block;
+      position: absolute;
+      height: 3px;
+      width: 100%;
+      background: $dark-text;
+      border-radius: 3px;
+      opacity: 1;
+      left: 0;
+      transform: rotate(0deg);
+      transition: 0.25s ease-in-out;
+
+      &:nth-child(1) {
+        top: 0;
+      }
+
+      &:nth-child(2) {
+        top: 7px;
+      }
+
+      &:nth-child(3) {
+        top: 14px;
+      }
+    }
+  }
+
+  &.active {
+    .hamburger {
+      span {
+        background: $primary-color;
+
+        &:nth-child(1) {
+          top: 7px;
+          transform: rotate(135deg);
+        }
+
+        &:nth-child(2) {
+          opacity: 0;
+          left: -60px;
+        }
+
+        &:nth-child(3) {
+          top: 7px;
+          transform: rotate(-135deg);
+        }
+      }
+    }
+  }
+}
+
+// Overlay for mobile
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
+
+  &.active {
+    opacity: 1;
+  }
+}
+
 // Sidebar Container
 .sidebar {
   width: $sidebar-width;
@@ -239,13 +347,191 @@ $font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
   }
 }
 
-// Responsive
+// Responsive Design
 @media (max-width: 992px) {
+  // Show mobile menu button
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  // Show overlay when sidebar is active
+  .sidebar-overlay {
+    display: block;
+  }
+
+  // Sidebar mobile behavior
   .sidebar {
     transform: translateX(-100%);
+    z-index: 101;
+    @include shadow-lg;
 
     &.active {
       transform: translateX(0);
     }
+  }
+
+  // Adjust main content padding when sidebar is hidden
+  .main-content {
+    margin-left: 0 !important;
+    padding-top: 80px; // Space for mobile menu button
+  }
+}
+
+// Tablet optimization
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px; // Slightly wider on smaller tablets
+  }
+
+  .admin-profile {
+    padding: 24px 16px;
+  }
+
+  .avatar-container {
+    width: 70px;
+    height: 70px;
+  }
+
+  .admin-info {
+    .admin-name {
+      font-size: 15px;
+    }
+
+    .admin-company {
+      font-size: 12px;
+    }
+  }
+
+  .sidebar-menu {
+    padding: 16px 12px;
+
+    a {
+      padding: 10px 14px;
+      font-size: 13px;
+
+      i {
+        font-size: 15px;
+      }
+    }
+  }
+}
+
+// Mobile optimization
+@media (max-width: 576px) {
+  .mobile-menu-btn {
+    width: 44px;
+    height: 44px;
+    top: 12px;
+    left: 12px;
+  }
+
+  .sidebar {
+    width: 100%; // Full width on mobile
+    max-width: 320px; // But not too wide
+  }
+
+  .admin-profile {
+    padding: 20px 16px;
+  }
+
+  .avatar-container {
+    width: 64px;
+    height: 64px;
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-width: 2px;
+    }
+  }
+
+  .admin-info {
+    .admin-name {
+      font-size: 14px;
+    }
+
+    .admin-company {
+      font-size: 11px;
+    }
+  }
+
+  .sidebar-menu {
+    padding: 12px 8px;
+
+    a {
+      padding: 10px 12px;
+      font-size: 13px;
+
+      i {
+        width: 18px;
+        margin-right: 10px;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .sidebar-footer {
+    padding: 12px 8px;
+
+    .logout-link {
+      padding: 10px 12px;
+      font-size: 13px;
+
+      i {
+        width: 18px;
+        margin-right: 10px;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// Landscape mobile
+@media (max-width: 992px) and (orientation: landscape) {
+  .sidebar {
+    width: 260px; // Smaller width in landscape
+  }
+
+  .admin-profile {
+    padding: 16px 12px;
+  }
+
+  .avatar-container {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+// Animation classes
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.slide-out {
+  animation: slideOut 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+// Prevent body scroll when sidebar is open on mobile
+body.sidebar-open {
+  @media (max-width: 992px) {
+    overflow: hidden;
   }
 }
