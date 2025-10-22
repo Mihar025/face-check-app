@@ -36,6 +36,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import io.micrometer.core.instrument.Timer;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -471,6 +472,28 @@ public class WorkAttendanceService {
                         .dailyInfo(emptyDailyInfo)
                         .build();
         }
+
+
+
+        public boolean isWorkerHasPunchInToday(Integer workerId, Authentication authentication) {
+                User user = ((User) authentication.getPrincipal());
+                if(!user.getId().equals(workerId)){
+                        throw new AccessDeniedException("Access denied");
+                }
+
+                User foundedUser = userRepository.findById(workerId).orElseThrow(
+                        () -> new EntityNotFoundException("Cannot find User with provided Id")
+                );
+                LocalDate today = LocalDate.now();
+                LocalDateTime startOfTheDay = today.atStartOfDay();
+                LocalDateTime endOfTheDay = today.plusDays(1).atStartOfDay();
+
+               return workerAttendanceRepository.hasPunchInToday(foundedUser, startOfTheDay, endOfTheDay);
+        }
+
+
+
+
 
 
         /**

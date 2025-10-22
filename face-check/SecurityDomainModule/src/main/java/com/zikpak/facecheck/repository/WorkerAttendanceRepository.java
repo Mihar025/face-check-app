@@ -80,6 +80,20 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
             @Param("endOfDay") LocalDateTime endOfDay
     );
 
+
+    @Query("""
+SELECT CASE WHEN COUNT(w) > 0 THEN true ELSE false END 
+FROM WorkerAttendance w 
+WHERE w.worker = :worker
+AND w.checkInTime >= :startOfDay 
+AND w.checkInTime < :endOfDay
+""")
+    boolean hasPunchInToday(
+            @Param("worker") User user,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay
+    );
+
     @Query("""
     SELECT wa FROM WorkerAttendance wa
     LEFT JOIN FETCH wa.worker w

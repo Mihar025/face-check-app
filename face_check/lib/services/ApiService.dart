@@ -205,6 +205,19 @@ class ApiService {
     );
   }
 
+  Future<bool> hasPunchIn({required int workerId}) async {
+    try {
+      final response = await _dio.get('/attendance/has-punch-in/$workerId');
+      if (response.statusCode == 200) {
+        print('GOT REQUEST WORKER HAS PUNCH!');
+        return response.data as bool;
+      }
+      return false;
+    } catch (e) {
+      print('Error checking punch in boolean status: $e');
+      return false;
+    }
+  }
 
   Future<List<DailyEarning>> getWeeklyEarnings() async {
     try {

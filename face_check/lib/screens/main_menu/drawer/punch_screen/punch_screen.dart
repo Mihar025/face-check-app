@@ -555,73 +555,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
                 SizedBox(height: _isSmallScreen ? 12 : 16),
 
-                // Tracking Indicator
-                ValueListenableBuilder<bool>(
-                  valueListenable: _isTrackingActive,
-                  builder: (context, isActive, _) {
-                    if (!isActive) return const SizedBox.shrink();
-
-                    return Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: _isSmallScreen ? 16 : 20,
-                        vertical: 8,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.green.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              TweenAnimationBuilder<double>(
-                                tween: Tween(begin: 1.0, end: 1.5),
-                                duration: const Duration(seconds: 1),
-                                builder: (context, value, child) {
-                                  return Container(
-                                    width: 30 * value,
-                                    height: 30 * value,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.green.withOpacity(0.5 / value),
-                                        width: 2,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                onEnd: () {
-                                  if (mounted && _isTrackingActive.value) {
-                                    setState(() {});
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-
                 // Work Site Selector
                 Container(
                   margin: EdgeInsets.symmetric(
@@ -673,7 +606,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
                           ),
                           SizedBox(width: _isSmallScreen ? 8 : 12),
                           Text(
-                            'You are currently punched in',
+                            'You are currently Punched In',
                             style: TextStyle(
                               color: Colors.green,
                               fontSize: _isSmallScreen ? 14 : 16,
