@@ -22,6 +22,7 @@ import '../../../../../api_client/api/worker_attendance_controller_api.dart';
 import '../../../../../api_client/serializers.dart';
 import '../../../../../services/ApiService.dart';
 import '../../../../../providers/localization_provider.dart';
+import '../../main_menu_punch_screen/punch_manager.dart';
 import 'clock_display.dart';
 import 'location_service.dart';
 import 'map_container.dart';
@@ -44,12 +45,13 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   final ImagePicker _imagePicker = ImagePicker();
 
   late final ValueNotifier<bool> _isLoading;
-  late final ValueNotifier<bool> _hasPunchIn;
   late final ValueNotifier<Position?> _currentPosition;
   late final ValueNotifier<WorkSiteResponse?> _selectedWorkSite;
   late final ValueNotifier<List<WorkSiteResponse>> _workSites;
   late final ValueNotifier<bool> _isTrackingActive;
   late final ValueNotifier<int?> _currentUserId;
+  late final PunchManager _punchManager;
+
 
   GoogleMapController? mapController;
 
@@ -66,7 +68,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     _isLoading = ValueNotifier<bool>(false);
-    _hasPunchIn = ValueNotifier<bool>(false);
+    _punchManager = PunchManager();
     _currentPosition = ValueNotifier<Position?>(null);
     _selectedWorkSite = ValueNotifier<WorkSiteResponse?>(null);
     _workSites = ValueNotifier<List<WorkSiteResponse>>([]);
@@ -92,7 +94,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _isLoading.dispose();
-    _hasPunchIn.dispose();
+    _punchManager.dispose();
     _currentPosition.dispose();
     _selectedWorkSite.dispose();
     _workSites.dispose();
@@ -104,7 +106,9 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      timeService.sync().then((_) => _checkTodayPunchStatus());
+      timeService.sync().then((_) {
+        _punchManager.forceRefresh();
+      });
     }
   }
 
@@ -201,58 +205,13 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     return aNy.year == bNy.year && aNy.month == bNy.month && aNy.day == bNy.day;
   }
 
+
   Future<void> _checkTodayPunchStatus() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Сначала проверяем флаг быстрой проверки
-      final bool? quickFlag = prefs.getBool('isPunchedInToday');
-
-      final String? inStr = prefs.getString('lastPunchInDate');
-      final String? outStr = prefs.getString('lastPunchOutDate');
-
-      final DateTime nowUtc = timeService.nowUtc();
-
-      // Если нет сохраненных данных, считаем что не было punch in
-      if ((inStr == null || inStr.isEmpty) && (outStr == null || outStr.isEmpty)) {
-        _hasPunchIn.value = false;
-        await prefs.setBool('isPunchedInToday', false);
-        return;
-      }
-
-      final DateTime? inUtc = (inStr != null && inStr.isNotEmpty)
-          ? DateTime.tryParse(inStr)?.toUtc()
-          : null;
-      final DateTime? outUtc = (outStr != null && outStr.isNotEmpty)
-          ? DateTime.tryParse(outStr)?.toUtc()
-          : null;
-
-      // Проверяем только события сегодняшнего дня
-      final bool inToday = (inUtc != null) && _isSameDayNY(inUtc, nowUtc);
-      final bool outToday = (outUtc != null) && _isSameDayNY(outUtc, nowUtc);
-
-      bool isPunchedIn = false;
-
-      if (inToday && outToday) {
-        // Оба события сегодня - проверяем последовательность
-        isPunchedIn = inUtc.isAfter(outUtc);
-      } else if (inToday && !outToday) {
-        // Только punch in сегодня
-        isPunchedIn = true;
-      } else {
-        // Нет punch in сегодня
-        isPunchedIn = false;
-      }
-
-      _hasPunchIn.value = isPunchedIn;
-      await prefs.setBool('isPunchedInToday', isPunchedIn);
-
-    } catch (e) {
-      print('Error checking punch status: $e');
-      _hasPunchIn.value = false;
+    if (_currentUserId.value != null) {
+      _punchManager.setUserId(_currentUserId.value!);
+      await _punchManager.checkPunchStatus();
     }
   }
-
   Future<void> _loadWorkSites() async {
     _isLoading.value = true;
 
@@ -400,7 +359,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         await prefs.setString('lastPunchInDate', nowUtcIso);
         await prefs.setBool('isPunchedInToday', true);
 
-        _hasPunchIn.value = true;
+        await _punchManager.onPunchInSuccess();
         _isTrackingActive.value = true;
 
         final currentTime = _getCurrentFormattedTime();
@@ -459,7 +418,8 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         await prefs.setString('lastPunchOutDate', nowUtcIso);
         await prefs.setBool('isPunchedInToday', false);
 
-        _hasPunchIn.value = false;
+       // _hasPunchIn.value = false;
+        await _punchManager.onPunchOutSuccess();
         _isTrackingActive.value = false;
 
         final currentTime = _getCurrentFormattedTime();
@@ -579,7 +539,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
                 // Status Indicator
                 ValueListenableBuilder<bool>(
-                  valueListenable: _hasPunchIn,
+                  valueListenable: _punchManager.hasPunchIn,
                   builder: (context, hasPunchIn, _) {
                     if (!hasPunchIn) return const SizedBox.shrink();
 
