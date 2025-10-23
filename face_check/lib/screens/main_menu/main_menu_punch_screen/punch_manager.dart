@@ -3,30 +3,37 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/ApiService.dart';
 
 /// Единый менеджер для управления Punch In/Out на ВСЕХ экранах
-/// Использовать можно и в MainMenuPunchScreen и в drawer PunchScreen
+/// Singleton с кешированием и реактивными обновлениями
 class PunchManager {
-  // Кеширование
-  static const String _cacheKey = 'punch_in_status';
-  static const String _cacheTimeKey = 'punch_in_status_time';
-  static const Duration _cacheDuration = Duration(minutes: 1);
-
-  // ValueNotifiers для реактивности
-  final ValueNotifier<bool> hasPunchIn = ValueNotifier<bool>(false);
-  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
-
+  // ========== SINGLETON ==========
   static final PunchManager _instance = PunchManager._internal();
   factory PunchManager() => _instance;
   PunchManager._internal();
 
+  // ========== КОНСТАНТЫ ==========
+  static const String _cacheKey = 'punch_in_status';
+  static const String _cacheTimeKey = 'punch_in_status_time';
+  static const Duration _cacheDuration = Duration(minutes: 10);
+
+  // ========== СОСТОЯНИЕ ==========
+  final ValueNotifier<bool> hasPunchIn = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
+
   int? _currentUserId;
+
+  // ========== PUBLIC МЕТОДЫ ==========
 
   /// Установить текущий User ID
   void setUserId(int userId) {
+    if (_currentUserId == userId) return;
+
     _currentUserId = userId;
     print('👤 PunchManager: User ID set to $userId');
+
+    clearCache();
   }
 
-  /// Проверить статус Punch In (с кешированием на 10 минут)
+  /// Проверить статус Punch In (с кешированием)
   Future<void> checkPunchStatus({bool forceRefresh = false}) async {
     if (_currentUserId == null) {
       print('⚠️ PunchManager: Cannot check - userId is null');
@@ -34,9 +41,8 @@ class PunchManager {
       return;
     }
 
-    print('🔍 PunchManager: Checking punch status for user $_currentUserId');
+    print('🔍 PunchManager: Checking punch status for user $_currentUserId (force: $forceRefresh)');
 
-    // Пробуем получить из кеша (если не forceRefresh)
     if (!forceRefresh) {
       final cachedStatus = await _getCachedStatus();
       if (cachedStatus != null) {
@@ -46,8 +52,9 @@ class PunchManager {
       }
     }
 
-    // Запрашиваем с сервера
     print('🌐 PunchManager: Fetching from server...');
+    isLoading.value = true;
+
     try {
       final status = await ApiService.instance.hasPunchIn(workerId: _currentUserId!);
 
@@ -58,30 +65,30 @@ class PunchManager {
     } catch (e) {
       print('❌ PunchManager: Error checking status: $e');
 
-      // При ошибке пробуем взять старый кеш
-      final prefs = await SharedPreferences.getInstance();
-      final cachedValue = prefs.getBool(_cacheKey);
-      if (cachedValue != null) {
-        hasPunchIn.value = cachedValue;
+      final staleCache = await _getCachedStatus(ignoreExpiry: true);
+      if (staleCache != null) {
+        hasPunchIn.value = staleCache;
         print('⚠️ PunchManager: Using stale cache due to error');
       } else {
         hasPunchIn.value = false;
       }
+    } finally {
+      isLoading.value = false;
     }
   }
 
   /// Обновить кеш после успешного Punch In
   Future<void> onPunchInSuccess() async {
+    print('✅ PunchManager: Punch In success → updating cache');
     hasPunchIn.value = true;
     await _saveToCache(true);
-    print('✅ PunchManager: Punch In success, cache updated');
   }
 
   /// Обновить кеш после успешного Punch Out
   Future<void> onPunchOutSuccess() async {
+    print('✅ PunchManager: Punch Out success → updating cache');
     hasPunchIn.value = false;
     await _saveToCache(false);
-    print('✅ PunchManager: Punch Out success, cache updated');
   }
 
   /// Принудительное обновление (игнорируя кеш)
@@ -95,13 +102,20 @@ class PunchManager {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_cacheKey);
     await prefs.remove(_cacheTimeKey);
+    hasPunchIn.value = false;
     print('🗑️ PunchManager: Cache cleared');
+  }
+
+  /// Очистка ресурсов
+  void dispose() {
+    hasPunchIn.dispose();
+    isLoading.dispose();
   }
 
   // ========== PRIVATE МЕТОДЫ ==========
 
-  /// Получить статус из кеша (если не устарел)
-  Future<bool?> _getCachedStatus() async {
+  /// Получить статус из кеша
+  Future<bool?> _getCachedStatus({bool ignoreExpiry = false}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -111,6 +125,10 @@ class PunchManager {
       if (cachedValue == null || cachedTimeMs == null) {
         print('📦 PunchManager: No cache found');
         return null;
+      }
+
+      if (ignoreExpiry) {
+        return cachedValue;
       }
 
       final cachedTime = DateTime.fromMillisecondsSinceEpoch(cachedTimeMs);
@@ -140,15 +158,9 @@ class PunchManager {
       await prefs.setBool(_cacheKey, status);
       await prefs.setInt(_cacheTimeKey, now);
 
-      print('💾 PunchManager: Saved to cache = $status (10min)');
+      print('💾 PunchManager: Saved to cache = $status (valid for ${_cacheDuration.inMinutes}min)');
     } catch (e) {
       print('❌ PunchManager: Error saving cache: $e');
     }
-  }
-
-  /// Очистка ресурсов
-  void dispose() {
-    hasPunchIn.dispose();
-    isLoading.dispose();
   }
 }
