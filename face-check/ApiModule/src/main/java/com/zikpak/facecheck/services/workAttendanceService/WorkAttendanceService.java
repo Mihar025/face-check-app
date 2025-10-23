@@ -488,12 +488,7 @@ public class WorkAttendanceService {
                 LocalDateTime startOfTheDay = today.atStartOfDay();
                 LocalDateTime endOfTheDay = today.plusDays(1).atStartOfDay();
 
-               WorkerAttendance todayAttendance =  workerAttendanceRepository.hasPunchInToday(foundedUser, startOfTheDay, endOfTheDay);
-               if(todayAttendance.getCheckInTime() != null && todayAttendance.getCheckOutTime() == null){
-                       return true;
-               }
-
-               return false;
+                return workerAttendanceRepository.hasActivePunchInToday(foundedUser, startOfTheDay, endOfTheDay);
 
         }
 
