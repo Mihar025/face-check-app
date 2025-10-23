@@ -29,6 +29,9 @@ import '../drawer/punch_screen/work_site_dialog.dart';
 import '../drawer/punch_screen/work_site_selector.dart';
 import '../drawer/punch_screen/work_site_service.dart';
 
+// Notification для перезагрузки MainScreen
+class MainScreenReloadNotification extends Notification {}
+
 class Mainmenupunchscreen extends StatefulWidget {
   const Mainmenupunchscreen({super.key});
 
@@ -123,8 +126,9 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       });
     }
   }
+
   void _initializeDependencies() async {
-    _isLoading.value = true; // ← ✅ Включаем загрузку СРАЗУ!
+    _isLoading.value = true;
 
     _initializeDio();
     timeService = TimeService(dio);
@@ -134,7 +138,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     _locationTrackingService = LocationTrackingService(dio);
 
     try {
-      // ✅ ПАРАЛЛЕЛЬНАЯ загрузка данных!
       await Future.wait([
         _fetchAndSaveUserId(),
         timeService.sync(),
@@ -142,14 +145,13 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         _loadWorkSites(),
       ]);
 
-      // Эти зависят от предыдущих, делаем последовательно
       await _checkTodayPunchStatus();
       await _checkTrackingStatus();
 
     } catch (e) {
       print('❌ Error during initialization: $e');
     } finally {
-      _isLoading.value = false; // ← ✅ Отключаем загрузку
+      _isLoading.value = false;
     }
   }
 
@@ -176,7 +178,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     } catch (e) {
       print('❌ Error fetching user ID: $e');
 
-      // Пробуем получить из кэша
       final prefs = await SharedPreferences.getInstance();
       final savedUserId = prefs.getInt('user_id');
 
@@ -207,12 +208,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         'Accept': 'application/json',
       },
       validateStatus: (status) {
-        // Принимаем все статусы < 500 для обработки
         return status != null && status < 500;
       },
     ));
 
-    // Добавляем логирование для дебага
     dio.interceptors.add(LogInterceptor(
       request: true,
       requestHeader: true,
@@ -264,7 +263,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
               break;
             case 401:
               errorMessage = 'Unauthorized. Please login again.';
-              // Можно добавить автоматический редирект на логин
               break;
             case 403:
               errorMessage = 'Access forbidden.';
@@ -285,7 +283,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
               errorMessage = 'Error: ${e.response?.statusCode}';
           }
 
-          // Пробуем извлечь сообщение от сервера
           if (e.response?.data != null) {
             if (e.response?.data is Map) {
               final serverMessage = e.response?.data['message'] ??
@@ -308,7 +305,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           errorMessage = 'Network error: ${e.message ?? "Unknown error"}';
         }
 
-        // Создаем новую ошибку с понятным сообщением
         final newError = DioException(
           requestOptions: e.requestOptions,
           response: e.response,
@@ -321,7 +317,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       },
     ));
 
-    // Добавляем retry interceptor
     dio.interceptors.add(RetryInterceptor(dio: dio));
   }
 
@@ -359,8 +354,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       _showErrorSnackBar('Failed to load work sites: $e');
     }
   }
-
-
 
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
@@ -454,10 +447,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     }
   }
 
-
-
   Future<void> _handlePunchInWithCamera() async {
-    // Валидация
     if (_selectedWorkSite.value == null) {
       _showErrorDialog(
         title: 'Work Site Required',
@@ -484,7 +474,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       return;
     }
 
-    _isLoading.value = true; // ✅ Начало загрузки
+    _isLoading.value = true;
 
     try {
       final Map<String, dynamic> requestData = {
@@ -504,7 +494,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         return;
       }
 
-      // Проверяем статус код
       if (response.statusCode! >= 200 && response.statusCode! < 300) {
         final prefs = await SharedPreferences.getInstance();
         final nowUtcIso = timeService.nowUtc().toIso8601String();
@@ -517,7 +506,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         await prefs.setString('lastPunchInDate', nowUtcIso);
         await prefs.setBool('isPunchedInToday', true);
 
-        // Очистка старого punch out
         final String? outStr = prefs.getString('lastPunchOutDate');
         if (outStr != null && outStr.isNotEmpty) {
           final DateTime? outUtc = DateTime.tryParse(outStr)?.toUtc();
@@ -529,10 +517,16 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           }
         }
 
+        // ✅ КРИТИЧНО: Обновить PunchManager
         await _punchManager.onPunchInSuccess();
-      //  await PunchStatusChecker.updateCacheAfterPunchIn();
+
+        // ✅ КРИТИЧНО: Уведомить MainScreen
+        if (mounted) {
+          MainScreenReloadNotification().dispatch(context);
+        }
+
         _isTrackingActive.value = true;
-        _isLoading.value = false; // ✅ Успех - сброс загрузки
+        _isLoading.value = false;
 
         final currentTime = _getCurrentFormattedTime();
         _showSuccessDialog(true, currentTime);
@@ -546,10 +540,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           );
         }
       } else {
-        // ✅ Статус код не 2xx - это ошибка
         _isLoading.value = false;
 
-        // Извлекаем сообщение об ошибке из ответа
         String errorMessage = 'Punch in failed';
 
         if (response.data != null && response.data is Map) {
@@ -569,7 +561,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         }
       }
     } catch (e) {
-      // ✅ КРИТИЧНО: Всегда сбрасываем загрузку при ошибке
       _isLoading.value = false;
 
       if (!mounted) return;
@@ -586,7 +577,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   }
 
   Future<void> _handlePunchOutWithCamera() async {
-    // Валидация
     if (_selectedWorkSite.value == null) {
       _showErrorDialog(
         title: 'Work Site Required',
@@ -613,7 +603,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       return;
     }
 
-    _isLoading.value = true; // ✅ Начало загрузки
+    _isLoading.value = true;
 
     try {
       final Map<String, dynamic> requestData = {
@@ -629,11 +619,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       );
 
       if (!mounted) {
-        _isLoading.value = false; // ✅ Сброс при unmount
+        _isLoading.value = false;
         return;
       }
 
-      // Проверяем статус код
       if (response.statusCode! >= 200 && response.statusCode! < 300) {
         print('🛑 Stopping location tracking for user ID: ${_currentUserId.value}');
         await _locationTrackingService.stopTracking();
@@ -644,11 +633,16 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         await prefs.setString('lastPunchOutDate', nowUtcIso);
         await prefs.setBool('isPunchedInToday', false);
 
-     //   _hasPunchIn.value = false;
-       // await PunchStatusChecker.updateCacheAfterPunchOut();
-       await _punchManager.onPunchOutSuccess();
+        // ✅ КРИТИЧНО: Обновить PunchManager
+        await _punchManager.onPunchOutSuccess();
+
+        // ✅ КРИТИЧНО: Уведомить MainScreen
+        if (mounted) {
+          MainScreenReloadNotification().dispatch(context);
+        }
+
         _isTrackingActive.value = false;
-        _isLoading.value = false; // ✅ Успех - сброс загрузки
+        _isLoading.value = false;
 
         final currentTime = _getCurrentFormattedTime();
         _showSuccessDialog(false, currentTime);
@@ -662,10 +656,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           );
         }
       } else {
-        // ✅ Статус код не 2xx - это ошибка
         _isLoading.value = false;
 
-        // Извлекаем сообщение об ошибке из ответа
         String errorMessage = 'Punch out failed';
 
         if (response.data != null && response.data is Map) {
@@ -685,7 +677,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         }
       }
     } catch (e) {
-      // ✅ КРИТИЧНО: Всегда сбрасываем загрузку при ошибке
       _isLoading.value = false;
 
       if (!mounted) return;
@@ -700,6 +691,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       );
     }
   }
+
   void _showErrorDialog({
     required String title,
     required String message,
@@ -788,7 +780,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
               children: [
                 SizedBox(height: _isSmallScreen ? 16 : 20),
 
-                // Clock Display
                 ClockDisplay(
                   textColor: _theme.textTheme.bodyLarge?.color ?? Colors.white,
                   isSmallScreen: _isSmallScreen,
@@ -797,7 +788,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
                 SizedBox(height: _isSmallScreen ? 16 : 20),
 
-                // Map Container with ValueListenableBuilder
                 ValueListenableBuilder<Position?>(
                   valueListenable: _currentPosition,
                   builder: (context, position, _) {
@@ -810,7 +800,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
                 SizedBox(height: _isSmallScreen ? 16 : 20),
 
-                // Work Site Selector
                 Padding(
                   padding: _isSmallScreen ? _smallPadding : _standardPadding,
                   child: ValueListenableBuilder<WorkSiteResponse?>(
@@ -834,20 +823,17 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
             ),
           ),
 
-          // Loading overlay
           ValueListenableBuilder<bool>(
             valueListenable: _isLoading,
             builder: (context, isLoading, _) {
               if (!isLoading) return const SizedBox.shrink();
 
-              return Container(
-                color: Colors.black54,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: _theme.brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.blue,
-                  ),
+              return const Positioned.fill(
+                child: Stack(
+                  children: [
+                    ModalBarrier(dismissible: false, color: Colors.transparent),
+                    Center(child: CircularProgressIndicator()),
+                  ],
                 ),
               );
             },
@@ -918,7 +904,4 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       ),
     );
   }
-
-
 }
-

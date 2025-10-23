@@ -16,9 +16,10 @@ import '../../../services/ApiService.dart';
 import '../../../services/time_service.dart';
 import '../../loginScreen/privacy_policy_screen.dart';
 import '../components/custom_drawer.dart';
+import '../main_menu_punch_screen/punch_manager.dart';
 import '../view-details/view_details_screen.dart';
 
-// Notification для перезагрузки данных (из drawer и из punch screen)
+// Notification для перезагрузки данных
 class MainScreenReloadNotification extends Notification {}
 
 // Cache Manager для хранения данных
@@ -302,7 +303,6 @@ class CircularProgressPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// Оптимизированный MainMenuScreen
 class MainMenuScreen extends StatefulWidget {
   final AuthenticationApi authenticationApi;
 
@@ -324,7 +324,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   late final ValueNotifier<double> _workedHours;
   late final ValueNotifier<String> _lastPunchDate;
   late final ValueNotifier<String> _lastPunchTime;
-  late final ValueNotifier<bool> _isPunchedIn;
   late final ValueNotifier<String> _weekPeriod;
 
   // Services
@@ -344,12 +343,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   void initState() {
     super.initState();
 
-    // ✅ ИСПРАВЛЕНИЕ: Устанавливаем светлые иконки для тёмной темы
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light, // ✅ СВЕТЛЫЕ иконки (для тёмного фона)
-        statusBarBrightness: Brightness.dark,      // ✅ Для iOS
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
     );
 
@@ -360,7 +358,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _workedHours = ValueNotifier<double>(0.0);
     _lastPunchDate = ValueNotifier<String>('--/--/----');
     _lastPunchTime = ValueNotifier<String>('--:--');
-    _isPunchedIn = ValueNotifier<bool>(false);
 
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
@@ -396,7 +393,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _workedHours.dispose();
     _lastPunchDate.dispose();
     _lastPunchTime.dispose();
-    _isPunchedIn.dispose();
     _weekPeriod.dispose();
     super.dispose();
   }
@@ -405,7 +401,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     await _loadCachedData();
     setState(() => _isInitialized = true);
     _timeService.sync().then((_) => _startTimeTicker());
-    _checkPunchStatus();
     await _initializeUserAndPrivacy();
     if (_canLoadData) {
       await _loadFreshData();
@@ -506,6 +501,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       }
 
       if (_currentUserId != null) {
+        // ✅ ИСПРАВЛЕНИЕ: Используем PunchManager правильно
+        final pm = PunchManager();
+        pm.setUserId(_currentUserId!);
+        await pm.checkPunchStatus();
+
         await _checkPrivacyPolicy(_currentUserId!);
       } else {
         print('Warning: No userId available for privacy policy check');
@@ -559,33 +559,31 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     }
   }
 
-  Future<void> _checkPunchStatus() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      _isPunchedIn.value = prefs.getBool('isPunchedInToday') ?? false;
-    } catch (e) {
-      print('Error checking punch status: $e');
+  // ✅ ИСПРАВЛЕНИЕ: Обновляем статус через PunchManager
+  Future<void> _refreshPunchStatus() async {
+    if (_currentUserId != null) {
+      final pm = PunchManager();
+      pm.setUserId(_currentUserId!);
+      await pm.checkPunchStatus(forceRefresh: false);
+      print('✅ MainScreen: Punch status refreshed');
     }
   }
-// Полная перезагрузка данных
+
+  // Полная перезагрузка данных
   Future<void> _fullReloadData() async {
     print('Starting full reload...');
 
-    // Очищаем кеш
     await CacheManager.clearCache();
 
-    // Сбрасываем значения на дефолтные
     _workedHours.value = 0.0;
     _lastPunchDate.value = '--/--/----';
     _lastPunchTime.value = '--:--';
 
-    // Перезагружаем userId и privacy policy
     await _initializeUserAndPrivacy();
 
-    // ✅ ВАЖНО: Обновляем статус punch in/out
-    await _checkPunchStatus();
+    // ✅ ИСПРАВЛЕНИЕ: Обновляем punch status через PunchManager
+    await _refreshPunchStatus();
 
-    // Загружаем свежие данные
     if (_canLoadData && _currentUserId != null) {
       await _loadFreshData();
     }
@@ -593,7 +591,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     print('Full reload completed');
   }
 
-  // Pull to refresh
   Future<void> _onRefresh() async {
     await _fullReloadData();
   }
@@ -611,9 +608,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     final mainFontSize = isSmall ? 14.0 : 16.0;
     final titleFontSize = isSmall ? 18.0 : 20.0;
 
+    // ✅ ИСПРАВЛЕНИЕ: Добавлен NotificationListener
     return NotificationListener<MainScreenReloadNotification>(
       onNotification: (notification) {
-        _fullReloadData();
+        print('📢 MainScreen: Received reload notification');
+        _refreshPunchStatus();
+        _loadFreshData();
         return true;
       },
       child: Scaffold(
@@ -643,236 +643,260 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.notifications_none_rounded, size: 28),
-                      onPressed: () => Navigator.pushNamed(context, '/notifications'),
+                      icon: Icon(Icons.access_time, size: 28),
+                      onPressed: () {},
                     ),
                   ],
                 ),
               ),
 
-              // MAIN CONTENT с Pull to Refresh
+              // BODY WITH REFRESH
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _onRefresh,
-                  color: Colors.blue,
-                  child: ListView(
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.all(basePadding),
-                    children: [
-                      // DATE & TIME CARD
-                      Container(
-                        padding: EdgeInsets.all(basePadding),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[900] : Colors.white,
-                          borderRadius: BorderRadius.circular(cardRadius),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // TIME CARD
+                        Container(
+                          padding: EdgeInsets.all(basePadding * 1.5),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[900] : Colors.white,
+                            borderRadius: BorderRadius.circular(cardRadius),
+                          ),
+                          child: Column(
+                            children: [
+                              ValueListenableBuilder<String>(
+                                valueListenable: _currentTime,
+                                builder: (_, time, __) => Text(
+                                  time,
+                                  style: TextStyle(
+                                    fontSize: isSmall ? 42 : 48,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              ValueListenableBuilder<String>(
+                                valueListenable: _currentDate,
+                                builder: (_, date, __) => Text(
+                                  date,
+                                  style: TextStyle(
+                                    fontSize: mainFontSize,
+                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ValueListenableBuilder<String>(
-                                  valueListenable: _currentDate,
-                                  builder: (_, date, __) => Text(
-                                    date,
-                                    style: TextStyle(
-                                      fontSize: mainFontSize - 2,
-                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                    ),
-                                  ),
-                                ),
-                                ValueListenableBuilder<String>(
-                                  valueListenable: _currentTime,
-                                  builder: (_, time, __) => Text(
-                                    time,
-                                    style: TextStyle(
-                                      fontSize: titleFontSize + 4,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            ValueListenableBuilder<bool>(
-                              valueListenable: _isPunchedIn,
-                              builder: (_, punched, __) => Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: basePadding,
-                                  vertical: basePadding / 2,
-                                ),
+
+                        SizedBox(height: basePadding),
+
+                        // PUNCH STATUS
+                        Container(
+                          padding: EdgeInsets.all(basePadding * 1.2),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[900] : Colors.white,
+                            borderRadius: BorderRadius.circular(cardRadius),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(basePadding * 0.8),
                                 decoration: BoxDecoration(
-                                  color: punched
-                                      ? Colors.green.withOpacity(0.1)
-                                      : Colors.red.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: punched ? Colors.green : Colors.red,
-                                    width: 1,
-                                  ),
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                child: Icon(
+                                  Icons.access_time,
+                                  color: Colors.green,
+                                  size: isSmall ? 24 : 28,
+                                ),
+                              ),
+                              SizedBox(width: basePadding),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: punched ? Colors.green : Colors.red,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    SizedBox(width: 6),
                                     Text(
-                                      punched ? l10n.get('active') : l10n.get('inactive'),
+                                      l10n.get('punchStatus'),
                                       style: TextStyle(
                                         fontSize: mainFontSize - 2,
-                                        fontWeight: FontWeight.w600,
-                                        color: punched ? Colors.green : Colors.red,
+                                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    ValueListenableBuilder<bool>(
+                                      valueListenable: PunchManager().hasPunchIn,
+                                      builder: (_, punched, __) => Row(
+                                        children: [
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: BoxDecoration(
+                                              color: punched ? Colors.green : Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          SizedBox(width: 6),
+                                          Text(
+                                            punched ? l10n.get('active') : l10n.get('inactive'),
+                                            style: TextStyle(
+                                              fontSize: mainFontSize - 2,
+                                              fontWeight: FontWeight.w600,
+                                              color: punched ? Colors.green : Colors.red,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
 
-                      SizedBox(height: basePadding),
+                        SizedBox(height: basePadding),
 
-                      // HOURS CIRCLE
-                      Container(
-                        padding: EdgeInsets.all(basePadding * 1.5),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[900] : Colors.white,
-                          borderRadius: BorderRadius.circular(cardRadius),
-                        ),
-                        child: Center(
-                          child: ValueListenableBuilder<double>(
-                            valueListenable: _workedHours,
-                            builder: (_, hours, __) => ValueListenableBuilder<String>(
-                              valueListenable: _weekPeriod,
-                              builder: (_, period, __) => WeeklyHoursCircle(
-                                hours: hours,
-                                period: period,
-                                thisWeekText: l10n.get('thisWeekText'),
+                        // HOURS CIRCLE
+                        Container(
+                          padding: EdgeInsets.all(basePadding * 1.5),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[900] : Colors.white,
+                            borderRadius: BorderRadius.circular(cardRadius),
+                          ),
+                          child: Center(
+                            child: ValueListenableBuilder<double>(
+                              valueListenable: _workedHours,
+                              builder: (_, hours, __) => ValueListenableBuilder<String>(
+                                valueListenable: _weekPeriod,
+                                builder: (_, period, __) => WeeklyHoursCircle(
+                                  hours: hours,
+                                  period: period,
+                                  thisWeekText: l10n.get('thisWeekText'),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
 
-                      SizedBox(height: basePadding),
+                        SizedBox(height: basePadding),
 
-                      // LAST PUNCH CARD
-                      Container(
-                        padding: EdgeInsets.all(basePadding * 1.2),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[900] : Colors.white,
-                          borderRadius: BorderRadius.circular(cardRadius),
+                        // LAST PUNCH CARD
+                        Container(
+                          padding: EdgeInsets.all(basePadding * 1.2),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[900] : Colors.white,
+                            borderRadius: BorderRadius.circular(cardRadius),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(basePadding * 0.8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.history,
+                                  color: Colors.blue,
+                                  size: isSmall ? 24 : 28,
+                                ),
+                              ),
+                              SizedBox(width: basePadding),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.get('lastPunch'),
+                                      style: TextStyle(
+                                        fontSize: mainFontSize - 2,
+                                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        ValueListenableBuilder<String>(
+                                          valueListenable: _lastPunchDate,
+                                          builder: (_, date, __) => Text(
+                                            date,
+                                            style: TextStyle(
+                                              fontSize: mainFontSize,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        ValueListenableBuilder<String>(
+                                          valueListenable: _lastPunchTime,
+                                          builder: (_, time, __) => Text(
+                                            time,
+                                            style: TextStyle(
+                                              fontSize: mainFontSize,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
+
+                        SizedBox(height: basePadding),
+
+                        // VIEW DETAILS BUTTON
+                        Row(
                           children: [
-                            Container(
-                              padding: EdgeInsets.all(basePadding * 0.8),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.history,
-                                color: Colors.blue,
-                                size: isSmall ? 24 : 28,
-                              ),
-                            ),
-                            SizedBox(width: basePadding),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    l10n.get('lastPunch'),
-                                    style: TextStyle(
-                                      fontSize: mainFontSize - 2,
-                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              child: SizedBox(
+                                height: isSmall ? 48 : 56,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ViewDetailsScreen(
+                                          workedHours: _workedHours.value,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue.withOpacity(0.1),
+                                    foregroundColor: Colors.blue,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(cardRadius - 4),
                                     ),
                                   ),
-                                  SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      ValueListenableBuilder<String>(
-                                        valueListenable: _lastPunchDate,
-                                        builder: (_, date, __) => Text(
-                                          date,
-                                          style: TextStyle(
-                                            fontSize: mainFontSize,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 8),
-                                      ValueListenableBuilder<String>(
-                                        valueListenable: _lastPunchTime,
-                                        builder: (_, time, __) => Text(
-                                          time,
-                                          style: TextStyle(
-                                            fontSize: mainFontSize,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.blue,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    l10n.get('viewDetails'),
+                                    style: TextStyle(
+                                      fontSize: mainFontSize,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
 
-                      SizedBox(height: basePadding),
-
-                      // VIEW DETAILS BUTTON
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: isSmall ? 48 : 56,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ViewDetailsScreen(
-                                        workedHours: _workedHours.value,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue.withOpacity(0.1),
-                                  foregroundColor: Colors.blue,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(cardRadius - 4),
-                                  ),
-                                ),
-                                child: Text(
-                                  l10n.get('viewDetails'),
-                                  style: TextStyle(
-                                    fontSize: mainFontSize,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: basePadding * 2),
-                    ],
+                        SizedBox(height: basePadding * 2),
+                      ],
+                    ),
                   ),
                 ),
               ),

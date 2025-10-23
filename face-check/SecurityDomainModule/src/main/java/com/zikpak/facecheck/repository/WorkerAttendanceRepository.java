@@ -88,7 +88,7 @@ WHERE w.worker = :worker
 AND w.checkInTime >= :startOfDay 
 AND w.checkInTime < :endOfDay
 """)
-    boolean hasPunchInToday(
+    WorkerAttendance hasPunchInToday(
             @Param("worker") User user,
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay
