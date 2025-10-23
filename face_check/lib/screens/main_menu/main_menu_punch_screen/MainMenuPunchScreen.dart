@@ -1,4 +1,4 @@
-import 'package:face_check/screens/main_menu/main_menu_punch_screen/punch-status-checker.dart';
+import 'package:face_check/screens/main_menu/main_menu_punch_screen/punch_manager.dart';
 import 'package:face_check/screens/main_menu/main_menu_punch_screen/punch_success_dialo.dart';
 import 'package:face_check/screens/main_menu/main_menu_punch_screen/retry-interceptor.dart';
 import 'package:face_check/services/time_service.dart';
@@ -49,12 +49,12 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
   // ValueNotifiers для оптимизации перерисовок
   late final ValueNotifier<bool> _isLoading;
-  late final ValueNotifier<bool> _hasPunchIn;
   late final ValueNotifier<Position?> _currentPosition;
   late final ValueNotifier<WorkSiteResponse?> _selectedWorkSite;
   late final ValueNotifier<List<WorkSiteResponse>> _workSites;
   late final ValueNotifier<bool> _isTrackingActive;
   late final ValueNotifier<int?> _currentUserId;
+  late final PunchManager _punchManager;
 
   // Google Maps Controller
   GoogleMapController? mapController;
@@ -80,7 +80,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
     // Инициализация ValueNotifiers
     _isLoading = ValueNotifier<bool>(false);
-    _hasPunchIn = ValueNotifier<bool>(false);
+    _punchManager = PunchManager();
     _currentPosition = ValueNotifier<Position?>(null);
     _selectedWorkSite = ValueNotifier<WorkSiteResponse?>(null);
     _workSites = ValueNotifier<List<WorkSiteResponse>>([]);
@@ -106,7 +106,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _isLoading.dispose();
-    _hasPunchIn.dispose();
+    _punchManager.dispose();
     _currentPosition.dispose();
     _selectedWorkSite.dispose();
     _workSites.dispose();
@@ -118,9 +118,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Когда приложение возвращается - обновляем принудительно
       timeService.sync().then((_) {
-        _refreshPunchStatus(); // ← Изменено с _checkTodayPunchStatus()
+        _punchManager.forceRefresh();
       });
     }
   }
@@ -338,51 +337,9 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   }
 
   Future<void> _checkTodayPunchStatus() async {
-    try {
-      print('🔍 Checking today\'s punch status...');
-
-      // Если нет userId - не можем проверить
-      if (_currentUserId.value == null) {
-        print('⚠️ Cannot check punch status: userId is null');
-        _hasPunchIn.value = false;
-        return;
-      }
-
-      // Используем PunchStatusChecker с кешированием на 10 минут
-      final hasPunchIn = await PunchStatusChecker.checkPunchInStatus(
-        workerId: _currentUserId.value!,
-        forceRefresh: false, // Используем кеш если есть
-      );
-
-      _hasPunchIn.value = hasPunchIn;
-
-      if (hasPunchIn) {
-        print('✅ User HAS punch in today');
-      } else {
-        print('❌ User does NOT have punch in today');
-      }
-
-    } catch (e) {
-      print('❌ Error checking punch status: $e');
-      _hasPunchIn.value = false;
-    }
-  }
-
-  Future<void> _refreshPunchStatus() async {
-    if (_currentUserId.value == null) return;
-
-    print('🔄 Force refreshing punch status...');
-
-    try {
-      final hasPunchIn = await PunchStatusChecker.checkPunchInStatus(
-        workerId: _currentUserId.value!,
-        forceRefresh: true, // Принудительно с сервера, игнорируя кеш
-      );
-
-      _hasPunchIn.value = hasPunchIn;
-      print('✅ Punch status refreshed: $hasPunchIn');
-    } catch (e) {
-      print('❌ Error refreshing punch status: $e');
+    if (_currentUserId.value != null) {
+      _punchManager.setUserId(_currentUserId.value!);
+      await _punchManager.checkPunchStatus();
     }
   }
 
@@ -490,12 +447,14 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   }
 
   Future<void> _handlePunchInOut() async {
-    if (!_hasPunchIn.value) {
+    if (!_punchManager.hasPunchIn.value) {
       await _handlePunchInWithCamera();
     } else {
       await _handlePunchOutWithCamera();
     }
   }
+
+
 
   Future<void> _handlePunchInWithCamera() async {
     // Валидация
@@ -570,8 +529,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           }
         }
 
-        _hasPunchIn.value = true;
-        await PunchStatusChecker.updateCacheAfterPunchIn();
+        await _punchManager.onPunchInSuccess();
+      //  await PunchStatusChecker.updateCacheAfterPunchIn();
         _isTrackingActive.value = true;
         _isLoading.value = false; // ✅ Успех - сброс загрузки
 
@@ -685,8 +644,9 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         await prefs.setString('lastPunchOutDate', nowUtcIso);
         await prefs.setBool('isPunchedInToday', false);
 
-        _hasPunchIn.value = false;
-        await PunchStatusChecker.updateCacheAfterPunchOut();
+     //   _hasPunchIn.value = false;
+       // await PunchStatusChecker.updateCacheAfterPunchOut();
+       await _punchManager.onPunchOutSuccess();
         _isTrackingActive.value = false;
         _isLoading.value = false; // ✅ Успех - сброс загрузки
 
@@ -904,7 +864,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
               valueListenable: _isLoading,
               builder: (context, isLoading, _) {
                 return ValueListenableBuilder<bool>(
-                  valueListenable: _hasPunchIn,
+                  valueListenable: _punchManager.hasPunchIn,
                   builder: (context, hasPunchIn, _) {
                     return Material(
                       color: Colors.transparent,
