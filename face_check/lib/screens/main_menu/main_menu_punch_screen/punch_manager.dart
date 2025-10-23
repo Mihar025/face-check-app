@@ -8,7 +8,7 @@ class PunchManager {
   // Кеширование
   static const String _cacheKey = 'punch_in_status';
   static const String _cacheTimeKey = 'punch_in_status_time';
-  static const Duration _cacheDuration = Duration(minutes: 10);
+  static const Duration _cacheDuration = Duration(minutes: 1);
 
   // ValueNotifiers для реактивности
   final ValueNotifier<bool> hasPunchIn = ValueNotifier<bool>(false);
