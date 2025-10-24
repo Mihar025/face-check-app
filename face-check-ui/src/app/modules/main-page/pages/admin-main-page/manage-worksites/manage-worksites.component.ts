@@ -130,16 +130,39 @@ export class ManageWorksitesComponent implements OnInit {
     this.authService.logout();
   }
 
-  // Open map modal
-  openMapModal(worksite: any) {
-    this.selectedWorksiteForMap = worksite;
-    this.showMapModal = true;
 
-    // Инициализируем карту после рендера модалки
-    setTimeout(() => {
-      this.initializeWorksiteMap();
-    }, 200);
+  openMapModal(worksite: any) {
+    const worksiteId = worksite.workSiteId;
+
+    // Используем тот же API что и для Info Modal
+    this.workSiteService.findWorkSiteById({ id: worksiteId }).subscribe(
+      (data) => {
+        this.selectedWorksiteForMap = data;
+        console.log('📍 Loaded worksite for map:', data.workSiteName);
+        console.log('📏 Current radius:', data.allowedRadius, 'meters');
+
+        // Открываем модалку
+        this.showMapModal = true;
+
+        // Инициализируем карту
+        setTimeout(() => {
+          this.initializeWorksiteMap();
+        }, 200);
+      },
+      (error) => {
+        console.error('Error loading worksite:', error);
+        this.errorMessage = 'Failed to load worksite details';
+
+        // Fallback - используем данные из таблицы
+        this.selectedWorksiteForMap = worksite;
+        this.showMapModal = true;
+        setTimeout(() => {
+          this.initializeWorksiteMap();
+        }, 200);
+      }
+    );
   }
+  // Load fresh worksite details
 
 // Close map modal
   closeMapModal() {
@@ -162,7 +185,7 @@ export class ManageWorksitesComponent implements OnInit {
 
     const lat = parseFloat(this.selectedWorksiteForMap.latitude);
     const lng = parseFloat(this.selectedWorksiteForMap.longitude);
-    const radius = this.selectedWorksiteForMap.radius || 100;
+    const radius = this.selectedWorksiteForMap.allowedRadius || 100;
 
     if (isNaN(lat) || isNaN(lng)) {
       console.error('Invalid coordinates');
