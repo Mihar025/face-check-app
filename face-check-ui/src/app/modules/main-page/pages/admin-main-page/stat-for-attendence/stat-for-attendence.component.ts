@@ -87,7 +87,6 @@ export class StatForAttendenceComponent implements OnInit{
       }
     });
   }
-
 // Open location modal for Check In
   openCheckInLocation(attendance: AttendanceResponse): void {
     if (!attendance.checkInLatitude || !attendance.checkInLongitude) {
@@ -98,11 +97,11 @@ export class StatForAttendenceComponent implements OnInit{
 
     this.locationType = 'checkin';
     this.selectedLocationData = {
-      latitude: attendance.checkInLatitude,
-      longitude: attendance.checkInLongitude,
+      latitude: attendance.checkInLatitude || 0,  // ← ДОБАВЬ || 0
+      longitude: attendance.checkInLongitude || 0, // ← ДОБАВЬ || 0
       location: attendance.checkInLocation || 'Location not available',
       time: attendance.checkInTime || '',
-      workerName: `${attendance.firstName} ${attendance.lastName}`,
+      workerName: `${attendance.firstName || ''} ${attendance.lastName || ''}`,
       type: 'Check In'
     };
     this.showLocationModal = true;
@@ -122,11 +121,11 @@ export class StatForAttendenceComponent implements OnInit{
 
     this.locationType = 'checkout';
     this.selectedLocationData = {
-      latitude: attendance.checkOutLatitude,
-      longitude: attendance.checkOutLongitude,
+      latitude: attendance.checkOutLatitude || 0,  // ← ДОБАВЬ || 0
+      longitude: attendance.checkOutLongitude || 0, // ← ДОБАВЬ || 0
       location: attendance.checkOutLocation || 'Location not available',
       time: attendance.checkOutTime || '',
-      workerName: `${attendance.firstName} ${attendance.lastName}`,
+      workerName: `${attendance.firstName || ''} ${attendance.lastName || ''}`,
       type: 'Check Out'
     };
     this.showLocationModal = true;
@@ -135,7 +134,6 @@ export class StatForAttendenceComponent implements OnInit{
       this.initializeLocationMap();
     }, 200);
   }
-
 // Close location modal
   closeLocationModal(): void {
     this.showLocationModal = false;
@@ -288,11 +286,13 @@ export class StatForAttendenceComponent implements OnInit{
 
 // Check if location exists
   hasCheckInLocation(attendance: AttendanceResponse): boolean {
-    return !!(attendance.checkInLatitude && attendance.checkInLongitude);
+    return typeof attendance.checkInLatitude === 'number' &&
+      typeof attendance.checkInLongitude === 'number';
   }
 
   hasCheckOutLocation(attendance: AttendanceResponse): boolean {
-    return !!(attendance.checkOutLatitude && attendance.checkOutLongitude);
+    return typeof attendance.checkOutLatitude === 'number' &&
+      typeof attendance.checkOutLongitude === 'number';
   }
 
 
