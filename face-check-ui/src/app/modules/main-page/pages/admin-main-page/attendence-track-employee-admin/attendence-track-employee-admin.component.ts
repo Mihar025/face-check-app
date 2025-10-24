@@ -6,6 +6,9 @@ import {AttendanceResponse} from "../../../../../services/models/attendance-resp
 import {FileControllerService} from "../../../../../services/services/file-controller.service";
 import {catchError, of} from "rxjs";
 
+
+declare let L: any;
+
 @Component({
   selector: 'app-attendence-track-employee-admin',
   templateUrl: './attendence-track-employee-admin.component.html',
@@ -37,6 +40,13 @@ export class AttendenceTrackEmployeeAdminComponent implements OnInit{
   selectedDate: string = new Date().toISOString().split('T')[0];
   fullscreenImage: string = '';
   loadingPhotos: boolean = false;
+
+  showLocationModal: boolean = false;
+  selectedLocationData: any = null;
+  locationType: 'checkin' | 'checkout' = 'checkin';
+  private locationMap: any = null;
+  private locationMarker: any = null;
+  private mapInitialized: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -75,6 +85,215 @@ export class AttendenceTrackEmployeeAdminComponent implements OnInit{
       }
     });
   }
+
+  // Open location modal for Check In
+  openCheckInLocation(attendance: AttendanceResponse): void {
+    if (!attendance.checkInLatitude || !attendance.checkInLongitude) {
+      this.errorMessage = 'Check-in location not available';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    this.locationType = 'checkin';
+    this.selectedLocationData = {
+      latitude: attendance.checkInLatitude,
+      longitude: attendance.checkInLongitude,
+      location: attendance.checkInLocation,
+      time: attendance.checkInTime,
+      workerName: `${attendance.firstName} ${attendance.lastName}`,
+      type: 'Check In'
+    };
+    this.showLocationModal = true;
+
+    setTimeout(() => {
+      this.initializeLocationMap();
+    }, 200);
+  }
+
+// Open location modal for Check Out
+  openCheckOutLocation(attendance: AttendanceResponse): void {
+    if (!attendance.checkOutLatitude || !attendance.checkOutLongitude) {
+      this.errorMessage = 'Check-out location not available';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    this.locationType = 'checkout';
+    this.selectedLocationData = {
+      latitude: attendance.checkOutLatitude,
+      longitude: attendance.checkOutLongitude,
+      location: attendance.checkOutLocation,
+      time: attendance.checkOutTime,
+      workerName: `${attendance.firstName} ${attendance.lastName}`,
+      type: 'Check Out'
+    };
+    this.showLocationModal = true;
+
+    setTimeout(() => {
+      this.initializeLocationMap();
+    }, 200);
+  }
+
+// Close location modal
+  closeLocationModal(): void {
+    this.showLocationModal = false;
+    this.selectedLocationData = null;
+
+    if (this.locationMap) {
+      this.locationMap.remove();
+      this.locationMap = null;
+      this.locationMarker = null;
+      this.mapInitialized = false;
+    }
+  }
+
+// Initialize Leaflet map for location
+  private initializeLocationMap(): void {
+    if (!this.selectedLocationData) return;
+
+    const lat = parseFloat(this.selectedLocationData.latitude);
+    const lng = parseFloat(this.selectedLocationData.longitude);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      console.error('Invalid coordinates');
+      return;
+    }
+
+    if (typeof L === 'undefined') {
+      console.error('Leaflet is not loaded!');
+      this.loadLeafletFromCDN();
+      return;
+    }
+
+    const mapElement = document.getElementById('attendanceLocationMap');
+    if (!mapElement) {
+      console.error('Map element not found');
+      return;
+    }
+
+    mapElement.innerHTML = '';
+
+    try {
+      mapElement.style.width = '100%';
+      mapElement.style.height = '100%';
+      mapElement.style.minHeight = '400px';
+
+      // Create map
+      this.locationMap = L.map(mapElement, {
+        center: [lat, lng],
+        zoom: 16,
+        zoomControl: true,
+        attributionControl: true
+      });
+
+      // Add tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors © CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20,
+        minZoom: 2
+      }).addTo(this.locationMap);
+
+      // Marker color based on type
+      const markerColor = this.locationType === 'checkin' ? '#10b981' : '#ef4444';
+      const iconHtml = `
+      <div style="
+        background: ${markerColor};
+        width: 30px;
+        height: 30px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          width: 10px;
+          height: 10px;
+          background: white;
+          border-radius: 50%;
+          transform: rotate(45deg);
+        "></div>
+      </div>
+    `;
+
+      const customIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: iconHtml,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+      });
+
+      // Add marker
+      this.locationMarker = L.marker([lat, lng], { icon: customIcon })
+        .addTo(this.locationMap);
+
+      // Popup content
+      const popupContent = `
+      <div style="padding: 10px; min-width: 200px;">
+        <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">
+          <i class="fas fa-user" style="color: ${markerColor};"></i>
+          ${this.selectedLocationData.workerName}
+        </h3>
+        <p style="margin: 5px 0; color: #6b7280; font-size: 13px;">
+          <i class="fas fa-clock" style="color: ${markerColor}; width: 20px;"></i>
+          <strong>${this.selectedLocationData.type}:</strong> ${this.formatDateTime(this.selectedLocationData.time)}
+        </p>
+        <p style="margin: 5px 0; color: #6b7280; font-size: 13px;">
+          <i class="fas fa-map-marker-alt" style="color: ${markerColor}; width: 20px;"></i>
+          ${this.selectedLocationData.location || 'Location not available'}
+        </p>
+        <p style="margin: 5px 0; color: #6b7280; font-size: 11px;">
+          <i class="fas fa-crosshairs" style="color: ${markerColor}; width: 20px;"></i>
+          ${lat.toFixed(6)}, ${lng.toFixed(6)}
+        </p>
+      </div>
+    `;
+
+      this.locationMarker.bindPopup(popupContent).openPopup();
+
+      setTimeout(() => {
+        if (this.locationMap) {
+          this.locationMap.invalidateSize(true);
+        }
+      }, 100);
+
+      this.mapInitialized = true;
+      console.log('Location map initialized successfully');
+
+    } catch (error) {
+      console.error('Error initializing location map:', error);
+    }
+  }
+
+// Load Leaflet from CDN if not available
+  private loadLeafletFromCDN(): void {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => {
+      console.log('Leaflet loaded from CDN');
+      setTimeout(() => this.initializeLocationMap(), 500);
+    };
+    document.head.appendChild(script);
+  }
+
+// Check if location exists
+  hasCheckInLocation(attendance: AttendanceResponse): boolean {
+    return !!(attendance.checkInLatitude && attendance.checkInLongitude);
+  }
+
+  hasCheckOutLocation(attendance: AttendanceResponse): boolean {
+    return !!(attendance.checkOutLatitude && attendance.checkOutLongitude);
+  }
+
+
 
   // Методы пагинации
   goToPage(pageNumber: number): void {
