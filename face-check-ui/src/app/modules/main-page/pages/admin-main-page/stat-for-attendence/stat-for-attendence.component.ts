@@ -88,8 +88,7 @@ export class StatForAttendenceComponent implements OnInit{
     });
   }
 
-
-  // Open location modal for Check In
+// Open location modal for Check In
   openCheckInLocation(attendance: AttendanceResponse): void {
     if (!attendance.checkInLatitude || !attendance.checkInLongitude) {
       this.errorMessage = 'Check-in location not available';
@@ -101,8 +100,8 @@ export class StatForAttendenceComponent implements OnInit{
     this.selectedLocationData = {
       latitude: attendance.checkInLatitude,
       longitude: attendance.checkInLongitude,
-      location: attendance.checkInLocation,
-      time: attendance.checkInTime,
+      location: attendance.checkInLocation || 'Location not available',
+      time: attendance.checkInTime || '',
       workerName: `${attendance.firstName} ${attendance.lastName}`,
       type: 'Check In'
     };
@@ -125,8 +124,8 @@ export class StatForAttendenceComponent implements OnInit{
     this.selectedLocationData = {
       latitude: attendance.checkOutLatitude,
       longitude: attendance.checkOutLongitude,
-      location: attendance.checkOutLocation,
-      time: attendance.checkOutTime,
+      location: attendance.checkOutLocation || 'Location not available',
+      time: attendance.checkOutTime || '',
       workerName: `${attendance.firstName} ${attendance.lastName}`,
       type: 'Check Out'
     };
