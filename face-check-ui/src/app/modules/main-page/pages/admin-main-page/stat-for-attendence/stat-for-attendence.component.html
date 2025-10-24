@@ -1,7 +1,16 @@
 <div class="page">
 
-  <!-- Сайдбар слева -->
-  <aside class="sidebar-left">
+
+  <button class="mobile-menu-toggle" (click)="toggleMobileMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Overlay -->
+  <div class="sidebar-overlay"
+       [class.active]="isMobileMenuOpen"
+       (click)="closeMobileMenu()">
+  </div>
+  <aside class="sidebar-left" [class.open]="isMobileMenuOpen">
     <app-admin-sidebar
       [userName]="userName"
       [companyName]="companyName"

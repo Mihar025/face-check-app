@@ -1805,3 +1805,537 @@ body {
     }
   }
 }
+
+// ============================================
+// MOBILE RESPONSIVE - FULL OPTIMIZATION
+// ============================================
+
+@media (max-width: 768px) {
+  // Main layout
+  .main-content {
+    margin-left: 0;
+  }
+
+  // Header
+  .top-logo-container {
+    padding: 0 16px;
+    height: 60px;
+
+    .top-logo {
+      height: 35px;
+    }
+  }
+
+  // Container
+  .admin-container {
+    padding: 16px;
+  }
+
+  // Header with action
+  .header-with-action {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+
+    h1 {
+      font-size: 24px;
+
+      &::before {
+        width: 4px;
+        height: 26px;
+      }
+    }
+
+    .add-button {
+      width: 100%;
+      justify-content: center;
+      padding: 12px 20px;
+    }
+  }
+
+  // Search and filters
+  .search-filters {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    .search-box,
+    .filter-select,
+    input,
+    select {
+      width: 100%;
+    }
+  }
+
+  // Employees section
+  .employees-section {
+    margin-bottom: 20px;
+    border-radius: $border-radius-sm;
+
+    h2 {
+      font-size: 16px;
+      padding: 16px 20px;
+    }
+  }
+
+  // TABLE TO CARDS - EMPLOYEES
+  .employees-table {
+    display: block;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: block;
+    }
+
+    tr {
+      display: block;
+      margin-bottom: 16px;
+      border: 1px solid $neutral-200;
+      border-radius: $border-radius-sm;
+      padding: 16px;
+      background: $white;
+      @include shadow-sm;
+
+      &:hover {
+        background: $white;
+        @include shadow-md;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    td {
+      display: block;
+      padding: 10px 0 !important;
+      border: none !important;
+      text-align: left;
+
+      &:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: $neutral-600;
+        display: block;
+        margin-bottom: 6px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      &:not(:last-child) {
+        border-bottom: 1px solid $neutral-100 !important;
+        padding-bottom: 12px !important;
+      }
+
+      // Labels for each column
+      &:first-child:before { content: "Employee"; }
+      &:nth-child(2):before { content: "Email"; }
+      &:nth-child(3):before { content: "Phone"; }
+      &:nth-child(4):before { content: "Role"; }
+      &:nth-child(5):before { content: "Worksite"; }
+      &:nth-child(6):before { content: "Status"; }
+      &:nth-child(7):before { content: "Actions"; }
+    }
+  }
+
+  // Worker avatar
+  .worker-avatar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+
+    .worker-photo,
+    .worker-photo-placeholder {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+    }
+
+    .worker-info {
+      .worker-name {
+        font-size: 15px;
+      }
+
+      .worker-title {
+        font-size: 12px;
+      }
+    }
+  }
+
+  // Role badge
+  .role-badge {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  // Status badge
+  .status-badge {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  // Worksite badge
+  .worksite-badge {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  // Action buttons
+  .actions-cell {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .action-button {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  // Empty state
+  .no-employees {
+    padding: 40px 20px;
+
+    i {
+      font-size: 60px;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    p {
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .add-button {
+      padding: 12px 24px;
+      font-size: 14px;
+    }
+  }
+
+  // Modal adjustments
+  .modal-overlay {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
+  .modal-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: $border-radius $border-radius 0 0;
+  }
+
+  .modal-header {
+    padding: 20px;
+
+    h2 {
+      font-size: 18px;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      font-size: 18px;
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+
+    .form-group {
+      margin-bottom: 16px;
+
+      label {
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      input,
+      textarea,
+      select {
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      textarea {
+        min-height: 100px;
+      }
+    }
+
+    .form-row {
+      flex-direction: column;
+      gap: 16px;
+
+      .form-group {
+        width: 100%;
+      }
+    }
+
+    .error-message,
+    .success-message {
+      padding: 10px 14px;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+  }
+
+  .modal-footer {
+    padding: 16px 20px;
+    flex-direction: column;
+    gap: 10px;
+
+    button {
+      width: 100%;
+      padding: 12px 20px;
+    }
+  }
+
+  // Employee info modal (if viewing details)
+  .employee-info-container {
+    padding: 16px;
+  }
+
+  .employee-info-section {
+    padding: 16px;
+    margin-bottom: 16px;
+
+    h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .info-item {
+      padding: 12px;
+
+      .label {
+        font-size: 11px;
+      }
+
+      .value {
+        font-size: 14px;
+      }
+    }
+  }
+
+  // Stats section (if any)
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+
+    .stat-value {
+      font-size: 24px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+    }
+  }
+
+  // Tabs (if any)
+  .tabs-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+
+    .tabs {
+      display: flex;
+      min-width: max-content;
+    }
+
+    .tab {
+      white-space: nowrap;
+      padding: 10px 16px;
+      font-size: 13px;
+    }
+  }
+
+  // Pagination
+  .pagination {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+
+    .pagination-info {
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .pagination-controls {
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+
+      button {
+        min-width: 36px;
+        height: 36px;
+        padding: 8px;
+        font-size: 13px;
+      }
+    }
+  }
+
+  // Bulk actions (if any)
+  .bulk-actions {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  // Filters panel
+  .filters-panel {
+    padding: 16px;
+
+    .filter-group {
+      margin-bottom: 16px;
+
+      label {
+        font-size: 12px;
+      }
+
+      input,
+      select {
+        width: 100%;
+      }
+    }
+  }
+
+  // Photo upload section
+  .photo-upload-section {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+
+    .photo-preview {
+      width: 100px;
+      height: 100px;
+    }
+
+    .upload-button {
+      width: 100%;
+    }
+  }
+}
+
+// Extra small devices
+@media (max-width: 480px) {
+  .admin-container {
+    padding: 12px;
+  }
+
+  .header-with-action {
+    h1 {
+      font-size: 20px;
+
+      &::before {
+        width: 3px;
+        height: 22px;
+      }
+    }
+  }
+
+  .employees-section {
+    h2 {
+      font-size: 15px;
+      padding: 14px 16px;
+    }
+  }
+
+  .employees-table {
+    tr {
+      padding: 14px;
+    }
+
+    td {
+      font-size: 13px;
+      padding: 8px 0 !important;
+
+      &:before {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .worker-avatar {
+    .worker-photo,
+    .worker-photo-placeholder {
+      width: 45px;
+      height: 45px;
+      font-size: 18px;
+    }
+
+    .worker-info {
+      .worker-name {
+        font-size: 14px;
+      }
+
+      .worker-title {
+        font-size: 11px;
+      }
+    }
+  }
+
+  .action-button {
+    padding: 8px 10px;
+    font-size: 12px;
+    min-width: 100%;
+
+    i {
+      font-size: 13px;
+    }
+  }
+
+  .modal-header {
+    padding: 16px;
+
+    h2 {
+      font-size: 16px;
+    }
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
+    padding: 14px 16px;
+  }
+}
