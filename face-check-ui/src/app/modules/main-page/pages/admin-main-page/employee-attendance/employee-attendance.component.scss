@@ -532,41 +532,6 @@ $border-radius: 8px;
   }
 }
 
-// Responsive
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
-  }
-
-  .page-content {
-    padding: 20px;
-  }
-
-  .stats-row {
-    flex-direction: column;
-  }
-
-  .employee-row {
-    .photo-count {
-      display: none;
-    }
-  }
-
-  .photos-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .date-selector {
-    flex-wrap: wrap;
-
-    .photo-count {
-      width: 100%;
-      margin-left: 0;
-      margin-top: 10px;
-    }
-  }
-}
-
 // Пагинация
 .pagination {
   display: flex;
@@ -616,4 +581,429 @@ $border-radius: 8px;
   color: $light-text;
   font-weight: 700;
   user-select: none;
+}
+
+// ============================================
+// MOBILE RESPONSIVE - FULL OPTIMIZATION
+// ============================================
+
+@media (max-width: 768px) {
+  // Main layout
+  .main-content {
+    margin-left: 0;
+  }
+
+  // Header
+  .top-header {
+    height: 60px;
+
+    .header-content {
+      padding: 0 16px;
+    }
+
+    .logo-section {
+      gap: 10px;
+
+      .top-logo {
+        height: 32px;
+      }
+
+      .company-title {
+        font-size: 16px;
+        display: none; // hide on small screens
+      }
+    }
+
+    .header-info {
+      .current-date {
+        font-size: 12px;
+
+        i {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  // Page content
+  .page-content {
+    padding: 16px;
+  }
+
+  // Page header
+  .page-header {
+    margin-bottom: 20px;
+
+    .page-title {
+      font-size: 22px;
+    }
+
+    .page-description {
+      font-size: 14px;
+    }
+  }
+
+  // Stats row - 1 column
+  .stats-row {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    .stat-box {
+      padding: 16px;
+
+      .stat-value {
+        font-size: 26px;
+      }
+
+      .stat-label {
+        font-size: 13px;
+      }
+    }
+  }
+
+  // Loading
+  .loading-container {
+    padding: 40px 20px;
+
+    .spinner {
+      width: 35px;
+      height: 35px;
+    }
+
+    p {
+      font-size: 14px;
+    }
+  }
+
+  // Employees section
+  .employees-section {
+    padding: 16px;
+    border-radius: 6px;
+
+    .section-title {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+  }
+
+  // Employees list
+  .employees-list {
+    border-radius: 6px;
+  }
+
+  .employee-row {
+    padding: 12px 14px;
+    flex-wrap: wrap;
+
+    &:hover {
+      background: $white; // disable hover on mobile
+    }
+
+    .employee-avatar {
+      width: 45px;
+      height: 45px;
+      margin-right: 12px;
+
+      .avatar-placeholder {
+        font-size: 18px;
+      }
+    }
+
+    .employee-info {
+      flex: 1;
+      min-width: 0;
+
+      .employee-name {
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .employee-details {
+        font-size: 13px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+
+        .separator {
+          display: none;
+        }
+
+        .employee-role {
+          &::before {
+            content: "• ";
+          }
+        }
+      }
+    }
+
+    .photo-count {
+      display: none; // hide on mobile, show in details
+    }
+
+    .view-arrow {
+      font-size: 16px;
+      margin-left: 8px;
+    }
+  }
+
+  // No employees
+  .no-employees {
+    padding: 40px 20px;
+
+    i {
+      font-size: 40px;
+    }
+
+    h3 {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 15px;
+    }
+  }
+
+  // Modal - bottom sheet style
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+
+    .modal-header {
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      background: $white;
+      z-index: 10;
+
+      h3 {
+        font-size: 18px;
+      }
+
+      .close-button {
+        width: 28px;
+        height: 28px;
+        font-size: 20px;
+      }
+    }
+
+    .modal-body {
+      padding: 16px 20px;
+    }
+  }
+
+  // Date selector
+  .date-selector {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px;
+
+    label {
+      font-size: 14px;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .today-btn {
+      width: 100%;
+      padding: 10px 16px;
+    }
+
+    .photo-count {
+      width: 100%;
+      margin-left: 0;
+      text-align: center;
+      padding: 8px;
+      background: $white;
+      border-radius: 4px;
+      border: 1px solid $border-color;
+    }
+  }
+
+  // Photos grid - 1 column
+  .photos-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+
+    .photo-item {
+      border-radius: 6px;
+
+      .photo-label {
+        padding: 10px 12px;
+
+        .photo-type {
+          font-size: 12px;
+        }
+
+        .photo-time {
+          font-size: 12px;
+        }
+      }
+
+      img {
+        height: 250px; // larger on mobile for better view
+      }
+    }
+  }
+
+  // No photos
+  .no-photos {
+    padding: 40px 20px;
+
+    i {
+      font-size: 40px;
+    }
+
+    p {
+      font-size: 16px;
+    }
+
+    small {
+      font-size: 13px;
+    }
+  }
+
+  // Fullscreen viewer
+  .fullscreen-viewer {
+    img {
+      max-width: 95%;
+      max-height: 95%;
+    }
+
+    .close-fullscreen {
+      top: 10px;
+      right: 10px;
+      width: 45px;
+      height: 45px;
+      font-size: 22px;
+    }
+  }
+
+  // Pagination
+  .pagination {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+
+  .pagination-button {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 13px;
+
+    &.page-number {
+      display: none; // hide page numbers on mobile
+
+      &.active {
+        display: flex; // show only active page
+      }
+    }
+
+    &.prev-btn,
+    &.next-btn {
+      display: flex; // always show prev/next
+    }
+  }
+
+  .page-dots {
+    display: none; // hide dots on mobile
+  }
+}
+
+// Extra small devices
+@media (max-width: 480px) {
+  .page-content {
+    padding: 12px;
+  }
+
+  .page-header {
+    .page-title {
+      font-size: 20px;
+    }
+
+    .page-description {
+      font-size: 13px;
+    }
+  }
+
+  .stats-row {
+    .stat-box {
+      padding: 14px;
+
+      .stat-value {
+        font-size: 24px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+      }
+    }
+  }
+
+  .employee-row {
+    padding: 10px 12px;
+
+    .employee-avatar {
+      width: 40px;
+      height: 40px;
+
+      .avatar-placeholder {
+        font-size: 16px;
+      }
+    }
+
+    .employee-info {
+      .employee-name {
+        font-size: 14px;
+      }
+
+      .employee-details {
+        font-size: 12px;
+      }
+    }
+  }
+
+  .modal-container {
+    .modal-header {
+      padding: 14px 16px;
+
+      h3 {
+        font-size: 16px;
+      }
+    }
+
+    .modal-body {
+      padding: 14px 16px;
+    }
+  }
+
+  .photos-grid {
+    .photo-item {
+      img {
+        height: 220px;
+      }
+    }
+  }
+
+  .pagination-button {
+    min-width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
 }

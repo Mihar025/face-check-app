@@ -46,6 +46,8 @@ export class StatForAttendenceComponent implements OnInit{
   private locationMap: any = null;
   private locationMarker: any = null;
   private mapInitialized: boolean = false;
+  isMobileMenuOpen = false;
+
 
   constructor(
     private authService: AuthService,
@@ -109,6 +111,14 @@ export class StatForAttendenceComponent implements OnInit{
     setTimeout(() => {
       this.initializeLocationMap();
     }, 200);
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  closeMobileMenu(): void {
+    this.isMobileMenuOpen = false;
   }
 
 // Open location modal for Check Out
