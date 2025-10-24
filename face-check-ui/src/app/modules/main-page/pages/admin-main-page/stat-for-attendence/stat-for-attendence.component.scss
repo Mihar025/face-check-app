@@ -1091,3 +1091,245 @@ $white: #ffffff;
     color: $primary;
   }
 }
+// ========================================
+// LOCATION MAP MODAL STYLES
+// ========================================
+
+// Button styles for location buttons
+.btn-success {
+  background: $success-light !important;
+  border-color: $success !important;
+
+  i {
+    color: $success !important;
+  }
+
+  &:hover {
+    background: $success !important;
+
+    i, .btn-label {
+      color: $white !important;
+    }
+  }
+}
+
+.btn-danger {
+  background: $danger-light !important;
+  border-color: $danger !important;
+
+  i {
+    color: $danger !important;
+  }
+
+  &:hover {
+    background: $danger !important;
+
+    i, .btn-label {
+      color: $white !important;
+    }
+  }
+}
+
+.btn-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+// Location Modal
+.location-modal-container {
+  max-width: 1000px;
+  width: 90%;
+  height: 85vh;
+  max-height: 85vh;
+
+  .modal-header {
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      i {
+        font-size: 1.25rem;
+
+        &.text-success {
+          color: $success;
+        }
+
+        &.text-danger {
+          color: $danger;
+        }
+      }
+    }
+  }
+}
+
+.location-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  overflow: hidden;
+  height: calc(85vh - 160px);
+}
+
+// Location Info Card
+.location-info-card {
+  background: $gray-50;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex-shrink: 0;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+
+  &.checkin {
+    border-color: $success;
+    background: lighten($success-light, 5%);
+  }
+
+  &.checkout {
+    border-color: $danger;
+    background: lighten($danger-light, 5%);
+  }
+
+  .info-row {
+    display: flex;
+    gap: 1.25rem;
+
+    .info-item {
+      flex: 1;
+      display: flex;
+      gap: 0.875rem;
+      align-items: flex-start;
+
+      &.full-width {
+        flex: 1 1 100%;
+      }
+
+      i {
+        font-size: 1.125rem;
+        color: $primary;
+        margin-top: 0.25rem;
+        flex-shrink: 0;
+      }
+
+      div {
+        flex: 1;
+        min-width: 0;
+
+        label {
+          display: block;
+          font-size: 0.75rem;
+          color: $gray-500;
+          text-transform: uppercase;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.375rem;
+        }
+
+        span {
+          display: block;
+          font-size: 0.9375rem;
+          color: $gray-900;
+          font-weight: 600;
+          word-wrap: break-word;
+        }
+      }
+    }
+  }
+}
+
+// Map Container for Attendance Location
+.map-container {
+  flex: 1;
+  min-height: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid $gray-200;
+  position: relative;
+  background: $gray-100;
+  box-shadow: $shadow-md;
+}
+
+.attendance-location-map {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  position: relative;
+  z-index: 1;
+}
+
+// Modal Footer
+.modal-footer {
+  padding: 1.25rem 2rem;
+  border-top: 1px solid $gray-200;
+  display: flex;
+  justify-content: flex-end;
+  background: $gray-50;
+  border-radius: 0 0 16px 16px;
+}
+
+// Leaflet Popup Override
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: $shadow-lg;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+
+  h3 {
+    margin: 0 0 0.75rem 0;
+    color: $gray-900;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0.375rem 0;
+    color: $gray-600;
+    font-size: 0.875rem;
+  }
+
+  strong {
+    color: $gray-900;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .location-modal-container {
+    width: 95%;
+    height: 90vh;
+    max-height: 90vh;
+  }
+
+  .location-modal-body {
+    height: calc(90vh - 160px);
+    padding: 1.25rem;
+  }
+
+  .location-info-card {
+    padding: 1.25rem;
+
+    .info-row {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  }
+
+  .map-container {
+    min-height: 300px;
+  }
+
+  .attendance-location-map {
+    min-height: 300px;
+  }
+
+  .btn-label {
+    display: none;
+  }
+}

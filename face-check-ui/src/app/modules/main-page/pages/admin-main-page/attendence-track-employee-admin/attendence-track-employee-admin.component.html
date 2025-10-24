@@ -111,27 +111,6 @@
             </td>
             <td>
               <div class="action-buttons">
-                <!-- Check In Location -->
-                <button
-                  class="btn-icon btn-success"
-                  *ngIf="hasCheckInLocation(attendance)"
-                  title="View Check-In Location"
-                  (click)="openCheckInLocation(attendance)">
-                  <i class="fas fa-map-marker-alt"></i>
-                  <span class="btn-label">In</span>
-                </button>
-
-                <!-- Check Out Location -->
-                <button
-                  class="btn-icon btn-danger"
-                  *ngIf="hasCheckOutLocation(attendance)"
-                  title="View Check-Out Location"
-                  (click)="openCheckOutLocation(attendance)">
-                  <i class="fas fa-map-marker-alt"></i>
-                  <span class="btn-label">Out</span>
-                </button>
-
-                <!-- Photos -->
                 <button
                   class="btn-icon"
                   *ngIf="attendance.checkInPhotoUrl"
