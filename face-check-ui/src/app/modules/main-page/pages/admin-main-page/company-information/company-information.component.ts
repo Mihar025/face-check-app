@@ -6,7 +6,6 @@ import {map, catchError, of, switchMap, Subscription} from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 
-
 @Component({
   selector: 'app-company-information',
   templateUrl: './company-information.component.html',
@@ -23,8 +22,6 @@ export class CompanyInformationComponent implements OnInit, OnDestroy {
   companyId: number | null = null;
 
   private subscriptions = new Subscription();
-
-
 
   constructor(
     private authService: AuthService,
@@ -49,29 +46,40 @@ export class CompanyInformationComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Подписываемся на данные из сервиса
     this.subscriptions.add(
       this.userDataService.userName$.subscribe(name => {
-        if (name) this.userName = name;
+        this.userName = name;
+        console.log('CompanyInfo - userName updated:', name);
       })
     );
 
     this.subscriptions.add(
       this.userDataService.companyName$.subscribe(name => {
-        if (name) this.companyName = name;
+        this.companyName = name;
+        console.log('CompanyInfo - companyName updated:', name);
       })
     );
 
     this.subscriptions.add(
       this.userDataService.userPhoto$.subscribe(photo => {
-        if (photo) this.userPhotoUrl = photo;
+        this.userPhotoUrl = photo;
+        console.log('CompanyInfo - userPhoto updated:', photo);
       })
     );
 
+    // Проверяем, загружены ли данные
+    // Если нет - загружаем
+    if (!this.userName && !this.companyName) {
+      console.log('Data not loaded, refreshing...');
+      this.userDataService.refreshUserData();
+    }
+
+    // Эти данные загружаем отдельно, так как их нет в UserDataService
     this.loadCompanyEmail();
     this.loadCompanyIdAndEmployees();
     this.loadCompanyPhone();
-    this.loadCompanyAddress()
-
+    this.loadCompanyAddress();
   }
 
   ngOnDestroy(): void {
@@ -85,7 +93,7 @@ export class CompanyInformationComponent implements OnInit, OnDestroy {
       },
       error => {
         console.error('Error loading email:', error);
-        this.companyName = 'Не удалось загрузить';
+        this.companyEmail = 'Не удалось загрузить';
       }
     );
   }
@@ -97,7 +105,7 @@ export class CompanyInformationComponent implements OnInit, OnDestroy {
       },
       error => {
         console.error('Error loading phoneNumber:', error);
-        this.companyName = 'Не удалось загрузить';
+        this.companyPhone = 'Не удалось загрузить';
       }
     );
   }
@@ -109,26 +117,21 @@ export class CompanyInformationComponent implements OnInit, OnDestroy {
       },
       error => {
         console.error('Error loading companyAddress:', error);
-        this.companyName = 'Не удалось загрузить';
+        this.companyAddress = 'Не удалось загрузить';
       }
     );
   }
 
-
-
-
-
   loadCompanyIdAndEmployees(): void {
     this.companyService.getCompanyId()
       .pipe(
-        // сервер отдаёт JSON-число; getCompanyId уже парсит его в number
         catchError(err => {
           console.error('Error loading companyId:', err);
-          return of(0); // без companyId покажем 0 сотрудников
+          return of(0);
         }),
         switchMap((id: number) => {
           this.companyId = id;
-          return this.companyService.count({ companyId: id }); // text/plain
+          return this.companyService.count({ companyId: id });
         }),
         map((v: string) => Number(v) || 0),
         catchError(err => {
@@ -138,6 +141,4 @@ export class CompanyInformationComponent implements OnInit, OnDestroy {
       )
       .subscribe(n => this.employeesCount = n);
   }
-
-
 }
