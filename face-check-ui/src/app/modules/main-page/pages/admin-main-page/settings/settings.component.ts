@@ -123,21 +123,6 @@ export class SettingsComponent implements OnInit {
 
 
 
-  get passwordStrength(): number {
-    if (!this.newPassword) return 0;
-    let strength = 0;
-    if (this.newPassword.length >= 6) strength += 33;
-    if (this.hasUpperCase) strength += 33;
-    if (this.hasNumber) strength += 34;
-    return strength;
-  }
-
-  get passwordStrengthText(): string {
-    const strength = this.passwordStrength;
-    if (strength < 34) return 'Weak';
-    if (strength < 67) return 'Fair';
-    return 'Strong';
-  }
 
   private http: HttpClient;
 
