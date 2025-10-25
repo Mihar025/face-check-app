@@ -109,19 +109,19 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.subscriptions.add(
       this.userDataService.userName$.subscribe(name => {
-        if (name) this.userName = name;
+         this.userName = name;
       })
     );
 
     this.subscriptions.add(
       this.userDataService.companyName$.subscribe(name => {
-        if (name) this.companyName = name;
+        this.companyName = name;
       })
     );
 
     this.subscriptions.add(
       this.userDataService.userPhoto$.subscribe(photo => {
-        if (photo) this.userPhotoUrl = photo;
+         this.userPhotoUrl = photo;
       })
     );
 
