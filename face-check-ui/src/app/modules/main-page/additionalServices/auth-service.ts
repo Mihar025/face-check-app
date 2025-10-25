@@ -98,7 +98,7 @@ export class AuthService {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_role');
-    localStorage.removeItem('company_id'); 
+    localStorage.removeItem('company_id');
     localStorage.removeItem('verification_email');
     localStorage.removeItem('temp_token');
 
