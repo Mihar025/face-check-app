@@ -6,7 +6,7 @@ import { NotificationControllerService } from "../../../../services/services/not
 import { NotificationResponse } from "../../../../services/models/notification-response";
 import { PageResponseNotificationResponse } from "../../../../services/models/page-response-notification-response";
 import {UserDataService} from "../../../components/user-data-service/user-data-service";
-import {Subscription} from "rxjs";
+import {catchError, of, Subscription} from "rxjs";
 
 @Component({
   selector: 'app-admin-page',
@@ -122,32 +122,46 @@ export class AdminPageComponent implements OnInit, OnDestroy {
   }
 
 
-  loadTotalEmployees(): void {
-    if (!this.hasCompany) return;
-
-    this.adminService.getTotalEmployeesCount().subscribe(
-      count => {
-        this.totalEmployees = count;
-      },
-      error => {
-        console.error('Error loading total employees count:', error);
-      }
-    );
-  }
+// admin-page.component.ts
 
   loadTotalWorksites(): void {
-    if (!this.hasCompany) return;
+    if (!this.hasCompany) {
+      this.totalWorksites = 0;
+      return;
+    }
 
-    this.adminService.getTotalWorksitesCount().subscribe(
-      count => {
+    this.adminService.getTotalWorksitesCount()
+      .pipe(
+        catchError(error => {
+          console.error('Error loading total worksites count:', error);
+          return of(0);
+        })
+      )
+      .subscribe(count => {
         this.totalWorksites = count;
-      },
-      error => {
-        console.error('Error loading total worksites count:', error);
-      }
-    );
+        console.log('Total worksites:', this.totalWorksites);
+      });
   }
 
+  loadTotalEmployees(): void {
+    if (!this.hasCompany) {
+      this.totalEmployees = 0;
+      return;
+    }
+
+    this.adminService.getTotalEmployeesCount()
+      .pipe(
+        catchError(error => {
+          console.error('Error loading total employees count:', error);
+          // При ошибке тоже возвращаем 0
+          return of(0);
+        })
+      )
+      .subscribe(count => {
+        this.totalEmployees = count;
+        console.log('Total employees:', this.totalEmployees);
+      });
+  }
 
   // Your existing method for loading company ID
   private async loadAdminsCompanyId(): Promise<number> {
