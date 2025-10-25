@@ -102,38 +102,84 @@ export class FinancePageComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    // 1. Проверка авторизации
     if (!this.authService.isUserAuthenticated()) {
       this.authService.logout();
       return;
     }
 
+    const userRole = this.authService.getUserRole();
+    if (userRole !== 'ADMIN') {
+      let targetUrl = '/';
+      if (userRole === 'USER') {
+        targetUrl = '/main-page/user';
+      }
+      window.location.href = targetUrl;
+      return;
+    }
+
+    // 2. Получаем companyId из localStorage СРАЗУ
+    const savedCompanyId = localStorage.getItem('company_id');
+    this.companyId = savedCompanyId ? parseInt(savedCompanyId) : 0;
+    console.log('Initial companyId from localStorage:', this.companyId);
+
+    // 3. Подписка на данные пользователя
     this.subscriptions.add(
       this.userDataService.userName$.subscribe(name => {
-        this.userName = name;  // ✅ Всегда обновляет
-        console.log('Component received userName:', name);
+        this.userName = name;
+        console.log('Finance - userName updated:', name);
       })
     );
 
     this.subscriptions.add(
       this.userDataService.companyName$.subscribe(name => {
-         this.companyName = name;
+        this.companyName = name;
+        console.log('Finance - companyName updated:', name);
       })
     );
 
     this.subscriptions.add(
       this.userDataService.userPhoto$.subscribe(photo => {
         this.userPhotoUrl = photo;
+        console.log('Finance - userPhoto updated:', photo ? 'loaded' : 'empty');
       })
     );
 
+    // 4. Подписка на обновления companyId (если изменится)
+    this.subscriptions.add(
+      this.userDataService.companyId$.subscribe(id => {
+        if (id > 0 && id !== this.companyId) {
+          this.companyId = id;
+          console.log('Company ID updated from service:', id);
+          // Сохраняем в localStorage на всякий случай
+          localStorage.setItem('company_id', id.toString());
+          // Перезагружаем все данные с новым ID
+          this.loadAllFinanceData();
+        }
+      })
+    );
 
+    // 5. Если есть companyId - грузим финансовые данные СРАЗУ
+    if (this.companyId > 0) {
+      console.log('Loading finance data with companyId:', this.companyId);
+      this.loadAllFinanceData();
+    } else {
+      console.warn('No companyId available, waiting for user data to load...');
+    }
+
+    // 6. Проверяем и загружаем данные пользователя если нужно
+    if (!this.userDataService.userName || !this.userDataService.companyName) {
+      console.log('User data not loaded, refreshing...');
+      this.userDataService.refreshUserData();
+    }
+  }
+
+
+  private loadAllFinanceData(): void {
     this.loadFinancialData();
     this.loadIRSPayments();
-    this.loadCompanyReports()
-
-    setTimeout(() => {
-      this.initializeCharts();
-    }, 500);
+    this.loadCompanyReports();
+    // Добавь другие методы загрузки если есть
   }
 
 
@@ -156,33 +202,7 @@ export class FinancePageComponent implements OnInit, OnDestroy {
     this.updatePaginatedReports();
   }
 
-  private loadCompanyInfo(): void {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        if (response && response.companyName) {
-          this.companyName = response.companyName;
 
-          this.userService.findWorkerCompanyIdByAuthentication().subscribe(
-            idResponse => {
-              if (idResponse && idResponse.companyId) {
-                this.companyId = idResponse.companyId;
-                console.log('Company loaded:', this.companyName, 'ID:', this.companyId);
-
-                this.loadIRSPayments();
-                this.loadCompanyReports();
-              }
-            },
-            error => {
-              console.error('Error loading company ID:', error);
-            }
-          );
-        }
-      },
-      error => {
-        console.error('Error loading company name:', error);
-      }
-    );
-  }
 
 
   private loadFinancialData(): void {
@@ -221,6 +241,7 @@ export class FinancePageComponent implements OnInit, OnDestroy {
 
 
   }
+
 
   loadIRSPayments(): void {
     this.paymentService.getAllPayments({

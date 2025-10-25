@@ -54,6 +54,7 @@ export class UserDataService {
     this.userPhotoSubject.next('');
     this.companyIdSubject.next(0);
     this.isLoaded = false;
+    localStorage.removeItem('company_id');
   }
 
   private loadUserFullName(): void {
@@ -97,12 +98,14 @@ export class UserDataService {
       response => {
         if (response?.companyId) {
           this.companyIdSubject.next(response.companyId);
-          console.log('Loaded company ID:', response.companyId);
+          localStorage.setItem('company_id', response.companyId.toString());
+          console.log('Loaded and saved company ID:', response.companyId);
         }
       },
       error => console.error('Error loading company ID:', error)
     );
   }
+
 
   // Геттеры для синхронного доступа
   get userName(): string {
