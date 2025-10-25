@@ -55,4 +55,7 @@ public interface WorkerSiteRepository extends JpaRepository<WorkSite, Integer> {
 
 
     @Query("SELECT COUNT(w) FROM WorkSite w WHERE w.company.id = :companyId")
-    Integer countWorkSitesByCompanyId(@Param("companyId") Integer companyId);}
+    Integer countWorkSitesByCompanyId(@Param("companyId") Integer companyId);
+
+    Integer countByCompanyId(Integer companyId);
+}

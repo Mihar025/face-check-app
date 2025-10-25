@@ -116,24 +116,25 @@ public class AdminService implements AdminAndForemanFunctionality {
         return foundedCompany.getEmployees().size();
     }
 
+
     public Integer findAllWorksitesInCompany(Authentication authentication) {
         log.info("findAllWorksitesInCompany begins");
         User admin = ((User) authentication.getPrincipal());
-        log.info("Checking roles");
-        doesHaveAdminRole(admin);
 
-        if (admin.getCompany() == null) {
-            log.warn("Admin has no company assigned");
+        // НЕ ЗАГРУЖАЙ Company через lazy loading!
+        // Используй прямой запрос
+        Integer adminId = admin.getId();
+
+        // Создай метод в UserRepository
+        Integer companyId = userRepository.findCompanyIdByUserId(adminId);
+
+        if (companyId == null) {
+            log.warn("No company found for admin");
             return 0;
         }
 
-        Integer companyId = admin.getCompany().getId();
-        log.info("Counting worksites for company ID: {}", companyId);
-
-        Integer count = workerSiteRepository.countWorkSitesByCompanyId(companyId);
-        log.info("Found {} worksites", count);
-
-        return count;
+        // Теперь считаем worksites без lazy loading
+        return workerSiteRepository.countByCompanyId(companyId);
     }
 
 

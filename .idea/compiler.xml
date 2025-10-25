@@ -15,10 +15,10 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
-        <module name="ConfigurationsModule" />
-        <module name="SecurityDomainModule" />
         <module name="ApiModule" />
         <module name="AppStarterModule" />
+        <module name="ConfigurationsModule" />
+        <module name="SecurityDomainModule" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
