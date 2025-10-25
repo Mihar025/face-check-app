@@ -42,7 +42,6 @@ export class AuthService {
 
           try {
             const decodedToken = this.decodeToken(response.token);
-            console.log('Decoded token:', decodedToken);
 
             if (decodedToken && decodedToken.authorities) {
               const role = Array.isArray(decodedToken.authorities)
@@ -52,9 +51,7 @@ export class AuthService {
               localStorage.setItem('user_role', role);
               console.log('User role from token:', role);
 
-              // ✅ ЗАГРУЖАЕМ ДАННЫЕ
               this.userDataService.loadUserData();
-              console.log('User data loading started');
 
               let targetUrl = '/';
               if (role === 'ADMIN') {
@@ -69,15 +66,12 @@ export class AuthService {
                 this.router.navigate([targetUrl]);
               }, 100);
             } else {
-              console.error('No authorities found in token');
             }
           } catch (error) {
-            console.error('Error processing token:', error);
           }
         }
       }),
       catchError(error => {
-        console.error('Auth error:', error);
         return throwError(() => error);
       })
     );
@@ -89,7 +83,6 @@ export class AuthService {
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       return JSON.parse(atob(base64));
     } catch (e) {
-      console.error('Error decoding token:', e);
       return null;
     }
   }
@@ -103,7 +96,6 @@ export class AuthService {
     localStorage.removeItem('temp_token');
 
     this.userDataService.clearUserData();
-    console.log('User data cleared');
     this.router.navigate(['/face-check']);
   }
 
@@ -176,7 +168,6 @@ export class AuthService {
       }
     };
 
-    console.log('Registering company:', params);
     const token = this.getToken();
     if (!token) {
       return throwError(() => new Error('Authentication token not found'));
@@ -190,12 +181,11 @@ export class AuthService {
 
     return this.apiAuthService.registerCompanyAppOwner(params).pipe(
       tap((response: any) => {
-        console.log('Company Registration response:', response);
+
       }),
       catchError(error => {
         console.error('Auth error:', error);
         if (error.status === 401 || error.status === 403) {
-          console.warn('Authentication error. Token may be expired.');
         }
         return throwError(() => error);
       })
@@ -267,12 +257,9 @@ export class AuthService {
 
     return this.apiAuthService.registerCompany(params).pipe(
       tap((response: any) => {
-        console.log('Company Registration response:', response);
       }),
       catchError(error => {
-        console.error('Auth error:', error);
         if (error.status === 401 || error.status === 403) {
-          console.warn('Authentication error. Token may be expired.');
         }
         return throwError(() => error);
       })
@@ -390,11 +377,9 @@ export class AuthService {
       body: registrationData
     };
 
-    console.log('Registering admin with extended data:', params);
 
     return this.apiAuthService.registerAdmin(params).pipe(
       tap((response: any) => {
-        console.log('Admin Registration response:', response);
         localStorage.setItem('verification_email', email);
 
         if (response && response.token) {
@@ -402,7 +387,6 @@ export class AuthService {
         }
       }),
       catchError(error => {
-        console.error('Admin registration error:', error);
         return throwError(() => error);
       })
     );
@@ -426,7 +410,6 @@ export class AuthService {
 
       return now >= expiryTime;
     } catch (error) {
-      console.error('Error checking token expiry:', error);
       return true;
     }
   }
