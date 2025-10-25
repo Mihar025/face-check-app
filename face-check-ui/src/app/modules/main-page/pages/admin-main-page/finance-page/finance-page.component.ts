@@ -128,6 +128,8 @@ export class FinancePageComponent implements OnInit, OnDestroy {
 
 
     this.loadFinancialData();
+    this.loadIRSPayments();
+    this.loadCompanyReports()
 
     setTimeout(() => {
       this.initializeCharts();
@@ -182,18 +184,6 @@ export class FinancePageComponent implements OnInit, OnDestroy {
     );
   }
 
-  private getUserPhoto(): void {
-    this.userService.findWorkerFullContactInformation().subscribe(
-      response => {
-        if (response && response.photoUrl) {
-          this.userPhotoUrl = response.photoUrl;
-        }
-      },
-      error => {
-        console.error('Error loading user photo:', error);
-      }
-    );
-  }
 
   private loadFinancialData(): void {
     this.adminService.getBudget().subscribe(
@@ -228,8 +218,7 @@ export class FinancePageComponent implements OnInit, OnDestroy {
       error => console.error('Error loading current capital:', error)
     );
 
-    this.loadIRSPayments();
-    this.loadCompanyReports()
+
 
   }
 
