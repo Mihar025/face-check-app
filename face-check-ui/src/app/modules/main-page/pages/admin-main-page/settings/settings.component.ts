@@ -11,6 +11,7 @@ import {UpdateCompanyEmailRequest} from "../../../../../services/models/update-c
 import {UpdateCompanyPhoneNumberRequest} from "../../../../../services/models/update-company-phone-number-request";
 import {UpdateCompanyNameRequest} from "../../../../../services/models/update-company-name-request";
 import {UpdateCompanyAddressRequest} from "../../../../../services/models/update-company-address-request";
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 
 @Component({
   selector: 'app-settings',
@@ -146,7 +147,8 @@ export class SettingsComponent implements OnInit {
     private companyService: CompanyControllerService,
     private fileService: FileControllerService,
     http: HttpClient,
-    private router: Router
+    private router: Router,
+    public userDataService: UserDataService
   ) {
     this.http = http;
   }

@@ -1,10 +1,11 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AttendanceResponse} from "../../../../../services/models/attendance-response";
 import {AuthService} from "../../../additionalServices/auth-service";
 import {WorkerAttendanceControllerService} from "../../../../../services/services/worker-attendance-controller.service";
 import {UserServiceControllerService} from "../../../../../services/services/user-service-controller.service";
 import {PageResponseAttendanceResponse} from "../../../../../services/models/page-response-attendance-response";
-import {catchError, of} from "rxjs";
+import {catchError, of, Subscription} from "rxjs";
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 declare let L: any;
 
 @Component({
@@ -12,7 +13,7 @@ declare let L: any;
   templateUrl: './stat-for-attendence.component.html',
   styleUrl: './stat-for-attendence.component.scss'
 })
-export class StatForAttendenceComponent implements OnInit{
+export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
   userName: string = '';
   companyName: string = '';
@@ -48,11 +49,14 @@ export class StatForAttendenceComponent implements OnInit{
   private mapInitialized: boolean = false;
   isMobileMenuOpen = false;
 
+  private subscriptions = new Subscription();
 
   constructor(
     private authService: AuthService,
     private attendanceService: WorkerAttendanceControllerService,
-    private userService: UserServiceControllerService
+    private userService: UserServiceControllerService,
+    public userDataService: UserDataService
+
   ) {}
 
   ngOnInit(): void {
@@ -61,9 +65,27 @@ export class StatForAttendenceComponent implements OnInit{
       return;
     }
     this.loadAttendance();
-    this.getUserPhoto();
-    this.loadUserFullName();
-    this.loadCompanyName();
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   loadAttendance(): void {

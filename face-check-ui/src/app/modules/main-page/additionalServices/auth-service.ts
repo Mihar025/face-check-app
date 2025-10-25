@@ -10,7 +10,8 @@ import { RegistrationAdminRequest } from "../../../services/models/registration-
 import { I9DocumentRequest } from "../../../services/models/i-9-document-request";
 import { DependentsRequest } from "../../../services/models/dependents-request";
 import { RegisterCompanyAppOwner$Params } from "../../../services/fn/authentication/register-company-app-owner";
-import { Router } from "@angular/router"; // ДОБАВЛЕНО
+import { Router } from "@angular/router";
+import {UserDataService} from "../../components/user-data-service/user-data-service"; // ДОБАВЛЕНО
 
 @Injectable({
   providedIn: 'root'
@@ -19,9 +20,9 @@ export class AuthService {
 
   constructor(
     private apiAuthService: AuthenticationService,
-    private router: Router // ДОБАВЛЕНО
+    private router: Router,
+    private userDataService: UserDataService
   ) {}
-
   login(email: string, password: string): Observable<any> {
     console.log('Login with:', email);
 
@@ -51,6 +52,10 @@ export class AuthService {
               localStorage.setItem('user_role', role);
               console.log('User role from token:', role);
 
+              // ✅ ЗАГРУЖАЕМ ДАННЫЕ
+              this.userDataService.loadUserData();
+              console.log('User data loading started');
+
               let targetUrl = '/';
               if (role === 'ADMIN') {
                 targetUrl = '/main-page/admin';
@@ -61,7 +66,7 @@ export class AuthService {
               console.log('Redirecting to:', targetUrl);
 
               setTimeout(() => {
-                window.location.href = targetUrl;
+                this.router.navigate([targetUrl]);
               }, 100);
             } else {
               console.error('No authorities found in token');
@@ -96,7 +101,8 @@ export class AuthService {
     localStorage.removeItem('verification_email');
     localStorage.removeItem('temp_token');
 
-    // ИЗМЕНЕНО: редирект на face-check вместо sign-in
+    this.userDataService.clearUserData();
+    console.log('User data cleared');
     this.router.navigate(['/face-check']);
   }
 

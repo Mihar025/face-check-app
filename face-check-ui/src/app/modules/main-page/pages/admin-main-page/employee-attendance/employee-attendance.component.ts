@@ -1,18 +1,19 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AuthService} from "../../../additionalServices/auth-service";
 import {UserServiceControllerService} from "../../../../../services/services/user-service-controller.service";
 import {CompanyControllerService} from "../../../../../services/services/company-controller.service";
 import {LocalTime} from "../../../../../services/models/local-time";
 import {FileControllerService} from "../../../../../services/services/file-controller.service";
-import {forkJoin, of} from 'rxjs';
+import {forkJoin, of, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 
 @Component({
   selector: 'app-employee-attendance',
   templateUrl: './employee-attendance.component.html',
   styleUrl: './employee-attendance.component.scss'
 })
-export class EmployeeAttendanceComponent implements OnInit {
+export class EmployeeAttendanceComponent implements OnInit,OnDestroy {
 
   userName: string = '';
   companyName: string = '';
@@ -40,11 +41,15 @@ export class EmployeeAttendanceComponent implements OnInit {
   allEmployeesPhotos: Map<number, Array<{url: string, type: string}>> = new Map();
   loading: boolean = false;
 
+  private subscriptions = new Subscription();
+
+
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private awsService: FileControllerService,
-    private companyService: CompanyControllerService
+    private companyService: CompanyControllerService,
+    public userDataService: UserDataService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -63,11 +68,23 @@ export class EmployeeAttendanceComponent implements OnInit {
       return;
     }
 
-    // Load main information
-    this.loadUserFullName();
-    this.loadCompanyName();
-    this.getUserPhotoUrl();
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
 
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
     // First load company ID, then everything else
     try {
       this.companyId = await this.loadAdminsCompanyId();
@@ -77,17 +94,8 @@ export class EmployeeAttendanceComponent implements OnInit {
     }
   }
 
-  private loadUserFullName() {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if(response && response.fullName){
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Error loading user full name:', error);
-      }
-    );
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   private async loadAdminsCompanyId(): Promise<number> {
@@ -104,32 +112,7 @@ export class EmployeeAttendanceComponent implements OnInit {
     }
   }
 
-  private getUserPhotoUrl() {
-    this.userService.findWorkerFullContactInformation()
-      .subscribe(
-        response => {
-          if(response && response.photoUrl){
-            this.userPhotoUrl = response.photoUrl;
-          }
-        },
-        error => {
-          console.error('Error loading user photo', error);
-          this.userPhotoUrl = '';
-        }
-      );
-  }
 
-  private loadCompanyName() {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        this.companyName = response.companyName || '';
-      },
-      error => {
-        console.log('Error loading company name', error);
-        this.companyName = 'Cannot load company name';
-      }
-    );
-  }
   private async loadAllEmployeesAndPhotos(): Promise<void> {
     this.loading = true;
 

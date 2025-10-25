@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AuthService} from "../../../additionalServices/auth-service";
 import {WorkerAttendanceControllerService} from "../../../../../services/services/worker-attendance-controller.service";
 import {UserServiceControllerService} from "../../../../../services/services/user-service-controller.service";
@@ -8,13 +8,15 @@ import {PageResponseNotificationResponse} from "../../../../../services/models/p
 import {
   GetTodaysNotifications$Params
 } from "../../../../../services/fn/notification-controller/get-todays-notifications";
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-notification-admin-page',
   templateUrl: './notification-admin-page.component.html',
   styleUrl: './notification-admin-page.component.scss'
 })
-export class NotificationAdminPageComponent implements OnInit{
+export class NotificationAdminPageComponent implements OnInit, OnDestroy{
 
 
 
@@ -35,10 +37,14 @@ export class NotificationAdminPageComponent implements OnInit{
   notificationsLoading: boolean = false;
   showNotifications: boolean = false;
 
+  private subscriptions = new Subscription();
+
+
   constructor(
     private authService: AuthService,
     private notificationService: NotificationControllerService,
-    private userService: UserServiceControllerService
+    private userService: UserServiceControllerService,
+    public userDataService: UserDataService
   ) {}
 
 
@@ -48,55 +54,32 @@ export class NotificationAdminPageComponent implements OnInit{
       this.authService.logout();
       return;
     }
-    this.loadUserFullName();
-    this.loadCompanyName();
-    this.getUserPhoto();
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
+
     this.loadTodaysNotifications();
   }
 
-
-
-
-
-  loadCompanyName() {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        if (response && response.companyName) {
-          this.companyName = response.companyName;
-        }
-      },
-      error => {
-        console.error('Error loading company name', error);
-      }
-    );
-  }
-
-  getUserPhoto(): void {
-    this.userService.findWorkerFullContactInformation().subscribe(
-      response => {
-        if (response && response.photoUrl) {
-          this.userPhotoUrl = response.photoUrl;
-        }
-      },
-      error => {
-        console.error('Error loading user photo:', error);
-      }
-    );
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
 
-  loadUserFullName(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response && response.fullName) {
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Error loading user full name', error);
-      }
-    );
-  }
 
 
 

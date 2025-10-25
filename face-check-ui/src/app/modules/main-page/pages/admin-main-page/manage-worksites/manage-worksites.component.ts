@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import { AuthService } from "../../../additionalServices/auth-service";
 import { UserServiceControllerService } from "../../../../../services/services/user-service-controller.service";
 import { WorkSiteControllerService } from "../../../../../services/services/work-site-controller.service";
@@ -23,6 +23,8 @@ import {PageResponseWorkerCurrentlyWorkingInWorkSite}
   from "../../../../../services/models/page-response-worker-currently-working-in-work-site";
 import {UpdateLocation$Params} from "../../../../../services/fn/track-location-controller/update-location";
 import {UpdateLocation1$Params} from "../../../../../services/fn/work-site-controller/update-location-1";
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {Subscription} from "rxjs";
 
 
 declare let L: any;
@@ -32,7 +34,7 @@ declare let L: any;
   templateUrl: './manage-worksites.component.html',
   styleUrl: './manage-worksites.component.scss'
 })
-export class ManageWorksitesComponent implements OnInit {
+export class ManageWorksitesComponent implements OnInit, OnDestroy {
 
   userName: string = '';
   companyName: string = '';
@@ -94,12 +96,14 @@ export class ManageWorksitesComponent implements OnInit {
 
 
   userPhotoUrl: string = '';
+  private subscriptions = new Subscription();
 
 
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
-    private workSiteService: WorkSiteControllerService
+    private workSiteService: WorkSiteControllerService,
+    public userDataService: UserDataService
   ) {
   }
 
@@ -119,15 +123,30 @@ export class ManageWorksitesComponent implements OnInit {
       return;
     }
 
-    this.loadUserFullName();
-    this.loadCompanyName();
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
     this.loadAllWorksites();
-    this.getUserPhoto();
 
   }
 
-  logout() {
-    this.authService.logout();
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
 
