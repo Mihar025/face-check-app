@@ -1,0 +1,135 @@
+<div class="page">
+  <!-- Sidebar -->
+  <aside class="sidebar-left">
+    <app-admin-sidebar
+      [userName]="userName"
+      [companyName]="companyName"
+      [userPhotoUrl]="userPhotoUrl">
+    </app-admin-sidebar>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="notifications-container">
+
+      <!-- Header -->
+      <div class="header-section">
+        <div class="header-content">
+          <div>
+            <h1>Company Notifications</h1>
+            <p class="subtitle">Send announcements and updates to all employees</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-section">
+        <div *ngIf="successMessage" class="success-message">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+        <div *ngIf="errorMessage" class="error-message">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+      </div>
+
+      <!-- Create Notification Form -->
+      <div class="create-notification-section">
+        <div class="section-header">
+          <h2>
+            <i class="fas fa-bullhorn"></i>
+            Create New Notification
+          </h2>
+        </div>
+
+        <div class="form-container">
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea
+              id="message"
+              [(ngModel)]="message"
+              placeholder="Enter your notification message..."
+              rows="5"
+              [disabled]="loading"></textarea>
+            <div class="char-count">{{ message.length }}/500 characters</div>
+          </div>
+
+          <button
+            class="send-btn"
+            (click)="createNotification()"
+            [disabled]="loading || !message.trim()">
+            <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-paper-plane]="!loading"></i>
+            <span *ngIf="!loading">Send Notification</span>
+            <span *ngIf="loading">Sending...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Today's Notifications -->
+      <div class="notifications-list-section">
+        <div class="section-header">
+          <h2>
+            <i class="fas fa-bell"></i>
+            Today's Notifications
+          </h2>
+          <span class="notification-count">{{ notificationsTotalElements }} total</span>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="notificationsLoading" class="loading-container">
+          <div class="spinner"></div>
+          <p>Loading notifications...</p>
+        </div>
+
+        <!-- Notifications List -->
+        <div *ngIf="!notificationsLoading && notifications.length > 0" class="notifications-list">
+          <div *ngFor="let notification of notifications" class="notification-card">
+            <div class="notification-icon">
+              <i class="fas fa-bell"></i>
+            </div>
+            <div class="notification-content">
+              <p class="notification-message">{{ notification.message }}</p>
+              <span class="notification-time">
+                <i class="fas fa-clock"></i>
+                {{ formatNotificationDate(notification.createdAt) }}
+              </span>
+            </div>
+            <div class="notification-id">
+              #{{ notification.notificationId }}
+            </div>
+          </div>
+        </div>
+
+        <!-- No Notifications -->
+        <div *ngIf="!notificationsLoading && notifications.length === 0" class="no-notifications">
+          <i class="fas fa-inbox"></i>
+          <h3>No Notifications Today</h3>
+          <p>Create your first notification using the form above</p>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="!notificationsLoading && notificationsTotalPages > 1" class="pagination">
+          <button
+            class="pagination-btn"
+            [disabled]="notificationsPage === 0"
+            (click)="changeNotificationsPage(notificationsPage - 1)">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+
+          <span class="page-info">
+            Page {{ notificationsPage + 1 }} of {{ notificationsTotalPages }}
+          </span>
+
+          <button
+            class="pagination-btn"
+            [disabled]="notificationsPage >= notificationsTotalPages - 1"
+            (click)="changeNotificationsPage(notificationsPage + 1)">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>

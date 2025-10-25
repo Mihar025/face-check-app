@@ -53,6 +53,9 @@ import {
   AttendenceTrackEmployeeAppOwnerComponent
 } from "./pages/appOwner/attendence-track-employee-app-owner/attendence-track-employee-app-owner.component";
 import {StatForAttendenceComponent} from "./pages/admin-main-page/stat-for-attendence/stat-for-attendence.component";
+import {
+  NotificationAdminPageComponent
+} from "./pages/admin-main-page/notification-admin-page/notification-admin-page.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -170,6 +173,11 @@ const routes: Routes = [
   {
     path: 'main-page/admin/attendance-statistic',
     component: StatForAttendenceComponent,
+    canActivate: [TokenExpiryGuard]
+  },
+  {
+    path: 'main-page/admin/notifications',
+    component: NotificationAdminPageComponent,
     canActivate: [TokenExpiryGuard]
   },
 

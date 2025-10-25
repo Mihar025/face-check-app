@@ -49,6 +49,7 @@ import { RefundPolicyComponent } from './pages/refund-policy/refund-policy.compo
 import {
   AttendenceTrackEmployeeAppOwnerComponent
 } from "./pages/appOwner/attendence-track-employee-app-owner/attendence-track-employee-app-owner.component";
+import { NotificationAdminPageComponent } from './pages/admin-main-page/notification-admin-page/notification-admin-page.component';
 
 @NgModule({
   declarations: [
@@ -85,7 +86,8 @@ import {
     CallToCustomersAppOwnerComponent,
     AttendenceTrackEmployeeAppOwnerComponent,
     AttendenceTrackEmployeeAdminComponent,
-    StatForAttendenceComponent
+    StatForAttendenceComponent,
+    NotificationAdminPageComponent
   ],
   imports: [
     CommonModule,
