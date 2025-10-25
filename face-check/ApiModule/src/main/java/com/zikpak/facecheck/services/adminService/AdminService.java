@@ -2,7 +2,9 @@ package com.zikpak.facecheck.services.adminService;
 
 
 import com.zikpak.facecheck.domain.AdminAndForemanFunctionality;
+import com.zikpak.facecheck.entity.Company;
 import com.zikpak.facecheck.entity.User;
+import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
@@ -14,12 +16,15 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -114,20 +119,35 @@ public class AdminService implements AdminAndForemanFunctionality {
         User admin = ((User) authentication.getPrincipal());
         log.info("Checking roles ");
         doesHaveAdminRole(admin);
-        log.info("Successful checked  role");
+        log.info("Successful checked role");
+
         var foundedAdmin = userRepository.findById(admin.getId())
-                .orElseThrow( () -> new  EntityNotFoundException("Admin not found"));
-        log.info("Founded admin  {}" ,  foundedAdmin);
-        var foundedCompany = companyRepository.findById(foundedAdmin.getCompany().getId())
-                .orElseThrow( () -> new  EntityNotFoundException("Company not found"));
-        log.info("Founded  company {}" , foundedCompany);
-        if(!foundedAdmin.getCompany().getId().equals(foundedCompany.getId())) {
-            log.info("Checking i s Admin in the same company!");
-            throw new AccessDeniedException("You dont have permission to access this company");
+                .orElseThrow(() -> new EntityNotFoundException("Admin not found"));
+        log.info("Founded admin {}", foundedAdmin);
+
+        // ПРОВЕРКА на null
+        if (foundedAdmin.getCompany() == null) {
+            log.error("Admin has no company assigned!");
+            return 0;  // или throw new EntityNotFoundException("Company not found for admin");
         }
+
+        var foundedCompany = companyRepository.findById(foundedAdmin.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+        log.info("Founded company {}", foundedCompany);
+
+        // Эта проверка теперь безопасна
+        if (!foundedAdmin.getCompany().getId().equals(foundedCompany.getId())) {
+            log.info("Checking is Admin in the same company!");
+            throw new AccessDeniedException("You don't have permission to access this company");
+        }
+
+        // ПРОВЕРКА на null для getWorkSites()
+        if (foundedCompany.getWorkSites() == null) {
+            return 0;
+        }
+
         return foundedCompany.getWorkSites().size();
     }
-
 
 
     public void setUpBudget(Authentication authentication, BigDecimal budget
