@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AuthService} from "../../../additionalServices/auth-service";
 import {
   AdminControllerService,
@@ -38,13 +38,15 @@ import {
 } from "../../../../../services/fn/company-controller/demote-from-admin-to-foreman";
 import {DependentsRequest} from "../../../../../services/models/dependents-request";
 import {I9DocumentRequest} from "../../../../../services/models/i-9-document-request";
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-manage-employees',
   templateUrl: './manage-employees.component.html',
   styleUrl: './manage-employees.component.scss'
 })
-export class ManageEmployeesComponent implements OnInit {
+export class ManageEmployeesComponent implements OnInit, OnDestroy {
   userName = '';
   companyName = '';
   employeeId: number = 0;
@@ -163,6 +165,9 @@ export class ManageEmployeesComponent implements OnInit {
 
   showScheduleForm: boolean = false;
 
+  private subscriptions = new Subscription();
+
+
   // Flexible schedule days
   flexibleDays: Array<{
     day: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
@@ -254,6 +259,7 @@ export class ManageEmployeesComponent implements OnInit {
     private adminControllerService: AdminControllerService,
     private scheduleService: WorkScheduleControllerService,
     private router: Router,
+    public userDataService: UserDataService
   ) {}
 
   ngOnInit(): void {
@@ -272,10 +278,24 @@ export class ManageEmployeesComponent implements OnInit {
       return;
     }
 
-    this.loadAdminName();
-    this.loadAdminCompany();
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
     this.loadAllEmployeesRelatedToCertainCompany();
-    this.getUserPhoto();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -298,6 +318,10 @@ export class ManageEmployeesComponent implements OnInit {
 
     // Load existing schedule
     this.loadExistingSchedule(employee.workerId);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   closeScheduleModal() {

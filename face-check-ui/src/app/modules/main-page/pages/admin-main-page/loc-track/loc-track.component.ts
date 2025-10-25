@@ -9,6 +9,8 @@ import { RelatedUserInCompanyResponse } from '../../../../../services/models/rel
 import { LocationRecordDto } from '../../../../../services/models/location-record-dto';
 import { GetAllEmployees$Params } from '../../../../../services/fn/company-controller/get-all-employees';
 import { GetLocationHistory$Params } from '../../../../../services/fn/track-location-controller/get-location-history';
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {Subscription} from "rxjs";
 
 // Импортируем Leaflet
 declare let L: any;
@@ -71,13 +73,17 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
   public selectedDate: string;
   public maxDate: string;
 
+  private subscriptions = new Subscription();
+
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private companyService: CompanyControllerService,
     private locationService: TrackLocationControllerService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    public userDataService: UserDataService
+
   ) {
     // Устанавливаем текущую дату
     const today = new Date();
@@ -101,8 +107,25 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    this.loadUserInfo();
-    this.loadEmployees();
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
+
+       this.loadEmployees();
   }
 
   public ngAfterViewInit(): void {
@@ -121,6 +144,8 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
       this.map = null;
       this.mapInitialized = false;
     }
+    this.subscriptions.unsubscribe();
+
   }
 
   private initializeMap(): void {
@@ -238,31 +263,7 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
     document.head.appendChild(script);
   }
 
-  public loadUserInfo(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response?.fullName) {
-          this.userName = response.fullName;
-        }
-      }
-    );
 
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        if (response?.companyName) {
-          this.companyName = response.companyName;
-        }
-      }
-    );
-
-    this.userService.findWorkerFullContactInformation().subscribe(
-      response => {
-        if (response?.photoUrl) {
-          this.userPhotoUrl = response.photoUrl;
-        }
-      }
-    );
-  }
   public async loadEmployees(): Promise<void> {
     this.loadingEmployees = true;
     this.errorMessage = '';

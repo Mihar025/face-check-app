@@ -23,8 +23,16 @@
         </div>
       </div>
 
-      <!-- Show this section ONLY if company exists -->
-      <ng-container *ngIf="hasCompany">
+      <!-- Loading State - проверка компании -->
+      <div *ngIf="isCheckingCompany" class="checking-company-state">
+        <div class="spinner-container">
+          <div class="spinner"></div>
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+
+      <!-- Show this section ONLY if company exists AND not checking -->
+      <ng-container *ngIf="!isCheckingCompany && hasCompany">
         <!-- Quick Actions Section -->
         <div class="quick-actions-section">
           <div class="section-title">
@@ -198,8 +206,8 @@
         </div>
       </ng-container>
 
-      <!-- Show ONLY when NO company exists - First time setup -->
-      <div *ngIf="!hasCompany" class="first-time-setup">
+      <!-- Show ONLY when NO company exists AND not checking -->
+      <div *ngIf="!isCheckingCompany && !hasCompany" class="first-time-setup">
         <div class="setup-card">
           <div class="setup-icon">
             <i class="fas fa-rocket"></i>

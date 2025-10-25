@@ -5,6 +5,7 @@ import { AdminControllerService } from "../../../../services/services/admin-cont
 import { NotificationControllerService } from "../../../../services/services/notification-controller.service";
 import { NotificationResponse } from "../../../../services/models/notification-response";
 import { PageResponseNotificationResponse } from "../../../../services/models/page-response-notification-response";
+import {UserDataService} from "../../../components/user-data-service/user-data-service";
 
 @Component({
   selector: 'app-admin-page',
@@ -13,7 +14,7 @@ import { PageResponseNotificationResponse } from "../../../../services/models/pa
 })
 export class AdminPageComponent implements OnInit {
   // User data - from your original code
-  userName: string = 'John Doe';
+  userName: string = '';
   companyName: string = '';
   totalEmployees: number = 0;
   totalWorksites: number = 0;
@@ -35,12 +36,16 @@ export class AdminPageComponent implements OnInit {
 
   // NEW PROPERTY: Track if user has a company
   hasCompany: boolean = false;
+  isCheckingCompany: boolean = true;
+
 
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private adminService: AdminControllerService,
-    private notificationService: NotificationControllerService
+    private notificationService: NotificationControllerService,
+    public userDataService: UserDataService
+
   ) { }
 
   ngOnInit(): void {
@@ -61,83 +66,50 @@ export class AdminPageComponent implements OnInit {
     }
 
     // Load your existing data
-    this.loadUserFullName();
-    this.checkIfCompanyExists(); // NEW: Check if company exists
-    this.getUserPhoto();
+    this.userDataService.userName$.subscribe(name => {
+      if (name) this.userName = name;
+    });
+
+    this.userDataService.companyName$.subscribe(name => {
+      if (name) {
+        this.companyName = name;
+        this.hasCompany = true;
+      }
+    });
+
+    this.userDataService.userPhoto$.subscribe(photo => {
+      if (photo) this.userPhotoUrl = photo;
+    });
+    this.checkIfCompanyExists();
   }
 
   // NEW METHOD: Check if admin has a company
   checkIfCompanyExists(): void {
-    // First try to load company ID
-    this.userService.findWorkerCompanyIdByAuthentication().subscribe(
-      response => {
-        if (response && response.companyId && response.companyId > 0) {
+    this.isCheckingCompany = true;
+
+    this.userService.findWorkerCompanyIdByAuthentication().subscribe({
+      next: (response) => {
+        if (response?.companyId && response.companyId > 0) {
           this.companyId = response.companyId;
           this.hasCompany = true;
 
-          // Only load company-related data if company exists
-          this.loadCompanyName();
           this.loadTotalEmployees();
           this.loadTotalWorksites();
           this.loadTodaysNotifications();
         } else {
           this.hasCompany = false;
-          this.companyName = '';
         }
+
+        this.isCheckingCompany = false;
       },
-      error => {
+      error: (error) => {
         console.error('Error checking company existence:', error);
-        // Fallback - try to load company name to double-check
-        this.loadCompanyName();
-      }
-    );
-  }
-
-  // Your existing methods - unchanged
-  logout(): void {
-    this.authService.logout();
-  }
-
-  loadUserFullName(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response && response.fullName) {
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Error loading user full name:', error);
-      }
-    );
-  }
-
-  loadCompanyName(): void {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        if (response && response.companyName && response.companyName.trim() !== '') {
-          this.companyName = response.companyName;
-          this.hasCompany = true;
-
-          // If we found company name but don't have ID yet, load it
-          if (!this.companyId) {
-            this.loadAdminsCompanyId().then(id => {
-              if (id > 0) {
-                this.companyId = id;
-                this.loadTodaysNotifications();
-              }
-            });
-          }
-        } else {
-          this.hasCompany = false;
-          this.companyName = '';
-        }
-      },
-      error => {
-        console.error('Error loading company name:', error);
         this.hasCompany = false;
+        this.isCheckingCompany = false;
       }
-    );
+    });
   }
+
 
   loadTotalEmployees(): void {
     if (!this.hasCompany) return;
@@ -165,18 +137,6 @@ export class AdminPageComponent implements OnInit {
     );
   }
 
-  getUserPhoto(): void {
-    this.userService.findWorkerFullContactInformation().subscribe(
-      response => {
-        if (response && response.photoUrl) {
-          this.userPhotoUrl = response.photoUrl;
-        }
-      },
-      error => {
-        console.error('Error loading user photo:', error);
-      }
-    );
-  }
 
   // Your existing method for loading company ID
   private async loadAdminsCompanyId(): Promise<number> {
@@ -295,13 +255,6 @@ export class AdminPageComponent implements OnInit {
     return notification.notificationId || index;
   }
 
-  // Pagination methods
-  changeNotificationsPage(newPage: number): void {
-    if (newPage >= 0 && newPage < this.notificationsTotalPages) {
-      this.notificationsPage = newPage;
-      this.loadTodaysNotifications();
-    }
-  }
 
   nextNotificationsPage(): void {
     if (this.notificationsPage < this.notificationsTotalPages - 1) {

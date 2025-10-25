@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import { AuthService } from "../../../additionalServices/auth-service";
 import { UserServiceControllerService } from "../../../../../services/services/user-service-controller.service";
 import { AdminControllerService } from "../../../../../services/services/admin-controller.service";
@@ -10,13 +10,15 @@ import { PaymentHistoryResponse } from "../../../../../services/models/payment-h
 import { ReportFileDto } from "../../../../../services/models/report-file-dto";
 import Chart from 'chart.js/auto';
 import { HttpClient } from "@angular/common/http";
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-finance-page',
   templateUrl: './finance-page.component.html',
   styleUrl: './finance-page.component.scss'
 })
-export class FinancePageComponent implements OnInit {
+export class FinancePageComponent implements OnInit, OnDestroy {
   // Properties for sidebar
   userName: string = '';
   companyName: string = '';
@@ -87,14 +89,16 @@ export class FinancePageComponent implements OnInit {
 
   focusedChart: string | null = null;
 
+  private subscriptions = new Subscription();
+
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private adminService: AdminControllerService,
     private paymentService: PaymentHistoryIrsControllerService,
     private reportService: ReportAwsControllerService,
-    private taxesService: TaxesControllerService,
-    private http: HttpClient
+    private http: HttpClient,
+    public userDataService: UserDataService
   ) { }
 
   ngOnInit(): void {
@@ -103,7 +107,25 @@ export class FinancePageComponent implements OnInit {
       return;
     }
 
-    this.loadUserData();
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
+
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
+
+
     this.loadFinancialData();
 
     setTimeout(() => {
@@ -111,24 +133,11 @@ export class FinancePageComponent implements OnInit {
     }, 500);
   }
 
-  private loadUserData(): void {
-    this.loadUserFullName();
-    this.loadCompanyInfo();
-    this.getUserPhoto();
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
-  private loadUserFullName(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response && response.fullName) {
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Error loading user full name:', error);
-      }
-    );
-  }
 
   updatePaginatedReports(): void {
     const filtered = this.getFilteredReports();

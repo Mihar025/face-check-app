@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AuthService} from "../../../additionalServices/auth-service";
 import {UserServiceControllerService} from "../../../../../services/services/user-service-controller.service";
 import {CompanyControllerService} from "../../../../../services/services/company-controller.service";
-import {map, catchError, of, switchMap} from 'rxjs';
+import {map, catchError, of, switchMap, Subscription} from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 
 
 @Component({
@@ -11,7 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   templateUrl: './company-information.component.html',
   styleUrls: ['./company-information.component.scss']
 })
-export class CompanyInformationComponent implements OnInit {
+export class CompanyInformationComponent implements OnInit, OnDestroy {
   userName: string = '';
   companyName: string = '';
   companyEmail: string = '';
@@ -21,12 +22,15 @@ export class CompanyInformationComponent implements OnInit {
   employeesCount: number = 0;
   companyId: number | null = null;
 
+  private subscriptions = new Subscription();
+
 
 
   constructor(
     private authService: AuthService,
     private userService: UserServiceControllerService,
-    private companyService: CompanyControllerService
+    private companyService: CompanyControllerService,
+    public userDataService: UserDataService
   ) { }
 
   ngOnInit(): void {
@@ -45,47 +49,33 @@ export class CompanyInformationComponent implements OnInit {
       return;
     }
 
+    this.subscriptions.add(
+      this.userDataService.userName$.subscribe(name => {
+        if (name) this.userName = name;
+      })
+    );
 
-    this.loadUserFullName();
+    this.subscriptions.add(
+      this.userDataService.companyName$.subscribe(name => {
+        if (name) this.companyName = name;
+      })
+    );
 
-    this.loadCompanyName();
+    this.subscriptions.add(
+      this.userDataService.userPhoto$.subscribe(photo => {
+        if (photo) this.userPhotoUrl = photo;
+      })
+    );
+
     this.loadCompanyEmail();
-    this.loadCompanyPhone();
-    this.loadCompanyAddress();
-    this.getUserPhoto();
     this.loadCompanyIdAndEmployees();
+    this.loadCompanyPhone();
+    this.loadCompanyAddress()
 
   }
 
-  logout(): void {
-    this.authService.logout();
-  }
-
-  // Метод для загрузки полного имени пользователя
-  loadUserFullName(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response && response.fullName) {
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Error loading user full name:', error);
-      }
-    );
-  }
-
-
-  loadCompanyName(): void {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        this.companyName = response.companyName || '';
-      },
-      error => {
-        console.error('Error loading company name:', error);
-        this.companyName = 'Cant load company name';
-      }
-    );
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   loadCompanyEmail(): void {
@@ -127,18 +117,6 @@ export class CompanyInformationComponent implements OnInit {
 
 
 
-  getUserPhoto(): void {
-    this.userService.findWorkerFullContactInformation().subscribe(
-      response => {
-        if (response && response.photoUrl) {
-          this.userPhotoUrl = response.photoUrl;
-        }
-      },
-      error => {
-        console.error('Error loading user photo:', error);
-      }
-    );
-  }
 
   loadCompanyIdAndEmployees(): void {
     this.companyService.getCompanyId()
