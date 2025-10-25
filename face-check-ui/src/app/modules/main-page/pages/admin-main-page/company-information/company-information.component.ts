@@ -68,14 +68,14 @@ export class CompanyInformationComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Проверяем, загружены ли данные
-    // Если нет - загружаем
-    if (!this.userName && !this.companyName) {
+
+    if (!this.userDataService.userName && !this.userDataService.companyName) {
       console.log('Data not loaded, refreshing...');
       this.userDataService.refreshUserData();
     }
 
-    // Эти данные загружаем отдельно, так как их нет в UserDataService
+
+      // Эти данные загружаем отдельно, так как их нет в UserDataService
     this.loadCompanyEmail();
     this.loadCompanyIdAndEmployees();
     this.loadCompanyPhone();
