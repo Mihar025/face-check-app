@@ -226,6 +226,10 @@ export class FinancePageComponent implements OnInit, OnDestroy {
       },
       error => console.error('Error loading current capital:', error)
     );
+
+    this.loadIRSPayments();
+    this.loadCompanyReports()
+
   }
 
   loadIRSPayments(): void {
