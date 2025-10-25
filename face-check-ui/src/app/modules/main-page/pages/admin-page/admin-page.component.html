@@ -113,14 +113,19 @@
           </div>
         </div>
 
-        <!-- Recent Activity - NOW WITH REAL NOTIFICATIONS -->
+        <!-- Recent Activity - WITH PAGINATION -->
         <div class="activity-section">
           <div class="section-header">
             <h2>Recent Activity</h2>
-            <span class="view-all" (click)="refreshNotifications()">
-              <i class="fas fa-sync-alt" [class.fa-spin]="isLoadingNotifications"></i>
-              {{ isLoadingNotifications ? 'Loading...' : 'Refresh' }}
-            </span>
+            <div class="header-actions">
+              <span class="notification-count" *ngIf="notificationsTotalElements > 0">
+                {{ notificationsTotalElements }} total
+              </span>
+              <button class="refresh-btn" (click)="refreshNotifications()" [disabled]="isLoadingNotifications">
+                <i class="fas fa-sync-alt" [class.fa-spin]="isLoadingNotifications"></i>
+                {{ isLoadingNotifications ? 'Loading...' : 'Refresh' }}
+              </button>
+            </div>
           </div>
 
           <!-- Loading State -->
@@ -168,6 +173,27 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Pagination -->
+          <div *ngIf="!isLoadingNotifications && notificationsTotalPages > 1" class="pagination-controls">
+            <button
+              class="pagination-btn"
+              [disabled]="notificationsPage === 0"
+              (click)="previousNotificationsPage()">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+
+            <span class="page-info">
+              Page {{ notificationsPage + 1 }} of {{ notificationsTotalPages }}
+            </span>
+
+            <button
+              class="pagination-btn"
+              [disabled]="notificationsPage >= notificationsTotalPages - 1"
+              (click)="nextNotificationsPage()">
+              <i class="fas fa-chevron-right"></i>
+            </button>
           </div>
         </div>
       </ng-container>
