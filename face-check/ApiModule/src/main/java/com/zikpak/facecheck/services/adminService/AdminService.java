@@ -7,6 +7,7 @@ import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.repository.CompanyRepository;
+import com.zikpak.facecheck.repository.WorkerSiteRepository;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.requestsResponses.admin.*;
 import com.zikpak.facecheck.repository.UserRepository;
@@ -36,6 +37,7 @@ public class AdminService implements AdminAndForemanFunctionality {
     private final WorkerAttendanceRepository workerAttendanceRepository;
     private final ForemanAndAdminService foremanAndAdminService;
     private final CompanyRepository companyRepository;
+    private final WorkerSiteRepository workerSiteRepository;
 
 
     @Override
@@ -117,36 +119,21 @@ public class AdminService implements AdminAndForemanFunctionality {
     public Integer findAllWorksitesInCompany(Authentication authentication) {
         log.info("findAllWorksitesInCompany begins");
         User admin = ((User) authentication.getPrincipal());
-        log.info("Checking roles ");
+        log.info("Checking roles");
         doesHaveAdminRole(admin);
-        log.info("Successful checked role");
 
-        var foundedAdmin = userRepository.findById(admin.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Admin not found"));
-        log.info("Founded admin {}", foundedAdmin);
-
-        // ПРОВЕРКА на null
-        if (foundedAdmin.getCompany() == null) {
-            log.error("Admin has no company assigned!");
-            return 0;  // или throw new EntityNotFoundException("Company not found for admin");
-        }
-
-        var foundedCompany = companyRepository.findById(foundedAdmin.getCompany().getId())
-                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
-        log.info("Founded company {}", foundedCompany);
-
-        // Эта проверка теперь безопасна
-        if (!foundedAdmin.getCompany().getId().equals(foundedCompany.getId())) {
-            log.info("Checking is Admin in the same company!");
-            throw new AccessDeniedException("You don't have permission to access this company");
-        }
-
-        // ПРОВЕРКА на null для getWorkSites()
-        if (foundedCompany.getWorkSites() == null) {
+        if (admin.getCompany() == null) {
+            log.warn("Admin has no company assigned");
             return 0;
         }
 
-        return foundedCompany.getWorkSites().size();
+        Integer companyId = admin.getCompany().getId();
+        log.info("Counting worksites for company ID: {}", companyId);
+
+        Integer count = workerSiteRepository.countWorkSitesByCompanyId(companyId);
+        log.info("Found {} worksites", count);
+
+        return count;
     }
 
 
