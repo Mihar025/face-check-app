@@ -3,6 +3,8 @@
   "ext": [],
   "threads": 9,
   "output-type": "json",
+  "securityRelatedIssues": false,
+  "annotation-file": [],
   "incremental": false,
   "force-rebuild": false,
   "disable-cache": false,
@@ -38,5 +40,6 @@
   "check-license": false,
   "logging": "OFF",
   "project": "/Users/mishamaydanskiy/face-check-app",
-  "type": "sources"
+  "type": "sources",
+  "disableDiag": false
 }
