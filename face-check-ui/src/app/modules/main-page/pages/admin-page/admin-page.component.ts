@@ -19,6 +19,12 @@ export class AdminPageComponent implements OnInit {
   totalWorksites: number = 0;
   userPhotoUrl: string = '';
 
+
+  notificationsPage: number = 0;
+  notificationsSize: number = 5;
+  notificationsTotalPages: number = 0;
+  notificationsTotalElements: number = 0;
+
   // Additional simple data
   currentDate: Date = new Date();
 
@@ -186,8 +192,7 @@ export class AdminPageComponent implements OnInit {
       return 0;
     }
   }
-
-  // Load today's notifications from backend
+// Load today's notifications from backend
   loadTodaysNotifications(): void {
     if (!this.companyId || !this.hasCompany) {
       console.log('Company not available, skipping notifications');
@@ -198,18 +203,19 @@ export class AdminPageComponent implements OnInit {
 
     this.notificationService.getTodaysNotifications({
       companyId: this.companyId,
-      page: 0,
-      size: 10 // Get latest 10 notifications
+      page: this.notificationsPage,  // ← ИСПОЛЬЗУЙ ПЕРЕМЕННУЮ
+      size: this.notificationsSize   // ← ИСПОЛЬЗУЙ ПЕРЕМЕННУЮ
     }).subscribe({
       next: (response: PageResponseNotificationResponse) => {
         this.notifications = response.content || [];
+        this.notificationsTotalPages = response.totalPages || 0;     // ← ДОБАВЬ
+        this.notificationsTotalElements = response.totalElement || 0; // ← ДОБАВЬ
         this.isLoadingNotifications = false;
         console.log('Loaded notifications:', this.notifications);
       },
       error: (error) => {
         console.error('Error loading notifications:', error);
         this.isLoadingNotifications = false;
-        // Fallback to empty array or show error message
         this.notifications = [];
       }
     });
@@ -289,12 +295,36 @@ export class AdminPageComponent implements OnInit {
     return notification.notificationId || index;
   }
 
-  // Method to refresh notifications manually
-  refreshNotifications(): void {
-    if (this.hasCompany) {
+  // Pagination methods
+  changeNotificationsPage(newPage: number): void {
+    if (newPage >= 0 && newPage < this.notificationsTotalPages) {
+      this.notificationsPage = newPage;
       this.loadTodaysNotifications();
     }
   }
+
+  nextNotificationsPage(): void {
+    if (this.notificationsPage < this.notificationsTotalPages - 1) {
+      this.notificationsPage++;
+      this.loadTodaysNotifications();
+    }
+  }
+
+  previousNotificationsPage(): void {
+    if (this.notificationsPage > 0) {
+      this.notificationsPage--;
+      this.loadTodaysNotifications();
+    }
+  }
+
+// Method to refresh notifications manually
+  refreshNotifications(): void {
+    if (this.hasCompany) {
+      this.notificationsPage = 0; // ← ДОБАВЬ СБРОС СТРАНИЦЫ
+      this.loadTodaysNotifications();
+    }
+  }
+
 
   // Method to delete a notification
   deleteNotification(notificationId: number): void {
