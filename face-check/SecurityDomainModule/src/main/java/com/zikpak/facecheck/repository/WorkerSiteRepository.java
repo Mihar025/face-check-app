@@ -52,4 +52,7 @@ public interface WorkerSiteRepository extends JpaRepository<WorkSite, Integer> {
     """)
     Optional<WorkSite> findByIdWithCompany(@Param("id") Integer id);
 
-}
+
+
+    @Query("SELECT COUNT(w) FROM WorkSite w WHERE w.company.id = :companyId")
+    Integer countWorkSitesByCompanyId(@Param("companyId") Integer companyId);}
