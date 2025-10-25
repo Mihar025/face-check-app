@@ -105,7 +105,6 @@ export class AdminPageComponent implements OnInit, OnDestroy {
           this.hasCompany = true;
 
           this.loadTotalEmployees();
-          this.loadTotalWorksites();
           this.loadTodaysNotifications();
         } else {
           this.hasCompany = false;
@@ -121,27 +120,6 @@ export class AdminPageComponent implements OnInit, OnDestroy {
     });
   }
 
-
-// admin-page.component.ts
-
-  loadTotalWorksites(): void {
-    if (!this.hasCompany) {
-      this.totalWorksites = 0;
-      return;
-    }
-
-    this.adminService.getTotalWorksitesCount()
-      .pipe(
-        catchError(error => {
-          console.error('Error loading total worksites count:', error);
-          return of(0);
-        })
-      )
-      .subscribe(count => {
-        this.totalWorksites = count;
-        console.log('Total worksites:', this.totalWorksites);
-      });
-  }
 
   loadTotalEmployees(): void {
     if (!this.hasCompany) {
