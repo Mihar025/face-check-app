@@ -21,7 +21,7 @@ public class NotificationController {
             @PathVariable Integer companyId,
             @RequestBody @Valid NotificationRequest request) {
         notificationService.createNotification(companyId, request);
-        return ResponseEntity.accepted().build(); // 202 - запрос принят
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/company/{companyId}/today")
