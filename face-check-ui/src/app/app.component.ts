@@ -17,7 +17,6 @@ export class AppComponent implements OnInit{
 
   ngOnInit() {
     if (this.authService.isUserAuthenticated()) {
-      console.log('User authenticated, loading data...');
       this.userDataService.loadUserData();
     }
   }

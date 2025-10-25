@@ -26,11 +26,9 @@ export class UserDataService {
   // Загружаем ВСЕ данные один раз
   loadUserData(): void {
     if (this.isLoaded) {
-      console.log('User data already loaded, skipping...');
       return;
     }
 
-    console.log('Loading user data...');
     this.loadUserFullName();
     this.loadCompanyName();
     this.loadUserPhoto();
@@ -41,14 +39,11 @@ export class UserDataService {
 
   // Принудительное обновление
   refreshUserData(): void {
-    console.log('Refreshing user data...');
     this.isLoaded = false;
     this.loadUserData();
   }
 
-  // ✅ ДОБАВЬ ЭТОТ МЕТОД - Очистка всех данных
   clearUserData(): void {
-    console.log('Clearing user data...');
     this.userNameSubject.next('');
     this.companyNameSubject.next('');
     this.userPhotoSubject.next('');
@@ -62,7 +57,6 @@ export class UserDataService {
       response => {
         if (response?.fullName) {
           this.userNameSubject.next(response.fullName);
-          console.log('Loaded user name:', response.fullName);
         }
       },
       error => console.error('Error loading user name:', error)
@@ -74,7 +68,6 @@ export class UserDataService {
       response => {
         if (response?.companyName) {
           this.companyNameSubject.next(response.companyName);
-          console.log('Loaded company name:', response.companyName);
         }
       },
       error => console.error('Error loading company name:', error)
@@ -86,7 +79,6 @@ export class UserDataService {
       response => {
         if (response?.photoUrl) {
           this.userPhotoSubject.next(response.photoUrl);
-          console.log('Loaded user photo');
         }
       },
       error => console.error('Error loading user photo:', error)
@@ -99,7 +91,6 @@ export class UserDataService {
         if (response?.companyId) {
           this.companyIdSubject.next(response.companyId);
           localStorage.setItem('company_id', response.companyId.toString());
-          console.log('Loaded and saved company ID:', response.companyId);
         }
       },
       error => console.error('Error loading company ID:', error)

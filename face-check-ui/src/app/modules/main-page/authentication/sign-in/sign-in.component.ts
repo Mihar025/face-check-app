@@ -47,10 +47,8 @@ export class SignInComponent implements OnDestroy {
       )
       .subscribe({
         next: () => {
-          console.log('Login successful');
         },
         error: (error) => {
-          console.error('Login error in component:', error);
           this.errorMessage = error.error?.message || 'Login failed. Please check your credentials.';
         }
       });

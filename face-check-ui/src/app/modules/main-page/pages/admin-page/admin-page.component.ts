@@ -113,7 +113,6 @@ export class AdminPageComponent implements OnInit, OnDestroy {
         this.isCheckingCompany = false;
       },
       error: (error) => {
-        console.error('Error checking company existence:', error);
         this.hasCompany = false;
         this.isCheckingCompany = false;
       }
@@ -130,35 +129,18 @@ export class AdminPageComponent implements OnInit, OnDestroy {
     this.adminService.getTotalEmployeesCount()
       .pipe(
         catchError(error => {
-          console.error('Error loading total employees count:', error);
           // При ошибке тоже возвращаем 0
           return of(0);
         })
       )
       .subscribe(count => {
         this.totalEmployees = count;
-        console.log('Total employees:', this.totalEmployees);
       });
   }
 
-  // Your existing method for loading company ID
-  private async loadAdminsCompanyId(): Promise<number> {
-    try {
-      const response = await this.userService.findWorkerCompanyIdByAuthentication().toPromise();
-      if (response && response.companyId) {
-        this.companyId = response.companyId;
-        return response.companyId;
-      }
-      return 0;
-    } catch (error) {
-      console.error('Error loading company Id', error);
-      return 0;
-    }
-  }
 // Load today's notifications from backend
   loadTodaysNotifications(): void {
     if (!this.companyId || !this.hasCompany) {
-      console.log('Company not available, skipping notifications');
       return;
     }
 
@@ -174,10 +156,8 @@ export class AdminPageComponent implements OnInit, OnDestroy {
         this.notificationsTotalPages = response.totalPages || 0;     // ← ДОБАВЬ
         this.notificationsTotalElements = response.totalElement || 0; // ← ДОБАВЬ
         this.isLoadingNotifications = false;
-        console.log('Loaded notifications:', this.notifications);
       },
       error: (error) => {
-        console.error('Error loading notifications:', error);
         this.isLoadingNotifications = false;
         this.notifications = [];
       }
@@ -292,10 +272,8 @@ export class AdminPageComponent implements OnInit, OnDestroy {
       next: () => {
         // Remove from local array
         this.notifications = this.notifications.filter(n => n.notificationId !== notificationId);
-        console.log('Notification deleted successfully');
       },
       error: (error) => {
-        console.error('Error deleting notification:', error);
       }
     });
   }
