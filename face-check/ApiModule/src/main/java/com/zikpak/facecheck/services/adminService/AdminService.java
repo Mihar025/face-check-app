@@ -133,7 +133,6 @@ public class AdminService implements AdminAndForemanFunctionality {
             return 0;
         }
 
-        // Теперь считаем worksites без lazy loading
         return workerSiteRepository.countByCompanyId(companyId);
     }
 
