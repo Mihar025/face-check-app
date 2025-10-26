@@ -78,18 +78,8 @@ public class AdminService implements AdminAndForemanFunctionality {
 
         log.info("Found worker: {}", foundedWorker.getId());
 
-        // 4. Проверка что attendance уже не существует (через query, без lazy loading)
-        LocalDate checkDate = changePunchInRequest.getDateWhenWorkerDidntMakePunchIn().toLocalDate();
-        boolean hasAttendance = workerAttendanceRepository.existsByWorkerIdAndCheckInDate(
-                workerId,
-                checkDate
-        );
-
-        if (hasAttendance) {
-            throw new IllegalStateException("There is already punch in for this date: " + checkDate);
-        }
-
-        log.info("No existing attendance found, creating new one");
+        // УБРАЛ ПРОВЕРКУ НА СУЩЕСТВОВАНИЕ - ПУСТЬ ПРОСТО СОЗДАЕТ
+        log.info("Creating new attendance without checking...");
 
         // 5. Создание нового attendance
         WorkerAttendance newAttendance = WorkerAttendance.builder()
@@ -99,6 +89,7 @@ public class AdminService implements AdminAndForemanFunctionality {
                         changePunchInRequest.getNewPunchInTime()))
                 .build();
 
+        log.info("About to save attendance...");
         workerAttendanceRepository.save(newAttendance);
         log.info("Successfully created new punch in for worker: {}", workerId);
 
@@ -110,6 +101,9 @@ public class AdminService implements AdminAndForemanFunctionality {
                 .newPunchInTime(changePunchInRequest.getNewPunchInTime())
                 .build();
     }
+
+
+
 
 
     @Transactional
