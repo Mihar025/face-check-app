@@ -949,7 +949,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       }
     );
   }
-
   changeHourlyRate() {
     this.loading = true;
     this.errorMessage = '';
@@ -964,9 +963,33 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       };
 
       this.companyService.updateEmployeeRate(params).subscribe(
-        () => {
+        (response: EmployeeSalaryResponse) => {  // ← Получаем ответ от сервера
           this.loading = false;
           this.successMessage = "Hourly rate updated successfully.";
+
+          // ✅ ОБНОВЛЯЕМ ДАННЫЕ В ВЫБРАННОМ РАБОТНИКЕ
+          if (this.selectedEmployee) {
+            this.selectedEmployee.baseHourlyRate = this.newHourlyRate;
+          }
+
+          // ✅ ОБНОВЛЯЕМ В ОСНОВНОМ СПИСКЕ EMPLOYEES
+          const employeeIndex = this.employees.findIndex(e => e.workerId === this.selectedEmployeeId);
+          if (employeeIndex !== -1) {
+            this.employees[employeeIndex].baseHourlyRate = this.newHourlyRate;
+          }
+
+          // ✅ ОБНОВЛЯЕМ В ОТФИЛЬТРОВАННОМ СПИСКЕ (если используешь поиск)
+          const filteredIndex = this.filteredEmployees.findIndex(e => e.workerId === this.selectedEmployeeId);
+          if (filteredIndex !== -1) {
+            this.filteredEmployees[filteredIndex].baseHourlyRate = this.newHourlyRate;
+          }
+
+          // ✅ ОБНОВЛЯЕМ employeeRateInfo если она используется в модалке
+          if (this.employeeRateInfo) {
+            this.employeeRateInfo.baseHourlyRate = this.newHourlyRate;
+          }
+
+          // Теперь открываем модалку с обновленными данными
           this.openEmployeeModal(this.selectedEmployee!);
         },
         error => {
@@ -976,7 +999,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       );
     });
   }
-
   findWorkerPersonalInformation(workerId: number | undefined) {
     if (workerId === undefined) {
       this.errorMessage = "Cannot load employee information: Employee ID is not defined";
