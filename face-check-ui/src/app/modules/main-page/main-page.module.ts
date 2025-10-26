@@ -1,6 +1,6 @@
 // src/app/modules/main-page/main-page.module.ts
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {CommonModule, DatePipe} from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { MainPageRoutingModule } from './main-page-routing.module';
@@ -96,6 +96,9 @@ import { NotificationAdminPageComponent } from './pages/admin-main-page/notifica
     ReactiveFormsModule,
     CodeInputModule,
     SharedModule
+  ],
+  providers: [
+    DatePipe  // ← ДОБАВЬ ЭТО!
   ],
   // важное: чтобы Angular не падал на <code-input> и любые web components
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
