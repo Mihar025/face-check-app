@@ -101,7 +101,6 @@ public class AuthenticationController {
         authenticationService.activateAccount(token);
     }
 
-    //Working
     @PostMapping("/employees/{employeeId}/payment")
     public ResponseEntity<Void> setPaymentData(
             @PathVariable Integer employeeId,

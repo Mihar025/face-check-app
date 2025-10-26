@@ -378,62 +378,77 @@ public class CompanyService implements CompanyServiceImpl {
 
 
 
-                        public EmployeeSalaryResponse changeEmployeeBaseHourRate(Integer companyId,
-                                                                                 Integer employeeId,
-                                                                                 Authentication authentication,
-                                                                                 EmployeeRaiseHourRateRequest raise) throws AccessDeniedException {
-                                        if(raise.getBaseHourlyRate() == null){
-                                            throw new IllegalArgumentException("Base hourly rate cannot be empty");
-                                        }
-                                        User user = ((User) authentication.getPrincipal());
+    public EmployeeSalaryResponse changeEmployeeBaseHourRate(Integer companyId,
+                                                             Integer employeeId,
+                                                             Authentication authentication,
+                                                             EmployeeRaiseHourRateRequest raise) throws AccessDeniedException {
+        if(raise.getBaseHourlyRate() == null){
+            throw new IllegalArgumentException("Base hourly rate cannot be empty");
+        }
 
-                                        if(!user.isAdmin() && !user.isBusinessOwner()){
-                                            throw new AccessDeniedException("You do not have permission to update this company");
-                                        }
-                                            var foundedCompany = companyRepository.findById(companyId)
-                                                    .orElseThrow(() -> new RuntimeException("Company not found"));
-                                            var foundedEmployee = userRepository.findById(employeeId)
-                                                    .orElseThrow(() -> new RuntimeException("Employee not found"));
-                                                if(!user.getCompany().getId().equals(foundedCompany.getId())){
-                                                    throw new AccessDeniedException("This worker is not from your company");
-                                                }
-                            WorkerPayroll currentPayroll;
-                                                    if(raise.getBaseHourlyRate().equals(user.getBaseHourlyRate())){
-                                                        throw new IllegalArgumentException("Base hourly rate cannot be the same as current hourly rate");
-                                                    }
+        User user = ((User) authentication.getPrincipal());
 
-                                                    if(foundedEmployee.getPayrolls().isEmpty()){
-                                                        currentPayroll = new WorkerPayroll();
-                                                        currentPayroll.setWorker(foundedEmployee);
-                                                        currentPayroll.setPeriodStart(LocalDate.now());
-                                                    }
-                                                    else{
-                                                        currentPayroll = foundedEmployee.getPayrolls()
-                                                                .stream()
-                                                                .max(Comparator.comparing(WorkerPayroll::getPeriodStart))
-                                                                .orElseThrow(() -> new RuntimeException("Employee payroll not found"));
-                                                        if (currentPayroll.getPeriodEnd() == null) {
-                                                            currentPayroll.setBaseHourlyRate(raise.getBaseHourlyRate());
-                                                        }
-                                                        else {
-                                                            WorkerPayroll newPayroll = new WorkerPayroll();
-                                                            newPayroll.setWorker(foundedEmployee);
-                                                            newPayroll.setPeriodStart(LocalDate.now());
-                                                            newPayroll.setBaseHourlyRate(raise.getBaseHourlyRate());
-                                                            newPayroll.setOvertimeRate(currentPayroll.getOvertimeRate());
-                                                        }
-                                                    }
-                                                    currentPayroll.setBaseHourlyRate(raise.getBaseHourlyRate());
-                                                    workerPayrollRepository.save(currentPayroll);
-                                            return new EmployeeSalaryResponse(
-                                                    foundedEmployee.getId(),
-                                                    foundedEmployee.getFirstName(),
-                                                    foundedEmployee.getLastName(),
-                                                    foundedEmployee.getEmail(),
-                                                    currentPayroll.getBaseHourlyRate()
-                                            )   ;
+        if(!user.isAdmin() && !user.isBusinessOwner()){
+            throw new AccessDeniedException("You do not have permission to update this company");
+        }
 
-                        }
+        var foundedCompany = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+        var foundedEmployee = userRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        if(!user.getCompany().getId().equals(foundedCompany.getId())){
+            throw new AccessDeniedException("This worker is not from your company");
+        }
+
+        // ✅ ИСПРАВЛЕНО: сравниваем с зарплатой работника, а не админа
+        if(raise.getBaseHourlyRate().equals(foundedEmployee.getBaseHourlyRate())){
+            throw new IllegalArgumentException("Base hourly rate cannot be the same as current hourly rate");
+        }
+
+        WorkerPayroll currentPayroll;
+
+        if(foundedEmployee.getPayrolls().isEmpty()){
+            currentPayroll = new WorkerPayroll();
+            currentPayroll.setWorker(foundedEmployee);
+            currentPayroll.setPeriodStart(LocalDate.now());
+            currentPayroll.setBaseHourlyRate(raise.getBaseHourlyRate());
+        }
+        else{
+            currentPayroll = foundedEmployee.getPayrolls()
+                    .stream()
+                    .max(Comparator.comparing(WorkerPayroll::getPeriodStart))
+                    .orElseThrow(() -> new RuntimeException("Employee payroll not found"));
+
+            if (currentPayroll.getPeriodEnd() == null) {
+                // Обновляем существующий активный payroll
+                currentPayroll.setBaseHourlyRate(raise.getBaseHourlyRate());
+            }
+            else {
+                // ✅ ИСПРАВЛЕНО: создаём новый payroll и присваиваем его
+                currentPayroll = new WorkerPayroll();
+                currentPayroll.setWorker(foundedEmployee);
+                currentPayroll.setPeriodStart(LocalDate.now());
+                currentPayroll.setBaseHourlyRate(raise.getBaseHourlyRate());
+                currentPayroll.setOvertimeRate(foundedEmployee.getOvertimeRate());
+            }
+        }
+
+        // Сохраняем payroll
+        workerPayrollRepository.save(currentPayroll);
+
+        // Также обновляем базовую ставку у самого работника
+        foundedEmployee.setBaseHourlyRate(raise.getBaseHourlyRate());
+        userRepository.save(foundedEmployee);
+
+        return new EmployeeSalaryResponse(
+                foundedEmployee.getId(),
+                foundedEmployee.getFirstName(),
+                foundedEmployee.getLastName(),
+                foundedEmployee.getEmail(),
+                raise.getBaseHourlyRate()
+        );
+    }
 
     @Cacheable(
             value = "users",
