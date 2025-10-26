@@ -66,10 +66,6 @@ public class CompanyMapper {
     }
 
     public RelatedUserInCompanyResponse toCompanyWorkerResponse(User foundedEmployee) {
-        BigDecimal baseHourlyRate = null;
-        if (foundedEmployee.getPayrolls() != null && !foundedEmployee.getPayrolls().isEmpty()) {
-            baseHourlyRate = foundedEmployee.getPayrolls().getLast().getBaseHourlyRate();
-        }
 
         return RelatedUserInCompanyResponse.builder()
                 .workerId(foundedEmployee.getId())
@@ -77,7 +73,7 @@ public class CompanyMapper {
                 .firstName(foundedEmployee.getFirstName())
                 .lastName(foundedEmployee.getLastName())
                 .email(foundedEmployee.getEmail())
-                .baseHourlyRate(baseHourlyRate)
+                .baseHourlyRate(foundedEmployee.getBaseHourlyRate())
                 .enabled(foundedEmployee.isEnabled())
                 .photoUrl(foundedEmployee.getPhotoUrl())
                 .companyName(foundedEmployee.getCompany().getCompanyName())
