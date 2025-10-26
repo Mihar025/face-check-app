@@ -23,8 +23,6 @@ export class EmployeeAttendanceComponent implements OnInit,OnDestroy {
   photos: Array<{url: string, type: string}> = [];
   companyId: number = 0;
 
-  startTime: LocalTime = {};
-  endTime: LocalTime = {};
 
   employees: Array<any> = [];
   selectedEmployee: any = null;
