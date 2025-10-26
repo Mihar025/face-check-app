@@ -1,6 +1,9 @@
 package com.zikpak.facecheck.requestsResponses.admin;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -27,6 +30,8 @@ public class ChangePunchOutRequest {
     @NotNull(message = "This field is required!")
     private LocalDate newPunchOutDate;
 
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
+    @JsonFormat(pattern = "HH:mm:ss")
     @NotNull(message = "This field is required!")
     private LocalTime newPunchOutTime;
 }
