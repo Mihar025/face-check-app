@@ -51,11 +51,6 @@ public interface WorkerSiteRepository extends JpaRepository<WorkSite, Integer> {
     Integer countByCompanyId(Integer companyId);
 
     @Modifying
-    @Query(value = "DELETE FROM work_site WHERE id = :workSiteId", nativeQuery = true)
-    void clearWorkSiteReferences(@Param("workSiteId") Integer workSiteId);
-
-
-    @Modifying
     @Query(value = "DELETE FROM user_work_sites WHERE work_site_id = :workSiteId", nativeQuery = true)
     void clearWorkSiteUserAssociations(@Param("workSiteId") Integer workSiteId);
 
