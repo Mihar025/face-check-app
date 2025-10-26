@@ -740,22 +740,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EMPLOYEE MANAGEMENT METHODS
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  loadAdminName(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response && response.fullName) {
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Cannot load username', error);
-      }
-    );
-  }
 
 
   async loadAllEmployeesRelatedToCertainCompany(): Promise<void> {
