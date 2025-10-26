@@ -825,7 +825,6 @@ public class WorkSiteServiceImpl implements WorkSiteService {
     }
 
     @Override
-
     public PageResponse<WorkerCurrentlyWorkingInWorkSite> findAllWorkerInWorkSiteRelated(Integer workSiteId,
                                                                                          int page,
                                                                                          int size,
