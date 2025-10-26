@@ -19,13 +19,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
 
-    @Query("""
-    
-    SELECT u FROM User u 
-    LEFT JOIN FETCH u.company c 
-    LEFT JOIN FETCH u.workSites ws 
-    WHERE u.email = :email
-""")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.company c WHERE u.email = :email")
     Optional<User> findByEmail(@Param("email") String email);
 
 
@@ -33,8 +27,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     boolean existsByEmail(@Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$" , message = "Email is not formatted well!")
                           @NotBlank(message = "Email is required!")
                           @Pattern(regexp = "^[^;'\"]*$", message = "Email contains invalid characters") String email);
-    @Query("SELECT u FROM User u WHERE u.company.id = :companyId ORDER BY u.createdDate DESC")
-    Page<User> findAllEmployeesInCompany(Pageable pageable, @Param("companyId") Integer companyId);
+
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.company.id = :companyId")
     long countEmployeesInCompany(@Param("companyId") Integer companyId);
@@ -42,21 +35,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT u.company.id FROM User u WHERE u.id = :userId")
     Integer findCompanyIdByUserId(@Param("userId") Integer userId);
 
-
-
-    @Query("""
-    SELECT u 
-    FROM User u 
-    WHERE u.company.id = :companyId 
-    AND (LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) 
-    OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
-    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))
-""")
-    Page<User> findEmployeesByNameOrEmail(
-            @Param("companyId") Integer companyId,
-            @Param("search") String search,
-            Pageable pageable
-    );
 
     @Query("""
     SELECT DISTINCT u 
@@ -101,32 +79,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     )
     Page<User> findAllEmployeesInCertainCompany(Pageable pageable, @Param("companyId") Integer companyId);
 
-    @Query("""
-    SELECT DISTINCT u, wa.checkInTime FROM User u
-    JOIN u.workSites ws
-    JOIN WorkerAttendance wa ON wa.worker = u
-    WHERE ws.id = :workSiteId
-    AND u.company.id = :companyId
-    AND ws.isActive = true
-    AND wa.checkInTime IS NOT NULL
-    AND wa.checkOutTime IS NULL
-    AND CAST(wa.checkInTime AS date) = CURRENT_DATE
-    ORDER BY wa.checkInTime DESC
-""")
-    Page<User> findAllUsersLocatedInWorkSite(
-            Pageable pageable,
-            @Param("workSiteId") Integer workSiteId,
-            @Param("companyId") Integer companyId
-    );
-
 
 
 
     @Query("""
 SELECT DISTINCT u FROM User u 
-LEFT JOIN FETCH u.workSites ws
-LEFT JOIN FETCH u.attendances a
-LEFT JOIN FETCH u.company c
 WHERE :workSiteId MEMBER OF u.workSites
 AND u.company.id = :companyId
 AND EXISTS (
@@ -176,27 +133,10 @@ AND u.id IN (
             @Param("year") Integer year
     );
 
-    @Query("""
-    SELECT DISTINCT u 
-    FROM User u 
-    JOIN u.roles r 
-    WHERE u.company.id = :companyId 
-    AND r.name = :roleName
-""")
-    List<User> findAllByCompanyIdAndRole(@Param("companyId") Integer companyId,
-                                         @Param("roleName") String roleName);
 
     List<User> findAllByCompanyIdIn(Collection<Integer> companyIds);
 
-    @Query("""
-    
-    SELECT DISTINCT u FROM User u
-    LEFT JOIN FETCH u.payrolls p
-    LEFT JOIN FETCH u.company c 
-    WHERE u.company.id = :companyId
-    ORDER BY u.id DESC
-    
-""")
+    @Query("SELECT u FROM User u WHERE u.company.id = :companyId ORDER BY u.id DESC")
     List<User> findAllEmployeesInCompanyWithDetails(@Param("companyId") Integer companyId);
 
 
