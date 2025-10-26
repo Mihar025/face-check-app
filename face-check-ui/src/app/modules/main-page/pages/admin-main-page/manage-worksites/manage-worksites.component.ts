@@ -91,6 +91,7 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
   selectedWorksiteForMap: any = null;
   private worksiteMap: any = null;
   private worksiteMarker: any = null;
+
   private worksiteCircle: any = null;
   private mapInitialized: boolean = false;
 
@@ -157,7 +158,7 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
     this.workSiteService.findWorkSiteById({ id: worksiteId }).subscribe(
       (data) => {
         this.selectedWorksiteForMap = data;
-        console.log('📍 Loaded worksite for map:', data.workSiteName);
+        console.log('📍 Loaded worksite for map:', data.workSiteName);12
         console.log('📏 Current radius:', data.allowedRadius, 'meters');
 
         // Открываем модалку
