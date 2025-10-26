@@ -377,7 +377,7 @@ public class CompanyService implements CompanyServiceImpl {
                     }
 
 
-
+    @Transactional
     public EmployeeSalaryResponse changeEmployeeBaseHourRate(Integer companyId,
                                                              Integer employeeId,
                                                              Authentication authentication,
