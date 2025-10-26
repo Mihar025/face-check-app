@@ -18,8 +18,8 @@ import java.time.LocalTime;
 @Builder
 public class ChangePunchOutRequest {
 
-    @NotNull(message = "This field is required!")
-    private Integer workerId;
+   // @NotNull(message = "This field is required!")
+  //  private Integer workerId;
 
     @NotNull(message = "This field is required!")
     private LocalDateTime dateWhenWorkerDidntMakePunchOut;
