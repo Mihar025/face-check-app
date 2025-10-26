@@ -58,4 +58,6 @@ public interface WorkerSiteRepository extends JpaRepository<WorkSite, Integer> {
     Integer countWorkSitesByCompanyId(@Param("companyId") Integer companyId);
 
     Integer countByCompanyId(Integer companyId);
+
+    void clearWorkSiteReferences(Integer workSiteId);
 }
