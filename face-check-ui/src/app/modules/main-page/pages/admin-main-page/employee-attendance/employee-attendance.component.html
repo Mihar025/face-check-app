@@ -172,8 +172,7 @@
         <div class="photos-grid" *ngIf="photos.length > 0">
           <div *ngFor="let photo of photos; let i = index" class="photo-item">
             <div class="photo-label">
-              <span class="photo-type" [class.check-in]="photo.type === 'punch-in'">
-                {{ photo.type === 'punch-in' ? 'Check In' : 'Check Out' }}
+              <span class="photo-type">
               </span>
               <span class="photo-time">{{ extractTime(photo.url) }}</span>
             </div>
