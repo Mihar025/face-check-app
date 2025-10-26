@@ -40,6 +40,7 @@ import {DependentsRequest} from "../../../../../services/models/dependents-reque
 import {I9DocumentRequest} from "../../../../../services/models/i-9-document-request";
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 import {Subscription} from "rxjs";
+import {DatePipe} from "@angular/common";
 
 @Component({
   selector: 'app-manage-employees',
@@ -251,6 +252,8 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     }
   ];
 
+
+
   constructor(
     private authService: AuthService,
     private authenticationControllerService: AuthenticationService,
@@ -259,7 +262,8 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     private adminControllerService: AdminControllerService,
     private scheduleService: WorkScheduleControllerService,
     private router: Router,
-    public userDataService: UserDataService
+    public userDataService: UserDataService,
+    private datePipe: DatePipe
   ) {}
 
   ngOnInit(): void {
