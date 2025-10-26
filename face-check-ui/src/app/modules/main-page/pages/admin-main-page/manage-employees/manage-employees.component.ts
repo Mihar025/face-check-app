@@ -761,6 +761,12 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
+    console.log('🔵 Starting punch out change');
+    console.log('dateWhenWorkerDidntMakePunchOut:', this.dateWhenWorkerDidntMakePunchOut);
+    console.log('newPunchOutDate:', this.newPunchOutDate);
+    console.log('newPunchOutTime:', this.newPunchOutTime);
+    console.log('selectedEmployeeId:', this.selectedEmployeeId);
+
     if (!this.dateWhenWorkerDidntMakePunchOut || !this.newPunchOutDate) {
       this.errorMessage = "Please fill in all required date fields";
       this.loading = false;
@@ -770,24 +776,36 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchOut);
     const isoNewDate = this.convertToISODate(this.newPunchOutDate);
 
+    console.log('📅 Converted dates:');
+    console.log('isoMissedDate:', isoMissedDate);
+    console.log('isoNewDate:', isoNewDate);
+
     if (!isoMissedDate || !isoNewDate) {
       this.errorMessage = 'Please enter valid dates in MM/DD/YYYY format';
       this.loading = false;
       return;
     }
 
-    // ✅ ИСПРАВЛЕНО: Убрал workerId из body!
+    // ✅ ТОЧНО ТАК ЖЕ КАК В PUNCH IN!
     const requestData = {
       dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`,
       newPunchOutDate: isoNewDate,
-      newPunchOutTime: `${(this.newPunchOutTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`
-      // ❌ УБРАЛИ: workerId (он передается в path!)
+      newPunchOutTime: {
+        hour: this.newPunchOutTime.hour || 0,
+        minute: this.newPunchOutTime.minute || 0,
+        second: 0,
+        nano: 0
+      }
     };
 
+    console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
+
     const params: ChangePunchOutForWorker$Params = {
-      workerId: this.selectedEmployeeId,  // ✅ Только тут!
+      workerId: this.selectedEmployeeId,
       body: requestData as any
     };
+
+    console.log('📤 Full params:', JSON.stringify(params, null, 2));
 
     this.adminControllerService.changePunchOutForWorker(params).subscribe(
       (response) => {
@@ -797,9 +815,9 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       },
       error => {
         this.loading = false;
-        console.error('❌ Error:', error);
+        console.error('❌ Full Error:', error);
+        console.error('❌ Error body:', error.error);
 
-        // ✅ Показываем понятную ошибку
         if (error.error && error.error.message) {
           this.errorMessage = error.error.message;
         } else {
