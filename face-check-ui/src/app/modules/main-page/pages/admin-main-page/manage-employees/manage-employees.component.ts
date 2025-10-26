@@ -616,11 +616,9 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     return { hour: 9, minute: 0 };
   }
 
-// Обновленный метод форматирования для отображения
   formatTime(time: any): string {
     if (!time) return '--:--';
 
-    // Если это строка
     if (typeof time === 'string') {
       const parts = time.split(':');
       if (parts.length >= 2) {
@@ -643,6 +641,23 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════════════════════════════════
   // PUNCH IN/OUT METHODS
   // ═══════════════════════════════════════════════════════════════════════════
+  private convertToISODate(usDate: string): string {
+    if (!usDate || usDate.trim().length === 0) {
+      return '';
+    }
+
+    const parts = usDate.split('/');
+    if (parts.length !== 3) {
+      console.error('Invalid date format. Expected MM/DD/YYYY, got:', usDate);
+      return '';
+    }
+
+    const month = parts[0].padStart(2, '0');
+    const day = parts[1].padStart(2, '0');
+    const year = parts[2];
+
+    return `${year}-${month}-${day}`;
+  }
 
   updatePunchIn() {
     this.loading = true;
@@ -670,6 +685,7 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
+
   changeNewPunchIn() {
     this.loading = true;
     this.errorMessage = '';
@@ -681,11 +697,21 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const formattedDateWhenMissed = `${this.dateWhenWorkerDidntMakePunchIn}T00:00:00`;
+    // ✅ КОНВЕРТИРУЕМ американский формат в ISO
+    const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchIn);
+    const isoNewDate = this.convertToISODate(this.newPunchInDate);
+
+    if (!isoMissedDate || !isoNewDate) {
+      this.errorMessage = 'Please enter valid dates in MM/DD/YYYY format';
+      this.loading = false;
+      return;
+    }
+
+    const formattedDateWhenMissed = `${isoMissedDate}T00:00:00`;
 
     const requestData = {
       dateWhenWorkerDidntMakePunchIn: formattedDateWhenMissed,
-      newPunchInDate: this.newPunchInDate,
+      newPunchInDate: isoNewDate,
       newPunchInTime: `${(this.newPunchInTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchInTime.minute || 0).toString().padStart(2, '0')}:00`,
       workerId: this.selectedEmployeeId
     };
@@ -707,6 +733,7 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
+// ЗАМЕНИ метод changeNewPunchOut
   changeNewPunchOut() {
     this.loading = true;
     this.errorMessage = '';
@@ -718,11 +745,21 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const formattedDateWhenMissed = `${this.dateWhenWorkerDidntMakePunchOut}T00:00:00`;
+    // ✅ КОНВЕРТИРУЕМ американский формат в ISO
+    const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchOut);
+    const isoNewDate = this.convertToISODate(this.newPunchOutDate);
+
+    if (!isoMissedDate || !isoNewDate) {
+      this.errorMessage = 'Please enter valid dates in MM/DD/YYYY format';
+      this.loading = false;
+      return;
+    }
+
+    const formattedDateWhenMissed = `${isoMissedDate}T00:00:00`;
 
     const requestData = {
       dateWhenWorkerDidntMakePunchOut: formattedDateWhenMissed,
-      newPunchOutDate: this.newPunchOutDate,
+      newPunchOutDate: isoNewDate,
       newPunchOutTime: `${(this.newPunchOutTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`,
       workerId: this.selectedEmployeeId
     };
@@ -743,7 +780,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       }
     );
   }
-
 
 
   async loadAllEmployeesRelatedToCertainCompany(): Promise<void> {

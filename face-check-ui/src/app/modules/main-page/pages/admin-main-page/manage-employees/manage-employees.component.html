@@ -184,7 +184,6 @@
               </button>
             </ng-container>
           </div>
-
           <div class="time-tabs">
             <button class="tab-button" [class.active]="activeTab === 'updatePunchIn'" (click)="activeTab = 'updatePunchIn'">Update Punch In</button>
             <button class="tab-button" [class.active]="activeTab === 'newPunchIn'" (click)="activeTab = 'newPunchIn'">Set New Punch In</button>
@@ -195,8 +194,11 @@
             <h5>Update Latest Punch In Time</h5>
             <div class="form-group">
               <label for="newCheckInTime">New Check-In Time (ISO Format)</label>
-              <input type="datetime-local" id="newCheckInTime" [(ngModel)]="newCheckInTime"
-                     placeholder="YYYY-MM-DDThh:mm:ss">
+              <input type="datetime-local"
+                     id="newCheckInTime"
+                     [(ngModel)]="newCheckInTime"
+                     placeholder="YYYY-MM-DDThh:mm:ss"
+                     lang="en-US">
               <small class="form-hint">Format: YYYY-MM-DDThh:mm:ss</small>
             </div>
             <div class="form-actions">
@@ -214,7 +216,8 @@
                      id="dateWhenWorkerDidntMakePunchIn"
                      [(ngModel)]="dateWhenWorkerDidntMakePunchIn"
                      placeholder="MM/DD/YYYY"
-                     pattern="\d{2}/\d{2}/\d{4}">
+                     pattern="\d{2}/\d{2}/\d{4}"
+                     lang="en-US">
             </div>
             <div class="form-group">
               <label for="newPunchInDate">New Punch In Date (MM/DD/YYYY)</label>
@@ -222,7 +225,8 @@
                      id="newPunchInDate"
                      [(ngModel)]="newPunchInDate"
                      placeholder="MM/DD/YYYY"
-                     pattern="\d{2}/\d{2}/\d{4}">
+                     pattern="\d{2}/\d{2}/\d{4}"
+                     lang="en-US">
             </div>
             <div class="form-row time-input-row">
               <div class="form-group">
@@ -249,7 +253,8 @@
                      id="dateWhenWorkerDidntMakePunchOut"
                      [(ngModel)]="dateWhenWorkerDidntMakePunchOut"
                      placeholder="MM/DD/YYYY"
-                     pattern="\d{2}/\d{2}/\d{4}">
+                     pattern="\d{2}/\d{2}/\d{4}"
+                     lang="en-US">
             </div>
             <div class="form-group">
               <label for="newPunchOutDate">New Punch Out Date (MM/DD/YYYY)</label>
@@ -257,7 +262,8 @@
                      id="newPunchOutDate"
                      [(ngModel)]="newPunchOutDate"
                      placeholder="MM/DD/YYYY"
-                     pattern="\d{2}/\d{2}/\d{4}">
+                     pattern="\d{2}/\d{2}/\d{4}"
+                     lang="en-US">
             </div>
             <div class="form-row time-input-row">
               <div class="form-group">
@@ -277,22 +283,22 @@
           </div>
         </div>
 
-          <div class="employee-info-section">
-            <h4>Update Hourly Rate</h4>
-            <div class="form-group">
-              <label>New Hourly Rate ($)</label>
-              <input type="number" [(ngModel)]="newHourlyRate" min="0" step="0.01" class="form-input">
-            </div>
-            <button class="action-button schedule-button" (click)="changeHourlyRate()">
-              <i class="fas fa-dollar-sign"></i> Update Rate
-            </button>
+        <div class="employee-info-section">
+          <h4>Update Hourly Rate</h4>
+          <div class="form-group">
+            <label>New Hourly Rate ($)</label>
+            <input type="number" [(ngModel)]="newHourlyRate" min="0" step="0.01" class="form-input">
           </div>
+          <button class="action-button schedule-button" (click)="changeHourlyRate()">
+            <i class="fas fa-dollar-sign"></i> Update Rate
+          </button>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="cancel-button" (click)="closeEmployeeModal()">Close</button>
-      </div>
     </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeEmployeeModal()">Close</button>
+    </div>
+  </div>
 </div>
 
 
