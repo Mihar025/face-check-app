@@ -2044,39 +2044,53 @@ public class WorkAttendanceService {
                 );
         }
 
-        public PageResponse<AttendanceResponse> findAllAttendanceAdmin (Authentication authentication, int page, int size){
-                User admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-                if(!admin.isAdmin()) {
-                        throw new AccessDeniedException("You dont have permission!");
-                }
+    public PageResponse<AttendanceResponse> findAllAttendanceAdmin(Authentication authentication, int page, int size) {
+        User admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
 
-                List<WorkerAttendance> allAttendances = workerAttendanceRepository.findAllAttendanceByCompanyId(admin.getCompany().getId());
-
-                List<WorkerAttendance> sorted = allAttendances.stream()
-                        .sorted((a1, a2) -> a2.getCheckInTime().compareTo(a1.getCheckInTime()))
-                        .toList();
-
-                int start = page * size;
-                int end = Math.min(start + size, sorted.size());
-                List<WorkerAttendance> pagedAttendances = start < end ? sorted.subList(start, end) : List.of();
-
-                List<AttendanceResponse> attendanceResponses = pagedAttendances.stream()
-                        .map(workAttendanceMapper::toCompanyWorkerResponse)
-                        .toList();
-
-                int totalPages = (int) Math.ceil((double) sorted.size() / size);
-
-                return new PageResponse<>(
-                        attendanceResponses,
-                        page,
-                        size,
-                        sorted.size(),
-                        totalPages,
-                        page == 0,
-                        end >= sorted.size()
-                );
+        if(!admin.isAdmin()) {
+            throw new AccessDeniedException("You dont have permission!");
         }
 
+        // ✅ ПРОВЕРКА НА NULL
+        if(admin.getCompany() == null) {
+            log.error("Admin has no company assigned! Admin ID: {}", admin.getId());
+            return new PageResponse<>(List.of(), page, size, 0, 0, true, true);
+        }
+
+        Integer companyId = admin.getCompany().getId();
+        log.info("Loading attendance for company ID: {}", companyId);
+
+        List<WorkerAttendance> allAttendances = workerAttendanceRepository
+                .findAllAttendanceByCompanyId(companyId);
+
+        log.info("Found {} attendance records", allAttendances.size());
+
+        // ✅ ФИЛЬТРУЙ NULL И СОРТИРУЙ
+        List<WorkerAttendance> sorted = allAttendances.stream()
+                .filter(a -> a.getCheckInTime() != null)  // ← ФИЛЬТР NULL
+                .sorted((a1, a2) -> a2.getCheckInTime().compareTo(a1.getCheckInTime()))
+                .toList();
+
+        int start = page * size;
+        int end = Math.min(start + size, sorted.size());
+        List<WorkerAttendance> pagedAttendances = start < end ? sorted.subList(start, end) : List.of();
+
+        List<AttendanceResponse> attendanceResponses = pagedAttendances.stream()
+                .map(workAttendanceMapper::toCompanyWorkerResponse)
+                .toList();
+
+        int totalPages = (int) Math.ceil((double) sorted.size() / size);
+
+        return new PageResponse<>(
+                attendanceResponses,
+                page,
+                size,
+                sorted.size(),
+                totalPages,
+                page == 0,
+                end >= sorted.size()
+        );
+    }
         // В WorkAttendanceService
         public WorkerPhotosResponse getPhotosForWorkerByDate(
                 Integer workerId,

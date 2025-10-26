@@ -697,7 +697,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ КОНВЕРТИРУЕМ американский формат в ISO
     const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchIn);
     const isoNewDate = this.convertToISODate(this.newPunchInDate);
 
