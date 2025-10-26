@@ -98,6 +98,9 @@ public class ForemanAndAdminService implements AdminAndForemanFunctionality {
 
         attendance.setCheckInTime(newPunchInTime);
 
+        // ✅ ДОБАВЬ ЯВНОЕ СОХРАНЕНИЕ!
+        workerAttendanceRepository.save(attendance);
+
         return UpdatePunchInForWorkerResponse.builder()
                 .workerId(foundedWorker.getId())
                 .newPunchInTime(newPunchInTime)
