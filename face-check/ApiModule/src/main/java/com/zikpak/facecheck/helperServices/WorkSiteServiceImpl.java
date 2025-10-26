@@ -880,13 +880,10 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
         var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
         var company = admin.getCompany();
-     //   var workSite = findWorkSiteBySpecialId(workSiteId);
-            var workSite = workSiteRepository.findByIdWithUsers(workSiteId)
-                    .orElseThrow(() -> new EntityNotFoundException("Cannot find WorkSIte"));
+            var workSite = workSiteRepository.findById(workSiteId)
+                    .orElseThrow(() -> new AccessDeniedException("Access denied"));
+        workSiteRepository.clearWorkSiteReferences(workSiteId);
 
-        for(User user: new HashSet<>(workSite.getUsers())){
-            workSite.removeUser(user);
-        }
         company.removeWorkSite(workSite);
         workSiteRepository.deleteById(workSite.getId());
     }
