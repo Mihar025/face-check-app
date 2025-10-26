@@ -877,17 +877,21 @@ public class WorkSiteServiceImpl implements WorkSiteService {
             @CacheEvict(value = "workSite", key = "#workSiteId")
     })
     public void deleteWorkSiteById(Authentication authentication, Integer workSiteId) {
-
         var admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-        var company = admin.getCompany();
-            var workSite = workSiteRepository.findById(workSiteId)
-                    .orElseThrow(() -> new AccessDeniedException("Access denied"));
-        workSiteRepository.clearWorkSiteReferences(workSiteId);
 
-        company.removeWorkSite(workSite);
-        workSiteRepository.deleteById(workSite.getId());
+        var workSite = workSiteRepository.findById(workSiteId)
+                .orElseThrow(() -> new EntityNotFoundException("WorkSite not found"));
+
+        if (!workSite.getCompany().getId().equals(admin.getCompany().getId())) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        workSiteRepository.clearWorkSiteUserAssociations(workSiteId);
+
+        workSiteRepository.clearCurrentWorkSiteReferences(workSiteId);
+
+        workSiteRepository.deleteById(workSiteId);
     }
-
     @Cacheable(
             value = "workSite",
             key = "'allInfo_' + #workSiteId",  // ← ИСПРАВЬ!
