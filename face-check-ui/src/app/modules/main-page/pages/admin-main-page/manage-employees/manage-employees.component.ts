@@ -719,7 +719,12 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     const requestData = {
       dateWhenWorkerDidntMakePunchIn: `${isoMissedDate}T00:00:00`,
       newPunchInDate: isoNewDate,
-      newPunchInTime: `${(this.newPunchInTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchInTime.minute || 0).toString().padStart(2, '0')}:00`
+      newPunchInTime: {
+        hour: this.newPunchInTime.hour || 0,
+        minute: this.newPunchInTime.minute || 0,
+        second: 0,
+        nano: 0
+      }
     };
 
     console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
