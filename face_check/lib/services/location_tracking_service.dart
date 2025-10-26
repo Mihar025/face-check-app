@@ -96,7 +96,6 @@ class LocationTrackingService {
       return;
     }
 
-    // Отправляем первую локацию сразу
     await _sendCurrentLocation(userId);
 
     // Запускаем периодическое обновление для активного приложения
@@ -112,63 +111,66 @@ class LocationTrackingService {
   Future<void> stopTracking() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Отправляем последнюю локацию перед остановкой
+    // Отправляем последнюю локацию
     final userId = prefs.getInt(_userIdKey);
     if (userId != null) {
       await _sendCurrentLocation(userId);
     }
 
-    // Останавливаем трекинг
+    await Workmanager().cancelAll();
+
+    // ПОТОМ меняем статус
     await prefs.setBool(_trackingStatusKey, false);
     await prefs.setString(_lastPunchTypeKey, 'OUT');
+    await prefs.remove(_userIdKey);
 
-    // Отменяем таймеры и подписки
     _locationTimer?.cancel();
     _positionStream?.cancel();
 
-    // Отменяем фоновую задачу
-    await Workmanager().cancelByUniqueName(_backgroundTaskName);
-
     debugPrint('Location tracking stopped');
   }
+  void _startForegroundTracking(int userId) {
+    // Отменяем предыдущие
+    _locationTimer?.cancel();
+    _positionStream?.cancel();
 
-  // Проверить, активен ли трекинг
+    // ✅ Рекурсивная функция для немедленного запуска
+    void scheduleNextUpdate() {
+      _locationTimer = Timer(_updateInterval, () async {
+        final prefs = await SharedPreferences.getInstance();
+        final isActive = prefs.getBool(_trackingStatusKey) ?? false;
+
+        if (isActive) {
+          await _sendCurrentLocation(userId);
+          debugPrint('📍 Foreground location sent at ${DateTime.now()}');
+
+          // ✅ Планируем следующее обновление
+          scheduleNextUpdate();
+        } else {
+          debugPrint('⏹️ Timer cancelled - tracking inactive');
+        }
+      });
+    }
+
+    // ✅ Запускаем первый таймер
+    scheduleNextUpdate();
+  }
+
+
   Future<bool> isTrackingActive() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_trackingStatusKey) ?? false;
   }
-
-  // Трекинг для активного приложения
-  void _startForegroundTracking(int userId) {
-    // Отменяем предыдущий таймер если есть
-    _locationTimer?.cancel();
-
-    // Создаем новый таймер для отправки каждые 5 минут
-    _locationTimer = Timer.periodic(_updateInterval, (timer) async {
-      final isActive = await isTrackingActive();
-      if (isActive) {
-        await _sendCurrentLocation(userId);
-      } else {
-        timer.cancel();
-      }
-    });
-
-    // Альтернативный вариант - стрим обновлений с фильтрацией
-    _setupLocationStream(userId);
-  }
-
   // Настройка стрима для более точного трекинга
   void _setupLocationStream(int userId) {
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 100, // Обновление каждые 100 метров
+      distanceFilter: 100,
     );
 
     _positionStream = Geolocator.getPositionStream(
       locationSettings: locationSettings,
     ).listen((Position position) async {
-      // Здесь можно добавить логику для фильтрации
-      // Например, отправлять только если прошло 5 минут с последней отправки
       await _handlePositionUpdate(position, userId);
     });
   }
@@ -294,8 +296,6 @@ class LocationTrackingService {
         debugPrint('Failed to sync offline location: $e');
       }
     }
-
-    // Сохраняем обновленный список
     await prefs.setString('offline_locations', jsonEncode(locations));
   }
 }
@@ -304,30 +304,40 @@ class LocationTrackingService {
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     if (task == LocationTrackingService._backgroundTaskName) {
-      // Проверяем, активен ли трекинг
       final prefs = await SharedPreferences.getInstance();
+
       final isTracking = prefs.getBool(LocationTrackingService._trackingStatusKey) ?? false;
+      final lastPunchType = prefs.getString(LocationTrackingService._lastPunchTypeKey);
 
-      if (isTracking) {
-        final userId = prefs.getInt('user_id');
-        if (userId != null) {
-          // Создаем Dio для фоновой задачи
-          final dio = Dio(BaseOptions(
-           // baseUrl: 'http://192.168.1.194:8088/api/v1/',
-            baseUrl:'https://face-check-prod-drgsy.ondigitalocean.app/api/v1',
-            connectTimeout: const Duration(seconds: 5),
-            receiveTimeout: const Duration(seconds: 30),
-          ));
+      if (!isTracking || lastPunchType != 'IN') {
+        debugPrint('🛑 Background task cancelled - not tracking');
+        return Future.value(true);
+      }
 
-          // Добавляем токен
-          final token = prefs.getString('auth_token');
-          if (token != null) {
-            dio.options.headers['Authorization'] = 'Bearer $token';
-          }
+      final userId = prefs.getInt('user_id');
+      if (userId == null) {
+        debugPrint('❌ No userId found in background task');
+        return Future.value(true);
+      }
 
-          final service = LocationTrackingService(dio);
-          await service._sendCurrentLocation(userId);
+      try {
+        final dio = Dio(BaseOptions(
+          baseUrl: 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1/',
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 30),
+        ));
+
+        final token = prefs.getString('auth_token');
+        if (token != null) {
+          dio.options.headers['Authorization'] = 'Bearer $token';
         }
+
+        final service = LocationTrackingService(dio);
+        await service._sendCurrentLocation(userId);
+
+        debugPrint('✅ Background location sent at ${DateTime.now()}');
+      } catch (e) {
+        debugPrint('❌ Background location error: $e');
       }
     }
 
