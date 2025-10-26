@@ -225,7 +225,7 @@ class LocationTrackingService {
       final locationDto = LocationUpdateDto(
         latitude: position.latitude,
         longitude: position.longitude,
-        timestamp: position.timestamp ?? DateTime.now(),
+        timestamp: position.timestamp?.toUtc() ?? DateTime.now().toUtc(),
         accuracy: position.accuracy,
         speed: position.speed,
         bearing: position.heading,
