@@ -48,8 +48,6 @@ public class AdminService implements AdminAndForemanFunctionality {
                                                                          Authentication authentication){
         return foremanAndAdminService.findAllWorkersInWorkSite(page, size, workSiteId, authentication);
     }
-
-
     @Transactional
     public ChangePunchInForWorkerResponse ChangingPunchInForWorkerIfDoesntExist(
             Integer workerId,
@@ -75,22 +73,7 @@ public class AdminService implements AdminAndForemanFunctionality {
 
         log.info("Found worker: {}", foundedWorker.getId());
 
-        // 4. ✅ ПРОСТАЯ ПРОВЕРКА - используй BETWEEN вместо DATE()
-        LocalDate checkDate = changePunchInRequest.getDateWhenWorkerDidntMakePunchIn().toLocalDate();
-        LocalDateTime startOfDay = checkDate.atStartOfDay();
-        LocalDateTime endOfDay = checkDate.atTime(23, 59, 59);
-
-        List<WorkerAttendance> existingAttendances = workerAttendanceRepository
-                .findAllByWorkerIdAndDateRange(workerId, startOfDay, endOfDay);
-
-        boolean hasCheckIn = existingAttendances.stream()
-                .anyMatch(a -> a.getCheckInTime() != null);
-
-        if (hasCheckIn) {
-            throw new IllegalStateException("There is already punch in for this date: " + checkDate);
-        }
-
-        log.info("No existing punch in found, creating new one");
+        log.info("Creating new attendance without checking...");
 
         // 5. Создание нового attendance
         WorkerAttendance newAttendance = WorkerAttendance.builder()
@@ -104,6 +87,7 @@ public class AdminService implements AdminAndForemanFunctionality {
         workerAttendanceRepository.save(newAttendance);
         log.info("Successfully created new punch in for worker: {}", workerId);
 
+        // 6. Возврат response
         return ChangePunchInForWorkerResponse.builder()
                 .workerId(foundedWorker.getId())
                 .dateWhenWorkerDidntMakePunchIn(changePunchInRequest.getDateWhenWorkerDidntMakePunchIn())
@@ -111,7 +95,6 @@ public class AdminService implements AdminAndForemanFunctionality {
                 .newPunchInTime(changePunchInRequest.getNewPunchInTime())
                 .build();
     }
-
     @Transactional
     public ChangePunchOutForWorkerResponse ChangingPunchOutForWorkerIfDoesntExist(
             Integer workerId,
@@ -120,37 +103,26 @@ public class AdminService implements AdminAndForemanFunctionality {
 
         log.info("Starting ChangingPunchOutForWorkerIfDoesntExist for worker: {}", workerId);
 
+        // 1. Проверка прав доступа
         User admin = ((User) authentication.getPrincipal());
         doesHaveAdminRole(admin);
 
+        // 2. Валидация входных данных
         if (changePunchOutRequest.getNewPunchOutDate() == null ||
                 changePunchOutRequest.getNewPunchOutTime() == null ||
                 changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut() == null) {
             throw new IllegalArgumentException("Please fill form with correct date, time and date when punch was missed!");
         }
 
+        // 3. Проверка существования worker
         User foundedWorker = userRepository.findById(workerId)
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
 
         log.info("Found worker: {}", foundedWorker.getId());
 
-        // ✅ ПРОСТАЯ ПРОВЕРКА
-        LocalDate checkDate = changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut().toLocalDate();
-        LocalDateTime startOfDay = checkDate.atStartOfDay();
-        LocalDateTime endOfDay = checkDate.atTime(23, 59, 59);
+        log.info("Creating new attendance without checking...");
 
-        List<WorkerAttendance> existingAttendances = workerAttendanceRepository
-                .findAllByWorkerIdAndDateRange(workerId, startOfDay, endOfDay);
-
-        boolean hasCheckOut = existingAttendances.stream()
-                .anyMatch(a -> a.getCheckOutTime() != null);
-
-        if (hasCheckOut) {
-            throw new IllegalStateException("There is already punch out for this date: " + checkDate);
-        }
-
-        log.info("No existing punch out found, creating new one");
-
+        // 5. Создание нового attendance
         WorkerAttendance newAttendance = WorkerAttendance.builder()
                 .worker(foundedWorker)
                 .checkOutTime(LocalDateTime.of(
@@ -158,9 +130,11 @@ public class AdminService implements AdminAndForemanFunctionality {
                         changePunchOutRequest.getNewPunchOutTime()))
                 .build();
 
+        log.info("About to save attendance...");
         workerAttendanceRepository.save(newAttendance);
         log.info("Successfully created new punch out for worker: {}", workerId);
 
+        // 6. Возврат response
         return ChangePunchOutForWorkerResponse.builder()
                 .workerId(foundedWorker.getId())
                 .dateWhenWorkerDidntMakePunchOut(changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut())
@@ -168,7 +142,6 @@ public class AdminService implements AdminAndForemanFunctionality {
                 .newPunchOutTime(changePunchOutRequest.getNewPunchOutTime())
                 .build();
     }
-
 
 
 
