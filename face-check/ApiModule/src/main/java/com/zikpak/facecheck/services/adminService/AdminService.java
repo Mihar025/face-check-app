@@ -95,6 +95,8 @@ public class AdminService implements AdminAndForemanFunctionality {
                 .newPunchInTime(changePunchInRequest.getNewPunchInTime())
                 .build();
     }
+
+
     @Transactional
     public ChangePunchOutForWorkerResponse ChangingPunchOutForWorkerIfDoesntExist(
             Integer workerId,
@@ -103,38 +105,39 @@ public class AdminService implements AdminAndForemanFunctionality {
 
         log.info("Starting ChangingPunchOutForWorkerIfDoesntExist for worker: {}", workerId);
 
-        // 1. Проверка прав доступа
         User admin = ((User) authentication.getPrincipal());
         doesHaveAdminRole(admin);
 
-        // 2. Валидация входных данных
         if (changePunchOutRequest.getNewPunchOutDate() == null ||
                 changePunchOutRequest.getNewPunchOutTime() == null ||
                 changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut() == null) {
             throw new IllegalArgumentException("Please fill form with correct date, time and date when punch was missed!");
         }
 
-        // 3. Проверка существования worker
         User foundedWorker = userRepository.findById(workerId)
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
 
         log.info("Found worker: {}", foundedWorker.getId());
 
-        log.info("Creating new attendance without checking...");
+        // ✅ НАЙДИ ПОСЛЕДНИЙ PUNCH-IN БЕЗ PUNCH-OUT
+        Optional<WorkerAttendance> lastOpenAttendance = workerAttendanceRepository
+                .findFirstByWorkerAndCheckOutTimeIsNullOrderByCheckInTimeDesc(foundedWorker);
 
-        // 5. Создание нового attendance
-        WorkerAttendance newAttendance = WorkerAttendance.builder()
-                .worker(foundedWorker)
-                .checkOutTime(LocalDateTime.of(
-                        changePunchOutRequest.getNewPunchOutDate(),
-                        changePunchOutRequest.getNewPunchOutTime()))
-                .build();
+        if (lastOpenAttendance.isEmpty()) {
+            throw new IllegalStateException("No open punch-in found for this worker. Cannot add punch-out without punch-in!");
+        }
 
-        log.info("About to save attendance...");
-        workerAttendanceRepository.save(newAttendance);
-        log.info("Successfully created new punch out for worker: {}", workerId);
+        WorkerAttendance attendance = lastOpenAttendance.get();
 
-        // 6. Возврат response
+        // ✅ ОБНОВИ СУЩЕСТВУЮЩУЮ ЗАПИСЬ
+        attendance.setCheckOutTime(LocalDateTime.of(
+                changePunchOutRequest.getNewPunchOutDate(),
+                changePunchOutRequest.getNewPunchOutTime()));
+
+        log.info("About to save updated attendance...");
+        workerAttendanceRepository.save(attendance);
+        log.info("Successfully added punch out for worker: {}", workerId);
+
         return ChangePunchOutForWorkerResponse.builder()
                 .workerId(foundedWorker.getId())
                 .dateWhenWorkerDidntMakePunchOut(changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut())
@@ -142,16 +145,6 @@ public class AdminService implements AdminAndForemanFunctionality {
                 .newPunchOutTime(changePunchOutRequest.getNewPunchOutTime())
                 .build();
     }
-
-
-
-
-
-
-
-
-
-
 
 
 
