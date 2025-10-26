@@ -20,6 +20,7 @@ import '../api_client/serializers.dart';
 import '../models/daily_earnings.dart';
 import '../models/finance_info_response.dart';
 import '../models/last_punch_info.dart';
+import '../models/server_notification.dart';
 
 class ApiService {
   static ApiService? _instance;
@@ -128,6 +129,43 @@ class ApiService {
     await _storage.delete(key: 'refresh_token');
     await JwtService.clearRole();
     _dio.options.headers.remove('Authorization');
+  }
+  Future<NotificationsPageResponse> getTodaysNotifications({
+    required int companyId,
+    int page = 0,
+    int size = 10,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/notifications/company/$companyId/today',
+        queryParameters: {
+          'page': page,
+          'size': size,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return NotificationsPageResponse.fromJson(response.data);
+      }
+
+      return NotificationsPageResponse.empty();
+    } catch (e) {
+      print('Error fetching notifications: $e');
+      return NotificationsPageResponse.empty();
+    }
+  }
+
+  Future<int?> getCompanyId() async {
+    try {
+      final response = await _dio.get('/user/company/id');
+      if (response.data != null && response.data['companyId'] != null) {
+        return response.data['companyId'] as int;
+      }
+      return null;
+    } catch (e) {
+      print('Error getting company ID: $e');
+      return null;
+    }
   }
 
   Future<void> setAuthToken(String token, String? refreshToken) async {
