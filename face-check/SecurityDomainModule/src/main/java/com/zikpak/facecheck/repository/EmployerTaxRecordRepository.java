@@ -16,9 +16,6 @@ public interface EmployerTaxRecordRepository extends JpaRepository<EmployerTaxRe
 
     @Query("""
     SELECT etr FROM EmployerTaxRecord etr
-    LEFT JOIN FETCH etr.company c
-    LEFT JOIN FETCH etr.employee e
-    LEFT JOIN FETCH etr.payStub ps
     WHERE etr.company.id = :companyId
     AND etr.periodStart BETWEEN :start AND :end
     """)
