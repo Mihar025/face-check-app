@@ -175,9 +175,12 @@ public class WorkSiteServiceImpl implements WorkSiteService {
         Timer.Sample timer = metric.startTimer();
         try {
 
-            checkIsUserHasAdminRoleAndBusinessOwner(authentication);
-            var company = companyRepository.findById(request.getCompanyId())
-                    .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+            var admin  = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+            var company = admin.getCompany();
+
+            if(company == null) {
+                throw new AccessDeniedException("Access dined");
+            }
             var newWorkSite = WorkSite.builder()
                     .siteName(request.getWorkSiteName())
                     .address(request.getAddress())
@@ -188,18 +191,22 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                     .isActive(true)
                     .isWorkerDidPunchIn(false)
                     .workDayEnd(request.getWorkDayEnd())
+                    .company(company)
                     .build();
-            company.addWorkSite(newWorkSite);
             var savedWorkSite = workSiteRepository.save(newWorkSite);
 
+         //   company.addWorkSite(newWorkSite);
+
+            companyRepository.save(company);
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message("Worksite: " + newWorkSite.getSiteName()+ " " + newWorkSite.getAddress() +  " was successfully registered")
                     .build();
+
             notificationService.createNotification(company.getId(), notification);
 
-
             metric.recordWorkSiteById(newWorkSite.getSiteName(), newWorkSite.getId(), true);
+
             metric.recordOperationTime(timer, "create_new_work_success");
 
             return workSiteMapper.toWorkSiteResponse(savedWorkSite);
