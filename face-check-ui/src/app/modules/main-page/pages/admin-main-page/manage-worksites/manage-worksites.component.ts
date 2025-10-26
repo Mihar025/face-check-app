@@ -203,16 +203,16 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
   private initializeWorksiteMap(): void {
     if (!this.selectedWorksiteForMap) return;
 
-    const lat = parseFloat(this.selectedWorksiteForMap.latitude);
-    const lng = parseFloat(this.selectedWorksiteForMap.longitude);
+    // Надёжнее привести к числу:
+    const lat = Number(this.selectedWorksiteForMap.latitude);
+    const lng = Number(this.selectedWorksiteForMap.longitude);
     const radius = this.selectedWorksiteForMap.allowedRadius || 100;
 
-    if (isNaN(lat) || isNaN(lng)) {
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
       console.error('Invalid coordinates');
       return;
     }
 
-    // Проверяем наличие Leaflet
     if (typeof L === 'undefined') {
       console.error('Leaflet is not loaded!');
       this.loadLeafletFromCDN();
@@ -225,16 +225,12 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Очищаем контейнер
     mapElement.innerHTML = '';
+    mapElement.style.width = '100%';
+    mapElement.style.height = '100%';
+    mapElement.style.minHeight = '400px';
 
     try {
-      // Устанавливаем размеры
-      mapElement.style.width = '100%';
-      mapElement.style.height = '100%';
-      mapElement.style.minHeight = '400px';
-
-      // Создаем карту
       this.worksiteMap = L.map(mapElement, {
         center: [lat, lng],
         zoom: 16,
@@ -242,7 +238,6 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
         attributionControl: true
       });
 
-      // Добавляем тайлы (тот же стиль что и в location tracking)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap contributors © CARTO',
         subdomains: 'abcd',
@@ -250,7 +245,6 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
         minZoom: 2
       }).addTo(this.worksiteMap);
 
-      // Добавляем круг радиуса (зона punch in/out)
       this.worksiteCircle = L.circle([lat, lng], {
         color: '#5B47E0',
         fillColor: '#5B47E0',
@@ -259,35 +253,38 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
         weight: 2
       }).addTo(this.worksiteMap);
 
-      // Создаем кастомную иконку маркера
       const customIcon = L.divIcon({
         className: 'custom-div-icon',
-        html: '<div style="background: #EA4335; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><div style="width: 10px; height: 10px; background: white; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg);"></div></div>',
+        html:
+          '<div style="background:#EA4335;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' +
+          '<div style="width:10px;height:10px;background:white;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg);"></div>' +
+          '</div>',
         iconSize: [30, 30],
         iconAnchor: [15, 30]
       });
 
-      // Добавляем маркер
-      this.worksiteMarker = L.marker([lat, lng], { icon: customIcon })
-        .addTo(this.worksiteMap);
+      this.worksiteMarker = L.marker([lat, lng], { icon: customIcon }).addTo(this.worksiteMap);
 
-      // Popup с информацией
+      // <<< ВАЖНО: используем значения напрямую из TS >>>
+      const name = this.selectedWorksiteForMap.workSiteName || 'Worksite';
+      const address = this.selectedWorksiteForMap.address || '';
+
       const popupContent = `
-      <div style="padding: 10px; min-width: 200px;">
-       <h3>
-  <i class="fas fa-map-marker-alt"></i>
-  {{ selectedWorksiteForMap?.workSiteName }}
-</h3>
-        <p style="margin: 5px 0; color: #6C7293; font-size: 13px;">
-          <i class="fas fa-map-marked-alt" style="color: #5B47E0; width: 20px;"></i>
-          ${this.selectedWorksiteForMap.address}
+      <div style="padding:10px;min-width:200px;">
+        <h3 style="margin:0 0 10px 0;color:#1E1E2E;font-size:16px;">
+          <i class="fas fa-building" style="color:#5B47E0;"></i>
+          ${name}
+        </h3>
+        <p style="margin:5px 0;color:#6C7293;font-size:13px;">
+          <i class="fas fa-map-marked-alt" style="color:#5B47E0;width:20px;"></i>
+          ${address}
         </p>
-        <p style="margin: 5px 0; color: #6C7293; font-size: 13px;">
-          <i class="fas fa-circle-notch" style="color: #5B47E0; width: 20px;"></i>
+        <p style="margin:5px 0;color:#6C7293;font-size:13px;">
+          <i class="fas fa-circle-notch" style="color:#5B47E0;width:20px;"></i>
           Radius: <strong>${radius}m</strong>
         </p>
-        <p style="margin: 5px 0; color: #6C7293; font-size: 11px;">
-          <i class="fas fa-crosshairs" style="color: #5B47E0; width: 20px;"></i>
+        <p style="margin:5px 0;color:#6C7293;font-size:11px;">
+          <i class="fas fa-crosshairs" style="color:#5B47E0;width:20px;"></i>
           ${lat.toFixed(6)}, ${lng.toFixed(6)}
         </p>
       </div>
@@ -295,20 +292,15 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
 
       this.worksiteMarker.bindPopup(popupContent).openPopup();
 
-      // Обновляем размер карты
-      setTimeout(() => {
-        if (this.worksiteMap) {
-          this.worksiteMap.invalidateSize(true);
-        }
-      }, 100);
+      setTimeout(() => this.worksiteMap?.invalidateSize(true), 100);
 
       this.mapInitialized = true;
       console.log('Worksite map initialized successfully');
-
     } catch (error) {
       console.error('Error initializing worksite map:', error);
     }
   }
+
 
 // Load Leaflet from CDN if not available
   private loadLeafletFromCDN(): void {
