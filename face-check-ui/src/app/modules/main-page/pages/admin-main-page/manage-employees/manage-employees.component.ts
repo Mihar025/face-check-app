@@ -827,6 +827,8 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
+
+  
   async loadAllEmployeesRelatedToCertainCompany(): Promise<void> {
     this.loading = true;
     this.errorMessage = '';
