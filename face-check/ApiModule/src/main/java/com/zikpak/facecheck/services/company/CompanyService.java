@@ -895,29 +895,25 @@ public class CompanyService implements CompanyServiceImpl {
             @CacheEvict(value = "users", allEntries = true)
     })
     public void fireEmployee(Integer workerId, Authentication authentication) throws AccessDeniedException {
-            User user = ((User) authentication.getPrincipal());
-            if(!user.isAdmin() && !user.isBusinessOwner()){
-                throw new AccessDeniedException("You do not have permission to update this company");
-            }
+        User user = ((User) authentication.getPrincipal());
 
-            var foundedEmployee = userRepository.findById(workerId)
-                    .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+        if(!user.isAdmin() && !user.isBusinessOwner()){
+            throw new AccessDeniedException("You do not have permission to update this company");
+        }
 
-                     if (!foundedEmployee.getCompany().getId().equals(user.getCompany().getId())) {
-                            throw new AccessDeniedException("Something went wrong");
-                        }
+        var foundedEmployee = userRepository.findById(workerId)
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
 
-                     var company = foundedEmployee.getCompany();
-                     company.setWorkersQuantity(company.getWorkersQuantity() - 1);
-                 //    try {
-               //         w2OfficialPDFService.generateFilledPdf(foundedEmployee.getId(), company.getId(), LocalDate.now().getYear());
-              //       } catch (IOException e) {
-               //          e.printStackTrace();
-              //       }
-                     companyRepository.save(company);
-                     userRepository.deleteById(foundedEmployee.getId());
+        if (!foundedEmployee.getCompany().getId().equals(user.getCompany().getId())) {
+            throw new AccessDeniedException("Something went wrong");
+        }
+
+        var company = foundedEmployee.getCompany();
+        company.setWorkersQuantity(company.getWorkersQuantity() - 1);
+        companyRepository.save(company);
+
+        userRepository.deleteById(foundedEmployee.getId());
     }
-
 
 
 
