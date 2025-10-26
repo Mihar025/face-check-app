@@ -632,7 +632,7 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'UTC'
+   //   timeZone: 'UTC'
     });
   }
 
@@ -642,7 +642,7 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      timeZone: 'UTC'
+     // timeZone: 'UTC'
     });
   }
 
@@ -665,17 +665,6 @@ export class LocTrackComponent implements OnInit, OnDestroy, AfterViewInit {
       batteryLevel: 0,
       distanceFromPrevious: 0
     };
-  }
-
-  public formatLastTime(timestamp: string): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString('en-US', { timeZone: 'UTC' });
   }
 
 }
