@@ -757,19 +757,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
-  loadAdminCompany(): void {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        if (response && response.companyName) {
-          this.companyName = response.companyName;
-          this.companyName2 = response.companyName;
-        }
-      },
-      error => {
-        console.error('Cannot load company name', error);
-      }
-    );
-  }
 
   async loadAllEmployeesRelatedToCertainCompany(): Promise<void> {
     this.loading = true;
@@ -795,11 +782,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
         this.loading = false;
       }
     );
-  }
-
-  changePage(newPage: number): void {
-    this.page = newPage;
-    this.loadAllEmployeesRelatedToCertainCompany();
   }
 
   nextPage(): void {
@@ -843,14 +825,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     this.showAddEmployeeModal = false;
   }
 
-  openAddAdminModal() {
-    this.resetForm();
-    this.showAddEmployeeModal = true;
-  }
-
-  closeAddAdminModal() {
-    this.showAddEmployeeModal = false;
-  }
 
   createNewEmployee() {
     this.loading = true;
@@ -936,9 +910,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
-  createNewAdmin() {
-    this.createNewEmployee();
-  }
 
   openDeleteModal(employee: RelatedUserInCompanyResponse) {
     if (!employee.workerId) {
