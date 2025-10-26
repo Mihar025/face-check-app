@@ -125,7 +125,19 @@ public class CompanyController {
             @PathVariable Integer employeeId,
             @Valid @RequestBody EmployeeRaiseHourRateRequest request,
             Authentication authentication) {
-        return ResponseEntity.ok(companyService.changeEmployeeBaseHourRate(companyId, employeeId, authentication, request));
+
+        log.info("Rate update request - Company: {}, Employee: {}, New Rate: {}",
+                companyId, employeeId, request.getBaseHourlyRate());
+
+        try {
+            EmployeeSalaryResponse response = companyService.changeEmployeeBaseHourRate(
+                    companyId, employeeId, authentication, request);
+            log.info("Rate update successful for employee {}", employeeId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Rate update failed for employee {} - Error: {}", employeeId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     //working
