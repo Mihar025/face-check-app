@@ -274,10 +274,10 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
       // Popup с информацией
       const popupContent = `
       <div style="padding: 10px; min-width: 200px;">
-        <h3 style="margin: 0 0 10px 0; color: #1E1E2E; font-size: 16px;">
-          <i class="fas fa-building" style="color: #5B47E0;"></i>
-          ${this.selectedWorksiteForMap.worksiteName}
-        </h3>
+       <h3>
+  <i class="fas fa-map-marker-alt"></i>
+  {{ selectedWorksiteForMap?.workSiteName }}
+</h3>
         <p style="margin: 5px 0; color: #6C7293; font-size: 13px;">
           <i class="fas fa-map-marked-alt" style="color: #5B47E0; width: 20px;"></i>
           ${this.selectedWorksiteForMap.address}
@@ -334,32 +334,6 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
   changeActiveWorkersPage(newPage: number): void {
     this.activeWorkersPage = newPage;
     this.checkActiveWorkersInSpecialWorksite();
-  }
-
-  loadUserFullName(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response && response.fullName) {
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Error loading user full name', error);
-      }
-    );
-  }
-
-  loadCompanyName() {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        if (response && response.companyName) {
-          this.companyName = response.companyName;
-        }
-      },
-      error => {
-        console.error('Error loading company name', error);
-      }
-    );
   }
 
   loadAllWorksites(): void {
