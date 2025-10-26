@@ -35,19 +35,21 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
 
 
 
-    @Query("SELECT COUNT(a) > 0 FROM WorkerAttendance a " +
-            "WHERE a.worker.id = :workerId " +
-            "AND a.checkInTime IS NOT NULL " +
-            "AND CAST(a.checkInTime AS date) = :date")
+    @Query(value = "SELECT EXISTS(SELECT 1 FROM worker_attendance " +
+            "WHERE worker_id = :workerId " +
+            "AND check_in_time IS NOT NULL " +
+            "AND DATE(check_in_time) = :date)",
+            nativeQuery = true)
     boolean existsByWorkerIdAndCheckInDate(
             @Param("workerId") Integer workerId,
             @Param("date") LocalDate date
     );
 
-    @Query("SELECT COUNT(a) > 0 FROM WorkerAttendance a " +
-            "WHERE a.worker.id = :workerId " +
-            "AND a.checkOutTime IS NOT NULL " +
-            "AND CAST(a.checkOutTime AS date) = :date")
+    @Query(value = "SELECT EXISTS(SELECT 1 FROM worker_attendance " +
+            "WHERE worker_id = :workerId " +
+            "AND check_out_time IS NOT NULL " +
+            "AND DATE(check_out_time) = :date)",
+            nativeQuery = true)
     boolean existsByWorkerIdAndCheckOutDate(
             @Param("workerId") Integer workerId,
             @Param("date") LocalDate date
