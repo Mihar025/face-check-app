@@ -706,33 +706,39 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const formattedDateWhenMissed = `${isoMissedDate}T00:00:00`;
-
+    // ✅ ИСПРАВЛЕНО: Убрал workerId из body!
     const requestData = {
-      dateWhenWorkerDidntMakePunchIn: formattedDateWhenMissed,
+      dateWhenWorkerDidntMakePunchIn: `${isoMissedDate}T00:00:00`,
       newPunchInDate: isoNewDate,
-      newPunchInTime: `${(this.newPunchInTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchInTime.minute || 0).toString().padStart(2, '0')}:00`,
-      workerId: this.selectedEmployeeId
+      newPunchInTime: `${(this.newPunchInTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchInTime.minute || 0).toString().padStart(2, '0')}:00`
+      // ❌ УБРАЛИ: workerId (он передается в path!)
     };
 
     const params: ChangePunchInForWorker$Params = {
-      workerId: this.selectedEmployeeId,
+      workerId: this.selectedEmployeeId,  // ✅ Только тут!
       body: requestData as any
     };
 
     this.adminControllerService.changePunchInForWorker(params).subscribe(
-      () => {
+      (response) => {
         this.loading = false;
-        this.successMessage = "Punch time was changed successfully!";
+        this.successMessage = "Punch In time was changed successfully!";
+        console.log('✅ Success:', response);
       },
       error => {
         this.loading = false;
-        this.errorMessage = "Failed to change punch time: " + (error.message || 'Unknown error');
+        console.error('❌ Error:', error);
+
+        // ✅ Показываем понятную ошибку
+        if (error.error && error.error.message) {
+          this.errorMessage = error.error.message;
+        } else {
+          this.errorMessage = "Failed to change punch time: " + (error.message || 'Unknown error');
+        }
       }
     );
   }
 
-// ЗАМЕНИ метод changeNewPunchOut
   changeNewPunchOut() {
     this.loading = true;
     this.errorMessage = '';
@@ -744,7 +750,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ КОНВЕРТИРУЕМ американский формат в ISO
     const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchOut);
     const isoNewDate = this.convertToISODate(this.newPunchOutDate);
 
@@ -754,32 +759,38 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const formattedDateWhenMissed = `${isoMissedDate}T00:00:00`;
-
+    // ✅ ИСПРАВЛЕНО: Убрал workerId из body!
     const requestData = {
-      dateWhenWorkerDidntMakePunchOut: formattedDateWhenMissed,
+      dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`,
       newPunchOutDate: isoNewDate,
-      newPunchOutTime: `${(this.newPunchOutTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`,
-      workerId: this.selectedEmployeeId
+      newPunchOutTime: `${(this.newPunchOutTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`
+      // ❌ УБРАЛИ: workerId (он передается в path!)
     };
 
     const params: ChangePunchOutForWorker$Params = {
-      workerId: this.selectedEmployeeId,
+      workerId: this.selectedEmployeeId,  // ✅ Только тут!
       body: requestData as any
     };
 
     this.adminControllerService.changePunchOutForWorker(params).subscribe(
-      () => {
+      (response) => {
         this.loading = false;
-        this.successMessage = "Punch out time was changed successfully!";
+        this.successMessage = "Punch Out time was changed successfully!";
+        console.log('✅ Success:', response);
       },
       error => {
         this.loading = false;
-        this.errorMessage = "Failed to change punch out time: " + (error.message || 'Unknown error');
+        console.error('❌ Error:', error);
+
+        // ✅ Показываем понятную ошибку
+        if (error.error && error.error.message) {
+          this.errorMessage = error.error.message;
+        } else {
+          this.errorMessage = "Failed to change punch out time: " + (error.message || 'Unknown error');
+        }
       }
     );
   }
-
 
   async loadAllEmployeesRelatedToCertainCompany(): Promise<void> {
     this.loading = true;
