@@ -15,8 +15,8 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 public class ChangePunchInRequest {
-    @NotNull(message = "This field is required!")
-    private Integer workerId;
+   // @NotNull(message = "This field is required!")
+  //  private Integer workerId;
 
     @NotNull(message = "This field is required!")
     private LocalDateTime dateWhenWorkerDidntMakePunchIn;
