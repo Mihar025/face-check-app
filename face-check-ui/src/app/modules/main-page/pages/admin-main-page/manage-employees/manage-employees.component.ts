@@ -691,6 +691,12 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
+    console.log('🔵 Starting punch in change');
+    console.log('dateWhenWorkerDidntMakePunchIn:', this.dateWhenWorkerDidntMakePunchIn);
+    console.log('newPunchInDate:', this.newPunchInDate);
+    console.log('newPunchInTime:', this.newPunchInTime);
+    console.log('selectedEmployeeId:', this.selectedEmployeeId);
+
     if (!this.dateWhenWorkerDidntMakePunchIn || !this.newPunchInDate) {
       this.errorMessage = "Please fill in all required date fields";
       this.loading = false;
@@ -700,24 +706,30 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchIn);
     const isoNewDate = this.convertToISODate(this.newPunchInDate);
 
+    console.log('📅 Converted dates:');
+    console.log('isoMissedDate:', isoMissedDate);
+    console.log('isoNewDate:', isoNewDate);
+
     if (!isoMissedDate || !isoNewDate) {
       this.errorMessage = 'Please enter valid dates in MM/DD/YYYY format';
       this.loading = false;
       return;
     }
 
-    // ✅ ИСПРАВЛЕНО: Убрал workerId из body!
     const requestData = {
       dateWhenWorkerDidntMakePunchIn: `${isoMissedDate}T00:00:00`,
       newPunchInDate: isoNewDate,
       newPunchInTime: `${(this.newPunchInTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchInTime.minute || 0).toString().padStart(2, '0')}:00`
-      // ❌ УБРАЛИ: workerId (он передается в path!)
     };
 
+    console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
+
     const params: ChangePunchInForWorker$Params = {
-      workerId: this.selectedEmployeeId,  // ✅ Только тут!
+      workerId: this.selectedEmployeeId,
       body: requestData as any
     };
+
+    console.log('📤 Full params:', JSON.stringify(params, null, 2));
 
     this.adminControllerService.changePunchInForWorker(params).subscribe(
       (response) => {
@@ -727,9 +739,9 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       },
       error => {
         this.loading = false;
-        console.error('❌ Error:', error);
+        console.error('❌ Full Error:', error);
+        console.error('❌ Error body:', error.error);
 
-        // ✅ Показываем понятную ошибку
         if (error.error && error.error.message) {
           this.errorMessage = error.error.message;
         } else {
