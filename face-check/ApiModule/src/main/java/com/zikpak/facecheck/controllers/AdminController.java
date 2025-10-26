@@ -41,7 +41,7 @@ public class AdminController {
     }
 
 
-    
+
 
     @PostMapping("/worker/{workerId}/punch-out")
     public ResponseEntity<ChangePunchOutForWorkerResponse> changePunchOutForWorker(
