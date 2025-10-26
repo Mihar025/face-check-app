@@ -31,7 +31,23 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
 """)
     Optional<WorkerAttendance> findFirstByWorkerAndCheckOutTimeIsNullOrderByCheckInTimeDesc(User worker);
 
+    @Query("SELECT COUNT(a) > 0 FROM WorkerAttendance a " +
+            "WHERE a.worker.id = :workerId " +
+            "AND a.checkInTime IS NOT NULL " +
+            "AND FUNCTION('DATE', a.checkInTime) = :date")
+    boolean existsByWorkerIdAndCheckInDate(
+            @Param("workerId") Integer workerId,
+            @Param("date") LocalDate date
+    );
 
+    @Query("SELECT COUNT(a) > 0 FROM WorkerAttendance a " +
+            "WHERE a.worker.id = :workerId " +
+            "AND a.checkOutTime IS NOT NULL " +
+            "AND FUNCTION('DATE', a.checkOutTime) = :date")
+    boolean existsByWorkerIdAndCheckOutDate(
+            @Param("workerId") Integer workerId,
+            @Param("date") LocalDate date
+    );
 
     @Query("""
     SELECT wa FROM WorkerAttendance wa
