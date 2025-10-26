@@ -317,6 +317,80 @@ public class WorkAttendanceService {
 
 
 
+
+    // ✅ Новый метод для admin - БЕЗ authentication, с userId
+    @Transactional
+    public void punchInForWorker(Integer userId, LocalDateTime checkInTime, Integer workSiteId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found"));
+
+        checkForExistingPunchIn(user);
+
+        WorkSite workSite = null;
+        if (workSiteId != null) {
+            workSite = validateAndGetWorkSite(workSiteId);
+            if (!user.getWorkSites().contains(workSite)) {
+                user.getWorkSites().add(workSite);
+                workSite.getUsers().add(user);
+            }
+        }
+
+        WorkerAttendance attendance = WorkerAttendance.builder()
+                .worker(user)
+                .checkInTime(checkInTime)
+                .checkInPhotoUrl("Manual entry by admin")
+                .checkInLocation(workSite != null ? workSite.getAddress() : "Manual entry")
+                .build();
+
+        workerAttendanceRepository.save(attendance);
+
+        if (workSite != null) {
+            workSite.setIsWorkerDidPunchIn(Boolean.TRUE);
+            user.setCurrentWorkSite(workSite);
+        }
+
+        log.info("Admin created punch in for worker: {}", userId);
+    }
+
+    // ✅ Новый метод для admin - БЕЗ authentication, с userId
+    @Transactional
+    public void punchOutForWorker(Integer userId, LocalDateTime checkOutTime) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found"));
+
+        LocalDate targetDate = checkOutTime.toLocalDate();
+        LocalDateTime startOfDay = targetDate.atStartOfDay();
+        LocalDateTime endOfDay = targetDate.atTime(LocalTime.MAX);
+
+        WorkerAttendance existingAttendance = workerAttendanceRepository
+                .findTodayActivePunchIn(user, startOfDay, endOfDay)
+                .orElseThrow(() -> new IllegalStateException("No active punch in found for this date!"));
+
+        existingAttendance.setCheckOutTime(checkOutTime);
+        existingAttendance.setCheckOutPhotoUrl("Manual entry by admin");
+        existingAttendance.setCheckOutLocation("Manual entry");
+
+        calculateWorkedHours(existingAttendance);
+        WorkerAttendance savedAttendance = workerAttendanceRepository.save(existingAttendance);
+
+        double workedHours = savedAttendance.getHoursWorked() != null
+                ? savedAttendance.getHoursWorked() : 0.00;
+        if (workedHours > 0) {
+            sickLeaveService.accrueSickLeave(user.getId(), workedHours);
+        }
+
+        updatePayrollOnPunchOut(savedAttendance);
+
+        if (user.getCurrentWorkSite() != null) {
+            user.getCurrentWorkSite().setIsWorkerDidPunchIn(Boolean.FALSE);
+        }
+
+        log.info("Admin created punch out for worker: {}", userId);
+    }
+
+
+
+
         public List<DailyEarningResponse> getCurrentWeekEarnings(Authentication authentication) {
                 Timer.Sample timer = metricsService.startTimer();
 

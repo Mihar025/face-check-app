@@ -12,7 +12,10 @@ import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.requestsResponses.admin.*;
 import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
+import com.zikpak.facecheck.requestsResponses.attendance.PunchInRequest;
+import com.zikpak.facecheck.requestsResponses.attendance.PunchOutRequest;
 import com.zikpak.facecheck.services.ForemanAndAdminFunctional.ForemanAndAdminService;
+import com.zikpak.facecheck.services.workAttendanceService.WorkAttendanceService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,7 @@ public class AdminService implements AdminAndForemanFunctionality {
     private final ForemanAndAdminService foremanAndAdminService;
     private final CompanyRepository companyRepository;
     private final WorkerSiteRepository workerSiteRepository;
+    private final WorkAttendanceService workAttendanceService;
 
 
     @Override
@@ -48,6 +52,7 @@ public class AdminService implements AdminAndForemanFunctionality {
                                                                          Authentication authentication){
         return foremanAndAdminService.findAllWorkersInWorkSite(page, size, workSiteId, authentication);
     }
+
     @Transactional
     public ChangePunchInForWorkerResponse ChangingPunchInForWorkerIfDoesntExist(
             Integer workerId,
@@ -56,46 +61,31 @@ public class AdminService implements AdminAndForemanFunctionality {
 
         log.info("Starting ChangingPunchInForWorkerIfDoesntExist for worker: {}", workerId);
 
-        // 1. Проверка прав доступа
         User admin = ((User) authentication.getPrincipal());
         doesHaveAdminRole(admin);
 
-        // 2. Валидация входных данных
         if (changePunchInRequest.getNewPunchInDate() == null ||
                 changePunchInRequest.getNewPunchInTime() == null ||
                 changePunchInRequest.getDateWhenWorkerDidntMakePunchIn() == null) {
             throw new IllegalArgumentException("Please enter correct date and time!");
         }
 
-        // 3. Проверка существования worker
-        User foundedWorker = userRepository.findById(workerId)
-                .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
+        LocalDateTime punchInDateTime = LocalDateTime.of(
+                changePunchInRequest.getNewPunchInDate(),
+                changePunchInRequest.getNewPunchInTime());
 
-        log.info("Found worker: {}", foundedWorker.getId());
+        // ✅ Вызываем новый метод для admin
+        workAttendanceService.punchInForWorker(workerId, punchInDateTime, null);
 
-        log.info("Creating new attendance without checking...");
+        log.info("Successfully created punch in with full logic for worker: {}", workerId);
 
-        // 5. Создание нового attendance
-        WorkerAttendance newAttendance = WorkerAttendance.builder()
-                .worker(foundedWorker)
-                .checkInTime(LocalDateTime.of(
-                        changePunchInRequest.getNewPunchInDate(),
-                        changePunchInRequest.getNewPunchInTime()))
-                .build();
-
-        log.info("About to save attendance...");
-        workerAttendanceRepository.save(newAttendance);
-        log.info("Successfully created new punch in for worker: {}", workerId);
-
-        // 6. Возврат response
         return ChangePunchInForWorkerResponse.builder()
-                .workerId(foundedWorker.getId())
+                .workerId(workerId)
                 .dateWhenWorkerDidntMakePunchIn(changePunchInRequest.getDateWhenWorkerDidntMakePunchIn())
                 .newPunchInDate(changePunchInRequest.getNewPunchInDate())
                 .newPunchInTime(changePunchInRequest.getNewPunchInTime())
                 .build();
     }
-
 
     @Transactional
     public ChangePunchOutForWorkerResponse ChangingPunchOutForWorkerIfDoesntExist(
@@ -114,41 +104,22 @@ public class AdminService implements AdminAndForemanFunctionality {
             throw new IllegalArgumentException("Please fill form with correct date, time and date when punch was missed!");
         }
 
-        User foundedWorker = userRepository.findById(workerId)
-                .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + workerId));
-
-        log.info("Found worker: {}", foundedWorker.getId());
-
-        // ✅ НАЙДИ ПОСЛЕДНИЙ PUNCH-IN БЕЗ PUNCH-OUT
-        Optional<WorkerAttendance> lastOpenAttendance = workerAttendanceRepository
-                .findFirstByWorkerAndCheckOutTimeIsNullOrderByCheckInTimeDesc(foundedWorker);
-
-        if (lastOpenAttendance.isEmpty()) {
-            throw new IllegalStateException("No open punch-in found for this worker. Cannot add punch-out without punch-in!");
-        }
-
-        WorkerAttendance attendance = lastOpenAttendance.get();
-
-        // ✅ ОБНОВИ СУЩЕСТВУЮЩУЮ ЗАПИСЬ
-        attendance.setCheckOutTime(LocalDateTime.of(
+        LocalDateTime punchOutDateTime = LocalDateTime.of(
                 changePunchOutRequest.getNewPunchOutDate(),
-                changePunchOutRequest.getNewPunchOutTime()));
+                changePunchOutRequest.getNewPunchOutTime());
 
-        log.info("About to save updated attendance...");
-        workerAttendanceRepository.save(attendance);
-        log.info("Successfully added punch out for worker: {}", workerId);
+        // ✅ Вызываем новый метод для admin
+        workAttendanceService.punchOutForWorker(workerId, punchOutDateTime);
+
+        log.info("Successfully added punch out with full logic for worker: {}", workerId);
 
         return ChangePunchOutForWorkerResponse.builder()
-                .workerId(foundedWorker.getId())
+                .workerId(workerId)
                 .dateWhenWorkerDidntMakePunchOut(changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut())
                 .newPunchOutDate(changePunchOutRequest.getNewPunchOutDate())
                 .newPunchOutTime(changePunchOutRequest.getNewPunchOutTime())
                 .build();
     }
-
-
-
-
 
     @Transactional
     public Integer findAllEmployeesInCompany(Authentication authentication) {
