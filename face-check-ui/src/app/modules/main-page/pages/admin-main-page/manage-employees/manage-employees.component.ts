@@ -685,7 +685,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
-
   changeNewPunchIn() {
     this.loading = true;
     this.errorMessage = '';
@@ -716,15 +715,11 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // ✅ ИЗМЕНИЛ НА СТРОКУ!
     const requestData = {
       dateWhenWorkerDidntMakePunchIn: `${isoMissedDate}T00:00:00`,
       newPunchInDate: isoNewDate,
-      newPunchInTime: {
-        hour: this.newPunchInTime.hour || 0,
-        minute: this.newPunchInTime.minute || 0,
-        second: 0,
-        nano: 0
-      }
+      newPunchInTime: `${(this.newPunchInTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchInTime.minute || 0).toString().padStart(2, '0')}:00`
     };
 
     console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
@@ -786,16 +781,11 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ ТОЧНО ТАК ЖЕ КАК В PUNCH IN!
+    // ✅ ИЗМЕНИЛ НА СТРОКУ!
     const requestData = {
       dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`,
       newPunchOutDate: isoNewDate,
-      newPunchOutTime: {
-        hour: this.newPunchOutTime.hour || 0,
-        minute: this.newPunchOutTime.minute || 0,
-        second: 0,
-        nano: 0
-      }
+      newPunchOutTime: `${(this.newPunchOutTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`
     };
 
     console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
@@ -827,8 +817,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     );
   }
 
-
-  
   async loadAllEmployeesRelatedToCertainCompany(): Promise<void> {
     this.loading = true;
     this.errorMessage = '';
