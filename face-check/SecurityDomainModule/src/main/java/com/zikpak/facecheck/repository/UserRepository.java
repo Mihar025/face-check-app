@@ -138,7 +138,7 @@ AND u.id IN (
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.company WHERE u.company.id = :companyId ORDER BY u.id DESC")
     List<User> findAllEmployeesInCompanyWithDetails(@Param("companyId") Integer companyId);
-    
+
     @Query("""
     
     SELECT DISTINCT u FROM User u
