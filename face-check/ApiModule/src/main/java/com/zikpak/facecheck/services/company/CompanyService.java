@@ -378,6 +378,7 @@ public class CompanyService implements CompanyServiceImpl {
 
 
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)  // Очищаем весь кеш users
     public EmployeeSalaryResponse changeEmployeeBaseHourRate(Integer companyId,
                                                              Integer employeeId,
                                                              Authentication authentication,
