@@ -73,6 +73,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/aws-reports/view", "/aws-reports/view").permitAll()
                         .requestMatchers("/api/v1/sales/**", "/sales/**").permitAll()
                         .requestMatchers("/api/v1/aws-reports/**", "/aws-reports/**").authenticated()
+                        .requestMatchers("/api/v1/company/**", "/company/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/company/employees/*/fire").authenticated()
 
                         // защищённые области
                         .requestMatchers("/api/v1/company/**", "/company/**").authenticated()

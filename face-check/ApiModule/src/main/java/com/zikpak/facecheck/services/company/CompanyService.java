@@ -909,11 +909,11 @@ public class CompanyService implements CompanyServiceImpl {
 
                      var company = foundedEmployee.getCompany();
                      company.setWorkersQuantity(company.getWorkersQuantity() - 1);
-                     try {
-                         w2OfficialPDFService.generateFilledPdf(foundedEmployee.getId(), company.getId(), LocalDate.now().getYear());
-                     } catch (IOException e) {
-                         e.printStackTrace();
-                     }
+                 //    try {
+               //         w2OfficialPDFService.generateFilledPdf(foundedEmployee.getId(), company.getId(), LocalDate.now().getYear());
+              //       } catch (IOException e) {
+               //          e.printStackTrace();
+              //       }
                      companyRepository.save(company);
                      userRepository.deleteById(foundedEmployee.getId());
     }
