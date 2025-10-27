@@ -82,23 +82,27 @@ public class AuthenticationService {
 
             userRepository.save(user);
 
-          //  fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
-          //  fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
+         //   fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
+        //    fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message(user.getFirstName() + " " + user.getLastName() + " was successfully registered")
                     .build();
 
-            notificationService.createNotification(company.getId(),notification);
+            notificationService.createNotification(company.getId(), notification);
             metric.recordOperationTime(timer, "register_successfully");
+
             try {
                 sendValidationEmail(user);
             } catch (MessagingException e) {
-                log.error("Failed to send validation email", user.getEmail(), e);
-                throw e;
+                log.error("Failed to send validation email to {}", user.getEmail(), e);
+                // Email не критичный - не откатываем транзакцию
             }
-        } catch (Exception e){
+
+        } catch (Exception e) {
             metric.recordError("register_failed", e.getMessage(), e);
+            log.error("Registration failed for email: {}", request.getEmail(), e);
+            throw new RuntimeException("Registration failed: " + e.getMessage(), e); // ✅ ПРОБРАСЫВАЕМ!
         }
     }
 
