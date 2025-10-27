@@ -41,6 +41,7 @@ import {I9DocumentRequest} from "../../../../../services/models/i-9-document-req
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 import {Subscription} from "rxjs";
 import {DatePipe} from "@angular/common";
+import {HttpErrorResponse} from "@angular/common/http";
 
 @Component({
   selector: 'app-manage-employees',
@@ -884,49 +885,168 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     this.showAddEmployeeModal = false;
   }
 
-
   createNewEmployee() {
-    this.loading = true;
-    this.errorMessage = '';
-
-    if (!this.gender) {
-      this.errorMessage = 'Please select gender';
-      this.loading = false;
+    // 1. Сначала валидация
+    const validationError = this.validateEmployeeForm();
+    if (validationError) {
+      this.errorMessage = validationError;
       return;
     }
 
-    const data: RegistrationRequest = {
-      firstName: this.firstName,
-      lastName: this.lastName,
-      email: this.email,
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const data: RegistrationRequest = this.buildRegistrationRequest();
+
+    const params: Register$Params = {
+      body: data
+    };
+
+    // Добавляем логирование для дебага
+    console.log('Registering employee with data:', data);
+
+    this.authenticationControllerService.register(params).subscribe({
+      next: (response: any) => {
+        console.log('Registration response:', response);
+
+        // ВАЖНО: Проверяем что регистрация действительно прошла успешно
+        // Бэкенд должен возвращать созданного юзера или хотя бы его ID
+        if (response && (response.id || response.userId)) {
+          this.successMessage = `Employee ${data.firstName} ${data.lastName} registered successfully!`;
+          this.loading = false;
+
+          // Закрываем модалку и обновляем список
+          setTimeout(() => {
+            this.closeAddEmployeeModal();
+            this.resetForm();
+            this.loadAllEmployeesRelatedToCertainCompany();
+          }, 1000); // Даём время показать success message
+
+        } else {
+          // Сервер вернул 200, но без ID - значит что-то пошло не так
+          this.errorMessage = 'Registration completed but no user ID returned. Please check if employee was created.';
+          this.loading = false;
+          console.error('No user ID in response:', response);
+
+          // Всё равно обновляем список, чтобы проверить
+          this.loadAllEmployeesRelatedToCertainCompany();
+        }
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading = false;
+        console.error('Registration error:', error);
+
+        // Детальная обработка ошибок
+        if (error.status === 0) {
+          this.errorMessage = '❌ Cannot connect to server. Please check your connection.';
+        } else if (error.status === 400) {
+          // Validation errors from backend
+          if (error.error?.errors) {
+            const errors = Object.values(error.error.errors).join(', ');
+            this.errorMessage = `❌ Validation failed: ${errors}`;
+          } else {
+            this.errorMessage = `❌ Invalid data: ${error.error?.message || 'Please check all fields'}`;
+          }
+        } else if (error.status === 409) {
+          this.errorMessage = `❌ Employee with email ${data.email} already exists`;
+        } else if (error.status === 404) {
+          this.errorMessage = `❌ Company "${data.companyName}" not found`;
+        } else if (error.status === 500) {
+          this.errorMessage = '❌ Server error occurred. Please try again or contact support.';
+
+          // При серверной ошибке логируем детали
+          console.error('Server error details:', {
+            message: error.error?.message,
+            trace: error.error?.trace,
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          this.errorMessage = `❌ ${error.error?.message || error.message || 'Unknown error occurred'}`;
+        }
+      }
+    });
+  }
+
+// Вспомогательный метод для валидации
+  private validateEmployeeForm(): string | null {
+    // Обязательные поля
+    if (!this.firstName?.trim()) return 'First name is required';
+    if (!this.lastName?.trim()) return 'Last name is required';
+    if (!this.email?.trim()) return 'Email is required';
+    if (!this.password?.trim()) return 'Password is required';
+    if (this.password.length < 6) return 'Password must be at least 6 characters';
+    if (!this.phoneNumber?.trim()) return 'Phone number is required';
+    if (!this.homeAddress?.trim()) return 'Home address is required';
+    if (!this.city?.trim()) return 'City is required';
+    if (!this.state?.trim()) return 'State is required';
+    if (!this.zipcode?.trim()) return 'Zipcode is required';
+    if (!this.gender) return 'Gender is required';
+    if (!this.dateOfBirth) return 'Date of birth is required';
+    if (!this.companyName2?.trim()) return 'Company name is required';
+    if (!this.companyAddress?.trim()) return 'Company address is required';
+    if (!this.wcRiskClassCode?.trim()) return 'WC Risk Class Code is required';
+
+    // Валидация email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.email)) return 'Invalid email format';
+
+    // Валидация SSN если указан
+    if (this.ssn_WORKER) {
+      const ssnRegex = /^\d{3}-?\d{2}-?\d{4}$/;
+      if (!ssnRegex.test(this.ssn_WORKER)) {
+        return 'Invalid SSN format (should be XXX-XX-XXXX or XXXXXXXXX)';
+      }
+    }
+
+    // Валидация телефона
+    const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
+    if (!phoneRegex.test(this.phoneNumber)) return 'Invalid phone number format';
+
+    // Валидация zipcode
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    if (!zipRegex.test(this.zipcode)) return 'Invalid zipcode format (should be XXXXX or XXXXX-XXXX)';
+
+    return null; // Всё валидно
+  }
+
+// Вспомогательный метод для построения request
+  private buildRegistrationRequest(): RegistrationRequest {
+    return {
+      // Обязательные поля
+      firstName: this.firstName.trim(),
+      lastName: this.lastName.trim(),
+      email: this.email.trim().toLowerCase(),
       password: this.password,
-      phoneNumber: this.phoneNumber,
-      homeAddress: this.homeAddress,
-      apt: this.apt,
-      city: this.city,
-      state: this.state,
-      zipcode: this.zipcode,
+      phoneNumber: this.phoneNumber.trim(),
+      homeAddress: this.homeAddress.trim(),
+      apt: this.apt?.trim() || '',
+      city: this.city.trim(),
+      state: this.state.trim(),
+      zipcode: this.zipcode.trim(),
       dateOfBirth: this.dateOfBirth || '',
-      gender: this.gender,
-      companyAddress: this.companyAddress,
-      companyName: this.companyName2,
+      gender: this.gender as 'MALE' | 'FEMALE' | 'OTHER',
+      companyAddress: this.companyAddress.trim(),
+      companyName: this.companyName2.trim(),
       employmentType: this.employmentType,
       payFrequency: this.payFrequency,
-      wcRiskClassCode: this.wcRiskClassCode,
+      wcRiskClassCode: this.wcRiskClassCode.trim(),
       filingStatus: this.filingStatus,
-      exemptFromWithholding: this.exemptFromWithholding,
-      multipleJobsOrSpouseWorks: this.multipleJobsOrSpouseWorks,
-      twoJobsCheckBox: this.twoJobsCheckBox,
-      livesInNYC: this.livesInNYC,
-      isCitizen: this.isCitizen,
-      isNonCitizenNationalOfTheUS: this.isNonCitizenNationalOfTheUS,
-      isPermanentResident: this.isPermanentResident,
-      isANonCitizen: this.isANonCitizen,
-      ...(this.ssn_WORKER && { ssn_WORKER: this.ssn_WORKER }),
-      ...(this.middleInitial && { middleInitial: this.middleInitial }),
+      exemptFromWithholding: this.exemptFromWithholding || false,
+      multipleJobsOrSpouseWorks: this.multipleJobsOrSpouseWorks || false,
+      twoJobsCheckBox: this.twoJobsCheckBox || false,
+      livesInNYC: this.livesInNYC || false,
+      isCitizen: this.isCitizen || false,
+      isNonCitizenNationalOfTheUS: this.isNonCitizenNationalOfTheUS || false,
+      isPermanentResident: this.isPermanentResident || false,
+      isANonCitizen: this.isANonCitizen || false,
+
+      // Опциональные поля
+      ...(this.ssn_WORKER && { ssn_WORKER: this.ssn_WORKER.replace(/\-/g, '') }), // Убираем дефисы из SSN
+      ...(this.middleInitial && { middleInitial: this.middleInitial.trim() }),
       ...(this.extraWithHoldings !== undefined && { extraWithHoldings: this.extraWithHoldings }),
       ...(this.dependents !== undefined && { dependents: this.dependents }),
-      ...(this.dependentsList && this.dependentsList.length > 0 && { dependentsList: this.dependentsList }),
+      ...(this.dependentsList?.length && { dependentsList: this.dependentsList }),
       ...(this.dependentsUnder17 !== undefined && { dependentsUnder17: this.dependentsUnder17 }),
       ...(this.otherDependents !== undefined && { otherDependents: this.otherDependents }),
       ...(this.totalDependentsCredit !== undefined && { totalDependentsCredit: this.totalDependentsCredit }),
@@ -942,33 +1062,14 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       ...(this.multipleJobsWorksheetLine2a !== undefined && { multipleJobsWorksheetLine2a: this.multipleJobsWorksheetLine2a }),
       ...(this.multipleJobsWorksheetLine2b !== undefined && { multipleJobsWorksheetLine2b: this.multipleJobsWorksheetLine2b }),
       ...(this.multipleJobsAdditionalWithholding !== undefined && { multipleJobsAdditionalWithholding: this.multipleJobsAdditionalWithholding }),
-      ...(this.uscisNumber && { uscisNumber: this.uscisNumber }),
-      ...(this.formI94AdmissionNumber && { formI94AdmissionNumber: this.formI94AdmissionNumber }),
-      ...(this.passportNumber && { passportNumber: this.passportNumber }),
-      ...(this.passportCountryOfIssuance && { passportCountryOfIssuance: this.passportCountryOfIssuance }),
+      ...(this.uscisNumber && { uscisNumber: this.uscisNumber.trim() }),
+      ...(this.formI94AdmissionNumber && { formI94AdmissionNumber: this.formI94AdmissionNumber.trim() }),
+      ...(this.passportNumber && { passportNumber: this.passportNumber.trim() }),
+      ...(this.passportCountryOfIssuance && { passportCountryOfIssuance: this.passportCountryOfIssuance.trim() }),
       ...(this.workAuthorizationExpiryDate && { workAuthorizationExpiryDate: this.workAuthorizationExpiryDate }),
-      ...(this.i9Documents && this.i9Documents.length > 0 && { i9Documents: this.i9Documents })
+      ...(this.i9Documents?.length && { i9Documents: this.i9Documents })
     };
-
-    const params: Register$Params = {
-      body: data
-    };
-
-    this.authenticationControllerService.register(params).subscribe(
-      () => {
-        this.loading = false;
-        this.successMessage = "Employee registered successfully!";
-        this.closeAddEmployeeModal();
-        this.resetForm();
-        this.loadAllEmployeesRelatedToCertainCompany();
-      },
-      error => {
-        this.errorMessage = 'Cannot register new employee: ' + (error.message || 'Unknown error');
-        this.loading = false;
-      }
-    );
   }
-
 
   openDeleteModal(employee: RelatedUserInCompanyResponse) {
     if (!employee.workerId) {
