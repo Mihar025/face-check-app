@@ -443,383 +443,126 @@
     </div>
   </div>
 </div>
+
 <!-- Add Employee Modal -->
 <div class="modal-overlay" *ngIf="showAddEmployeeModal">
   <div class="modal-container modal-extra-large">
     <div class="modal-header">
       <h3>Add New Employee</h3>
-      <button class="close-button" (click)="closeAddEmployeeModal()" [disabled]="loading">&times;</button>
+      <button class="close-button" (click)="closeAddEmployeeModal()">&times;</button>
     </div>
-
     <div class="modal-body modal-scrollable">
-      <!-- Сообщения об ошибках и успехе -->
-      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible" role="alert">
-        <div class="d-flex align-items-start">
-          <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
-          <div class="flex-grow-1">{{ errorMessage }}</div>
-          <button type="button" class="btn-close btn-sm" (click)="errorMessage = ''" [disabled]="loading"></button>
-        </div>
-      </div>
-
-      <div *ngIf="successMessage" class="alert alert-success alert-dismissible" role="alert">
-        <div class="d-flex align-items-start">
-          <i class="bi bi-check-circle-fill me-2 mt-1"></i>
-          <div class="flex-grow-1">{{ successMessage }}</div>
-          <button type="button" class="btn-close btn-sm" (click)="successMessage = ''" [disabled]="loading"></button>
-        </div>
-      </div>
-
-      <!-- Индикатор загрузки -->
-      <div *ngIf="loading" class="text-center mb-3">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Creating employee...</span>
-        </div>
-        <p class="mt-2 text-muted">Creating employee account and generating forms...</p>
-      </div>
-
-      <form class="new-employee-form" #employeeForm="ngForm" [class.form-disabled]="loading">
+      <form class="new-employee-form">
 
         <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
-        <div class="section-title">
-          <i class="bi bi-person-circle"></i> Personal Information
-          <span class="required-note">* Required fields</span>
-        </div>
+        <div class="section-title">Personal Information</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="firstName">First Name <span class="required">*</span></label>
-            <input
-              type="text"
-              id="firstName"
-              class="form-control"
-              [(ngModel)]="firstName"
-              name="firstName"
-              required
-              [disabled]="loading"
-              placeholder="John"
-              #firstNameInput="ngModel">
-            <div *ngIf="firstNameInput.invalid && firstNameInput.touched" class="field-error">
-              First name is required
-            </div>
+            <label for="firstName">First Name *</label>
+            <input type="text" id="firstName" [(ngModel)]="firstName" name="firstName" required>
           </div>
-
           <div class="form-group">
-            <label for="lastName">Last Name <span class="required">*</span></label>
-            <input
-              type="text"
-              id="lastName"
-              class="form-control"
-              [(ngModel)]="lastName"
-              name="lastName"
-              required
-              [disabled]="loading"
-              placeholder="Doe"
-              #lastNameInput="ngModel">
-            <div *ngIf="lastNameInput.invalid && lastNameInput.touched" class="field-error">
-              Last name is required
-            </div>
+            <label for="lastName">Last Name *</label>
+            <input type="text" id="lastName" [(ngModel)]="lastName" name="lastName" required>
           </div>
-
           <div class="form-group">
             <label for="middleInitial">Middle Initial</label>
-            <input
-              type="text"
-              id="middleInitial"
-              class="form-control"
-              [(ngModel)]="middleInitial"
-              name="middleInitial"
-              [disabled]="loading"
-              maxlength="1"
-              placeholder="M">
+            <input type="text" id="middleInitial" [(ngModel)]="middleInitial" name="middleInitial">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="email">Email <span class="required">*</span></label>
-            <input
-              type="email"
-              id="email"
-              class="form-control"
-              [(ngModel)]="email"
-              name="email"
-              required
-              email
-              [disabled]="loading"
-              placeholder="john.doe@example.com"
-              #emailInput="ngModel">
-            <div *ngIf="emailInput.invalid && emailInput.touched" class="field-error">
-              <span *ngIf="emailInput.errors?.['required']">Email is required</span>
-              <span *ngIf="emailInput.errors?.['email']">Invalid email format</span>
-            </div>
+            <label for="email">Email *</label>
+            <input type="email" id="email" [(ngModel)]="email" name="email" required>
           </div>
-
           <div class="form-group">
-            <label for="password">Password <span class="required">*</span></label>
-            <div class="password-input-wrapper">
-              <input
-                [type]="showPassword ? 'text' : 'password'"
-                id="password"
-                class="form-control"
-                [(ngModel)]="password"
-                name="password"
-                required
-                minlength="6"
-                [disabled]="loading"
-                placeholder="Min 6 characters"
-                #passwordInput="ngModel">
-              <button
-                type="button"
-                class="password-toggle"
-                (click)="showPassword = !showPassword"
-                [disabled]="loading">
-                <i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-              </button>
-            </div>
-            <div *ngIf="passwordInput.invalid && passwordInput.touched" class="field-error">
-              <span *ngIf="passwordInput.errors?.['required']">Password is required</span>
-              <span *ngIf="passwordInput.errors?.['minlength']">Password must be at least 6 characters</span>
-            </div>
+            <label for="password">Password *</label>
+            <input type="password" id="password" [(ngModel)]="password" name="password" required>
           </div>
-
           <div class="form-group">
-            <label for="phoneNumber">Phone Number <span class="required">*</span></label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              class="form-control"
-              [(ngModel)]="phoneNumber"
-              name="phoneNumber"
-              required
-              [disabled]="loading"
-              placeholder="(555) 123-4567"
-              pattern="[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}"
-              #phoneInput="ngModel">
-            <div *ngIf="phoneInput.invalid && phoneInput.touched" class="field-error">
-              <span *ngIf="phoneInput.errors?.['required']">Phone number is required</span>
-              <span *ngIf="phoneInput.errors?.['pattern']">Invalid phone format</span>
-            </div>
+            <label for="phoneNumber">Phone Number *</label>
+            <input type="tel" id="phoneNumber" [(ngModel)]="phoneNumber" name="phoneNumber" required>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="dateOfBirth">Date of Birth <span class="required">*</span></label>
-            <input
-              type="date"
-              id="dateOfBirth"
-              class="form-control"
-              [(ngModel)]="dateOfBirth"
-              name="dateOfBirth"
-              required
-              [disabled]="loading"
-              [max]="maxDateOfBirth"
-              #dobInput="ngModel">
-            <div *ngIf="dobInput.invalid && dobInput.touched" class="field-error">
-              Date of birth is required
-            </div>
+            <label for="dateOfBirth">Date of Birth *</label>
+            <input type="date" id="dateOfBirth" [(ngModel)]="dateOfBirth" name="dateOfBirth" required>
           </div>
-
           <div class="form-group">
-            <label for="gender">Gender <span class="required">*</span></label>
-            <select
-              id="gender"
-              class="form-control"
-              [(ngModel)]="gender"
-              name="gender"
-              required
-              [disabled]="loading"
-              #genderInput="ngModel">
-              <option value="" disabled>Select Gender</option>
+            <label for="gender">Gender *</label>
+            <select id="gender" [(ngModel)]="gender" name="gender" required>
+              <option value="">Select Gender</option>
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
             </select>
-            <div *ngIf="genderInput.invalid && genderInput.touched" class="field-error">
-              Gender is required
-            </div>
           </div>
-
           <div class="form-group">
             <label for="ssn">SSN</label>
-            <input
-              type="text"
-              id="ssn"
-              class="form-control"
-              [(ngModel)]="ssn_WORKER"
-              name="ssn_WORKER"
-              placeholder="XXX-XX-XXXX"
-              [disabled]="loading"
-              pattern="\d{3}-?\d{2}-?\d{4}"
-              #ssnInput="ngModel">
-            <div *ngIf="ssnInput.invalid && ssnInput.touched" class="field-error">
-              Invalid SSN format (XXX-XX-XXXX)
-            </div>
+            <input type="text" id="ssn" [(ngModel)]="ssn_WORKER" name="ssn_WORKER" placeholder="XXX-XX-XXXX">
           </div>
         </div>
 
         <!-- АДРЕС -->
-        <div class="section-title">
-          <i class="bi bi-house"></i> Address Information
-        </div>
+        <div class="section-title">Address Information</div>
 
         <div class="form-row">
           <div class="form-group full-width">
-            <label for="homeAddress">Home Address <span class="required">*</span></label>
-            <input
-              type="text"
-              id="homeAddress"
-              class="form-control"
-              [(ngModel)]="homeAddress"
-              name="homeAddress"
-              required
-              [disabled]="loading"
-              placeholder="123 Main Street"
-              #addressInput="ngModel">
-            <div *ngIf="addressInput.invalid && addressInput.touched" class="field-error">
-              Home address is required
-            </div>
+            <label for="homeAddress">Home Address *</label>
+            <input type="text" id="homeAddress" [(ngModel)]="homeAddress" name="homeAddress" required>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="apt">Apt/Unit <span class="required">*</span></label>
-            <input
-              type="text"
-              id="apt"
-              class="form-control"
-              [(ngModel)]="apt"
-              name="apt"
-              required
-              [disabled]="loading"
-              placeholder="4B"
-              #aptInput="ngModel">
-            <div *ngIf="aptInput.invalid && aptInput.touched" class="field-error">
-              Apt/Unit is required
-            </div>
+            <label for="apt">Apt/Unit *</label>
+            <input type="text" id="apt" [(ngModel)]="apt" name="apt" required>
           </div>
-
           <div class="form-group">
-            <label for="city">City <span class="required">*</span></label>
-            <input
-              type="text"
-              id="city"
-              class="form-control"
-              [(ngModel)]="city"
-              name="city"
-              required
-              [disabled]="loading"
-              placeholder="Brooklyn"
-              #cityInput="ngModel">
-            <div *ngIf="cityInput.invalid && cityInput.touched" class="field-error">
-              City is required
-            </div>
+            <label for="city">City *</label>
+            <input type="text" id="city" [(ngModel)]="city" name="city" required>
           </div>
-
           <div class="form-group">
-            <label for="state">State <span class="required">*</span></label>
-            <select
-              id="state"
-              class="form-control"
-              [(ngModel)]="state"
-              name="state"
-              required
-              [disabled]="loading"
-              #stateInput="ngModel">
-              <option value="">Select State</option>
+            <label for="state">State *</label>
+            <select id="state" [(ngModel)]="state" name="state" required>
               <option value="NY">New York</option>
-              <option value="NJ">New Jersey</option>
-              <option value="CT">Connecticut</option>
-              <option value="PA">Pennsylvania</option>
             </select>
-            <div *ngIf="stateInput.invalid && stateInput.touched" class="field-error">
-              State is required
-            </div>
           </div>
-
           <div class="form-group">
-            <label for="zipcode">Zipcode <span class="required">*</span></label>
-            <input
-              type="text"
-              id="zipcode"
-              class="form-control"
-              [(ngModel)]="zipcode"
-              name="zipcode"
-              pattern="^\d{5}(-\d{4})?$"
-              required
-              [disabled]="loading"
-              placeholder="11201"
-              #zipInput="ngModel">
-            <div *ngIf="zipInput.invalid && zipInput.touched" class="field-error">
-              <span *ngIf="zipInput.errors?.['required']">Zipcode is required</span>
-              <span *ngIf="zipInput.errors?.['pattern']">Invalid zipcode format (XXXXX or XXXXX-XXXX)</span>
-            </div>
+            <label for="zipcode">Zipcode *</label>
+            <input type="text" id="zipcode" [(ngModel)]="zipcode" name="zipcode" pattern="[0-9]{5}" required>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group full-width">
-            <label for="companyAddress">Work Address <span class="required">*</span></label>
-            <input
-              type="text"
-              id="companyAddress"
-              class="form-control"
-              [(ngModel)]="companyAddress"
-              name="companyAddress"
-              required
-              [disabled]="loading"
-              placeholder="456 Work Street, Brooklyn, NY 11201"
-              #workAddressInput="ngModel">
-            <div *ngIf="workAddressInput.invalid && workAddressInput.touched" class="field-error">
-              Work address is required
-            </div>
+            <label for="companyAddress">Work Address *</label>
+            <input type="text" id="companyAddress" [(ngModel)]="companyAddress" name="companyAddress" required>
           </div>
         </div>
 
         <!-- ИНФОРМАЦИЯ О ТРУДОУСТРОЙСТВЕ -->
-        <div class="section-title">
-          <i class="bi bi-briefcase"></i> Employment Information
-        </div>
+        <div class="section-title">Employment Information</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="companyName2">Company Name <span class="required">*</span></label>
-            <input
-              type="text"
-              id="companyName2"
-              class="form-control readonly-field"
-              [(ngModel)]="companyName2"
-              name="companyName2"
-              [value]="companyName"
-              required
-              readonly
-              [disabled]="loading">
+            <label for="companyName2">Company Name *</label>
+            <input type="text" id="companyName2" [(ngModel)]="companyName2" name="companyName2" [value]="companyName" required readonly>
           </div>
-
           <div class="form-group">
-            <label for="employmentType">Employment Type <span class="required">*</span></label>
-            <select
-              id="employmentType"
-              class="form-control"
-              [(ngModel)]="employmentType"
-              name="employmentType"
-              required
-              [disabled]="loading">
+            <label for="employmentType">Employment Type *</label>
+            <select id="employmentType" [(ngModel)]="employmentType" name="employmentType" required>
               <option value="W2">W2 Employee</option>
               <option value="CONTRACTOR_1099">1099 Contractor</option>
             </select>
           </div>
-
           <div class="form-group">
-            <label for="payFrequency">Pay Frequency <span class="required">*</span></label>
-            <select
-              id="payFrequency"
-              class="form-control"
-              [(ngModel)]="payFrequency"
-              name="payFrequency"
-              required
-              [disabled]="loading">
+            <label for="payFrequency">Pay Frequency *</label>
+            <select id="payFrequency" [(ngModel)]="payFrequency" name="payFrequency" required>
               <option value="WEEKLY">Weekly</option>
               <option value="BIWEEKLY">Bi-Weekly</option>
               <option value="MONTHLY">Monthly</option>
@@ -829,259 +572,114 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="wcRiskClassCode">WC Risk Class Code <span class="required">*</span></label>
-            <input
-              type="text"
-              id="wcRiskClassCode"
-              class="form-control"
-              [(ngModel)]="wcRiskClassCode"
-              name="wcRiskClassCode"
-              required
-              [disabled]="loading"
-              placeholder="5183"
-              #wcRiskInput="ngModel">
-            <div *ngIf="wcRiskInput.invalid && wcRiskInput.touched" class="field-error">
-              WC Risk Class Code is required
-            </div>
+            <label for="wcRiskClassCode">WC Risk Class Code *</label>
+            <input type="text" id="wcRiskClassCode" [(ngModel)]="wcRiskClassCode" name="wcRiskClassCode" required>
           </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="isRehired"
-                name="isRehired"
-                [disabled]="loading">
-              Is Rehired Employee?
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isRehired" name="isRehired"> Is Rehired Employee?
             </label>
           </div>
-
           <div class="form-group" *ngIf="isRehired">
             <label for="dateWhenRehired">Date When Rehired</label>
-            <input
-              type="date"
-              id="dateWhenRehired"
-              class="form-control"
-              [(ngModel)]="dateWhenRehired"
-              name="dateWhenRehired"
-              [disabled]="loading">
+            <input type="date" id="dateWhenRehired" [(ngModel)]="dateWhenRehired" name="dateWhenRehired">
           </div>
         </div>
 
         <!-- НАЛОГОВАЯ ИНФОРМАЦИЯ -->
-        <div class="section-title">
-          <i class="bi bi-calculator"></i> Tax Information
-        </div>
+        <div class="section-title">Tax Information</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="filingStatus">Filing Status <span class="required">*</span></label>
-            <select
-              id="filingStatus"
-              class="form-control"
-              [(ngModel)]="filingStatus"
-              name="filingStatus"
-              required
-              [disabled]="loading">
+            <label for="filingStatus">Filing Status *</label>
+            <select id="filingStatus" [(ngModel)]="filingStatus" name="filingStatus" required>
               <option value="SINGLE">Single</option>
               <option value="MARRIED_FILLING_JOINTLY">Married Filing Jointly</option>
               <option value="MARRIED_FILLING_SEPARATELY">Married Filing Separately</option>
               <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
             </select>
           </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="exemptFromWithholding"
-                name="exemptFromWithholding"
-                [disabled]="loading">
-              Exempt from Withholding
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="exemptFromWithholding" name="exemptFromWithholding"> Exempt from Withholding
             </label>
           </div>
-
           <div class="form-group">
             <label for="extraWithHoldings">Extra Withholdings ($)</label>
-            <input
-              type="number"
-              id="extraWithHoldings"
-              class="form-control"
-              [(ngModel)]="extraWithHoldings"
-              name="extraWithHoldings"
-              min="0"
-              step="0.01"
-              [disabled]="loading"
-              placeholder="0.00">
+            <input type="number" id="extraWithHoldings" [(ngModel)]="extraWithHoldings" name="extraWithHoldings" min="0">
           </div>
         </div>
 
         <div class="form-row">
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="multipleJobsOrSpouseWorks"
-                name="multipleJobsOrSpouseWorks"
-                [disabled]="loading">
-              Multiple Jobs or Spouse Works
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="multipleJobsOrSpouseWorks" name="multipleJobsOrSpouseWorks"> Multiple Jobs or Spouse Works
             </label>
           </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="twoJobsCheckBox"
-                name="twoJobsCheckBox"
-                [disabled]="loading">
-              Two Jobs Total
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="twoJobsCheckBox" name="twoJobsCheckBox"> Two Jobs Total
             </label>
           </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="livesInNYC"
-                name="livesInNYC"
-                [disabled]="loading">
-              Lives in NYC
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="livesInNYC" name="livesInNYC"> Lives in NYC
             </label>
           </div>
         </div>
 
         <!-- ЗАВИСИМЫЕ ЛИЦА -->
-        <div class="section-title">
-          <i class="bi bi-people"></i> Dependents Information
-        </div>
+        <div class="section-title">Dependents Information</div>
 
         <div class="form-row">
           <div class="form-group">
             <label for="dependents">Number of Dependents</label>
-            <input
-              type="number"
-              id="dependents"
-              class="form-control"
-              [(ngModel)]="dependents"
-              name="dependents"
-              min="0"
-              [disabled]="loading"
-              placeholder="0">
+            <input type="number" id="dependents" [(ngModel)]="dependents" name="dependents" min="0">
           </div>
-
           <div class="form-group">
             <label for="dependentsUnder17">Dependents Under 17</label>
-            <input
-              type="number"
-              id="dependentsUnder17"
-              class="form-control"
-              [(ngModel)]="dependentsUnder17"
-              name="dependentsUnder17"
-              min="0"
-              [disabled]="loading"
-              placeholder="0">
+            <input type="number" id="dependentsUnder17" [(ngModel)]="dependentsUnder17" name="dependentsUnder17" min="0">
           </div>
-
           <div class="form-group">
             <label for="otherDependents">Other Dependents</label>
-            <input
-              type="number"
-              id="otherDependents"
-              class="form-control"
-              [(ngModel)]="otherDependents"
-              name="otherDependents"
-              min="0"
-              [disabled]="loading"
-              placeholder="0">
+            <input type="number" id="otherDependents" [(ngModel)]="otherDependents" name="otherDependents" min="0">
           </div>
         </div>
 
         <!-- СТАТУС ГРАЖДАНСТВА -->
-        <div class="section-title">
-          <i class="bi bi-globe"></i> Citizenship Status
-        </div>
+        <div class="section-title">Citizenship Status</div>
 
         <div class="form-row">
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="isCitizen"
-                name="isCitizen"
-                [disabled]="loading"
-                (change)="onCitizenshipChange('citizen')">
-              US Citizen
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isCitizen" name="isCitizen"> US Citizen
             </label>
           </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="isPermanentResident"
-                name="isPermanentResident"
-                [disabled]="loading"
-                (change)="onCitizenshipChange('permanent')">
-              Permanent Resident
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isPermanentResident" name="isPermanentResident"> Permanent Resident
             </label>
           </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="isNonCitizenNationalOfTheUS"
-                name="isNonCitizenNationalOfTheUS"
-                [disabled]="loading"
-                (change)="onCitizenshipChange('national')">
-              Non-Citizen National of US
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isNonCitizenNationalOfTheUS" name="isNonCitizenNationalOfTheUS"> Non-Citizen National of US
             </label>
           </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [(ngModel)]="isANonCitizen"
-                name="isANonCitizen"
-                [disabled]="loading"
-                (change)="onCitizenshipChange('noncitizen')">
-              Non-Citizen
+          <div class="form-group">
+            <label>
+              <input type="checkbox" [(ngModel)]="isANonCitizen" name="isANonCitizen"> Non-Citizen
             </label>
           </div>
         </div>
 
       </form>
     </div>
-
     <div class="modal-footer">
-      <div class="footer-info">
-        <small class="text-muted">
-          <i class="bi bi-info-circle"></i>
-          Employee will receive an email to verify their account
-        </small>
-      </div>
-      <div class="footer-buttons">
-        <button
-          class="cancel-button"
-          (click)="closeAddEmployeeModal()"
-          [disabled]="loading">
-          Cancel
-        </button>
-        <button
-          class="confirm-button"
-          (click)="createNewEmployee()"
-          [disabled]="loading || employeeForm.invalid">
-          <span *ngIf="!loading">
-            <i class="bi bi-person-plus"></i> Add Employee
-          </span>
-          <span *ngIf="loading">
-            <span class="spinner-border spinner-border-sm me-2"></span>
-            Creating Employee...
-          </span>
-        </button>
-      </div>
+      <button class="cancel-button" (click)="closeAddEmployeeModal()">Cancel</button>
+      <button class="confirm-button" (click)="createNewEmployee()" [disabled]="loading">
+        <span *ngIf="!loading">Add Employee</span>
+        <span *ngIf="loading">Adding...</span>
+      </button>
     </div>
   </div>
 </div>
