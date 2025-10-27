@@ -328,13 +328,17 @@ $border-radius-xs: 8px;
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  z-index: 1;
+  isolation: isolate; // ✅ Создает новый stacking context
 }
 
 .map-controls {
   padding: 20px;
   background: linear-gradient(135deg, $neutral-50, $white);
   border-bottom: 2px solid $neutral-200;
+  position: sticky; // ✅ Делаем sticky вместо обычного
+  top: 0;
+  z-index: 10; // ✅ Поднимаем выше карты
+  flex-shrink: 0; // ✅ Не даем сжиматься
 }
 
 .date-controls {
@@ -401,7 +405,12 @@ $border-radius-xs: 8px;
   display: flex;
   align-items: center;
   gap: 20px;
+  position: relative;
+  z-index: 11;
+  background: inherit; // ✅ Наследуем фон
+  padding: 10px 0; // ✅ Добавляем отступы
 }
+
 
 .control-btn {
   width: 44px;
@@ -626,16 +635,14 @@ $border-radius-xs: 8px;
 // Map Overlay
 .map-overlay {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: $white;
-  border-radius: $border-radius;
-  padding: 20px;
-  min-width: 320px;
-  @include shadow-xl;
-  z-index: 1000;
-  border: 1px solid $neutral-200;
-  pointer-events: all;
+  top: 10px;
+  right: 10px;
+  max-width: 320px;
+  background: rgba($white, 0.95);
+  border-radius: $border-radius-sm;
+  @include shadow-lg;
+  z-index: 8; // ✅ Выше карты, но ниже controls
+  pointer-events: auto; // ✅ Разрешаем взаимодействие
 }
 
 .overlay-header {
@@ -1518,28 +1525,10 @@ $border-radius-xs: 8px;
     order: 1;
   }
 }
-// Исправление для .map-panel
-.map-panel {
-  background: $white;
-  border-radius: $border-radius;
-  @include shadow-md;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  isolation: isolate; // ✅ Создает новый stacking context
-}
+
 
 // Исправление для .map-controls
-.map-controls {
-  padding: 20px;
-  background: linear-gradient(135deg, $neutral-50, $white);
-  border-bottom: 2px solid $neutral-200;
-  position: sticky; // ✅ Делаем sticky вместо обычного
-  top: 0;
-  z-index: 10; // ✅ Поднимаем выше карты
-  flex-shrink: 0; // ✅ Не даем сжиматься
-}
+
 
 // Исправление для .map-wrapper
 .map-wrapper {
@@ -1566,25 +1555,5 @@ $border-radius-xs: 8px;
 }
 
 // Фиксируем overlay чтобы не перекрывал controls
-.map-overlay {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  max-width: 320px;
-  background: rgba($white, 0.95);
-  border-radius: $border-radius-sm;
-  @include shadow-lg;
-  z-index: 8; // ✅ Выше карты, но ниже controls
-  pointer-events: auto; // ✅ Разрешаем взаимодействие
-}
 
-// Дополнительная защита для playback-controls
-.playback-controls {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  position: relative; // ✅ Относительное позиционирование
-  z-index: 11; // ✅ Выше всего в controls
-  background: inherit; // ✅ Наследуем фон
-  padding: 10px 0; // ✅ Добавляем отступы
-}
+
