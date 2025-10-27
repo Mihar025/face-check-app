@@ -82,8 +82,8 @@ public class AuthenticationService {
 
             userRepository.save(user);
 
-            fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
-            fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
+          //  fillFormI9.generateFilledPdf(user.getId(), user.getCompany().getId());
+          //  fillFormW4.generateW4Pdf(user.getId(), user.getCompany().getId());
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message(user.getFirstName() + " " + user.getLastName() + " was successfully registered")
