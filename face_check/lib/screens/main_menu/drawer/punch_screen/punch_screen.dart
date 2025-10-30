@@ -695,8 +695,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     );
   }
 }
-
-// ---------- UI helpers ----------
 class _ActionCircleButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -718,7 +716,7 @@ class _ActionCircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final double size = small ? 65 : 75;
     final double iconSize = small ? 20 : 24;
-    final double fontSize = small ? 10 : 12;
+    final double fontSize = small ? 9 : 11; // ✅ Зменшили ще більше
 
     return Material(
       color: Colors.transparent,
@@ -743,12 +741,19 @@ class _ActionCircleButton extends StatelessWidget {
               children: [
                 Icon(icon, color: color, size: iconSize),
                 SizedBox(height: small ? 2 : 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4), // ✅ Додали padding
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center, // ✅ Центруємо текст
+                    maxLines: 1, // ✅ Тільки один рядок
+                    overflow: TextOverflow.clip, // ✅ Обрізаємо якщо не влізає
+                    style: TextStyle(
+                      color: color,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5, // ✅ Зменшуємо відстань між літерами
+                    ),
                   ),
                 ),
               ],
