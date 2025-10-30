@@ -755,7 +755,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               builder: (_, period, __) => WeeklyHoursCircle(
                                 hours: hours,
                                 period: period,
-                                thisWeekText: l10n.get('thisWeekText'),
+                                thisWeekText: l10n.get('thisWeek'),
                               ),
                             ),
                           ),
