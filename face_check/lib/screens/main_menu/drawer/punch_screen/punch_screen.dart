@@ -636,61 +636,62 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         ],
       ),
   // ----- TWO BUTTONS -----
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: _theme.scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        padding: EdgeInsets.fromLTRB(
-          16,
-          10,
-          16,
-          _isSmallScreen ? 16 : 20,
-        ),
-        child: ValueListenableBuilder<bool>(
-          valueListenable: _isLoading,
-          builder: (context, isLoading, _) {
-            return ValueListenableBuilder<bool>(
-              valueListenable: _punchManager.hasPunchIn,
-              builder: (context, hasPunchIn, __) {
-                final inEnabled = !isLoading && !hasPunchIn;
-                final outEnabled = !isLoading && hasPunchIn;
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: _theme.scaffoldBackgroundColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            10,
+            16,
+            _isSmallScreen ? 16 : 20,
+          ),
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _isLoading,
+            builder: (context, isLoading, _) {
+              return ValueListenableBuilder<bool>(
+                valueListenable: _punchManager.hasPunchIn,
+                builder: (context, hasPunchIn, __) {
+                  final inEnabled = !isLoading && !hasPunchIn;
+                  final outEnabled = !isLoading && hasPunchIn;
 
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Punch In
-                    _ActionCircleButton(
-                      label: l10n.get('punchIn'),
-                      icon: Icons.login,
-                      color: Colors.green,
-                      enabled: inEnabled,
-                      onTap: inEnabled ? _handlePunchIn : null,
-                      small: _isSmallScreen,
+                  return SafeArea(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly, // ✅ spaceEvenly замість center
+                      children: [
+                        // Punch In
+                        _ActionCircleButton(
+                          label: l10n.get('punchIn'),
+                          icon: Icons.login,
+                          color: Colors.green,
+                          enabled: inEnabled,
+                          onTap: inEnabled ? _handlePunchIn : null,
+                          small: _isSmallScreen,
+                        ),
+                        // Punch Out
+                        _ActionCircleButton(
+                          label: l10n.get('punchOut'),
+                          icon: Icons.logout,
+                          color: Colors.blue,
+                          enabled: outEnabled,
+                          onTap: outEnabled ? _handlePunchOut : null,
+                          small: _isSmallScreen,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 18),
-                    // Punch Out
-                    _ActionCircleButton(
-                      label: l10n.get('punchOut'),
-                      icon: Icons.logout,
-                      color: Colors.blue,
-                      enabled: outEnabled,
-                      onTap: outEnabled ? _handlePunchOut : null,
-                      small: _isSmallScreen,
-                    ),
-                  ],
-                );
-              },
-            );
-          },
+                  );
+                  },
+              );
+            },
+          ),
         ),
-      ),
     );
   }
 }
