@@ -8,6 +8,7 @@ import '../../api_client/api/authentication_api.dart';
 import '../../api_client/model/authentication_request.dart';
 import '../../services/ApiService.dart';
 import '../../services/jwt_service.dart';
+import 'legal_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final AuthenticationApi authApi;
@@ -420,6 +421,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
+
             const SizedBox(height: 4),
 
             // Forgot password и биометрия
@@ -437,6 +439,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 );
               },
             ),
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const LegalScreen(),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.black54,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                child: const Text('Privacy & Terms'),
+              ),
+            ),
+
           ],
         ),
       ),
