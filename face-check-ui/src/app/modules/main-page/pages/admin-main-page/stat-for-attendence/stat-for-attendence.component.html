@@ -149,22 +149,7 @@
                 <!-- Photos Button - показываем ТОЛЬКО если есть фото -->
                 <!-- Photos Button - показываем ТОЛЬКО если есть хоть одно фото -->
                 <!-- Кнопка камеры показывается ТОЛЬКО для записей с реальными фото -->
-                <button
-                  class="btn-icon"
-                  *ngIf="hasValidPhotos(attendance)"
-                  title="View Photos"
-                  (click)="openPhotoModal(attendance)">
-                  <i class="fas fa-camera"></i>
-                </button>
 
-                <!-- Индикатор ручной записи -->
-                <span
-                  class="manual-badge"
-                  *ngIf="!hasValidPhotos(attendance)"
-                  title="Manual entry">
-  <i class="fas fa-edit"></i>
-  Manual
-</span>
               </div>
             </td>
           </tr>
