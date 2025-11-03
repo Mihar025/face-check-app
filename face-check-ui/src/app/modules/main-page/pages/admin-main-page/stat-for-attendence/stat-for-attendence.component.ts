@@ -525,10 +525,13 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       minute: '2-digit'
     });
   }
-
   formatDate(date: string | undefined): string {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-US', {
+
+    const [year, month, day] = date.split('T')[0].split('-');
+    const localDate = new Date(+year, +month - 1, +day, 12, 0, 0); // Полдень локального времени
+
+    return localDate.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
