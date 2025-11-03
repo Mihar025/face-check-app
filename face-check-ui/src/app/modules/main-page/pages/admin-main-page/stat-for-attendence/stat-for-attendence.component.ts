@@ -394,13 +394,23 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     this.page = 0;
     this.loadAttendance();
   }
+
   openPhotoModal(attendance: AttendanceResponse): void {
-    // Проверяем есть ли вообще фото
-    if (!attendance.checkInPhotoUrl && !attendance.checkOutPhotoUrl) {
-      // Показываем уведомление вместо открытия модалки
-      this.errorMessage = 'No photos available for this attendance record';
+    // Проверяем что URL не пустые строки и не null
+    const hasCheckInPhoto = attendance.checkInPhotoUrl &&
+      attendance.checkInPhotoUrl.trim() !== '' &&
+      attendance.checkInPhotoUrl !== 'null' &&
+      attendance.checkInPhotoUrl !== 'undefined';
+
+    const hasCheckOutPhoto = attendance.checkOutPhotoUrl &&
+      attendance.checkOutPhotoUrl.trim() !== '' &&
+      attendance.checkOutPhotoUrl !== 'null' &&
+      attendance.checkOutPhotoUrl !== 'undefined';
+
+    if (!hasCheckInPhoto && !hasCheckOutPhoto) {
+      this.errorMessage = 'No photos available for this attendance record (manual entry)';
       setTimeout(() => this.errorMessage = '', 3000);
-      return; // ВАЖНО: выходим и НЕ открываем модалку
+      return;
     }
 
     this.selectedAttendance = attendance;
@@ -414,6 +424,21 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
     this.loadPhotosForAttendance();
   }
+
+  hasValidPhotos(attendance: AttendanceResponse): boolean {
+    const checkInValid = attendance.checkInPhotoUrl &&
+      attendance.checkInPhotoUrl.trim() !== '' &&
+      attendance.checkInPhotoUrl !== 'null' &&
+      attendance.checkInPhotoUrl !== 'undefined';
+
+    const checkOutValid = attendance.checkOutPhotoUrl &&
+      attendance.checkOutPhotoUrl.trim() !== '' &&
+      attendance.checkOutPhotoUrl !== 'null' &&
+      attendance.checkOutPhotoUrl !== 'undefined';
+
+    return !!(checkInValid || checkOutValid);
+  }
+
   loadPhotosForAttendance(): void {
     if (!this.selectedAttendance?.attendanceId) {
       this.loadingPhotos = false; // Сразу ставим false
@@ -560,4 +585,12 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   }
 
   Math = Math;
+
+// Добавь этот метод в StatForAttendenceComponent
+  hasPhotos(attendance: AttendanceResponse): boolean {
+    return !!(
+      (attendance.checkInPhotoUrl && attendance.checkInPhotoUrl.trim() !== '') ||
+      (attendance.checkOutPhotoUrl && attendance.checkOutPhotoUrl.trim() !== '')
+    );
+  }
 }
