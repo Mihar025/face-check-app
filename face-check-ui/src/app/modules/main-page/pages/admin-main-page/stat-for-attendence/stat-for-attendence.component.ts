@@ -87,7 +87,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
-
   loadAttendance(): void {
     this.isLoading = true;
     this.errorMessage = '';
@@ -98,6 +97,19 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     }).subscribe({
       next: (response: PageResponseAttendanceResponse) => {
         this.attendanceList = response.content || [];
+
+        // 🔍 ДОБАВЬ ЭТО ДЛЯ ДЕБАГА
+        console.log('🔍 Checking manual entries:');
+        this.attendanceList.forEach(att => {
+          if (!att.checkInPhotoUrl || !att.checkOutPhotoUrl) {
+            console.log(`ID: ${att.attendanceId}`, {
+              checkInPhoto: att.checkInPhotoUrl,
+              checkOutPhoto: att.checkOutPhotoUrl,
+              worker: `${att.firstName} ${att.lastName}`
+            });
+          }
+        });
+
         this.totalPages = response.totalPages || 0;
         this.totalElements = response.totalElement || 0;
         this.isFirst = response.first || true;
@@ -328,44 +340,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   }
 
 
-  loadUserFullName(): void {
-    this.userService.findWorkerFullName().subscribe(
-      response => {
-        if (response && response.fullName) {
-          this.userName = response.fullName;
-        }
-      },
-      error => {
-        console.error('Error loading user full name', error);
-      }
-    );
-  }
-
-  loadCompanyName() {
-    this.userService.findWorkerCompanyName().subscribe(
-      response => {
-        if (response && response.companyName) {
-          this.companyName = response.companyName;
-        }
-      },
-      error => {
-        console.error('Error loading company name', error);
-      }
-    );
-  }
-
-  getUserPhoto(): void {
-    this.userService.findWorkerFullContactInformation().subscribe(
-      response => {
-        if (response && response.photoUrl) {
-          this.userPhotoUrl = response.photoUrl;
-        }
-      },
-      error => {
-        console.error('Error loading user photo:', error);
-      }
-    );
-  }
 
   // Методы пагинации
   goToPage(pageNumber: number): void {
