@@ -150,7 +150,7 @@
                 <!-- Photos -->
                 <button
                   class="btn-icon"
-                  *ngIf="attendance.checkInPhotoUrl"
+                  *ngIf="attendance.checkInPhotoUrl || attendance.checkOutPhotoUrl"
                   title="View Photos"
                   (click)="openPhotoModal(attendance)">
                   <i class="fas fa-camera"></i>

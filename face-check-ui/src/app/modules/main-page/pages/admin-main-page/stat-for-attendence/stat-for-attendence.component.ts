@@ -397,6 +397,12 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
   // ✅ ИСПРАВЛЕННЫЙ метод - используем attendanceId!
   openPhotoModal(attendance: AttendanceResponse): void {
+
+    if (!attendance.checkInPhotoUrl && !attendance.checkOutPhotoUrl) {
+      console.warn('No photos available for this attendance record');
+      return; // Выходим если нет фото
+    }
+
     this.selectedAttendance = attendance;
     this.showPhotoModal = true;
 
