@@ -398,17 +398,27 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
     this.loadPhotosForAttendance();
   }
-
   hasValidPhotos(attendance: AttendanceResponse): boolean {
+    const invalidValues = [
+      'Manual entry by admin',
+      'manual-update',
+      'manual-update-assumed',
+      'Manual entry',
+      'upload-failed',
+      'uploading'
+    ];
+
     const checkInValid = attendance.checkInPhotoUrl &&
       attendance.checkInPhotoUrl.trim() !== '' &&
       attendance.checkInPhotoUrl !== 'null' &&
-      attendance.checkInPhotoUrl !== 'undefined';
+      attendance.checkInPhotoUrl !== 'undefined' &&
+      !invalidValues.includes(attendance.checkInPhotoUrl);
 
     const checkOutValid = attendance.checkOutPhotoUrl &&
       attendance.checkOutPhotoUrl.trim() !== '' &&
       attendance.checkOutPhotoUrl !== 'null' &&
-      attendance.checkOutPhotoUrl !== 'undefined';
+      attendance.checkOutPhotoUrl !== 'undefined' &&
+      !invalidValues.includes(attendance.checkOutPhotoUrl);
 
     return !!(checkInValid || checkOutValid);
   }
