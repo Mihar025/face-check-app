@@ -146,13 +146,10 @@
                   <i class="fas fa-map-marker-alt"></i>
                   <span class="btn-label">Out</span>
                 </button>
-
-                <!-- Photos -->
-                <!-- Photos -->
+                <!-- Photos Button - показываем ТОЛЬКО если есть фото -->
                 <button
                   class="btn-icon"
-                  *ngIf="(attendance.checkInPhotoUrl && attendance.checkInPhotoUrl.trim() !== '') ||
-         (attendance.checkOutPhotoUrl && attendance.checkOutPhotoUrl.trim() !== '')"
+                  *ngIf="attendance.checkInPhotoUrl || attendance.checkOutPhotoUrl"
                   title="View Photos"
                   (click)="openPhotoModal(attendance)">
                   <i class="fas fa-camera"></i>

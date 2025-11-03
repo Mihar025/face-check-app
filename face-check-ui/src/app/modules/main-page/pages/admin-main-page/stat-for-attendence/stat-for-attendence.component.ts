@@ -394,77 +394,75 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     this.page = 0;
     this.loadAttendance();
   }
-
-  // ✅ ИСПРАВЛЕННЫЙ метод - используем attendanceId!
   openPhotoModal(attendance: AttendanceResponse): void {
-
+    // Проверяем есть ли вообще фото
     if (!attendance.checkInPhotoUrl && !attendance.checkOutPhotoUrl) {
-      console.warn('No photos available for this attendance record');
-      return; // Выходим если нет фото
+      // Показываем уведомление вместо открытия модалки
+      this.errorMessage = 'No photos available for this attendance record';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return; // ВАЖНО: выходим и НЕ открываем модалку
     }
 
     this.selectedAttendance = attendance;
     this.showPhotoModal = true;
 
-    // Устанавливаем дату из checkInTime
     if (attendance.checkInTime) {
       this.selectedDate = attendance.checkInTime.split('T')[0];
     } else {
       this.selectedDate = new Date().toISOString().split('T')[0];
     }
 
-    // ✅ СРАЗУ загружаем фото для ЭТОЙ КОНКРЕТНОЙ ЗАПИСИ
     this.loadPhotosForAttendance();
   }
-
-  // ✅ НОВЫЙ метод - грузим фото по attendanceId
   loadPhotosForAttendance(): void {
-    if (!this.selectedAttendance || !this.selectedAttendance.attendanceId) {
-      console.error('No attendance ID found!');
+    if (!this.selectedAttendance?.attendanceId) {
+      this.loadingPhotos = false; // Сразу ставим false
+      this.photos = [];
       return;
     }
 
     this.loadingPhotos = true;
     this.photos = [];
 
-    // ✅ Используем НОВЫЙ метод с attendanceId
     this.attendanceService.getPhotosByAttendanceId({
       attendanceId: this.selectedAttendance.attendanceId
     }).pipe(
       catchError(error => {
         console.error('Error loading photos:', error);
+        this.loadingPhotos = false; // Важно!
+        this.photos = [];
         return of(null);
       })
     ).subscribe({
       next: (response) => {
-        console.log('Photos response:', response);
-
         if (response) {
-          // ✅ Добавляем check-in фото
+          const tempPhotos = [];
+
           if (response.checkInPhotoUrl) {
-            this.photos.push({
+            tempPhotos.push({
               url: response.checkInPhotoUrl,
               type: 'punch-in',
               time: response.checkInTime || ''
             });
           }
 
-          // ✅ Добавляем check-out фото
           if (response.checkOutPhotoUrl) {
-            this.photos.push({
+            tempPhotos.push({
               url: response.checkOutPhotoUrl,
               type: 'punch-out',
               time: response.checkOutTime || ''
             });
           }
+
+          this.photos = tempPhotos; // Присваиваем один раз
         }
 
-        console.log('Formatted photos:', this.photos);
         this.loadingPhotos = false;
       },
       error: (error) => {
         console.error('Error loading photos:', error);
         this.loadingPhotos = false;
+        this.photos = [];
       }
     });
   }
