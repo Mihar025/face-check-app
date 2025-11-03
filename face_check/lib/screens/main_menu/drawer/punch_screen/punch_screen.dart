@@ -635,7 +635,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
         ],
       ),
-  // ----- TWO BUTTONS -----
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             color: _theme.scaffoldBackgroundColor,
