@@ -8,6 +8,18 @@ import { Router } from '@angular/router';
 })
 export class ViewDemoComponent implements OnInit {
 
+  // Screenshot modal
+  showScreenshotModal: boolean = false;
+  selectedScreenshot: string = '';
+
+  // Screenshot paths mapping - CORRECT ORDER FROM HTML
+  screenshots: { [key: number]: string } = {
+    1: 'assets/01.png',  // Smart Tracking Dashboard
+    2: 'assets/02.png',  // Real-Time Notifications
+    3: 'assets/04.png',  // Productivity Analytics
+    4: 'assets/03.png'   // Finance Management
+  };
+
   constructor(private router: Router) { }
 
   ngOnInit(): void {
@@ -23,15 +35,28 @@ export class ViewDemoComponent implements OnInit {
     }
   }
 
-  // Open screenshot in modal or lightbox
+  // Open screenshot in fullscreen modal
   openScreenshot(screenshotId: number): void {
     console.log('Opening screenshot:', screenshotId);
-    // TODO: Implement modal/lightbox to show full screenshot
-    // You can add a modal component or use a library like ngx-gallery
+    this.selectedScreenshot = this.screenshots[screenshotId] || '';
+    if (this.selectedScreenshot) {
+      this.showScreenshotModal = true;
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+  }
 
-    // Example implementation:
-    // this.showScreenshotModal(screenshotId);
-    alert(`Opening screenshot ${screenshotId} - Implement modal here!`);
+  // Close screenshot modal
+  closeScreenshotModal(): void {
+    this.showScreenshotModal = false;
+    this.selectedScreenshot = '';
+    // Restore body scroll
+    document.body.style.overflow = 'auto';
+  }
+
+  // Prevent modal close when clicking inside
+  preventModalClose(event: Event): void {
+    event.stopPropagation();
   }
 
   // Contact sales
