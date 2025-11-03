@@ -18,7 +18,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Navigation */
+// Mobile-optimized Navigation Bar
 .navbar {
   position: fixed;
   top: 20px;
@@ -30,95 +30,149 @@ body {
   justify-content: center;
   padding: 0 20px;
   pointer-events: none;
+
+  .navbar-container {
+    width: 100%;
+    max-width: 1200px;
+    height: 65px;
+    background-color: rgba(255, 255, 255, 0.98);
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(230, 230, 230, 0.7);
+    pointer-events: all;
+    animation: fadeIn 0.5s ease forwards;
+    overflow: hidden; // Prevent text overflow
+  }
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0; // Prevent logo from shrinking
+    min-width: 0; // Allow text truncation
+  }
+
+  .logo {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    flex-shrink: 0;
+
+    .logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  .brand-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #333;
+    text-decoration: none;
+    letter-spacing: -0.3px;
+    cursor: pointer;
+    white-space: nowrap; // Prevent text wrapping
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 25px;
+    overflow: hidden; // Hide overflowing links
+
+    .nav-link {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #555;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      white-space: nowrap; // Prevent text wrapping
+
+      &:hover {
+        color: #2563EB;
+        background-color: rgba(37, 99, 235, 0.08);
+      }
+    }
+  }
+
+  .sign-in-button {
+    background-color: #2563EB;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.2);
+    cursor: pointer;
+    white-space: nowrap; // Prevent text wrapping
+    flex-shrink: 0; // Prevent button from shrinking
+
+    &:hover {
+      background-color: #1E50CF;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+  }
 }
 
-.navbar-container {
-  width: 100%;
-  max-width: 1200px;
-  height: 65px;
-  background-color: rgba(255, 255, 255, 0.98);
-  border-radius: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 25px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(230, 230, 230, 0.7);
-  pointer-events: all;
-  animation: fadeIn 0.5s ease forwards;
-}
-
-.logo-container {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.logo {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;
-}
-
-.logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.brand-name {
-  font-size: 1.3rem;
-  font-weight: 700;
+// Mobile hamburger menu (hidden by default)
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
   color: #333;
-  text-decoration: none;
-  letter-spacing: -0.3px;
+  font-size: 1.5rem;
   cursor: pointer;
+  padding: 8px;
+  margin-left: auto;
 }
 
-.nav-links {
-  display: flex;
-  gap: 25px;
-}
+// Mobile Menu Overlay
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 
-.nav-link {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #555;
-  text-decoration: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-
-  &:hover {
-    color: #2563EB;
-    background-color: rgba(37, 99, 235, 0.08);
+  &.active {
+    display: block;
   }
 }
 
-.sign-in-button {
-  background-color: #2563EB;
-  color: white;
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 10px 20px;
-  border-radius: 30px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.2);
-  cursor: pointer;
+.mobile-menu-panel {
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 300px;
+  height: 100%;
+  background: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease;
+  z-index: 1001;
+  padding: 2rem;
 
-  &:hover {
-    background-color: #1E50CF;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  &.active {
+    right: 0;
   }
 }
 
-/* Refund Hero */
+// Refund Hero Section
 .refund-hero {
   padding: 140px 0 60px;
   background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%);
@@ -135,36 +189,36 @@ body {
     background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     opacity: 0.1;
   }
+
+  .refund-hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 1rem;
+      animation: slideUp 0.6s ease;
+    }
+
+    .effective-date {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border-radius: 50px;
+      font-weight: 500;
+      animation: fadeIn 0.8s ease;
+    }
+  }
 }
 
-.refund-hero-content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-
-  h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    color: white;
-    margin-bottom: 1rem;
-    animation: slideUp 0.6s ease;
-  }
-
-  .effective-date {
-    display: inline-block;
-    padding: 0.5rem 1.5rem;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border-radius: 50px;
-    font-weight: 500;
-    animation: fadeIn 0.8s ease;
-  }
-}
-
-/* Main Content Layout */
+// Main Content Layout
 .refund-content-wrapper {
   display: flex;
   max-width: 1400px;
@@ -174,7 +228,7 @@ body {
   gap: 2rem;
 }
 
-/* Left Sidebar Navigation */
+// Left Sidebar Navigation
 .sidebar-nav {
   position: sticky;
   top: 100px;
@@ -251,7 +305,7 @@ body {
   }
 }
 
-/* Refund Container */
+// Refund Container
 .refund-container {
   flex: 1;
   min-width: 0;
@@ -265,7 +319,7 @@ body {
   animation: slideUp 0.8s ease;
 }
 
-/* Legal Entity Box */
+// Legal Entity Box
 .legal-entity-box {
   background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
   border-left: 4px solid #f59e0b;
@@ -290,11 +344,12 @@ body {
     i {
       color: #f59e0b;
       width: 20px;
+      flex-shrink: 0;
     }
   }
 }
 
-/* Refund Sections */
+// Refund Sections
 .refund-section {
   margin-bottom: 3rem;
   scroll-margin-top: 100px;
@@ -307,6 +362,21 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-wrap: wrap; // Allow wrapping on mobile
+
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #dc2626);
+      color: white;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
   }
 
   h3 {
@@ -338,20 +408,7 @@ body {
   }
 }
 
-.section-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #f59e0b, #dc2626);
-  color: white;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-/* Important Notice Box */
+// Important Notice Box
 .important-box {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(220, 38, 38, 0.05));
   border-radius: 12px;
@@ -367,7 +424,7 @@ body {
   }
 }
 
-/* Info Box */
+// Info Box
 .info-box {
   background: rgba(37, 99, 235, 0.05);
   border-left: 4px solid #2563eb;
@@ -382,7 +439,7 @@ body {
   }
 }
 
-/* Warning Box */
+// Warning Box
 .warning-box {
   background: rgba(239, 68, 68, 0.05);
   border: 1px solid rgba(239, 68, 68, 0.2);
@@ -397,18 +454,28 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
 
     i {
       font-size: 1.25rem;
+      flex-shrink: 0;
     }
   }
 
   p, li {
     color: #7f1d1d;
   }
+
+  ul {
+    margin-left: 1.5rem;
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+  }
 }
 
-/* Quick Summary */
+// Quick Summary
 .quick-summary {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(245, 158, 11, 0.05));
   border-radius: 16px;
@@ -426,6 +493,7 @@ body {
 
     i {
       color: #10b981;
+      flex-shrink: 0;
     }
   }
 
@@ -447,12 +515,13 @@ body {
       i {
         color: #10b981;
         margin-top: 0.25rem;
+        flex-shrink: 0;
       }
     }
   }
 }
 
-/* Timeline Table */
+// Timeline Table
 .timeline-table {
   width: 100%;
   border-collapse: collapse;
@@ -490,7 +559,7 @@ body {
   }
 }
 
-/* Footer */
+// Footer
 .footer {
   background: #111827;
   color: white;
@@ -566,7 +635,7 @@ body {
   }
 }
 
-/* Animations */
+// Animations
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -587,7 +656,11 @@ body {
   }
 }
 
-/* Responsive */
+// =============================================
+// MOBILE RESPONSIVE STYLES
+// =============================================
+
+// Tablet (768px - 1024px)
 @media (max-width: 1024px) {
   .sidebar-nav {
     display: none;
@@ -595,37 +668,338 @@ body {
 
   .refund-content-wrapper {
     flex-direction: column;
+    padding: 0 1.5rem;
+  }
+
+  .refund-card {
+    padding: 2.5rem;
+  }
+
+  .timeline-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 }
 
+// Mobile (max 768px)
 @media (max-width: 768px) {
-  .refund-hero h1 {
-    font-size: 2rem;
+  // Navigation adjustments
+  .navbar {
+    padding: 0 10px;
+    top: 10px;
+
+    .navbar-container {
+      height: 55px;
+      padding: 0 15px;
+      border-radius: 30px;
+    }
+
+    .logo-container {
+      .logo {
+        width: 30px;
+        height: 30px;
+        margin-right: 8px;
+      }
+
+      .brand-name {
+        font-size: 1.1rem;
+      }
+    }
+
+    .nav-links {
+      display: none;
+    }
+
+    .mobile-menu-btn {
+      display: block;
+    }
+
+    .sign-in-button {
+      font-size: 0.85rem;
+      padding: 8px 16px;
+      margin-left: 10px;
+    }
+  }
+
+  // Hero section
+  .refund-hero {
+    padding: 120px 0 50px;
+
+    .refund-hero-content {
+      padding: 0 1.5rem;
+
+      h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+      }
+
+      .effective-date {
+        font-size: 0.875rem;
+        padding: 0.4rem 1.2rem;
+      }
+    }
+  }
+
+  // Content adjustments
+  .refund-content-wrapper {
+    margin: -20px auto 60px;
+    padding: 0 1rem;
   }
 
   .refund-card {
     padding: 2rem 1.5rem;
+    border-radius: 16px;
   }
 
-  .nav-links {
-    display: none;
-  }
+  // Sections
+  .refund-section {
+    margin-bottom: 2.5rem;
 
-  .footer-bottom {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
+    h2 {
+      font-size: 1.5rem;
 
-    .footer-legal {
-      justify-content: center;
+      .section-number {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+      }
+    }
+
+    h3 {
+      font-size: 1.15rem;
+    }
+
+    p {
+      font-size: 0.95rem;
+    }
+
+    ul, ol {
+      margin-left: 1rem;
+
+      li {
+        font-size: 0.95rem;
+      }
     }
   }
 
+  // Boxes
+  .legal-entity-box {
+    padding: 1.25rem;
+
+    h3 {
+      font-size: 1rem;
+    }
+
+    p {
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  .warning-box,
+  .info-box,
+  .important-box {
+    padding: 1.25rem;
+
+    h4 {
+      font-size: 1rem;
+    }
+
+    p {
+      font-size: 0.9rem;
+    }
+  }
+
+  .quick-summary {
+    padding: 1.5rem;
+
+    h3 {
+      font-size: 1.25rem;
+    }
+
+    ul li {
+      padding: 0.6rem 0;
+      font-size: 0.9rem;
+    }
+  }
+
+  // Table - make it scrollable on mobile
   .timeline-table {
     font-size: 0.85rem;
+    display: block;
+    overflow-x: auto;
 
-    th, td {
-      padding: 0.75rem 0.5rem;
+    thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    tr {
+      border: 1px solid #e5e7eb;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+
+    td {
+      border: none;
+      position: relative;
+      padding-left: 50%;
+      text-align: right;
+
+      &:before {
+        position: absolute;
+        top: 50%;
+        left: 1rem;
+        width: 45%;
+        text-align: left;
+        white-space: nowrap;
+        font-weight: 600;
+        color: #111827;
+        transform: translateY(-50%);
+      }
+
+      &:nth-of-type(1):before { content: "Subscription Type"; }
+      &:nth-of-type(2):before { content: "Refund Window"; }
+      &:nth-of-type(3):before { content: "Conditions"; }
+    }
+  }
+
+  // Footer
+  .footer {
+    padding: 40px 0 20px;
+
+    .footer-container {
+      padding: 0 1.5rem;
+    }
+
+    .footer-bottom {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+
+      .footer-legal {
+        justify-content: center;
+        gap: 1rem;
+      }
+    }
+  }
+}
+
+// Small mobile (max 480px)
+@media (max-width: 480px) {
+  .refund-hero h1 {
+    font-size: 1.75rem;
+  }
+
+  .refund-section h2 {
+    font-size: 1.35rem;
+  }
+
+  .quick-summary {
+    h3 {
+      font-size: 1.15rem;
+    }
+
+    ul li {
+      font-size: 0.85rem;
+
+      strong {
+        display: block;
+        margin-bottom: 0.25rem;
+      }
+    }
+  }
+}
+
+// Very small mobile (max 380px)
+@media (max-width: 380px) {
+  .navbar {
+    .navbar-container {
+      height: 50px;
+      padding: 0 12px;
+    }
+
+    .logo-container {
+      .logo {
+        width: 28px;
+        height: 28px;
+        margin-right: 6px;
+      }
+
+      .brand-name {
+        font-size: 1rem;
+      }
+    }
+
+    .sign-in-button {
+      font-size: 0.8rem;
+      padding: 7px 14px;
+    }
+  }
+
+  .refund-hero {
+    padding: 110px 0 40px;
+
+    .refund-hero-content h1 {
+      font-size: 1.6rem;
+    }
+  }
+
+  .refund-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .refund-section {
+    h2 {
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+    }
+  }
+
+  .quick-summary {
+    padding: 1.25rem;
+
+    h3 {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+// Very small screens (max 320px)
+@media (max-width: 320px) {
+  .navbar {
+    .brand-name {
+      display: none; // Hide brand name on very small screens
+    }
+  }
+
+  .refund-hero h1 {
+    font-size: 1.4rem;
+  }
+
+  .refund-section {
+    h2 {
+      font-size: 1.15rem;
+      gap: 0.5rem;
+    }
+  }
+
+  .legal-entity-box p {
+    font-size: 0.85rem;
+    flex-direction: column;
+    align-items: flex-start;
+
+    i {
+      margin-bottom: 0.25rem;
     }
   }
 }
