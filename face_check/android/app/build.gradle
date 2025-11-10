@@ -1,26 +1,53 @@
-// android/app/build.gradle (GROOVY)
+// android/app/build.gradle (Groovy)
+
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'dev.flutter.flutter-gradle-plugin'
 }
 
+// ---------- читаем flutter.versionName / flutter.versionCode из local.properties ----------
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+// ---------- keystore ----------
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties") // face_check/android/key.properties
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace "com.example.face_check"
+    namespace "com.face_check.app"
 
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.example.face_check"
+        applicationId "com.face_check.app"
         minSdkVersion flutter.minSdkVersion
         targetSdk 36
-        versionCode 1
-        versionName "1.0.0"
-        multiDexEnabled true  // Добавьте эту строку
+        multiDexEnabled true
+
+        // ВАЖНО: версия берётся из pubspec.yaml -> local.properties
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
     }
 
     compileOptions {
-        coreLibraryDesugaringEnabled true  // Добавьте эту строку
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -28,17 +55,31 @@ android {
         jvmTarget = '17'
     }
 
+    signingConfigs {
+        release {
+            // читаем из key.properties
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+        // debug — дефолтный
+    }
+
     buildTypes {
         release {
-            // временно подпишем дебаг-ключом, чтобы просто собрать
-            signingConfig signingConfigs.debug
+            // подписываем релиз нашим release-ключом
+            signingConfig signingConfigs.release
 
-            // В Groovy — БЕЗ префикса "is"
-            minifyEnabled true
-            shrinkResources true
+            // для первого релиза можно без минификации — быстрее и проще
+            minifyEnabled false
+            shrinkResources false
 
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
-                    'proguard-rules.pro'
+            // Если решишь включить — раскомментируй:
+            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            // дефолт
         }
     }
 }
@@ -48,5 +89,7 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'  // Добавьте эту строку
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    // Если minSdk < 21 и нужен multiDex, добавь:
+    // implementation 'androidx.multidex:multidex:2.0.1'
 }

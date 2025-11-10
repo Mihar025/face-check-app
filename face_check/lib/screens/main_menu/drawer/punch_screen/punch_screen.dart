@@ -226,11 +226,19 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _getCurrentLocation() async {
-    final position = await locationService.getCurrentLocation();
-    if (position != null) {
-      _currentPosition.value = position;
+    try {
+      final position = await locationService.getCurrentLocation();
+      if (!mounted) return;
+      if (position != null) {
+        _currentPosition.value = position;
+      }
+    } catch (e) {
+      debugPrint('❌ _getCurrentLocation error: $e');
+      if (!mounted) return;
+      _showErrorSnackBar('Cannot get location. Please enable GPS and try again.');
     }
   }
+
 
   Future<void> _showWorkSiteDialog() async {
     await showDialog(

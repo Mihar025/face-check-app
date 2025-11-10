@@ -11,15 +11,17 @@ PODS:
   - geolocator_apple (1.2.0):
     - Flutter
     - FlutterMacOS
-  - Google-Maps-iOS-Utils (6.1.0):
-    - GoogleMaps (~> 9.0)
+  - Google-Maps-iOS-Utils (5.0.0):
+    - GoogleMaps (~> 8.0)
   - google_maps_flutter_ios (0.0.1):
     - Flutter
     - Google-Maps-iOS-Utils (< 7.0, >= 5.0)
     - GoogleMaps (< 10.0, >= 8.4)
-  - GoogleMaps (9.2.0):
-    - GoogleMaps/Maps (= 9.2.0)
-  - GoogleMaps/Maps (9.2.0)
+  - GoogleMaps (8.4.0):
+    - GoogleMaps/Maps (= 8.4.0)
+  - GoogleMaps/Base (8.4.0)
+  - GoogleMaps/Maps (8.4.0):
+    - GoogleMaps/Base
   - image_picker_ios (0.0.1):
     - Flutter
   - local_auth_darwin (0.0.1):
@@ -105,15 +107,15 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/workmanager_apple/ios"
 
 SPEC CHECKSUMS:
-  battery_plus: 3b68b6e7710fe49c022999753d22760e6dbbc471
+  battery_plus: 34f72fa2afeeea83bbae306c72a25828d3ec727a
   device_info_plus: 97af1d7e84681a90d0693e63169a5d50e0839a0d
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: 0c0b1ae97e741e1521e4c1629a459d04b9aec743
   flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
   geolocator_apple: 66b711889fd333205763b83c9dcf0a57a28c7afd
-  Google-Maps-iOS-Utils: 0a484b05ed21d88c9f9ebbacb007956edd508a96
+  Google-Maps-iOS-Utils: 66d6de12be1ce6d3742a54661e7a79cb317a9321
   google_maps_flutter_ios: e31555a04d1986ab130f2b9f24b6cdc861acc6d3
-  GoogleMaps: 634ec3ca99698b31ca2253d64f017217d70cfb38
+  GoogleMaps: 8939898920281c649150e0af74aa291c60f2e77d
   image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
   local_auth_darwin: fa4b06454df7df8e97c18d7ee55151c57e7af0de
   open_filex: 6e26e659846ec990262224a12ef1c528bb4edbe4
@@ -125,6 +127,6 @@ SPEC CHECKSUMS:
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
   workmanager_apple: 7bac258335c310689a641e2d66e88d4845d372e9
 
-PODFILE CHECKSUM: 83f6a08c58d4b249cda5d50acce1e33fac59623c
+PODFILE CHECKSUM: a53f8210a9b9fd88597fa98a5fcb861adc1d9638
 
 COCOAPODS: 1.16.2

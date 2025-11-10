@@ -138,13 +138,17 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     _locationTrackingService = LocationTrackingService(dio);
 
     try {
+      // 1. Сначала загружаем данные БЕЗ локации
       await Future.wait([
         _fetchAndSaveUserId(),
         timeService.sync(),
-        _getCurrentLocation(),
         _loadWorkSites(),
       ]);
 
+      // 2. ОТДЕЛЬНО запрашиваем локацию (не в Future.wait!)
+      await _getCurrentLocation();
+
+      // 3. Остальные проверки
       await _checkTodayPunchStatus();
       await _checkTrackingStatus();
 
@@ -368,11 +372,19 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   }
 
   Future<void> _getCurrentLocation() async {
-    final position = await locationService.getCurrentLocation();
-    if (position != null) {
-      _currentPosition.value = position;
+    try {
+      final position = await locationService.getCurrentLocation();
+      if (!mounted) return;
+      if (position != null) {
+        _currentPosition.value = position;
+      }
+    } catch (e) {
+      debugPrint('❌ _getCurrentLocation error: $e');
+      if (!mounted) return;
+      _showErrorSnackBar('Cannot get location. Please enable GPS and try again.');
     }
   }
+
 
   Future<void> _showWorkSiteDialog() async {
     await showDialog(

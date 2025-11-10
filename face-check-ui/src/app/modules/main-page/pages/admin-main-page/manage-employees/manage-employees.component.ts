@@ -161,8 +161,7 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
   i9Documents?: Array<I9DocumentRequest>;
 
   userPhotoUrl: string = '';
-  activeTab: 'updatePunchIn' | 'newPunchIn' | 'newPunchOut' = 'updatePunchIn';
-
+  activeTab: 'newPunchIn' | 'newPunchOut' = 'newPunchIn';
   endTime: LocalTime = {};
   startTime: LocalTime = {};
 

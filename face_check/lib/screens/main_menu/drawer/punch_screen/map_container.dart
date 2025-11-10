@@ -4,22 +4,29 @@ import 'package:geolocator/geolocator.dart';
 
 class MapContainer extends StatefulWidget {
   final Position? currentPosition;
-  final Function(GoogleMapController) onMapCreated;
+  final Function(GoogleMapController)? onMapCreated;
 
   const MapContainer({
     super.key,
     required this.currentPosition,
-    required this.onMapCreated,
+    this.onMapCreated,
   });
 
   @override
   State<MapContainer> createState() => _MapContainerState();
 }
 
-class _MapContainerState extends State<MapContainer> with AutomaticKeepAliveClientMixin {
-  Set<Marker>? _markers;
+class _MapContainerState extends State<MapContainer>
+    with AutomaticKeepAliveClientMixin {
+  GoogleMapController? _controller;
   CameraPosition? _initialPosition;
+  Set<Marker> _markers = {};
 
+  // показываем ли карту (true) или лоадер (false)
+  bool _showMap = false;
+
+  // дефолт — если вообще не дали локацию
+  static const LatLng _fallbackLatLng = LatLng(40.7128, -74.0060); // NYC
 
   static const double _defaultHeight = 200.0;
   static const double _smallScreenHeight = 180.0;
@@ -30,40 +37,86 @@ class _MapContainerState extends State<MapContainer> with AutomaticKeepAliveClie
   @override
   void initState() {
     super.initState();
-    _updatePositionData();
+    _setFromPosition(widget.currentPosition);
+
+    // если позиция уже есть — сразу показываем
+    if (widget.currentPosition != null) {
+      _showMap = true;
+    } else {
+      // если нет — можно через небольшую задержку всё равно показать карту с дефолтом
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (!mounted) return;
+        if (widget.currentPosition == null) {
+          // всё ещё нет позиции — показываем дефолт
+          setState(() {
+            _initialPosition = const CameraPosition(
+              target: _fallbackLatLng,
+              zoom: 14,
+            );
+            _markers = {};
+            _showMap = true;
+          });
+        }
+      });
+    }
   }
 
   @override
-  void didUpdateWidget(MapContainer oldWidget) {
+  void didUpdateWidget(covariant MapContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentPosition?.latitude != widget.currentPosition?.latitude ||
-        oldWidget.currentPosition?.longitude != widget.currentPosition?.longitude) {
-      _updatePositionData();
+
+    // если пришла НОВАЯ реальная позиция — переставим маркер и подвинем камеру
+    final oldPos = oldWidget.currentPosition;
+    final newPos = widget.currentPosition;
+
+    final changed = oldPos?.latitude != newPos?.latitude ||
+        oldPos?.longitude != newPos?.longitude;
+
+    if (changed && newPos != null) {
+      _setFromPosition(newPos);
+
+      // если карта уже создана — плавно двигаем
+      if (_controller != null) {
+        _controller!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(newPos.latitude, newPos.longitude),
+              zoom: 15,
+            ),
+          ),
+        );
+      }
+
+      // если до этого лоадер был — покажем карту
+      if (!_showMap) {
+        setState(() {
+          _showMap = true;
+        });
+      } else {
+        setState(() {}); // просто обновим маркеры
+      }
     }
   }
 
-  void _updatePositionData() {
-    final position = widget.currentPosition;
-    if (position != null) {
-      final latLng = LatLng(position.latitude, position.longitude);
-      _initialPosition = CameraPosition(target: latLng, zoom: 15);
-      _markers = {
-        Marker(
-          markerId: const MarkerId('current_location'),
-          position: latLng,
-        ),
-      };
-    }
+  void _setFromPosition(Position? position) {
+    if (position == null) return;
+
+    final latLng = LatLng(position.latitude, position.longitude);
+    _initialPosition = CameraPosition(target: latLng, zoom: 15);
+    _markers = {
+      Marker(
+        markerId: const MarkerId('current_location'),
+        position: latLng,
+      ),
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
-
 
     final height = isSmallScreen ? _smallScreenHeight : _defaultHeight;
     final margin = isSmallScreen ? _smallScreenMargin : _defaultMargin;
@@ -77,25 +130,35 @@ class _MapContainerState extends State<MapContainer> with AutomaticKeepAliveClie
           color: Colors.white.withOpacity(0.1),
         ),
       ),
-      child: RepaintBoundary(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(_borderRadius),
-          child: widget.currentPosition == null
-              ? const Center(
-            child: CircularProgressIndicator(),
-          )
-              : GoogleMap(
-            onMapCreated: widget.onMapCreated,
-            initialCameraPosition: _initialPosition!,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            zoomControlsEnabled: false,
-            markers: _markers!,
-            compassEnabled: false,
-            buildingsEnabled: false,
-            mapToolbarEnabled: false,
-          ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        child: !_showMap || _initialPosition == null
+            ? _buildLoader()
+            : GoogleMap(
+          onMapCreated: (c) {
+            _controller = c;
+            if (widget.onMapCreated != null) {
+              widget.onMapCreated!(c);
+            }
+          },
+          initialCameraPosition: _initialPosition!,
+          myLocationEnabled: widget.currentPosition != null,
+          myLocationButtonEnabled: true,
+          zoomControlsEnabled: false,
+          markers: _markers,
+          compassEnabled: false,
+          buildingsEnabled: false,
+          mapToolbarEnabled: false,
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoader() {
+    return Container(
+      color: Colors.grey[200],
+      child: const Center(
+        child: CircularProgressIndicator(),
       ),
     );
   }
