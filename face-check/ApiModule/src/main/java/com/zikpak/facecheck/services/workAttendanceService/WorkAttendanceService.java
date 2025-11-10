@@ -1792,16 +1792,21 @@ public class WorkAttendanceService {
                                 regularPay, totalRegularHours, payroll.getBaseHourlyRate(),
                                 overtimePay, totalOvertimeHours, payroll.getOvertimeRate());
 
-                        PayStubResponse response = financeCalculator.calculateNetPayWithSeparateHours(
-                                payroll.getWorker(),
-                                payroll.getBaseHourlyRate(),
-                                payroll.getOvertimeRate(),
-                                payroll.getRegularHours(),
-                                payroll.getOvertimeHours(),
-                                calculateYtdPFL(payroll.getWorker(), payroll.getPeriodStart()),
-                                calculateYtdSocialSecurity(payroll.getWorker(), payroll.getPeriodStart()),
-                                calculateYtdMedicare(payroll.getWorker(), payroll.getPeriodStart())
-                        );
+                    // Безопасно получаем YTD значения с защитой от null
+                    BigDecimal ytdPFL = calculateYtdPFL(payroll.getWorker(), payroll.getPeriodStart());
+                    BigDecimal ytdSS = calculateYtdSocialSecurity(payroll.getWorker(), payroll.getPeriodStart());
+                    BigDecimal ytdMedicare = calculateYtdMedicare(payroll.getWorker(), payroll.getPeriodStart());
+
+                    PayStubResponse response = financeCalculator.calculateNetPayWithSeparateHours(
+                            payroll.getWorker(),
+                            payroll.getBaseHourlyRate(),
+                            payroll.getOvertimeRate(),
+                            payroll.getRegularHours(),
+                            payroll.getOvertimeHours(),
+                            ytdPFL != null ? ytdPFL : BigDecimal.ZERO,
+                            ytdSS != null ? ytdSS : BigDecimal.ZERO,
+                            ytdMedicare != null ? ytdMedicare : BigDecimal.ZERO
+                    );
 
                         payroll.setGrossPay(response.getGrossPay());
                         payroll.setNetPay(response.getNetPay());
