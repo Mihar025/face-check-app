@@ -31,6 +31,11 @@ export class AttendenceTrackEmployeeAppOwnerComponent implements OnInit {
   errorMessage: string = '';
   successMessage: string = '';
 
+  showDeleteModal: boolean = false;
+  selectedAttendanceId: number = 0;
+  attendanceToDelete: AttendanceResponse | null = null;
+  deleting: boolean = false;
+
   // Pagination
   page: number = 0;
   size: number = 10;
@@ -186,6 +191,69 @@ export class AttendenceTrackEmployeeAppOwnerComponent implements OnInit {
         console.error('Error adding overtime:', error);
         this.errorMessage = error.error?.message || 'Failed to add overtime. Please try again.';
         this.isSubmitting = false;
+      }
+    });
+  }
+
+  openDeleteModal(attendance: AttendanceResponse): void {
+    if (!attendance.attendanceId) {
+      this.errorMessage = 'Cannot delete: Attendance ID is missing';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    this.selectedAttendanceId = attendance.attendanceId;
+    this.attendanceToDelete = attendance;
+    this.showDeleteModal = true;
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.selectedAttendanceId = 0;
+    this.attendanceToDelete = null;
+  }
+
+  deleteAttendance(): void {
+    if (!this.selectedAttendanceId) {
+      this.errorMessage = 'No attendance selected for deletion';
+      return;
+    }
+
+    this.deleting = true;
+    this.errorMessage = '';
+
+    this.attendanceService.deleteAttendanceRecord({
+      attendanceId: this.selectedAttendanceId
+    }).subscribe({
+      next: () => {
+        this.deleting = false;
+        this.closeDeleteModal();
+
+        // Показываем успешное сообщение
+        this.errorMessage = ''; // Очищаем ошибки
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = '<i class="fas fa-check-circle"></i> Attendance record deleted successfully!';
+        document.querySelector('.attendance-container')?.prepend(successDiv);
+
+        setTimeout(() => {
+          successDiv.remove();
+        }, 3000);
+
+        // Перезагружаем список
+        this.loadAttendance();
+      },
+      error: (error) => {
+        this.deleting = false;
+        console.error('Delete error:', error);
+
+        if (error.status === 404) {
+          this.errorMessage = 'Attendance record not found';
+        } else if (error.status === 403) {
+          this.errorMessage = 'You do not have permission to delete this record';
+        } else {
+          this.errorMessage = `Failed to delete: ${error.error?.message || 'Unknown error'}`;
+        }
       }
     });
   }

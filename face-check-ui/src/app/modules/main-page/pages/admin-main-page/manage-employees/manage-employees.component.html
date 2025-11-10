@@ -185,31 +185,20 @@
             </ng-container>
           </div>
           <div class="time-tabs">
-            <button class="tab-button" [class.active]="activeTab === 'updatePunchIn'" (click)="activeTab = 'updatePunchIn'">Update Punch In</button>
             <button class="tab-button" [class.active]="activeTab === 'newPunchIn'" (click)="activeTab = 'newPunchIn'">Set New Punch In</button>
             <button class="tab-button" [class.active]="activeTab === 'newPunchOut'" (click)="activeTab = 'newPunchOut'">Set New Punch Out</button>
           </div>
 
-          <div *ngIf="activeTab === 'updatePunchIn'" class="time-form">
-            <h5>Update Latest Punch In Time</h5>
-            <div class="form-group">
-              <label for="newCheckInTime">New Check-In Time (ISO Format)</label>
-              <input type="datetime-local"
-                     id="newCheckInTime"
-                     [(ngModel)]="newCheckInTime"
-                     placeholder="YYYY-MM-DDThh:mm:ss"
-                     lang="en-US">
-              <small class="form-hint">Format: YYYY-MM-DDThh:mm:ss</small>
-            </div>
-            <div class="form-actions">
-              <button class="action-button time-button" (click)="updatePunchIn()">
-                <i class="fas fa-clock"></i> Update Time
-              </button>
-            </div>
-          </div>
 
           <div *ngIf="activeTab === 'newPunchIn'" class="time-form">
             <h5>Set New Punch In</h5>
+
+            <div class="info-message" style="background-color: #f0f8ff; border: 1px solid #4a90e2; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
+              <i class="fas fa-info-circle" style="color: #4a90e2;"></i>
+              <span style="color: #333;">You can update an existing Punch In or set a completely new Punch In for missed days</span>
+            </div>
+
+
             <div class="form-group">
               <label for="dateWhenWorkerDidntMakePunchIn">Date When Punch In Was Missed (MM/DD/YYYY)</label>
               <input type="text"

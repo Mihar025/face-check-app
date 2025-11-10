@@ -1964,22 +1964,22 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "Location saved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
           "400": {
             "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Location saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2020,8 +2020,8 @@
           "required": true
         },
         "responses": {
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -2033,8 +2033,8 @@
               }
             }
           },
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -6519,8 +6519,8 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -6532,8 +6532,8 @@
               }
             }
           },
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -8250,6 +8250,37 @@
         }
       }
     },
+    "/attendance/has-punch-in/{workerId}": {
+      "get": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "hasPunchIn",
+        "parameters": [
+          {
+            "name": "workerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/attendance/find-all/attendance/app-owner": {
       "get": {
         "tags": [
@@ -8640,6 +8671,37 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/attendance/attendance/{attendanceId}": {
+      "delete": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "deleteAttendanceRecord",
+        "parameters": [
+          {
+            "name": "attendanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           }
         }
       }
@@ -11012,15 +11074,10 @@
         "required": [
           "dateWhenWorkerDidntMakePunchOut",
           "newPunchOutDate",
-          "newPunchOutTime",
-          "workerId"
+          "newPunchOutTime"
         ],
         "type": "object",
         "properties": {
-          "workerId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "dateWhenWorkerDidntMakePunchOut": {
             "type": "string",
             "format": "date-time"
@@ -11058,15 +11115,10 @@
         "required": [
           "dateWhenWorkerDidntMakePunchIn",
           "newPunchInDate",
-          "newPunchInTime",
-          "workerId"
+          "newPunchInTime"
         ],
         "type": "object",
         "properties": {
-          "workerId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "dateWhenWorkerDidntMakePunchIn": {
             "type": "string",
             "format": "date-time"

@@ -79,6 +79,8 @@ public class AdminController {
         foremanAndAdminService.deleteWorkerPunchIn(authentication, workerId);
         return ResponseEntity.noContent().build();
     }
+
+
     @PutMapping("/worker/{workerId}/punch-in")
     public ResponseEntity<UpdatePunchInForWorkerResponse> updatePunchInTime(
             Authentication authentication,
