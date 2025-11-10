@@ -43,8 +43,8 @@ public class SickLeaveService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + userId));
 
-        // 1) Обновляем общее количество отработанных часов за год
-        BigDecimal oldYtd = user.getHoursWorkedYearToDate();
+        // 1) Обновляем общее количество отработанных часов за год (null-safe)
+        BigDecimal oldYtd = nz(user.getHoursWorkedYearToDate());
         BigDecimal worked = BigDecimal.valueOf(workedHours);
         BigDecimal newYtd = oldYtd.add(worked);
         user.setHoursWorkedYearToDate(newYtd);
@@ -54,8 +54,10 @@ public class SickLeaveService {
         BigDecimal sickHoursThisPeriod = worked
                 .divide(BigDecimal.valueOf(30), 2, RoundingMode.DOWN);
 
-        // 3) Определяем лимиты в зависимости от размера компании
-        int companySize = user.getCompany().getEmployees().size();
+        // 3) Определяем лимиты в зависимости от размера компании (null-safe)
+        int companySize = Optional.ofNullable(user.getCompany())
+                .map(c -> c.getEmployees() == null ? 0 : c.getEmployees().size())
+                .orElse(0);
         BigDecimal annualCap;
         boolean isPaid;
 
@@ -70,11 +72,8 @@ public class SickLeaveService {
             isPaid = false;
         }
 
-        // 4) Проверяем, не превысили ли мы годовой лимит
-        BigDecimal currentYearAccrued = user.getSickLeaveAccruedThisYear() != null
-                ? user.getSickLeaveAccruedThisYear()
-                : BigDecimal.ZERO;
-
+        // 4) Проверяем, не превысили ли мы годовой лимит (null-safe)
+        BigDecimal currentYearAccrued = nz(user.getSickLeaveAccruedThisYear());
         BigDecimal potentialNewAccrued = currentYearAccrued.add(sickHoursThisPeriod);
 
         if (potentialNewAccrued.compareTo(annualCap) > 0) {
@@ -82,8 +81,8 @@ public class SickLeaveService {
             sickHoursThisPeriod = annualCap.subtract(currentYearAccrued).max(BigDecimal.ZERO);
         }
 
-        // 5) Обновляем балансы
-        BigDecimal newAccrued = user.getSickLeaveAccrued().add(sickHoursThisPeriod);
+        // 5) Обновляем балансы (null-safe)
+        BigDecimal newAccrued = nz(user.getSickLeaveAccrued()).add(sickHoursThisPeriod);
         user.setSickLeaveAccrued(newAccrued);
 
         // Обновляем счетчик начисленного в текущем году
@@ -110,7 +109,8 @@ public class SickLeaveService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + userId));
 
-        BigDecimal available = user.getSickLeaveAccrued().subtract(user.getSickLeaveUsed());
+        // null-safe разница
+        BigDecimal available = nz(user.getSickLeaveAccrued()).subtract(nz(user.getSickLeaveUsed()));
 
         // Проверяем, может ли сотрудник использовать sick leave
         LocalDate hireDate = user.getHireDate();
@@ -137,7 +137,7 @@ public class SickLeaveService {
 
         // Максимум 40 часов можно перенести на следующий год
         BigDecimal maxCarryOver = BigDecimal.valueOf(40);
-        BigDecimal unused = user.getSickLeaveAccrued().subtract(user.getSickLeaveUsed());
+        BigDecimal unused = nz(user.getSickLeaveAccrued()).subtract(nz(user.getSickLeaveUsed()));
         BigDecimal carryOver = unused.min(maxCarryOver);
 
         // Сбрасываем счетчики для нового года
@@ -173,15 +173,18 @@ public class SickLeaveService {
         }
 
         return SickLeaveInfo.builder()
-                .totalAccrued(user.getSickLeaveAccrued())
-                .totalUsed(user.getSickLeaveUsed())
+                .totalAccrued(nz(user.getSickLeaveAccrued()))
+                .totalUsed(nz(user.getSickLeaveUsed()))
                 .available(available)
-                .accruedThisYear(user.getSickLeaveAccruedThisYear())
+                .accruedThisYear(nz(user.getSickLeaveAccruedThisYear()))
                 .isPaid(user.getSickLeavePaid())
                 .canUse(canUse)
                 .daysUntilCanUse(daysUntilCanUse)
                 .build();
     }
+
+    private static BigDecimal nz(BigDecimal v) { return v != null ? v : BigDecimal.ZERO; }
+
 
     @lombok.Builder
     @lombok.Data
