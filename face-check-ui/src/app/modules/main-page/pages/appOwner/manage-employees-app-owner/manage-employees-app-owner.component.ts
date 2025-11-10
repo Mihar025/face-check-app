@@ -666,10 +666,11 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
         day.isDayOff = schedule.isDayOff || false;
 
         if (!day.isDayOff) {
-          day.startTime = schedule.startTime || { hour: 9, minute: 0 };
-          day.endTime = schedule.endTime || { hour: 17, minute: 0 };
-          day.lunchStart = schedule.lunchStart || { hour: 12, minute: 0 };
-          day.lunchEnd = schedule.lunchEnd || { hour: 13, minute: 0 };
+          // Используем parseTime для правильного парсинга
+          day.startTime = this.parseTime(schedule.startTime);
+          day.endTime = this.parseTime(schedule.endTime);
+          day.lunchStart = this.parseTime(schedule.lunchStart);
+          day.lunchEnd = this.parseTime(schedule.lunchEnd);
           day.isCompanyPayingLunch = schedule.isCompanyPayingLunch || false;
         }
       }
@@ -780,7 +781,6 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
       }
     });
   }
-
   generateScheduleForWorker(): void {
     if (!this.selectedEmployee?.workerId) return;
 
@@ -795,26 +795,50 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
+    // ✅ ДОБАВЛЯЕМ ФУНКЦИЮ ФОРМАТИРОВАНИЯ (как в первом файле)
+    const formatTimeForJava = (time: LocalTime): string => {
+      const hour = (time.hour ?? 0).toString().padStart(2, '0');
+      const minute = (time.minute ?? 0).toString().padStart(2, '0');
+      return `${hour}:${minute}:00`;
+    };
+
     const weeklySchedule: any = {};
 
     this.flexibleDays.forEach(day => {
-      weeklySchedule[day.day] = {
-        startTime: { hour: day.startTime.hour ?? 0, minute: day.startTime.minute ?? 0 },
-        endTime: { hour: day.endTime.hour ?? 0, minute: day.endTime.minute ?? 0 },
-        lunchStart: { hour: day.lunchStart.hour ?? 0, minute: day.lunchStart.minute ?? 0 },
-        lunchEnd: { hour: day.lunchEnd.hour ?? 0, minute: day.lunchEnd.minute ?? 0 },
-        isCompanyPayingLunch: day.isCompanyPayingLunch,
-        isDayOff: day.isDayOff
-      };
+      // ✅ ИСПРАВЛЯЕМ - используем formatTimeForJava для всех времён
+      if (day.isDayOff) {
+        // Для выходного дня тоже отправляем строки, не объекты
+        weeklySchedule[day.day] = {
+          startTime: formatTimeForJava({ hour: 9, minute: 0 }),
+          endTime: formatTimeForJava({ hour: 17, minute: 0 }),
+          lunchStart: formatTimeForJava({ hour: 12, minute: 0 }),
+          lunchEnd: formatTimeForJava({ hour: 13, minute: 0 }),
+          isCompanyPayingLunch: false,
+          isDayOff: true
+        };
+      } else {
+        weeklySchedule[day.day] = {
+          startTime: formatTimeForJava(day.startTime),
+          endTime: formatTimeForJava(day.endTime),
+          lunchStart: formatTimeForJava(day.lunchStart),
+          lunchEnd: formatTimeForJava(day.lunchEnd),
+          isCompanyPayingLunch: day.isCompanyPayingLunch,
+          isDayOff: false
+        };
+      }
     });
 
     const requestData = { weeklySchedule };
+
+    // Логируем для дебага
+    console.log('Sending schedule request:', JSON.stringify(requestData, null, 2));
 
     this.scheduleService.setWeeklySchedule({
       workerId: this.selectedEmployee.workerId,
       body: requestData
     }).subscribe({
       next: (response) => {
+        console.log('Schedule saved successfully:', response);
         this.employeeGeneratedSchedule = response;
         this.hasExistingSchedule = true;
         this.successMessage = 'Schedule saved successfully!';
@@ -822,13 +846,28 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
         this.clearMessages();
       },
       error: (error) => {
-        console.error('Schedule error:', error);
-        this.errorMessage = 'Failed to save schedule: ' + (error?.error?.message || error?.message || 'Unknown error');
+        console.error('Schedule error details:', error);
+
+        let errorMsg = 'Failed to save schedule: ';
+
+        if (error?.status === 500) {
+          errorMsg += 'Server error. Check server logs for details.';
+          if (error?.error?.message?.includes('validate')) {
+            errorMsg = 'Validation error: ' + error.error.message;
+          } else if (error?.error?.message?.includes('null')) {
+            errorMsg = 'Required fields are missing. Please fill all schedule times.';
+          }
+        } else if (error?.status === 400) {
+          errorMsg += error?.error?.message || 'Invalid request format';
+        } else {
+          errorMsg += error?.error?.message || error?.message || 'Unknown error';
+        }
+
+        this.errorMessage = errorMsg;
         this.loading = false;
       }
     });
   }
-
   // ────────────────────────────────────────────────────────────────────────────────
   // Delete Modal
   // ────────────────────────────────────────────────────────────────────────────────
@@ -1248,4 +1287,29 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
   }
 
   trackByEmployee = (_: number, item: RelatedUserInCompanyResponse) => item.workerId ?? item.email ?? item.firstName;
+
+   parseTime(time: any): LocalTime {
+    if (!time) {
+      return { hour: 9, minute: 0 };
+    }
+
+    // Если это уже объект LocalTime
+    if (typeof time === 'object' && 'hour' in time) {
+      return {
+        hour: time.hour || 0,
+        minute: time.minute || 0
+      };
+    }
+
+    // Если это строка вида "HH:mm:ss" или "HH:mm"
+    if (typeof time === 'string') {
+      const parts = time.split(':');
+      return {
+        hour: parseInt(parts[0]) || 0,
+        minute: parseInt(parts[1]) || 0
+      };
+    }
+
+    return { hour: 9, minute: 0 };
+  }
 }
