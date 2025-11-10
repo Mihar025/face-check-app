@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>$(DEVELOPMENT_LANGUAGE)</string>
+  <key>CFBundleDisplayName</key>
+  <string>Face Check</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>face_check</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$(FLUTTER_BUILD_NAME)</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>$(FLUTTER_BUILD_NUMBER)</string>
+
+  <!-- Удали весь LSApplicationQueriesSchemes, если не нужен -->
+  <!-- <key>LSApplicationQueriesSchemes</key>
+  <array>
+    <string>https</string>
+    <string>http</string>
+  </array> -->
+
+  <key>LSRequiresIPhoneOS</key>
+  <true/>
+
+  <!-- Privacy texts (уточнены под твой кейс) -->
+  <key>NSCameraUsageDescription</key>
+  <string>We use the camera to capture punch-in/out photos for attendance verification.</string>
+  <key>NSFaceIDUsageDescription</key>
+  <string>Use Face ID for quick and secure sign-in.</string>
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>We use your location during punch-in/out to verify you are at the assigned worksite.</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+
+  <!-- Оставляй эти два ключа ТОЛЬКО если реально нужен фон (active shift tracking) -->
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>We track location during active shifts to confirm worksite presence and accurate timesheets.</string>
+  <key>NSLocationAlwaysUsageDescription</key>
+  <string>This app needs background location access during active shifts.</string>
+
+  <!-- Если только выбираешь фото из галереи — оставь Usage;
+       если сохраняешь фото в галерею — добавь и NSPhotoLibraryAddUsageDescription -->
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>We access your photo library to select a profile image if you choose one.</string>
+  <!-- <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>We save captured photos to your library only if you choose to export them.</string> -->
+
+  <key>UIApplicationSupportsIndirectInputEvents</key>
+  <true/>
+
+  <!-- Background Modes: оставь только используемые -->
+  <key>UIBackgroundModes</key>
+  <array>
+    <!-- <string>fetch</string> -->
+    <!-- <string>remote-notification</string> -->
+    <string>location</string>
+  </array>
+
+  <key>UILaunchStoryboardName</key>
+  <string>LaunchScreen</string>
+
+  <!-- Для Flutter обычно НЕ нужен основной storyboard -->
+  <!-- <key>UIMainStoryboardFile</key>
+  <string>Main</string> -->
+
+  <!-- Лучше убрать пустой ключ -->
+  <!-- <key>UIStatusBarStyle</key>
+  <string>UIStatusBarStyleDefault</string> -->
+
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <!-- Удали ландшафт, если приложение портрет-только -->
+    <!-- <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string> -->
+  </array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+
+  <key>io.flutter.embedded_views_preview</key>
+  <true/>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+</dict>
+</plist>
