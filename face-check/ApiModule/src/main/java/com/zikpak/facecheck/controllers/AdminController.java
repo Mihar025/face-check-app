@@ -99,9 +99,6 @@ public class AdminController {
 
 
 
-
-
-
     @GetMapping("/company/employees/count")
     @Operation(summary = "Get total number of employees in company",
             description = "Returns the total count of employees in the admin's company")
