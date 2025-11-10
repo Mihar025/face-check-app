@@ -172,6 +172,8 @@ public class SickLeaveService {
             }
         }
 
+
+
         return SickLeaveInfo.builder()
                 .totalAccrued(nz(user.getSickLeaveAccrued()))
                 .totalUsed(nz(user.getSickLeaveUsed()))
