@@ -42,6 +42,7 @@ import {UserDataService} from "../../../../components/user-data-service/user-dat
 import {Subscription} from "rxjs";
 import {DatePipe} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
+import {ChangePunchOutRequest} from "../../../../../services/models/change-punch-out-request";
 
 @Component({
   selector: 'app-manage-employees',
@@ -758,8 +759,8 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     this.successMessage = '';
 
     console.log('🔵 Starting punch out change');
-    console.log('dateWhenWorkerDidntMakePunchOut:', this.dateWhenWorkerDidntMakePunchOut);
-    console.log('newPunchOutDate:', this.newPunchOutDate);
+    console.log('dateWhenWorkerDidntMakePunchOut (raw):', this.dateWhenWorkerDidntMakePunchOut);
+    console.log('newPunchOutDate (raw):', this.newPunchOutDate);
     console.log('newPunchOutTime:', this.newPunchOutTime);
     console.log('selectedEmployeeId:', this.selectedEmployeeId);
 
@@ -769,6 +770,7 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Конвертируем MM/DD/YYYY в YYYY-MM-DD
     const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchOut);
     const isoNewDate = this.convertToISODate(this.newPunchOutDate);
 
@@ -782,11 +784,19 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ ИЗМЕНИЛ НА СТРОКУ!
+    // ✅ ПРАВИЛЬНЫЙ ФОРМАТ - dateWhenWorkerDidntMakePunchOut как LocalDateTime строка
+    // newPunchOutDate как LocalDate строка (YYYY-MM-DD)
+    // newPunchOutTime как объект LocalTime
     const requestData = {
-      dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`,
-      newPunchOutDate: isoNewDate,
-      newPunchOutTime: `${(this.newPunchOutTime.hour || 0).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`
+      dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`, // LocalDateTime формат
+      newPunchOutDate: isoNewDate,  // LocalDate формат (YYYY-MM-DD)
+      newPunchOutTime: {  // LocalTime объект
+        hour: this.newPunchOutTime.hour || 0,
+        minute: this.newPunchOutTime.minute || 0,
+        second: 0,
+        nano: 0
+      },
+      workerId: this.selectedEmployeeId
     };
 
     console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
@@ -796,13 +806,16 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       body: requestData as any
     };
 
-    console.log('📤 Full params:', JSON.stringify(params, null, 2));
-
     this.adminControllerService.changePunchOutForWorker(params).subscribe(
       (response) => {
         this.loading = false;
         this.successMessage = "Punch Out time was changed successfully!";
         console.log('✅ Success:', response);
+
+        // Очищаем поля после успеха
+        this.dateWhenWorkerDidntMakePunchOut = '';
+        this.newPunchOutDate = '';
+        this.newPunchOutTime = { hour: 17, minute: 0 };
       },
       error => {
         this.loading = false;
