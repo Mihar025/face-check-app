@@ -58,7 +58,7 @@
         <entry key="battery_plus">
           <value>
             <list>
-              <option value="$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/battery_plus-5.0.3/lib" />
+              <option value="$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/battery_plus-6.2.3/lib" />
             </list>
           </value>
         </entry>
@@ -1769,7 +1769,7 @@
       <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/args-2.7.0/lib" />
       <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/async-2.11.0/lib" />
       <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/barcode-2.2.9/lib" />
-      <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/battery_plus-5.0.3/lib" />
+      <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/battery_plus-6.2.3/lib" />
       <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/battery_plus_platform_interface-2.0.1/lib" />
       <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/bidi-2.0.13/lib" />
       <root url="file://$PROJECT_DIR$/../.pub-cache/hosted/pub.dev/boolean_selector-2.1.1/lib" />

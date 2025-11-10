@@ -1018,3 +1018,208 @@ $white: #ffffff;
   }
 }
 
+
+
+// Delete button style
+.btn-delete {
+  background: #ef4444;
+  color: white;
+
+  &:hover {
+    background: #dc2626;
+    transform: scale(1.05);
+  }
+}
+
+// Delete modal styles
+.delete-modal {
+  .modal-header {
+    background: #fef2f2;
+    border-bottom: 2px solid #fecaca;
+
+    h3 {
+      color: #991b1b;
+    }
+  }
+
+  .delete-warning {
+    padding: 20px;
+
+    .attendance-details {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+
+        .label {
+          font-weight: 600;
+          color: #6b7280;
+        }
+
+        .value {
+          color: #111827;
+        }
+      }
+    }
+
+    .warning-message {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+
+      ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+
+      .text-danger {
+        color: #dc2626;
+        margin-top: 10px;
+      }
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+
+      &.btn-secondary {
+        background: #6b7280;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background: #4b5563;
+        }
+      }
+
+      &.btn-danger {
+        background: #dc2626;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background: #b91c1c;
+        }
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// Success message
+.success-message {
+  background: #10b981;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideDown 0.3s ease;
+
+  i {
+    font-size: 20px;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+
+  &:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #b91c1c;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.delete-modal {
+  .attendance-details {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+
+      .label {
+        font-weight: 600;
+        color: #6b7280;
+      }
+
+      .value {
+        color: #111827;
+      }
+    }
+  }
+
+  .warning-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+
+    ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+
+    .text-danger {
+      color: #dc2626;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+  }
+}

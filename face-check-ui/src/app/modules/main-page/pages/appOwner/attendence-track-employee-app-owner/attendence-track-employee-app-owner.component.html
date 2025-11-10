@@ -130,6 +130,12 @@
                   (click)="openPhotoModal(attendance)">
                   <i class="fas fa-camera"></i>
                 </button>
+                <button
+                  class="btn-icon btn-delete"
+                  title="Delete Attendance"
+                  (click)="openDeleteModal(attendance)">
+                  <i class="fas fa-trash"></i>
+                </button>
               </div>
             </td>
           </tr>
@@ -171,6 +177,8 @@
             (click)="nextPage()">
             <i class="fas fa-chevron-right"></i>
           </button>
+
+
         </div>
       </div>
 
@@ -321,5 +329,86 @@
     <button class="close-fullscreen" (click)="closeFullscreen()">
       <i class="fas fa-times"></i>
     </button>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div class="modal-container delete-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>
+        Confirm Deletion
+      </h3>
+      <button class="close-button" (click)="closeDeleteModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="delete-warning">
+        <p><strong>Are you sure you want to delete this attendance record?</strong></p>
+
+        <!-- Attendance Details -->
+        <div class="attendance-details" *ngIf="attendanceToDelete">
+          <div class="detail-row">
+            <span class="label">Employee:</span>
+            <span class="value">{{ attendanceToDelete.firstName }} {{ attendanceToDelete.lastName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Company:</span>
+            <span class="value">{{ attendanceToDelete.companyName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Date:</span>
+            <span class="value">{{ formatDate(attendanceToDelete.checkInTime) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Hours Worked:</span>
+            <span class="value">{{ formatHours(attendanceToDelete.hoursWorked) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Gross Pay:</span>
+            <span class="value">{{ formatCurrency(attendanceToDelete.grossPayPerDay) }}</span>
+          </div>
+        </div>
+
+        <!-- Warning Message -->
+        <div class="warning-message">
+          <i class="fas fa-info-circle"></i>
+          <p>This action will:</p>
+          <ul>
+            <li>Permanently delete this attendance record</li>
+            <li>Recalculate payroll for this period</li>
+            <li>Update all related financial reports</li>
+          </ul>
+          <p class="text-danger"><strong>This action cannot be undone!</strong></p>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-actions">
+      <button
+        class="btn-secondary"
+        (click)="closeDeleteModal()"
+        [disabled]="deleting">
+        Cancel
+      </button>
+      <button
+        class="btn-danger"
+        (click)="deleteAttendance()"
+        [disabled]="deleting">
+        <i *ngIf="deleting" class="fas fa-spinner fa-spin"></i>
+        <i *ngIf="!deleting" class="fas fa-trash"></i>
+        {{ deleting ? 'Deleting...' : 'Delete Record' }}
+      </button>
+    </div>
   </div>
 </div>

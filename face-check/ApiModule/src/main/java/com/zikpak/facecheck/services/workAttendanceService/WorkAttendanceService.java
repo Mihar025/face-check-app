@@ -2332,6 +2332,145 @@ public class WorkAttendanceService {
                 }
         }
 
+    @Transactional
+    public void deleteAttendanceRecord(Integer attendanceId, Integer adminId) {
+        Timer.Sample timer = metricsService.startTimer();
+
+        try {
+            log.info("🗑️ Starting deletion of attendance record: {} by admin: {}", attendanceId, adminId);
+
+            // 1. Находим attendance запись
+            WorkerAttendance attendance = workerAttendanceRepository.findById(attendanceId)
+                    .orElseThrow(() -> new EntityNotFoundException("Attendance not found: " + attendanceId));
+
+            User worker = attendance.getWorker();
+            LocalDate attendanceDate = attendance.getCheckInTime().toLocalDate();
+
+            // 2. Сохраняем данные для логирования
+            String logInfo = String.format(
+                    "Deleting attendance - Worker: %s, Date: %s, Hours: %.2f, Overtime: %.2f, Gross: %s",
+                    worker.getFirstName() + " " + worker.getLastName(),
+                    attendanceDate,
+                    attendance.getHoursWorked() != null ? attendance.getHoursWorked() : 0.0,
+                    attendance.getOvertimeHours() != null ? attendance.getOvertimeHours() : 0.0,
+                    attendance.getGrossPayPerDay()
+            );
+            log.info(logInfo);
+
+            // 3. Находим payroll период
+            WorkerPayroll payroll = workerPayrollRepository
+                    .findFirstByWorkerAndPeriodStartLessThanEqualAndPeriodEndGreaterThanEqualOrderByPeriodEndDesc(
+                            worker, attendanceDate, attendanceDate)
+                    .orElse(null);
+
+            // 4. Удаляем attendance запись
+            workerAttendanceRepository.delete(attendance);
+            log.info("✅ Attendance record deleted");
+
+            // 5. Если был payroll - пересчитываем
+            if (payroll != null) {
+                log.info("📊 Recalculating payroll for period: {} to {}",
+                        payroll.getPeriodStart(), payroll.getPeriodEnd());
+
+                // Получаем оставшиеся attendance за период
+                List<WorkerAttendance> remainingAttendances = workerAttendanceRepository
+                        .findAllByWorkerIdAndCheckInTimeBetween(
+                                worker.getId(),
+                                payroll.getPeriodStart().atStartOfDay(),
+                                payroll.getPeriodEnd().atTime(LocalTime.MAX));
+
+                // Пересчитываем суммы
+                double totalRegularHours = 0;
+                double totalOvertimeHours = 0;
+
+                for (WorkerAttendance att : remainingAttendances) {
+                    if (att.getHoursWorked() != null) {
+                        totalRegularHours += att.getHoursWorked();
+                    }
+                    if (att.getOvertimeHours() != null) {
+                        totalOvertimeHours += att.getOvertimeHours();
+                    }
+                }
+
+                // Обновляем payroll
+                payroll.setRegularHours(totalRegularHours);
+                payroll.setOvertimeHours(totalOvertimeHours);
+                payroll.setTotalHours(totalRegularHours + totalOvertimeHours);
+
+                // Если часов вообще не осталось - можно удалить payroll
+                if (totalRegularHours == 0 && totalOvertimeHours == 0) {
+                    workerPayrollRepository.delete(payroll);
+                    log.info("🗑️ Payroll period deleted (no hours remaining)");
+                } else {
+                    // Пересчитываем налоги и зарплату
+                    BigDecimal regularPay = BigDecimal.valueOf(totalRegularHours)
+                            .multiply(payroll.getBaseHourlyRate())
+                            .setScale(2, RoundingMode.HALF_UP);
+
+                    BigDecimal overtimePay = BigDecimal.valueOf(totalOvertimeHours)
+                            .multiply(payroll.getOvertimeRate())
+                            .setScale(2, RoundingMode.HALF_UP);
+
+                    payroll.setRegularPay(regularPay);
+                    payroll.setOvertimePay(overtimePay);
+
+                    // Пересчитываем все налоги
+                    PayStubResponse response = financeCalculator.calculateNetPayWithSeparateHours(
+                            worker,
+                            payroll.getBaseHourlyRate(),
+                            payroll.getOvertimeRate(),
+                            totalRegularHours,
+                            totalOvertimeHours,
+                            calculateYtdPFL(worker, payroll.getPeriodStart()),
+                            calculateYtdSocialSecurity(worker, payroll.getPeriodStart()),
+                            calculateYtdMedicare(worker, payroll.getPeriodStart())
+                    );
+
+                    // Обновляем все поля payroll
+                    payroll.setGrossPay(response.getGrossPay());
+                    payroll.setNetPay(response.getNetPay());
+                    payroll.setMedicare(response.getMedicare());
+                    payroll.setSocialSecurityEmployee(response.getSocialSecurity());
+                    payroll.setFederalWithholding(response.getFederalTax());
+                    payroll.setNyStateWithholding(response.getStateTax());
+                    payroll.setNyLocalWithholding(response.getNycTax());
+                    payroll.setNyDisabilityWithholding(response.getDisability());
+                    payroll.setNyPaidFamilyLeave(response.getPfl());
+                    payroll.setTotalDeductions(response.getTotalDeductions());
+
+                    WorkerPayroll savedPayroll = workerPayrollRepository.save(payroll);
+
+                    // Перераспределяем net pay по оставшимся дням
+                    distributeOnlyNetPay(savedPayroll);
+
+                    log.info("✅ Payroll recalculated - new totals: regular={}, overtime={}, gross={}, net={}",
+                            totalRegularHours, totalOvertimeHours,
+                            savedPayroll.getGrossPay(), savedPayroll.getNetPay());
+                }
+            }
+
+            // 6. Обновляем sick leave (если нужно вычитать)
+            double hoursToRemove = (attendance.getHoursWorked() != null ? attendance.getHoursWorked() : 0.0) +
+                    (attendance.getOvertimeHours() != null ? attendance.getOvertimeHours() : 0.0);
+
+            if (hoursToRemove > 0) {
+                // Тут можно вычесть начисленные sick hours если нужно
+                // sickLeaveService.reverseSickLeave(worker.getId(), hoursToRemove);
+                log.info("🏥 Would reverse {} sick leave hours (if implemented)", hoursToRemove);
+            }
+
+            metricsService.recordOperationTime(timer, "delete_attendance_success");
+            log.info("✅ Successfully deleted attendance record {} for worker {}",
+                    attendanceId, worker.getFirstName() + " " + worker.getLastName());
+
+        } catch (Exception e) {
+            metricsService.recordError("delete_attendance", e.getMessage(), e);
+            metricsService.recordOperationTime(timer, "delete_attendance_failed");
+            log.error("❌ Failed to delete attendance record {}", attendanceId, e);
+            throw new RuntimeException("Failed to delete attendance: " + e.getMessage(), e);
+        }
+    }
+
         private User checkIsUserHasAdminRoleAndBusinessOwner(Authentication authentication) {
                 User user = (User) authentication.getPrincipal();
 

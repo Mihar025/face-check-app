@@ -2,22 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  final SharedPreferences prefs;
-  late bool _isDarkTheme;
+  SharedPreferences? _prefs;
+  bool _isDarkTheme;
 
-  ThemeProvider(this.prefs) {
-    _isDarkTheme = prefs.getBool('isDarkTheme') ?? true;
-  }
+  /// Можно создать провайдер без prefs, а потом «прикрепить» их.
+  ThemeProvider({SharedPreferences? prefs, bool initialDark = true})
+      : _prefs = prefs,
+        _isDarkTheme = prefs?.getBool('isDarkTheme') ?? initialDark;
 
   bool get isDarkTheme => _isDarkTheme;
-
   ThemeData get currentTheme => _isDarkTheme ? darkTheme : lightTheme;
 
+  /// Вызываем, когда prefs стали доступны (после старта)
+  void attachPrefs(SharedPreferences prefs) {
+    _prefs = prefs;
+    final saved = prefs.getBool('isDarkTheme');
+    if (saved != null && saved != _isDarkTheme) {
+      _isDarkTheme = saved;
+      notifyListeners();
+    }
+  }
+
   void toggleTheme(bool isDark) {
+    if (_isDarkTheme == isDark) return;
     _isDarkTheme = isDark;
-    prefs.setBool('isDarkTheme', isDark);
+    _prefs?.setBool('isDarkTheme', isDark);
     notifyListeners();
   }
+
+  // -------- ТЕМЫ (как у тебя) --------
 
   static final darkTheme = ThemeData(
     scaffoldBackgroundColor: Colors.black,
@@ -41,13 +54,11 @@ class ThemeProvider extends ChangeNotifier {
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: Colors.grey[900],
     ),
-    drawerTheme: const DrawerThemeData(
-      backgroundColor: Colors.black,
-    ),
+    drawerTheme: const DrawerThemeData(backgroundColor: Colors.black),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith((states) => Colors.white),
-      trackColor: MaterialStateProperty.resolveWith((states) =>
-      states.contains(MaterialState.selected) ? Colors.white70 : Colors.grey
+      thumbColor: MaterialStateProperty.resolveWith((_) => Colors.white),
+      trackColor: MaterialStateProperty.resolveWith(
+            (s) => s.contains(MaterialState.selected) ? Colors.white70 : Colors.grey,
       ),
     ),
     colorScheme: const ColorScheme.dark(),
@@ -72,16 +83,12 @@ class ThemeProvider extends ChangeNotifier {
       titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
       contentTextStyle: TextStyle(color: Colors.black),
     ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: Colors.white,
-    ),
-    drawerTheme: const DrawerThemeData(
-      backgroundColor: Colors.white,
-    ),
+    bottomSheetTheme: const BottomSheetThemeData(backgroundColor: Colors.white),
+    drawerTheme: const DrawerThemeData(backgroundColor: Colors.white),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith((states) => Colors.black),
-      trackColor: MaterialStateProperty.resolveWith((states) =>
-      states.contains(MaterialState.selected) ? Colors.black87 : Colors.grey
+      thumbColor: MaterialStateProperty.resolveWith((_) => Colors.black),
+      trackColor: MaterialStateProperty.resolveWith(
+            (s) => s.contains(MaterialState.selected) ? Colors.black87 : Colors.grey,
       ),
     ),
     colorScheme: const ColorScheme.light(),

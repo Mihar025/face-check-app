@@ -14,6 +14,8 @@ import { StrictHttpResponse } from '../strict-http-response';
 import { addManualOvertime } from '../fn/worker-attendance-controller/add-manual-overtime';
 import { AddManualOvertime$Params } from '../fn/worker-attendance-controller/add-manual-overtime';
 import { DailyEarningResponse } from '../models/daily-earning-response';
+import { deleteAttendanceRecord } from '../fn/worker-attendance-controller/delete-attendance-record';
+import { DeleteAttendanceRecord$Params } from '../fn/worker-attendance-controller/delete-attendance-record';
 import { FinanceInfoForWeekInFinanceScreenResponse } from '../models/finance-info-for-week-in-finance-screen-response';
 import { getAllAttendanceForAdmin } from '../fn/worker-attendance-controller/get-all-attendance-for-admin';
 import { GetAllAttendanceForAdmin$Params } from '../fn/worker-attendance-controller/get-all-attendance-for-admin';
@@ -29,6 +31,8 @@ import { getWeeklyEarnings } from '../fn/worker-attendance-controller/get-weekly
 import { GetWeeklyEarnings$Params } from '../fn/worker-attendance-controller/get-weekly-earnings';
 import { getWorkerPhotosByDate } from '../fn/worker-attendance-controller/get-worker-photos-by-date';
 import { GetWorkerPhotosByDate$Params } from '../fn/worker-attendance-controller/get-worker-photos-by-date';
+import { hasPunchIn } from '../fn/worker-attendance-controller/has-punch-in';
+import { HasPunchIn$Params } from '../fn/worker-attendance-controller/has-punch-in';
 import { LastPunchTimeDto } from '../models/last-punch-time-dto';
 import { OvertimeResponse } from '../models/overtime-response';
 import { PageResponseAttendanceResponse } from '../models/page-response-attendance-response';
@@ -221,6 +225,31 @@ export class WorkerAttendanceControllerService extends BaseService {
     );
   }
 
+  /** Path part for operation `hasPunchIn()` */
+  static readonly HasPunchInPath = '/attendance/has-punch-in/{workerId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `hasPunchIn()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  hasPunchIn$Response(params: HasPunchIn$Params, context?: HttpContext): Observable<StrictHttpResponse<boolean>> {
+    return hasPunchIn(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `hasPunchIn$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  hasPunchIn(params: HasPunchIn$Params, context?: HttpContext): Observable<boolean> {
+    return this.hasPunchIn$Response(params, context).pipe(
+      map((r: StrictHttpResponse<boolean>): boolean => r.body)
+    );
+  }
+
   /** Path part for operation `getAllAttendanceForAppOwner()` */
   static readonly GetAllAttendanceForAppOwnerPath = '/attendance/find-all/attendance/app-owner';
 
@@ -293,6 +322,35 @@ export class WorkerAttendanceControllerService extends BaseService {
   getFinanceInfoForWeek(params: GetFinanceInfoForWeek$Params, context?: HttpContext): Observable<FinanceInfoForWeekInFinanceScreenResponse> {
     return this.getFinanceInfoForWeek$Response(params, context).pipe(
       map((r: StrictHttpResponse<FinanceInfoForWeekInFinanceScreenResponse>): FinanceInfoForWeekInFinanceScreenResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `deleteAttendanceRecord()` */
+  static readonly DeleteAttendanceRecordPath = '/attendance/attendance/{attendanceId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deleteAttendanceRecord()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deleteAttendanceRecord$Response(params: DeleteAttendanceRecord$Params, context?: HttpContext): Observable<StrictHttpResponse<{
+}>> {
+    return deleteAttendanceRecord(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deleteAttendanceRecord$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deleteAttendanceRecord(params: DeleteAttendanceRecord$Params, context?: HttpContext): Observable<{
+}> {
+    return this.deleteAttendanceRecord$Response(params, context).pipe(
+      map((r: StrictHttpResponse<{
+}>): {
+} => r.body)
     );
   }
 

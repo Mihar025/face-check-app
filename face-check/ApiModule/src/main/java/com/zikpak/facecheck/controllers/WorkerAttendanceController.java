@@ -5,9 +5,12 @@ import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.attendance.*;
 import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinanceScreenResponse;
 import com.zikpak.facecheck.services.workAttendanceService.WorkAttendanceService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +18,12 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("attendance")
 @RequiredArgsConstructor
+@Slf4j
 public class WorkerAttendanceController {
 
     private final WorkAttendanceService workAttendanceService;
@@ -134,6 +139,52 @@ public class WorkerAttendanceController {
     @GetMapping("/has-punch-in/{workerId}")
     public ResponseEntity<Boolean> hasPunchIn(@PathVariable(name = "workerId") Integer workerId,  Authentication authentication) {
         return ResponseEntity.ok(workAttendanceService.isWorkerHasPunchInToday(workerId, authentication));
+    }
+
+
+    @DeleteMapping("/attendance/{attendanceId}")
+    public ResponseEntity<?> deleteAttendanceRecord(
+            @PathVariable Integer attendanceId,
+            Authentication authentication) {
+
+        try {
+            User admin = (User) authentication.getPrincipal();
+
+            // Проверяем права
+            if (!admin.isAdmin()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                                "success", false,
+                                "message", "Only admins can delete attendance records"
+                        ));
+            }
+
+            log.info("Admin {} deleting attendance record {}", admin.getId(), attendanceId);
+
+            // Вызываем сервис
+            workAttendanceService.deleteAttendanceRecord(attendanceId, admin.getId());
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Attendance record deleted successfully",
+                    "deletedAttendanceId", attendanceId,
+                    "deletedBy", admin.getFirstName() + " " + admin.getLastName()
+            ));
+
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "success", false,
+                            "message", e.getMessage()
+                    ));
+        } catch (Exception e) {
+            log.error("Error deleting attendance {}", attendanceId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Failed to delete attendance record: " + e.getMessage()
+                    ));
+        }
     }
 
 }

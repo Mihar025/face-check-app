@@ -7,5 +7,4 @@ export interface ChangePunchInRequest {
   dateWhenWorkerDidntMakePunchIn: string;
   newPunchInDate: string;
   newPunchInTime: LocalTime;
-  workerId: number;
 }
