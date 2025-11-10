@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../../../../../api_client/model/user_full_contact_information.dart';
 import '../../../../../services/ApiService.dart';
 import 'image_picker_bottom_sheet.dart';
@@ -60,22 +63,32 @@ class ProfileController {
     }
   }
 
+  // ====== НОВОЕ: запрос прав на iOS ======
+  Future<bool> _requestPhotosIOS() async {
+    final status = await Permission.photos.request();
+    if (status.isGranted) return true;
+
+    return false;
+  }
+
+  // ====== НОВОЕ: запрос прав на Android ======
+  Future<bool> _requestPhotosAndroid() async {
+    // сначала пробуем "фото" (Android 13+)
+    var status = await Permission.photos.request();
+    if (status.isGranted) return true;
+
+    // если не дали или старый андроид – пробуем storage
+    status = await Permission.storage.request();
+    return status.isGranted;
+  }
   Future<void> pickAndUploadImage(BuildContext context) async {
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
     try {
-      final ImageSource? source = await showModalBottomSheet<ImageSource>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (BuildContext context) => const ImagePickerBottomSheet(),
-      );
-
-      if (source == null) return;
-
+      // СРАЗУ ОТКРЫВАЕМ КАМЕРУ - БЕЗ BOTTOM SHEET!
       final XFile? image = await _picker.pickImage(
-        source: source,
+        source: ImageSource.camera,  // ТОЛЬКО КАМЕРА!
         maxWidth: 800,
         maxHeight: 800,
         imageQuality: 80,
@@ -101,10 +114,12 @@ class ProfileController {
           if (response.statusCode == 200) {
             final String photoUrl = response.data ?? '';
             if (_state.value.userInfo != null) {
-              final updatedUserInfo = _state.value.userInfo!.rebuild((b) => b
-                ..photoUrl = photoUrl);
+              final updatedUserInfo = _state.value.userInfo!.rebuild(
+                    (b) => b..photoUrl = photoUrl,
+              );
               _state.value = _state.value.copyWith(userInfo: updatedUserInfo);
             }
+
             await loadUserInfo();
 
             if (context.mounted) {
@@ -112,9 +127,7 @@ class ProfileController {
                 SnackBar(
                   content: Text(
                     'Profile photo updated successfully',
-                    style: TextStyle(
-                      fontSize: isSmallScreen ? 12 : 14,
-                    ),
+                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
                   ),
                   backgroundColor: Colors.green,
                   behavior: SnackBarBehavior.floating,
@@ -137,9 +150,7 @@ class ProfileController {
               SnackBar(
                 content: Text(
                   'Failed to upload profile photo: $e',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 12 : 14,
-                  ),
+                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
                 ),
                 backgroundColor: Colors.red,
                 behavior: SnackBarBehavior.floating,
@@ -166,9 +177,7 @@ class ProfileController {
           SnackBar(
             content: Text(
               'Error: $e',
-              style: TextStyle(
-                fontSize: isSmallScreen ? 12 : 14,
-              ),
+              style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,

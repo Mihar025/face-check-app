@@ -5,30 +5,39 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../../localization/app_localizations.dart';
 
 class NotificationService {
-  AppLocalizations l10n;
+  late AppLocalizations l10n;
   static NotificationService? _instance;
   static NotificationService get instance => _instance!;
 
-  NotificationService._(this.l10n) {
-    _instance = this;
+  final FlutterLocalNotificationsPlugin _notifications =
+  FlutterLocalNotificationsPlugin();
+
+  NotificationService._(this.l10n);
+
+  /// Безопасная инициализация — можно вызвать из любого контекста под MaterialApp
+  static Future<NotificationService> initialize({
+    required BuildContext context,
+    required String languageCode,
+  }) async {
+    try {
+      print('🔔 Initializing NotificationService (lang: $languageCode)');
+      final l10n = AppLocalizations(languageCode);
+      final instance = NotificationService._(l10n);
+      _instance = instance;
+      await instance._init();
+      return instance;
+    } catch (e, st) {
+      debugPrint('❌ NotificationService init error: $e');
+      debugPrint('$st');
+      rethrow;
+    }
   }
 
-  static Future<NotificationService> initialize(BuildContext context) async {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    print('Initializing notifications for language: $languageCode');
-
-    final l10n = AppLocalizations(languageCode);
-    final instance = NotificationService._(l10n);
-    await instance.init();
-    return instance;
-  }
-
-  final _notifications = FlutterLocalNotificationsPlugin();
-
-  Future<void> init() async {
+  Future<void> _init() async {
     tz.initializeTimeZones();
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -36,142 +45,140 @@ class NotificationService {
     );
 
     await _notifications.initialize(
-        InitializationSettings(android: androidSettings, iOS: darwinSettings)
+      const InitializationSettings(
+        android: androidSettings,
+        iOS: darwinSettings,
+      ),
     );
+    print('✅ Notification plugin initialized');
   }
 
+  /// При смене языка
   Future<void> updateLanguage(String languageCode) async {
-    print('Updating notifications language to: $languageCode');
+    print('🌍 Updating notification language to: $languageCode');
     l10n = AppLocalizations(languageCode);
     await _notifications.cancelAll();
     await scheduleWeeklyNotifications();
   }
 
+  /// Планируем три уведомления (2 ежедневных и 1 еженедельное)
   Future<void> scheduleWeeklyNotifications() async {
-    print('Scheduling notifications in language: ${l10n.languageCode}');
-    print('PunchIn title will be: ${l10n.get('dailyPunchIn.title')}');
+    try {
+      print('🕐 Scheduling notifications for ${l10n.languageCode}');
+      print('→ PunchIn: ${l10n.get('dailyPunchIn.title')}');
 
-    await _notifications.zonedSchedule(
-      1,
-      l10n.get('dailyPunchIn.title'),
-      l10n.get('dailyPunchIn.body'),
-      _nextInstanceOfWeekday(7, 10),
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_notifications',
-          'Daily Notifications',
-          channelDescription: 'Daily notification channel',
-          importance: Importance.high,
-          priority: Priority.high,
+      // Punch In
+      await _notifications.zonedSchedule(
+        1,
+        l10n.get('dailyPunchIn.title'),
+        l10n.get('dailyPunchIn.body'),
+        _nextInstanceOfWeekday(7, 10),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_notifications',
+            'Daily Notifications',
+            channelDescription: 'Daily notification channel',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      androidAllowWhileIdle: true,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+        androidAllowWhileIdle: true,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
 
-    await _notifications.zonedSchedule(
-      2,
-      l10n.get('dailyPunchOut.title'),
-      l10n.get('dailyPunchOut.body'),
-      _nextInstanceOfWeekday(12, 0),
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_notifications',
-          'Daily Notifications',
-          channelDescription: 'Daily notification channel',
-          importance: Importance.high,
-          priority: Priority.high,
+      // Punch Out
+      await _notifications.zonedSchedule(
+        2,
+        l10n.get('dailyPunchOut.title'),
+        l10n.get('dailyPunchOut.body'),
+        _nextInstanceOfWeekday(12, 0),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_notifications',
+            'Daily Notifications',
+            channelDescription: 'Daily notification channel',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      androidAllowWhileIdle: true,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+        androidAllowWhileIdle: true,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
 
-    await _notifications.zonedSchedule(
-      3,
-      l10n.get('weeklyHoursCheck.title'),
-      l10n.get('weeklyHoursCheck.body'),
-      _nextInstanceOfFriday(15, 0),
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'weekly_notifications',
-          'Weekly Notifications',
-          channelDescription: 'Weekly notification channel',
-          importance: Importance.high,
-          priority: Priority.high,
+      // Weekly Hours Check
+      await _notifications.zonedSchedule(
+        3,
+        l10n.get('weeklyHoursCheck.title'),
+        l10n.get('weeklyHoursCheck.body'),
+        _nextInstanceOfFriday(15, 0),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'weekly_notifications',
+            'Weekly Notifications',
+            channelDescription: 'Weekly notification channel',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      androidAllowWhileIdle: true,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-    );
+        uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+        androidAllowWhileIdle: true,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      );
+
+      print('✅ Notifications scheduled successfully');
+    } catch (e, st) {
+      debugPrint('❌ Failed to schedule notifications: $e');
+      debugPrint('$st');
+    }
   }
 
+  /// Следующий будний день в нужное время
   tz.TZDateTime _nextInstanceOfWeekday(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
+    var date = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
-    if (scheduledDate.weekday == DateTime.saturday) {
-      scheduledDate = scheduledDate.add(const Duration(days: 2));
-    } else if (scheduledDate.weekday == DateTime.sunday) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    if (date.weekday >= DateTime.saturday) {
+      date = date.add(Duration(days: 8 - date.weekday));
+    } else if (date.isBefore(now)) {
+      date = date.add(const Duration(days: 1));
     }
 
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-      if (scheduledDate.weekday == DateTime.saturday) {
-        scheduledDate = scheduledDate.add(const Duration(days: 2));
-      } else if (scheduledDate.weekday == DateTime.sunday) {
-        scheduledDate = scheduledDate.add(const Duration(days: 1));
-      }
-    }
-
-    return scheduledDate;
+    return date;
   }
 
+  /// Следующая пятница
   tz.TZDateTime _nextInstanceOfFriday(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
+    var date = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
-    while (scheduledDate.weekday != DateTime.friday) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    while (date.weekday != DateTime.friday) {
+      date = date.add(const Duration(days: 1));
     }
 
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 7));
+    if (date.isBefore(now)) {
+      date = date.add(const Duration(days: 7));
     }
 
-    return scheduledDate;
+    return date;
   }
 }

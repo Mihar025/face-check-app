@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'notification_service.dart';
 
 class InitializationWidget extends StatefulWidget {
@@ -25,58 +23,60 @@ class _InitializationWidgetState extends State<InitializationWidget> {
   }
 
   Future<void> _initializeApp() async {
-    try {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await NotificationService.initialize(context);
-        await NotificationService.instance.scheduleWeeklyNotifications();
+    // ждём пока построится первый фрейм, чтобы Localizations уже были
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final locale = Localizations.localeOf(context).languageCode;
 
+        final service = await NotificationService.initialize(
+          context: context,
+          languageCode: locale,
+        );
+
+        await service.scheduleWeeklyNotifications();
+      } catch (e, st) {
+        debugPrint('Ошибка инициализации: $e');
+        debugPrint('$st');
+      } finally {
         if (mounted) {
           setState(() {
             _initialized = true;
           });
         }
-      });
-    } catch (e) {
-      print('Ошибка инициализации: $e');
-      if (mounted) {
-        setState(() {
-          _initialized = true;
-        });
       }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-
     if (!_initialized) {
-      return MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: isSmallScreen ? 30 : 40,
-                  height: isSmallScreen ? 30 : 40,
-                  child: const CircularProgressIndicator(),
+      final screenSize = MediaQuery.of(context).size;
+      final isSmallScreen = screenSize.width < 360;
+
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: isSmallScreen ? 30 : 40,
+                height: isSmallScreen ? 30 : 40,
+                child: const CircularProgressIndicator(),
+              ),
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              Text(
+                'Инициализация...',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 14 : 16,
+                  fontWeight: FontWeight.w400,
                 ),
-                SizedBox(height: isSmallScreen ? 12 : 16),
-                Text(
-                  'Инициализация...',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 14 : 16,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
     }
+
     return widget.child;
   }
 }
