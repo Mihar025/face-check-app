@@ -782,24 +782,23 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ ПРАВИЛЬНЫЙ ФОРМАТ согласно бэкенду
-    const requestData = {
-      // LocalDateTime - полная дата-время строка
+    // ✅ Форматируем время как строку
+    const formattedTime = `${(this.newPunchOutTime.hour || 17).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`;
+
+    // ✅ Создаём объект вручную с правильными типами
+    const requestBody = {
       dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`,
-      // LocalDate - только дата
       newPunchOutDate: isoNewDate,
-      // LocalTime - СТРОКА в формате "HH:mm:ss" (не объект!)
-      newPunchOutTime: `${(this.newPunchOutTime.hour || 17).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`
+      newPunchOutTime: formattedTime  // Отправляем как строку!
     };
 
-    console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
+    console.log('📤 Final request data:', JSON.stringify(requestBody, null, 2));
 
-    const params: ChangePunchOutForWorker$Params = {
+    // Делаем прямой HTTP запрос, чтобы обойти типизацию
+    this.adminControllerService.changePunchOutForWorker$Response({
       workerId: this.selectedEmployeeId,
-      body: requestData as any
-    };
-
-    this.adminControllerService.changePunchOutForWorker(params).subscribe(
+      body: requestBody as any
+    }).subscribe(
       (response) => {
         this.loading = false;
         this.successMessage = "Punch Out time was changed successfully!";
