@@ -752,15 +752,14 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       }
     );
   }
-
   changeNewPunchOut() {
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
 
     console.log('🔵 Starting punch out change');
-    console.log('dateWhenWorkerDidntMakePunchOut (raw):', this.dateWhenWorkerDidntMakePunchOut);
-    console.log('newPunchOutDate (raw):', this.newPunchOutDate);
+    console.log('dateWhenWorkerDidntMakePunchOut:', this.dateWhenWorkerDidntMakePunchOut);
+    console.log('newPunchOutDate:', this.newPunchOutDate);
     console.log('newPunchOutTime:', this.newPunchOutTime);
     console.log('selectedEmployeeId:', this.selectedEmployeeId);
 
@@ -770,7 +769,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Конвертируем MM/DD/YYYY в YYYY-MM-DD
     const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchOut);
     const isoNewDate = this.convertToISODate(this.newPunchOutDate);
 
@@ -784,19 +782,14 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ ПРАВИЛЬНЫЙ ФОРМАТ - dateWhenWorkerDidntMakePunchOut как LocalDateTime строка
-    // newPunchOutDate как LocalDate строка (YYYY-MM-DD)
-    // newPunchOutTime как объект LocalTime
+    // ✅ ПРАВИЛЬНЫЙ ФОРМАТ согласно бэкенду
     const requestData = {
-      dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`, // LocalDateTime формат
-      newPunchOutDate: isoNewDate,  // LocalDate формат (YYYY-MM-DD)
-      newPunchOutTime: {  // LocalTime объект
-        hour: this.newPunchOutTime.hour || 0,
-        minute: this.newPunchOutTime.minute || 0,
-        second: 0,
-        nano: 0
-      },
-      workerId: this.selectedEmployeeId
+      // LocalDateTime - полная дата-время строка
+      dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`,
+      // LocalDate - только дата
+      newPunchOutDate: isoNewDate,
+      // LocalTime - СТРОКА в формате "HH:mm:ss" (не объект!)
+      newPunchOutTime: `${(this.newPunchOutTime.hour || 17).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`
     };
 
     console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
@@ -812,7 +805,7 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
         this.successMessage = "Punch Out time was changed successfully!";
         console.log('✅ Success:', response);
 
-        // Очищаем поля после успеха
+        // Очищаем поля
         this.dateWhenWorkerDidntMakePunchOut = '';
         this.newPunchOutDate = '';
         this.newPunchOutTime = { hour: 17, minute: 0 };
@@ -830,7 +823,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
       }
     );
   }
-
   async loadAllEmployeesRelatedToCertainCompany(): Promise<void> {
     this.loading = true;
     this.errorMessage = '';
