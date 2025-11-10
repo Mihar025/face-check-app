@@ -2,13 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>FaceCheckUi</title>
+  <title>FaceCheck — Time & Attendance</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Иконка: файл лежит в /public/icon_fc.png -->
+  <!-- Канонический адрес главной -->
+  <link rel="canonical" href="https://face-check.org/" />
+
+  <!-- Брендовые мета -->
+  <meta name="application-name" content="FaceCheck" />
+  <meta name="apple-mobile-web-app-title" content="FaceCheck" />
+  <meta name="description" content="FaceCheck — простое управление учётом рабочего времени и зарплатой для стройки и не только." />
+
+  <!-- OG для консистентности -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="FaceCheck" />
+  <meta property="og:title" content="FaceCheck — Time & Attendance" />
+  <meta property="og:url" content="https://face-check.org/" />
+  <meta property="og:description" content="FaceCheck — простое управление учётом рабочего времени и зарплатой для стройки и не только." />
+
+  <!-- Иконка: файл лежит в /public/icon_fc.png (оставляем ровно эти две строки) -->
   <link rel="icon" type="image/png" sizes="32x32" href="/icon_fc.png?v=3">
   <link rel="icon" type="image/png" href="/icon_fc.png?v=3">
+
+  <!-- Structured data: WebSite (имя сайта) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "FaceCheck",
+      "alternateName": ["Face-Check","Face check","FaceCheck","face check", "face-check", "face-check.org", "FaceCheck App"],
+      "url": "https://face-check.org/",
+    }
+  </script>
 </head>
 <body>
 <app-root></app-root>
