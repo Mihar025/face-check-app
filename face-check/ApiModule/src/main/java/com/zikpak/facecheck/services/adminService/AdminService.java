@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,22 +71,33 @@ public class AdminService implements AdminAndForemanFunctionality {
             throw new IllegalArgumentException("Please enter correct date and time!");
         }
 
-        LocalDateTime punchInDateTime = LocalDateTime.of(
-                changePunchInRequest.getNewPunchInDate(),
-                changePunchInRequest.getNewPunchInTime());
+        LocalDate newDate = changePunchInRequest.getNewPunchInDate();
+        LocalTime newTime = changePunchInRequest.getNewPunchInTime();
 
-        // ✅ Вызываем новый метод для admin
-        workAttendanceService.punchInForWorker(workerId, punchInDateTime, null);
+        // 🔁 Один вызов покрывает оба случая:
+        // - нет записей -> создаст punch-in (как раньше)
+        // - есть и in, и out -> обновит in и пересчитает часы/пэйролл
+        // - есть открытая смена -> просто обновит in, без пересчёта
+        workAttendanceService.changePunchInSmart(
+                workerId,
+                newDate,
+                newTime,
+                null // workSiteId при необходимости можно пробросить из запроса
+        );
 
-        log.info("Successfully created punch in with full logic for worker: {}", workerId);
+
+
+
+        log.info("Successfully processed punch-in change (smart) for worker: {}", workerId);
 
         return ChangePunchInForWorkerResponse.builder()
                 .workerId(workerId)
                 .dateWhenWorkerDidntMakePunchIn(changePunchInRequest.getDateWhenWorkerDidntMakePunchIn())
-                .newPunchInDate(changePunchInRequest.getNewPunchInDate())
-                .newPunchInTime(changePunchInRequest.getNewPunchInTime())
+                .newPunchInDate(newDate)
+                .newPunchInTime(newTime)
                 .build();
     }
+
 
     @Transactional
     public ChangePunchOutForWorkerResponse ChangingPunchOutForWorkerIfDoesntExist(
@@ -205,71 +217,6 @@ public class AdminService implements AdminAndForemanFunctionality {
         }
     }
 
-    private User findWorkerById(Integer workerId){
-        return userRepository.findById(workerId).orElseThrow(() -> new EntityNotFoundException("Worker not found"));
-    }
-
-    private void findAndValidateWorkerAttendanceForPunchIn(User worker,ChangePunchInRequest changePunchInRequest ){
-        boolean hasAttendance = worker.getAttendances()
-                .stream()
-                .anyMatch(attendance -> attendance.getCheckInTime()!= null && attendance.getCheckInTime().toLocalDate()
-                        .equals(changePunchInRequest.getDateWhenWorkerDidntMakePunchIn().toLocalDate()));
-        if(hasAttendance){
-            throw new IllegalStateException("There is already punch in for this date");
-        }
-    }
-
-    private void setNewAttendanceForNewPunchIn(User worker, ChangePunchInRequest changePunchInRequest){
-        if(changePunchInRequest.getNewPunchInDate() == null && changePunchInRequest.getNewPunchInTime() == null){
-            throw new IllegalArgumentException("Please enter correct date and time!");
-        }
-        WorkerAttendance newAttendance = WorkerAttendance.builder()
-                .worker(worker)
-                .checkInTime(LocalDateTime.of(
-                        changePunchInRequest.getNewPunchInDate(),
-                        changePunchInRequest.getNewPunchInTime()))
-                .build();
-            workerAttendanceRepository.save(newAttendance);
-    }
-
-
-
-
-    private void findAndValidateWorkerAttendanceForPunchOut(User worker,ChangePunchOutRequest changePunchOutRequest ){
-        if (changePunchOutRequest.getNewPunchOutDate() == null
-                || changePunchOutRequest.getNewPunchOutTime() == null
-                || changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut() == null) {
-            throw new IllegalArgumentException("Please fill form with correct date, time and date when punch was missed!");
-        }
-
-        boolean hasAttendance = worker.getAttendances()
-                .stream()
-                .anyMatch(attendance -> attendance.getCheckOutTime() != null &&
-                        attendance.getCheckOutTime().toLocalDate()
-                                .equals(changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut().toLocalDate()));
-        if(hasAttendance){
-            throw new IllegalStateException("There is already punch Out for this date");
-        }
-    }
-
-
-
-
-    private void setNewAttendanceForNewPunchOut(User worker, ChangePunchOutRequest changePunchOutRequest){
-        if (changePunchOutRequest.getNewPunchOutDate() == null
-                || changePunchOutRequest.getNewPunchOutTime() == null
-                || changePunchOutRequest.getDateWhenWorkerDidntMakePunchOut() == null) {
-            throw new IllegalArgumentException("Please fill form with correct date, time and date when punch was missed!");
-        }
-        WorkerAttendance newAttendance = WorkerAttendance.builder()
-                .worker(worker)
-                .checkOutTime(LocalDateTime.of(
-                        changePunchOutRequest.getNewPunchOutDate(),
-                        changePunchOutRequest.getNewPunchOutTime()))
-                .build();
-
-        workerAttendanceRepository.save(newAttendance);
-    }
 
 
 
