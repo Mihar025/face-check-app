@@ -1808,6 +1808,8 @@ public class WorkAttendanceService {
                             ytdMedicare != null ? ytdMedicare : BigDecimal.ZERO
                     );
 
+
+
                         payroll.setGrossPay(response.getGrossPay());
                         payroll.setNetPay(response.getNetPay());
                         payroll.setMedicare(response.getMedicare());
