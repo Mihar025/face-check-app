@@ -352,6 +352,72 @@ public class WorkAttendanceService {
         log.info("Admin created punch in for worker: {}", userId);
     }
 
+
+    @Transactional
+    public void changePunchInSmart(Integer userId,
+                                   LocalDate newPunchInDate,
+                                   LocalTime newPunchInTime,
+                                   Integer workSiteIdIfNeed) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found"));
+
+        LocalDateTime startOfDay = newPunchInDate.atStartOfDay();
+        LocalDateTime endOfDay   = newPunchInDate.atTime(LocalTime.MAX);
+
+        // Ищем все записи за день
+        List<WorkerAttendance> dayAttendances = workerAttendanceRepository
+                .findAllByWorkerIdAndCheckInTimeBetween(user.getId(), startOfDay, endOfDay)
+                .stream()
+                .sorted(Comparator.comparing(WorkerAttendance::getCheckInTime))
+                .toList();
+
+        // Кейс 1: Вообще нет записей -> работаем как сейчас (создаём punch-in)
+        if (dayAttendances.isEmpty()) {
+            punchInForWorker(userId, LocalDateTime.of(newPunchInDate, newPunchInTime), workSiteIdIfNeed);
+            log.info("No attendance found on {}, created punch-in for worker {}", newPunchInDate, userId);
+            return;
+        }
+
+        // Если есть открытая смена (checkOutTime == null) — обновим check-in и выйдем (пересчёт будет на punch-out)
+        Optional<WorkerAttendance> openShiftOpt = dayAttendances.stream()
+                .filter(a -> a.getCheckOutTime() == null)
+                .findFirst();
+
+        if (openShiftOpt.isPresent()) {
+            WorkerAttendance att = openShiftOpt.get();
+            att.setCheckInTime(LocalDateTime.of(newPunchInDate, newPunchInTime));
+            if (att.getCheckInPhotoUrl() == null) att.setCheckInPhotoUrl("manual-update");
+            String notes = att.getNotes() != null ? att.getNotes() + "; " : "";
+            att.setNotes(notes + "Admin changed punch-in time");
+            workerAttendanceRepository.save(att);
+            log.info("Updated open shift punch-in for worker {} on {} (no recalculation yet)", userId, newPunchInDate);
+            return;
+        }
+
+        // Кейс 2: Есть и punch-in, и punch-out — обновляем check-in И ПЕРЕСЧИТЫВАЕМ
+        WorkerAttendance attendance = dayAttendances.get(0); // берём первую (самую раннюю) запись дня
+        attendance.setCheckInTime(LocalDateTime.of(newPunchInDate, newPunchInTime));
+        if (attendance.getCheckInPhotoUrl() == null) attendance.setCheckInPhotoUrl("manual-update");
+        String notes = attendance.getNotes() != null ? attendance.getNotes() + "; " : "";
+        attendance.setNotes(notes + "Admin changed punch-in time with recalculation");
+
+        // Пересчёт часов по вашему расписанию и правилам
+        calculateWorkedHours(attendance);
+        WorkerAttendance saved = workerAttendanceRepository.save(attendance);
+
+        // Полный перерасчёт пейролла как при punch-out'е (ваш существующий пайплайн)
+        WorkerPayroll payroll = updatePayrollOnPunchOut(saved);
+
+        log.info("Recalculated hours & payroll after punch-in change for worker {}: hours={}, overtime={}, grossDay={}, period {}..{}",
+                userId,
+                saved.getHoursWorked(), saved.getOvertimeHours(),
+                saved.getGrossPayPerDay(),
+                payroll.getPeriodStart(), payroll.getPeriodEnd());
+    }
+
+
+
+
     // ✅ Новый метод для admin - БЕЗ authentication, с userId
     @Transactional
     public void punchOutForWorker(Integer userId, LocalDateTime checkOutTime) {
