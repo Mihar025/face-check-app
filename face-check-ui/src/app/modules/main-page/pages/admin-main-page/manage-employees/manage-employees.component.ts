@@ -757,12 +757,6 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.successMessage = '';
 
-    console.log('🔵 Starting punch out change');
-    console.log('dateWhenWorkerDidntMakePunchOut:', this.dateWhenWorkerDidntMakePunchOut);
-    console.log('newPunchOutDate:', this.newPunchOutDate);
-    console.log('newPunchOutTime:', this.newPunchOutTime);
-    console.log('selectedEmployeeId:', this.selectedEmployeeId);
-
     if (!this.dateWhenWorkerDidntMakePunchOut || !this.newPunchOutDate) {
       this.errorMessage = "Please fill in all required date fields";
       this.loading = false;
@@ -772,39 +766,32 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     const isoMissedDate = this.convertToISODate(this.dateWhenWorkerDidntMakePunchOut);
     const isoNewDate = this.convertToISODate(this.newPunchOutDate);
 
-    console.log('📅 Converted dates:');
-    console.log('isoMissedDate:', isoMissedDate);
-    console.log('isoNewDate:', isoNewDate);
-
     if (!isoMissedDate || !isoNewDate) {
       this.errorMessage = 'Please enter valid dates in MM/DD/YYYY format';
       this.loading = false;
       return;
     }
 
-    // ✅ Форматируем время как строку
-    const formattedTime = `${(this.newPunchOutTime.hour || 17).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`;
-
-    // ✅ Создаём объект вручную с правильными типами
-    const requestBody = {
+    // ✅ Создаём объект БЕЗ workerId и с правильным форматом времени
+    const requestData = JSON.parse(JSON.stringify({
       dateWhenWorkerDidntMakePunchOut: `${isoMissedDate}T00:00:00`,
       newPunchOutDate: isoNewDate,
-      newPunchOutTime: formattedTime  // Отправляем как строку!
+      newPunchOutTime: `${(this.newPunchOutTime.hour || 17).toString().padStart(2, '0')}:${(this.newPunchOutTime.minute || 0).toString().padStart(2, '0')}:00`
+    }));
+
+    console.log('📤 Final request data:', JSON.stringify(requestData, null, 2));
+
+    const params = {
+      workerId: this.selectedEmployeeId,
+      body: requestData  // БЕЗ as any!
     };
 
-    console.log('📤 Final request data:', JSON.stringify(requestBody, null, 2));
-
-    // Делаем прямой HTTP запрос, чтобы обойти типизацию
-    this.adminControllerService.changePunchOutForWorker$Response({
-      workerId: this.selectedEmployeeId,
-      body: requestBody as any
-    }).subscribe(
+    this.adminControllerService.changePunchOutForWorker(params as any).subscribe(
       (response) => {
         this.loading = false;
         this.successMessage = "Punch Out time was changed successfully!";
         console.log('✅ Success:', response);
 
-        // Очищаем поля
         this.dateWhenWorkerDidntMakePunchOut = '';
         this.newPunchOutDate = '';
         this.newPunchOutTime = { hour: 17, minute: 0 };
