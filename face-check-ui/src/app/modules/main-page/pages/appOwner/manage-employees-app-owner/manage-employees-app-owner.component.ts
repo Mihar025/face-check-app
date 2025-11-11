@@ -88,8 +88,8 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
   // ────────────────────────────────────────────────────────────────────────────────
   // Time management tabs & state
   // ────────────────────────────────────────────────────────────────────────────────
-  activeTab: 'updatePunchIn' | 'newPunchIn' | 'newPunchOut' = 'updatePunchIn';
-  newCheckInTime = '';
+  activeTab: 'newPunchIn' | 'newPunchOut' = 'newPunchIn';
+
   dateWhenWorkerDidntMakePunchIn = '';
   newPunchInDate = '';
   newPunchInTime: LocalTime = { hour: 9, minute: 0 };
@@ -979,29 +979,6 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
     });
   }
 
-  // ────────────────────────────────────────────────────────────────────────────────
-  // Time management (Punch In/Out)
-  // ────────────────────────────────────────────────────────────────────────────────
-  updatePunchIn(): void {
-    if (!this.selectedEmployee?.workerId || !this.newCheckInTime) return;
-
-    this.loading = true;
-    const request: PunchInUpdateRequest = { newCheckInTIme: this.newCheckInTime } as any;
-
-    this.adminService
-      .updatePunchInTime({ workerId: this.selectedEmployee.workerId, body: request })
-      .subscribe({
-        next: () => {
-          this.successMessage = 'Punch in time updated successfully';
-          this.loading = false;
-          this.clearMessages();
-        },
-        error: (error) => {
-          this.errorMessage = 'Failed to update punch in: ' + (error?.message || 'Unknown error');
-          this.loading = false;
-        }
-      });
-  }
 
   changeNewPunchIn(): void {
     if (!this.selectedEmployee?.workerId) return;

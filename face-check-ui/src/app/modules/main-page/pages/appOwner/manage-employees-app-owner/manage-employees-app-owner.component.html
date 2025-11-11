@@ -651,12 +651,6 @@
           <div class="tabs">
             <button
               class="tab-button"
-              [class.active]="activeTab === 'updatePunchIn'"
-              (click)="activeTab = 'updatePunchIn'">
-              <i class="fas fa-edit"></i> Update Punch In
-            </button>
-            <button
-              class="tab-button"
               [class.active]="activeTab === 'newPunchIn'"
               (click)="activeTab = 'newPunchIn'">
               <i class="fas fa-sign-in-alt"></i> New Punch In
@@ -666,17 +660,6 @@
               [class.active]="activeTab === 'newPunchOut'"
               (click)="activeTab = 'newPunchOut'">
               <i class="fas fa-sign-out-alt"></i> New Punch Out
-            </button>
-          </div>
-
-          <!-- Update Punch In Tab -->
-          <div *ngIf="activeTab === 'updatePunchIn'" class="tab-content">
-            <div class="form-group">
-              <label>New Check-In Time</label>
-              <input type="datetime-local" [(ngModel)]="newCheckInTime" class="form-input">
-            </div>
-            <button class="btn btn-save" (click)="updatePunchIn()">
-              <i class="fas fa-clock"></i> Update Time
             </button>
           </div>
 
