@@ -13,6 +13,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../providers/localization_provider.dart';
 import '../../../services/ApiService.dart';
@@ -158,6 +159,67 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
       _isLoading.value = false;
     }
   }
+
+  Future<bool> _ensureCameraPermission() async {
+    final status = await Permission.camera.status;
+
+    if (status.isGranted) {
+      return true;
+    }
+
+    final newStatus = await Permission.camera.request();
+
+    if (newStatus.isGranted) {
+      return true;
+    }
+
+    await _showCameraPermissionDialog(newStatus);
+    return false;
+  }
+
+  Future<void> _showCameraPermissionDialog(PermissionStatus status) async {
+    if (!mounted) return;
+
+    String message;
+    List<Widget> actions;
+
+    if (status.isPermanentlyDenied || status.isRestricted) {
+      message =
+      'Camera access is disabled. To take a photo for punch in/out, please enable camera in Settings.';
+      actions = [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.of(context).pop();
+            await openAppSettings();
+          },
+          child: const Text('Open Settings'),
+        ),
+      ];
+    } else {
+      message =
+      'Camera access is required to take your photo for punch in/out. You can enable it later in Settings.';
+      actions = [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('OK'),
+        ),
+      ];
+    }
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Camera permission'),
+        content: Text(message),
+        actions: actions,
+      ),
+    );
+  }
+
 
   Future<void> _fetchAndSaveUserId() async {
     try {
@@ -413,19 +475,28 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
   Future<String?> _captureImage() async {
     try {
+      // 1) Проверяем/запрашиваем разрешение
+      final hasPermission = await _ensureCameraPermission();
+      if (!hasPermission) {
+        // Уже показали диалог, просто выходим
+        return null;
+      }
+
+      // 2) Открываем камеру
       final XFile? image = await _imagePicker.pickImage(
-          source: ImageSource.camera,
-          imageQuality: 50,
-          maxWidth: 1024,
-          maxHeight: 1024
+        source: ImageSource.camera,
+        imageQuality: 50,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
 
-      if (image != null) {
-        final File imageFile = File(image.path);
-        final bytes = await imageFile.readAsBytes();
-        return base64Encode(bytes);
+      if (image == null) {
+        return null;
       }
-      return null;
+
+      final File imageFile = File(image.path);
+      final bytes = await imageFile.readAsBytes();
+      return base64Encode(bytes);
     } catch (e) {
       print('Error capturing image: $e');
       return null;
@@ -479,12 +550,9 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
     final String? photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-      _showErrorDialog(
-        title: 'Photo Required',
-        message: 'A photo is required to punch in. Please take a photo.',
-      );
       return;
     }
+
 
     _isLoading.value = true;
 
@@ -608,12 +676,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
     final String? photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-      _showErrorDialog(
-        title: 'Photo Required',
-        message: 'A photo is required to punch out. Please take a photo.',
-      );
       return;
     }
+
+
 
     _isLoading.value = true;
 

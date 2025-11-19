@@ -6,7 +6,6 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../../api_client/model/user_full_contact_information.dart';
 import '../../../../../services/ApiService.dart';
-import 'image_picker_bottom_sheet.dart';
 
 class ProfileState {
   final bool isLoading;
@@ -30,6 +29,7 @@ class ProfileState {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
       isUploading: isUploading ?? this.isUploading,
+      // если явно передали null — очищаем ошибку
       error: error,
       userInfo: userInfo ?? this.userInfo,
     );
@@ -63,84 +63,120 @@ class ProfileController {
     }
   }
 
-  // ====== НОВОЕ: запрос прав на iOS ======
-  Future<bool> _requestPhotosIOS() async {
-    final status = await Permission.photos.request();
-    if (status.isGranted) return true;
+  // ---------- CAMERA PERMISSION ----------
+  Future<bool> _ensureCameraPermission(BuildContext context) async {
+    var status = await Permission.camera.status;
+
+    if (status.isGranted) {
+      return true;
+    }
+
+    // запрашиваем
+    final newStatus = await Permission.camera.request();
+    if (newStatus.isGranted) {
+      return true;
+    }
+
+    // пользователь отказал — НИКАКОЙ "ошибки", только мягкий диалог
+    if (context.mounted) {
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Camera access'),
+          content: const Text(
+            'To take or update your profile photo, please allow camera access in Settings. '
+                'You can continue using the app without a profile photo.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
 
     return false;
   }
 
-  // ====== НОВОЕ: запрос прав на Android ======
-  Future<bool> _requestPhotosAndroid() async {
-    // сначала пробуем "фото" (Android 13+)
-    var status = await Permission.photos.request();
-    if (status.isGranted) return true;
-
-    // если не дали или старый андроид – пробуем storage
-    status = await Permission.storage.request();
-    return status.isGranted;
-  }
+  // ---------- PICK + UPLOAD ----------
   Future<void> pickAndUploadImage(BuildContext context) async {
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
+    // 1. Сначала — permission камеры
+    final allowed = await _ensureCameraPermission(context);
+    if (!allowed) {
+      // пользователь отказал → просто выходим, БЕЗ ошибок
+      return;
+    }
+
     try {
-      // СРАЗУ ОТКРЫВАЕМ КАМЕРУ - БЕЗ BOTTOM SHEET!
+      // 2. Открываем камеру
       final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,  // ТОЛЬКО КАМЕРА!
+        source: ImageSource.camera, // только камера
         maxWidth: 800,
         maxHeight: 800,
         imageQuality: 80,
       );
 
-      if (image != null) {
-        imageFile = File(image.path);
-        _state.value = _state.value.copyWith(
-          isUploading: true,
-          error: null,
+      // user мог нажать Cancel → это НЕ ошибка
+      if (image == null) {
+        return;
+      }
+
+      imageFile = File(image.path);
+
+      _state.value = _state.value.copyWith(
+        isUploading: true,
+        error: null,
+      );
+
+      try {
+        // 3. Загружаем файл
+        final response = await ApiService.instance.fileApi.uploadPhoto(
+          photo: imageFile!,
+          email: _state.value.userInfo?.email ?? '',
+          prefix: 'profile',
+          onSendProgress: (int sent, int total) {
+            final progress = (sent / total * 100).toStringAsFixed(2);
+            print('Upload progress: $progress%');
+          },
         );
 
-        try {
-          final response = await ApiService.instance.fileApi.uploadPhoto(
-            photo: imageFile!,
-            email: _state.value.userInfo?.email ?? '',
-            prefix: 'profile',
-            onSendProgress: (int sent, int total) {
-              print('Upload progress: ${(sent / total * 100).toStringAsFixed(2)}%');
-            },
-          );
+        if (response.statusCode == 200) {
+          final String photoUrl = response.data ?? '';
 
-          if (response.statusCode == 200) {
-            final String photoUrl = response.data ?? '';
-            if (_state.value.userInfo != null) {
-              final updatedUserInfo = _state.value.userInfo!.rebuild(
-                    (b) => b..photoUrl = photoUrl,
-              );
-              _state.value = _state.value.copyWith(userInfo: updatedUserInfo);
-            }
-
-            await loadUserInfo();
-
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Profile photo updated successfully',
-                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                  ),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
-                ),
-              );
-            }
+          // обновляем userInfo локально
+          if (_state.value.userInfo != null) {
+            final updatedUserInfo = _state.value.userInfo!.rebuild(
+                  (b) => b..photoUrl = photoUrl,
+            );
+            _state.value = _state.value.copyWith(userInfo: updatedUserInfo);
           }
-        } catch (e) {
-          print('Error uploading file: $e');
+
+          // или перезагружаем из API (как у тебя)
+          await loadUserInfo();
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Profile photo updated successfully',
+                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              ),
+            );
+          }
+        } else {
+          // реальный фейл ответа сервера
           _state.value = _state.value.copyWith(
             error: 'Failed to upload profile photo',
           );
@@ -149,7 +185,7 @@ class ProfileController {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'Failed to upload profile photo: $e',
+                  'Failed to upload profile photo. Please try again.',
                   style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
                 ),
                 backgroundColor: Colors.red,
@@ -162,21 +198,46 @@ class ProfileController {
             );
           }
         }
+      } catch (e) {
+        // ошибка ЗАГРУЗКИ, а не permission
+        print('Error uploading file: $e');
+        _state.value = _state.value.copyWith(
+          error: 'Failed to upload profile photo',
+        );
 
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to upload profile photo. Please try again.',
+                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
+            ),
+          );
+        }
+      } finally {
         _state.value = _state.value.copyWith(isUploading: false);
       }
     } catch (e) {
+      // это уже какая-то странная ошибка работы плагина, но НЕ permission-denied,
+      // потому что разрешение мы запросили заранее
+      print('Error picking image: $e');
       _state.value = _state.value.copyWith(
         isUploading: false,
-        error: 'Error picking image',
+        // можно вообще не трогать error здесь, чтобы не засорять UI
       );
-      print('Error picking image: $e');
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Error: $e',
+              'Could not open camera. Please try again.',
               style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
             ),
             backgroundColor: Colors.red,
