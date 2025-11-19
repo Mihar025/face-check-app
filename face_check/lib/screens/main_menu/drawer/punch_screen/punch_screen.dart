@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -171,6 +172,77 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     ));
   }
 
+
+  Future<bool> _ensureCameraPermission() async {
+    final status = await Permission.camera.status;
+
+    if (status.isGranted) {
+      return true;
+    }
+
+    // Запрашиваем
+    final newStatus = await Permission.camera.request();
+
+    if (newStatus.isGranted) {
+      return true;
+    }
+
+    // Пользователь отказал
+    await _showCameraPermissionDialog(newStatus);
+    return false;
+  }
+
+  Future<void> _showCameraPermissionDialog(PermissionStatus status) async {
+    if (!mounted) return;
+
+    String message;
+    List<Widget> actions = [];
+
+    if (status.isPermanentlyDenied || status.isRestricted) {
+      message =
+      'Camera access is disabled. To use photo verification when punching in or out, please enable camera access in Settings.';
+      actions = [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.of(context).pop();
+            await openAppSettings();
+          },
+          child: const Text('Open Settings'),
+        ),
+      ];
+    } else {
+      // обычный отказ "Don\'t Allow"
+      message =
+      'Camera access is required to take your photo for punch in/out. You can continue using the app, but photo-based punch will not work until you allow camera access.';
+      actions = [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('OK'),
+        ),
+      ];
+    }
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Camera permission'),
+          content: Text(message),
+          actions: actions,
+        );
+      },
+    );
+  }
+
+
   // ---------- Helpers ----------
   Future<void> _fetchAndSaveUserId() async {
     try {
@@ -267,17 +339,33 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
   Future<String?> _captureImage() async {
     try {
+      // 1) Проверяем и запрашиваем разрешение
+      final hasPermission = await _ensureCameraPermission();
+      if (!hasPermission) {
+        // тут уже показали диалог, просто выходим
+        return null;
+      }
+
+      // 2) Открываем камеру
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 70,
         maxWidth: 1024,
         maxHeight: 1024,
       );
-      if (image == null) return null;
+
+      // Пользователь мог нажать "Cancel" в камере
+      if (image == null) {
+        // Никаких ошибок, просто отмена
+        return null;
+      }
+
       final bytes = await File(image.path).readAsBytes();
       return base64Encode(bytes);
     } catch (e) {
       debugPrint('Error capturing image: $e');
+      // Можно показать более дружелюбный текст
+      _showErrorSnackBar('Could not open camera. Please try again.');
       return null;
     }
   }
@@ -331,7 +419,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
     final photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-      _showErrorSnackBar('A photo is required to punch in.');
+      //_showErrorSnackBar('A photo is required to punch in.');
       return;
     }
 
@@ -407,7 +495,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
     final photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-      _showErrorSnackBar('A photo is required to punch out.');
+     // _showErrorSnackBar('A photo is required to punch out.');
       return;
     }
 

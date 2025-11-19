@@ -6,6 +6,13 @@
 	<array>
 		<string>com.transistorsoft.fetch</string>
 	</array>
+
+	<key>UIDeviceFamily</key>
+    <array>
+      <integer>1</integer>
+    </array>
+
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -60,6 +67,8 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>UIStatusBarStyle</key>
+	<string></string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
