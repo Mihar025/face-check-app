@@ -43,8 +43,8 @@
 	<array>
 		<string>_dartVmService._tcp</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>We need camera access to take photos for attendance verification and profile pictures.</string>
+<key>NSCameraUsageDescription</key>
+<string>This app needs camera access to take photos for attendance verification</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID for quick and secure sign-in.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
