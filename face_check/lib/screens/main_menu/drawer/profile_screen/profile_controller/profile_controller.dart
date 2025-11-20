@@ -66,26 +66,62 @@ class ProfileController {
   // ---------- CAMERA PERMISSION ----------
   Future<bool> _ensureCameraPermission(BuildContext context) async {
     var status = await Permission.camera.status;
+    print('📸 Initial camera status: $status');
 
     if (status.isGranted) {
       return true;
     }
 
-    // запрашиваем
+    // Если уже permanentlyDenied, не пытаемся запросить
+    if (status.isPermanentlyDenied) {
+      print('📸 Camera is permanently denied');
+      // Показываем диалог с предложением открыть настройки
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Camera access'),
+            content: const Text(
+              'Camera access was previously denied. '
+                  'Please go to Settings > FaceCheck > Camera and enable access.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(dialogContext).pop();
+                  await openAppSettings(); // Открыть настройки
+                },
+                child: const Text('Open Settings'),
+              ),
+            ],
+          ),
+        );
+      }
+      return false;
+    }
+
+    // Запрашиваем только если статус isDenied или isRestricted
+    print('📸 Requesting camera permission...');
     final newStatus = await Permission.camera.request();
+    print('📸 New camera status after request: $newStatus');
+
     if (newStatus.isGranted) {
       return true;
     }
 
-    // пользователь отказал — НИКАКОЙ "ошибки", только мягкий диалог
+    // Показываем мягкий диалог
     if (context.mounted) {
       await showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Camera access'),
           content: const Text(
-            'To take or update your profile photo, please allow camera access in Settings. '
-                'You can continue using the app without a profile photo.',
+            'To take photos, please allow camera access. '
+                'You can continue using the app without this feature.',
           ),
           actions: [
             TextButton(
