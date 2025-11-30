@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:face_check/services/safety_service.dart';
+
 import '../../../theme/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -18,6 +20,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool safetyZoneAlerts = false;
   bool is24HourFormat = true;
   bool isDarkTheme = true;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
@@ -42,10 +45,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final SharedPreferences prefs = await _prefs;
+    safetyZoneAlerts = prefs.getBool('safetyZoneAlerts') ?? false;
+
+    if (safetyZoneAlerts) {
+      SafetyService.start();
+    }
+
     setState(() {
       is24HourFormat = prefs.getBool('is24HourFormat') ?? true;
     });
   }
+
 
   Future<void> _saveTimeFormat(bool value) async {
     final SharedPreferences prefs = await _prefs;
@@ -54,6 +64,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       prefs.setBool('is24HourFormat', value);
     });
   }
+
+  Future<void> _saveSafetyZoneAlerts(bool value) async {
+    final SharedPreferences prefs = await _prefs;
+
+    setState(() {
+      safetyZoneAlerts = value;
+      prefs.setBool('safetyZoneAlerts', value);
+    });
+
+    if (value) {
+      SafetyService.start();
+    } else {
+      SafetyService.stop();
+    }
+  }
+
+
 
   Future<void> _saveTheme(bool value) async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -115,6 +142,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSectionHeader(l10n.get('preferences'), theme, isSmallScreen),
               SizedBox(height: isSmallScreen ? 12 : 16),
               _buildPreferencesSection(theme, l10n, isSmallScreen),
+              _buildDivider(theme),
+              _buildSettingTile(
+                icon: Icons.shield_outlined,
+                title: "Safety Zone Alerts",
+                subtitle: "Notify when leaving job site",
+                onTap: () {
+                  setState(() {
+                    safetyZoneAlerts = !safetyZoneAlerts;
+                    _saveSafetyZoneAlerts(safetyZoneAlerts);
+                  });
+                },
+                trailing: Switch.adaptive(
+                  value: safetyZoneAlerts,
+                  onChanged: _saveSafetyZoneAlerts,
+                  activeColor: theme.primaryColor,
+                ),
+                theme: theme,
+                isSmallScreen: isSmallScreen,
+              ),
+
+
             ],
           );
         },
