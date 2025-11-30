@@ -392,11 +392,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     return aNy.year == bNy.year && aNy.month == bNy.month && aNy.day == bNy.day;
   }
 
-  String _nyYmd(DateTime utc) {
-    final d = tz.TZDateTime.from(utc.toUtc(), _ny);
-    return '${d.year}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
-  }
-
   Future<void> _checkTodayPunchStatus() async {
     if (_currentUserId.value != null) {
       _punchManager.setUserId(_currentUserId.value!);
@@ -678,8 +673,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     if (photoBase64 == null) {
       return;
     }
-
-
 
     _isLoading.value = true;
 

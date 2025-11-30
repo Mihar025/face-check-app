@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:face_check/services/safety_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -47,7 +50,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
   @override
   void initState() {
     super.initState();
-
+    const bool enableIOSBackgroundTracking = false;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // 1) таймзоны
       await Future(() => tz.initializeTimeZones());
@@ -70,7 +73,11 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
       // 4) фоновые службы (локация и т.д.)
       try {
-        await LocationTrackingService.initializeBackgroundService();
+        await SafetyService.init();
+
+        if (Platform.isAndroid || enableIOSBackgroundTracking) {
+          await LocationTrackingService.initializeBackgroundService();
+        }
       } catch (e) {
         debugPrint('Location background init error: $e');
       }

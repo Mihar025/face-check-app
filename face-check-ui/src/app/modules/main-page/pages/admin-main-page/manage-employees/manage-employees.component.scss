@@ -48,33 +48,41 @@ $border-radius-xl: 32px;
 // Typography
 $font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-// Professional Shadows
+// Professional Shadows - OPTIMIZED (reduced complexity)
 @mixin shadow-xs {
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 @mixin shadow-sm {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 @mixin shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 @mixin shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 @mixin shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 @mixin shadow-2xl {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
+// OPTIMIZED transition - using transform and opacity only for GPU acceleration
 @mixin smooth-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+// GPU acceleration mixin
+@mixin gpu-accelerate {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 // Base Reset
@@ -180,32 +188,16 @@ body {
   color: $white;
   @include shadow-md;
   @include smooth-transition;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.6s;
-  }
+  @include gpu-accelerate;
 
   &:hover {
     background: linear-gradient(135deg, $primary-dark, $primary-color);
-    transform: translateY(-3px);
+    transform: translateY(-3px) translateZ(0);
     @include shadow-xl;
-
-    &::before {
-      left: 100%;
-    }
   }
 
   &:active {
-    transform: translateY(-1px);
+    transform: translateY(-1px) translateZ(0);
     @include shadow-lg;
   }
 
@@ -239,7 +231,6 @@ body {
     &::before {
       content: '👥';
       font-size: 24px;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
   }
 
@@ -334,35 +325,11 @@ body {
   border: 3px solid $white;
   @include shadow-md;
   @include smooth-transition;
-  position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, $primary-color, $primary-light);
-    opacity: 0;
-    @include smooth-transition;
-    z-index: -1;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: $white;
-    z-index: -1;
-  }
+  @include gpu-accelerate;
 
   &:hover {
-    transform: scale(1.15);
+    transform: scale(1.15) translateZ(0);
     @include shadow-lg;
-
-    &::before {
-      opacity: 1;
-    }
   }
 }
 
@@ -384,7 +351,6 @@ body {
 
   i {
     font-size: 28px;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   }
 }
 
@@ -407,11 +373,12 @@ body {
   font-size: 14px;
   border-radius: $border-radius-xs;
   @include smooth-transition;
+  @include gpu-accelerate;
 
   &:hover {
     background: $primary-color;
     color: $white;
-    transform: scale(1.2) rotate(15deg);
+    transform: scale(1.2) rotate(15deg) translateZ(0);
     @include shadow-sm;
   }
 }
@@ -435,29 +402,10 @@ body {
   align-items: center;
   gap: 8px;
   @include smooth-transition;
-  position: relative;
-  overflow: hidden;
+  @include gpu-accelerate;
 
   i {
     font-size: 15px;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-
-  &:hover::before {
-    width: 100px;
-    height: 100px;
   }
 
   &.info-button {
@@ -469,7 +417,7 @@ body {
       background: linear-gradient(135deg, $info-color, darken($info-color, 10%));
       color: $white;
       @include shadow-md;
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
       border-color: transparent;
     }
   }
@@ -483,7 +431,7 @@ body {
       background: linear-gradient(135deg, $danger-color, darken($danger-color, 10%));
       color: $white;
       @include shadow-md;
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
       border-color: transparent;
     }
   }
@@ -497,7 +445,7 @@ body {
       background: linear-gradient(135deg, $primary-color, $primary-dark);
       color: $white;
       @include shadow-md;
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
       border-color: transparent;
     }
   }
@@ -510,7 +458,7 @@ body {
     &:hover {
       background: linear-gradient(135deg, darken($info-color, 10%), $info-color);
       @include shadow-lg;
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
     }
   }
 }
@@ -525,7 +473,7 @@ body {
     background: linear-gradient(135deg, $foreman-color, darken($foreman-color, 10%));
     color: $white;
     @include shadow-md;
-    transform: translateY(-2px);
+    transform: translateY(-2px) translateZ(0);
     border-color: transparent;
   }
 }
@@ -539,7 +487,7 @@ body {
     background: linear-gradient(135deg, $admin-color, darken($admin-color, 10%));
     color: $white;
     @include shadow-md;
-    transform: translateY(-2px);
+    transform: translateY(-2px) translateZ(0);
     border-color: transparent;
   }
 }
@@ -552,7 +500,7 @@ body {
     background: linear-gradient(135deg, $neutral-600, $neutral-700);
     color: $white;
     @include shadow-md;
-    transform: translateY(-2px);
+    transform: translateY(-2px) translateZ(0);
   }
 }
 
@@ -609,13 +557,14 @@ body {
   cursor: pointer;
   @include smooth-transition;
   @include shadow-sm;
+  @include gpu-accelerate;
 
   &:hover:not([disabled]) {
     background: linear-gradient(135deg, $primary-color, $primary-light);
     color: $white;
     border-color: $primary-color;
     @include shadow-lg;
-    transform: translateY(-2px);
+    transform: translateY(-2px) translateZ(0);
   }
 
   &[disabled] {
@@ -650,9 +599,10 @@ body {
     border: 5px solid $neutral-200;
     border-top: 5px solid $primary-color;
     border-radius: 50%;
-    animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    animation: spin 1s linear infinite;
     margin-bottom: 24px;
     @include shadow-md;
+    @include gpu-accelerate;
   }
 
   p {
@@ -663,8 +613,8 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: rotate(0deg) translateZ(0); }
+  100% { transform: rotate(360deg) translateZ(0); }
 }
 
 // Enhanced Alert Messages
@@ -681,7 +631,8 @@ body {
   @include shadow-md;
   position: relative;
   overflow: hidden;
-  animation: slideInDown 0.5s ease;
+  animation: slideInDown 0.3s ease-out;
+  @include gpu-accelerate;
 
   &::before {
     content: '';
@@ -699,11 +650,11 @@ body {
 
 @keyframes slideInDown {
   from {
-    transform: translateY(-100%);
+    transform: translateY(-20px) translateZ(0);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) translateZ(0);
     opacity: 1;
   }
 }
@@ -755,25 +706,40 @@ body {
     font-size: 64px;
     margin-bottom: 20px;
     opacity: 0.5;
-    filter: grayscale(50%);
   }
 }
 
-// Enhanced Modal Design
+// ═══════════════════════════════════════════════════════════════
+// MODAL STYLES - OPTIMIZED FOR PERFORMANCE (NO FLICKERING)
+// ═══════════════════════════════════════════════════════════════
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 15, 35, 0.8);
-  backdrop-filter: blur(12px);
+  background: rgba(15, 15, 35, 0.85);
+  // REMOVED backdrop-filter to prevent flickering
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn 0.3s ease;
   padding: 20px;
+  // GPU acceleration for smooth rendering
+  @include gpu-accelerate;
+  // Simple fade animation
+  animation: modalFadeIn 0.2s ease-out forwards;
+  will-change: opacity;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-container {
@@ -784,8 +750,12 @@ body {
   max-height: 90vh;
   overflow: hidden;
   @include shadow-2xl;
-  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   border: 1px solid rgba($neutral-200, 0.5);
+  // GPU acceleration - CRITICAL for preventing flicker
+  @include gpu-accelerate;
+  will-change: transform, opacity;
+  // Simplified animation
+  animation: modalSlideUp 0.25s ease-out forwards;
 
   &.modal-large {
     max-width: 900px;
@@ -796,14 +766,14 @@ body {
   }
 }
 
-@keyframes slideUp {
+@keyframes modalSlideUp {
   from {
-    transform: translateY(60px) scale(0.9);
     opacity: 0;
+    transform: translateY(30px) translateZ(0);
   }
   to {
-    transform: translateY(0) scale(1);
     opacity: 1;
+    transform: translateY(0) translateZ(0);
   }
 }
 
@@ -837,12 +807,13 @@ body {
     justify-content: center;
     border-radius: $border-radius-sm;
     @include smooth-transition;
+    @include gpu-accelerate;
 
     &:hover {
       background: linear-gradient(135deg, $danger-light, rgba($danger-color, 0.1));
       color: $danger-color;
       border-color: $danger-color;
-      transform: rotate(90deg) scale(1.1);
+      transform: rotate(90deg) scale(1.1) translateZ(0);
       @include shadow-md;
     }
   }
@@ -852,6 +823,10 @@ body {
   padding: 32px;
   max-height: calc(90vh - 180px);
   overflow-y: auto;
+  // Smooth scrolling
+  -webkit-overflow-scrolling: touch;
+  // Prevent layout shift
+  contain: layout style;
 
   &.modal-scrollable {
     max-height: 70vh;
@@ -893,6 +868,7 @@ body {
     border: none;
     @include smooth-transition;
     @include shadow-sm;
+    @include gpu-accelerate;
   }
 
   .cancel-button {
@@ -904,7 +880,7 @@ body {
       background: $neutral-100;
       color: $neutral-900;
       @include shadow-md;
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
     }
   }
 
@@ -915,7 +891,7 @@ body {
     &:hover {
       background: linear-gradient(135deg, $primary-dark, $primary-color);
       @include shadow-lg;
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
     }
 
     &.delete-button {
@@ -1068,10 +1044,11 @@ body {
   border-radius: $border-radius-sm;
   border: 1px solid $neutral-200;
   @include smooth-transition;
+  @include gpu-accelerate;
 
   &:hover {
     @include shadow-sm;
-    transform: translateY(-2px);
+    transform: translateY(-2px) translateZ(0);
     border-color: $primary-color;
   }
 
@@ -1113,30 +1090,12 @@ body {
   font-weight: 600;
   color: $neutral-600;
   @include smooth-transition;
+  @include gpu-accelerate;
   position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba($primary-color, 0.1);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
 
   &:hover {
     color: $primary-color;
     background: rgba($primary-color, 0.05);
-
-    &::before {
-      width: 200px;
-      height: 200px;
-    }
   }
 
   &.active {
@@ -1174,6 +1133,7 @@ body {
   position: relative;
   overflow: hidden;
 
+  // OPTIMIZED: Static gradient instead of animation
   &::before {
     content: '';
     position: absolute;
@@ -1182,8 +1142,6 @@ body {
     right: 0;
     height: 4px;
     background: linear-gradient(90deg, $primary-color, $primary-light, $primary-color);
-    background-size: 200% 100%;
-    animation: shimmer 3s ease-in-out infinite;
   }
 
   h5 {
@@ -1200,14 +1158,8 @@ body {
     &::before {
       content: '⏰';
       font-size: 20px;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
   }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 }
 
 .role-buttons {
@@ -1301,10 +1253,11 @@ body {
       border-radius: $border-radius-sm;
       border: 1px solid rgba($success-color, 0.3);
       @include smooth-transition;
+      @include gpu-accelerate;
 
       &:hover {
         @include shadow-sm;
-        transform: translateX(4px);
+        transform: translateX(4px) translateZ(0);
       }
 
       .day-name {
@@ -1620,7 +1573,10 @@ body {
   }
 }
 
-// Responsive Design
+// ═══════════════════════════════════════════════════════════════
+// RESPONSIVE DESIGN
+// ═══════════════════════════════════════════════════════════════
+
 @media (max-width: 1200px) {
   .admin-container {
     padding: 28px;
@@ -1777,261 +1733,8 @@ body {
       }
     }
   }
-}
 
-@media (max-width: 480px) {
-  .employees-container {
-    padding: 12px;
-  }
-
-  .modal-header {
-    padding: 16px;
-
-    h3 {
-      font-size: 18px;
-    }
-  }
-
-  .modal-body {
-    padding: 16px;
-  }
-
-  .modal-footer {
-    padding: 16px;
-    flex-direction: column;
-
-    button {
-      width: 100%;
-    }
-  }
-}
-
-// ============================================
-// MOBILE RESPONSIVE - FULL OPTIMIZATION
-// ============================================
-
-@media (max-width: 768px) {
-  // Main layout
-  .main-content {
-    margin-left: 0;
-  }
-
-  // Header
-  .top-logo-container {
-    padding: 0 16px;
-    height: 60px;
-
-    .top-logo {
-      height: 35px;
-    }
-  }
-
-  // Container
-  .admin-container {
-    padding: 16px;
-  }
-
-  // Header with action
-  .header-with-action {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-
-    h1 {
-      font-size: 24px;
-
-      &::before {
-        width: 4px;
-        height: 26px;
-      }
-    }
-
-    .add-button {
-      width: 100%;
-      justify-content: center;
-      padding: 12px 20px;
-    }
-  }
-
-  // Search and filters
-  .search-filters {
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
-
-    .search-box,
-    .filter-select,
-    input,
-    select {
-      width: 100%;
-    }
-  }
-
-  // Employees section
-  .employees-section {
-    margin-bottom: 20px;
-    border-radius: $border-radius-sm;
-
-    h2 {
-      font-size: 16px;
-      padding: 16px 20px;
-    }
-  }
-
-  // TABLE TO CARDS - EMPLOYEES
-  .employees-table {
-    display: block;
-
-    thead {
-      display: none;
-    }
-
-    tbody {
-      display: block;
-    }
-
-    tr {
-      display: block;
-      margin-bottom: 16px;
-      border: 1px solid $neutral-200;
-      border-radius: $border-radius-sm;
-      padding: 16px;
-      background: $white;
-      @include shadow-sm;
-
-      &:hover {
-        background: $white;
-        @include shadow-md;
-      }
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-
-    td {
-      display: block;
-      padding: 10px 0 !important;
-      border: none !important;
-      text-align: left;
-
-      &:before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: $neutral-600;
-        display: block;
-        margin-bottom: 6px;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      &:not(:last-child) {
-        border-bottom: 1px solid $neutral-100 !important;
-        padding-bottom: 12px !important;
-      }
-
-      // Labels for each column
-      &:first-child:before { content: "Employee"; }
-      &:nth-child(2):before { content: "Email"; }
-      &:nth-child(3):before { content: "Phone"; }
-      &:nth-child(4):before { content: "Role"; }
-      &:nth-child(5):before { content: "Worksite"; }
-      &:nth-child(6):before { content: "Status"; }
-      &:nth-child(7):before { content: "Actions"; }
-    }
-  }
-
-  // Worker avatar
-  .worker-avatar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-
-    .worker-photo,
-    .worker-photo-placeholder {
-      width: 50px;
-      height: 50px;
-      font-size: 20px;
-    }
-
-    .worker-info {
-      .worker-name {
-        font-size: 15px;
-      }
-
-      .worker-title {
-        font-size: 12px;
-      }
-    }
-  }
-
-  // Role badge
-  .role-badge {
-    font-size: 12px;
-    padding: 5px 10px;
-  }
-
-  // Status badge
-  .status-badge {
-    font-size: 12px;
-    padding: 5px 10px;
-  }
-
-  // Worksite badge
-  .worksite-badge {
-    font-size: 12px;
-    padding: 5px 10px;
-  }
-
-  // Action buttons
-  .actions-cell {
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .action-button {
-    flex: 1;
-    min-width: calc(50% - 4px);
-    justify-content: center;
-    padding: 10px 12px;
-    font-size: 13px;
-
-    i {
-      font-size: 14px;
-    }
-  }
-
-  // Empty state
-  .no-employees {
-    padding: 40px 20px;
-
-    i {
-      font-size: 60px;
-      margin-bottom: 16px;
-    }
-
-    h3 {
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
-
-    p {
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-
-    .add-button {
-      padding: 12px 24px;
-      font-size: 14px;
-    }
-  }
-
-  // Modal adjustments
+  // Mobile modal optimizations
   .modal-overlay {
     padding: 10px;
     align-items: flex-end;
@@ -2047,55 +1750,13 @@ body {
   .modal-header {
     padding: 20px;
 
-    h2 {
-      font-size: 18px;
-    }
-
-    .modal-close {
-      width: 32px;
-      height: 32px;
+    h3 {
       font-size: 18px;
     }
   }
 
   .modal-body {
     padding: 20px;
-
-    .form-group {
-      margin-bottom: 16px;
-
-      label {
-        font-size: 12px;
-        margin-bottom: 8px;
-      }
-
-      input,
-      textarea,
-      select {
-        padding: 12px 14px;
-        font-size: 14px;
-      }
-
-      textarea {
-        min-height: 100px;
-      }
-    }
-
-    .form-row {
-      flex-direction: column;
-      gap: 16px;
-
-      .form-group {
-        width: 100%;
-      }
-    }
-
-    .error-message,
-    .success-message {
-      padding: 10px 14px;
-      font-size: 13px;
-      margin: 16px 0;
-    }
   }
 
   .modal-footer {
@@ -2105,157 +1766,10 @@ body {
 
     button {
       width: 100%;
-      padding: 12px 20px;
-    }
-  }
-
-  // Employee info modal (if viewing details)
-  .employee-info-container {
-    padding: 16px;
-  }
-
-  .employee-info-section {
-    padding: 16px;
-    margin-bottom: 16px;
-
-    h3 {
-      font-size: 16px;
-      margin-bottom: 12px;
-    }
-
-    .info-grid {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .info-item {
-      padding: 12px;
-
-      .label {
-        font-size: 11px;
-      }
-
-      .value {
-        font-size: 14px;
-      }
-    }
-  }
-
-  // Stats section (if any)
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .stat-card {
-    padding: 16px;
-
-    .stat-value {
-      font-size: 24px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-    }
-
-    .stat-icon {
-      width: 40px;
-      height: 40px;
-      font-size: 18px;
-    }
-  }
-
-  // Tabs (if any)
-  .tabs-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 20px;
-
-    .tabs {
-      display: flex;
-      min-width: max-content;
-    }
-
-    .tab {
-      white-space: nowrap;
-      padding: 10px 16px;
-      font-size: 13px;
-    }
-  }
-
-  // Pagination
-  .pagination {
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-
-    .pagination-info {
-      text-align: center;
-      font-size: 13px;
-    }
-
-    .pagination-controls {
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 6px;
-
-      button {
-        min-width: 36px;
-        height: 36px;
-        padding: 8px;
-        font-size: 13px;
-      }
-    }
-  }
-
-  // Bulk actions (if any)
-  .bulk-actions {
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px;
-
-    button {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-
-  // Filters panel
-  .filters-panel {
-    padding: 16px;
-
-    .filter-group {
-      margin-bottom: 16px;
-
-      label {
-        font-size: 12px;
-      }
-
-      input,
-      select {
-        width: 100%;
-      }
-    }
-  }
-
-  // Photo upload section
-  .photo-upload-section {
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-
-    .photo-preview {
-      width: 100px;
-      height: 100px;
-    }
-
-    .upload-button {
-      width: 100%;
     }
   }
 }
 
-// Extra small devices
 @media (max-width: 480px) {
   .admin-container {
     padding: 12px;
@@ -2279,55 +1793,17 @@ body {
     }
   }
 
-  .employees-table {
-    tr {
-      padding: 14px;
-    }
-
-    td {
-      font-size: 13px;
-      padding: 8px 0 !important;
-
-      &:before {
-        font-size: 10px;
-      }
-    }
-  }
-
-  .worker-avatar {
-    .worker-photo,
-    .worker-photo-placeholder {
-      width: 45px;
-      height: 45px;
-      font-size: 18px;
-    }
-
-    .worker-info {
-      .worker-name {
-        font-size: 14px;
-      }
-
-      .worker-title {
-        font-size: 11px;
-      }
-    }
-  }
-
-  .action-button {
-    padding: 8px 10px;
-    font-size: 12px;
-    min-width: 100%;
-
-    i {
-      font-size: 13px;
-    }
-  }
-
   .modal-header {
     padding: 16px;
 
-    h2 {
+    h3 {
       font-size: 16px;
+    }
+
+    .close-button {
+      width: 32px;
+      height: 32px;
+      font-size: 18px;
     }
   }
 
