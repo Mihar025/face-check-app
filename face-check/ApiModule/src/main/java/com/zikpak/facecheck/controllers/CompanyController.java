@@ -1,6 +1,7 @@
 package com.zikpak.facecheck.controllers;
 
 
+import com.zikpak.facecheck.entity.Company;
 import com.zikpak.facecheck.requestsResponses.company.CompanyResponse;
 import com.zikpak.facecheck.services.company.*;
 import com.zikpak.facecheck.taxesServices.services.PayStubService;
@@ -33,6 +34,15 @@ import java.util.List;
 public class CompanyController {
 
     private final CompanyService companyService;
+
+
+    @GetMapping("/{companyId}/billing-info")
+    public ResponseEntity<CompanyStripeResponse> getBillingInfo(
+            @PathVariable Integer companyId,
+            Authentication auth
+    ) {
+        return ResponseEntity.ok(companyService.findCompanyStripe(companyId, auth));
+    }
 
     @GetMapping(value = "/{companyId}/employees/count", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> count(@PathVariable Integer companyId, Authentication auth) {

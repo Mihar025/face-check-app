@@ -19,6 +19,7 @@ public class JobScheduler {
     @PostConstruct
     public void scheduleJobs() {
         try {
+            scheduleStripeRecountingPrice();
             scheduleWeeklyEmployerTaxes();
          //   scheduleWeeklyPayStubJob();
          //   scheduleBIWeeklyPayStubJob();
@@ -44,15 +45,27 @@ public class JobScheduler {
         }
     }
 
+    private void scheduleStripeRecountingPrice() throws SchedulerException {
+        JobDetail stripeRecountingJob = JobBuilder.newJob(StripeRecountingJob.class)
+                .withIdentity("stripeRecountingPrice", "TAX_JOBS")
+                .storeDurably()
+                .build();
 
+        Trigger stripeJobEndTrigger = TriggerBuilder.newTrigger()
+                .withIdentity("stripeRecountingTrigger", "TAX_JOBS")
+                .withSchedule(CronScheduleBuilder
+                        .cronSchedule("0 0 1 * * ?")
+                        .inTimeZone(TimeZone.getTimeZone("America/New_York")))
+                .build();
 
+        if (scheduler.checkExists(stripeRecountingJob.getKey())) {
+            scheduler.deleteJob(stripeRecountingJob.getKey());
+        }
 
+        scheduler.scheduleJob(stripeRecountingJob, stripeJobEndTrigger);
 
-
-
-
-
-
+        log.info("✅ Stripe Recounting Job scheduled successfully");
+    }
 
 
     private void scheduleQuarterlyFutaReportsJob() throws SchedulerException {

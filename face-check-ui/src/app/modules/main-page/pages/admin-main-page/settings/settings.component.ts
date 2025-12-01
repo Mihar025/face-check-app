@@ -12,6 +12,8 @@ import {UpdateCompanyPhoneNumberRequest} from "../../../../../services/models/up
 import {UpdateCompanyNameRequest} from "../../../../../services/models/update-company-name-request";
 import {UpdateCompanyAddressRequest} from "../../../../../services/models/update-company-address-request";
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {environment} from "../../../../../../environments/environment.prod";
+
 
 @Component({
   selector: 'app-settings',
@@ -39,6 +41,8 @@ export class SettingsComponent implements OnInit {
   adminEmailInput: string = '';
   adminPhoneInput: string = '';
   adminAddressInput: string = '';
+
+  subscriptionStatus: string = 'inactive';
 
   // Password Fields
   newPassword: string = '';
@@ -159,6 +163,8 @@ export class SettingsComponent implements OnInit {
     this.loadCompanyData();
     this.loadAdminData();
     this.getUserPhoto();
+    this.loadBillingStatus();
+
   }
 
   async saveCompanyInfo(): Promise<void> {
@@ -256,6 +262,35 @@ export class SettingsComponent implements OnInit {
     }
   }
 
+  loadBillingStatus(): void {
+    this.userService.findWorkerCompanyIdByAuthentication().subscribe({
+      next: (res) => {
+        if (!res || !res.companyId) {
+          console.error("Company ID not found.");
+          this.subscriptionStatus = 'inactive';
+          return;
+        }
+
+        this.companyId = res.companyId;
+
+        this.http.get<any>(
+          `${environment.apiUrl}/company/${this.companyId}/billing-info`
+        ).subscribe({
+          next: (company) => {
+            this.subscriptionStatus = company.subscriptionStatus ?? 'inactive';
+          },
+          error: () => {
+            this.subscriptionStatus = 'inactive';
+          }
+        });
+      },
+      error: () => {
+        this.subscriptionStatus = 'inactive';
+      }
+    });
+  }
+
+
 
   isPasswordValid(): boolean {
     return this.newPassword.length >= 6 &&
@@ -263,6 +298,16 @@ export class SettingsComponent implements OnInit {
       this.hasNumber &&
       this.newPassword === this.confirmPassword;
   }
+
+  goToBilling() {
+    if (!this.companyId || this.companyId === 0) {
+      console.error("Cannot navigate to billing: companyId is missing.");
+      return;
+    }
+
+    this.router.navigate([`/company/${this.companyId}/billing`]);
+  }
+
 
   async updatePassword(): Promise<void> {
     this.passwordUpdateSuccess = false;

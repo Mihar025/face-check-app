@@ -1,0 +1,59 @@
+.billing-canceled-container {
+  display: flex;
+  justify-content: center;
+  padding-top: 70px;
+}
+
+.card {
+  background: #ffffff;
+  padding: 35px;
+  border-radius: 14px;
+  width: 420px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.icon.error {
+  font-size: 48px;
+  color: #e53935;
+  margin-bottom: 15px;
+}
+
+h1 {
+  font-size: 26px;
+  margin-bottom: 12px;
+}
+
+p {
+  font-size: 16px;
+  margin-bottom: 25px;
+  color: #555;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #2196f3;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #1e87d8;
+}
+
+.btn-light {
+  background: #f2f2f2;
+  color: #333;
+}
+
+.btn-light:hover {
+  background: #e1e1e1;
+}
