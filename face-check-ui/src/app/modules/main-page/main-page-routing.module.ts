@@ -186,7 +186,9 @@ const routes: Routes = [
 
   {
     path: 'company/:companyId/billing',
-    component: BillingPageComponent
+    component: BillingPageComponent,
+    canActivate: [TokenExpiryGuard]
+
   },
   {
     path: 'billing/success',

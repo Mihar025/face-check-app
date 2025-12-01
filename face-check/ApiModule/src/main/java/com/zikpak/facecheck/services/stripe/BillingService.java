@@ -8,11 +8,14 @@ import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.PriceCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import com.stripe.param.checkout.SessionCreateParams;
+import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import com.stripe.model.checkout.Session;
 
@@ -30,7 +33,9 @@ public class BillingService {
 
 
 
-    public BillingResponse activateBilling(Integer companyId) throws StripeException {
+    public BillingResponse activateBilling(Integer companyId, Authentication authentication) throws StripeException {
+        User user = (User) authentication.getPrincipal();
+        validateCompanyAccess(user, companyId);
 
         var company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + companyId + " not found"));
@@ -61,7 +66,7 @@ public class BillingService {
 
         Price seatsPrice = Price.create(
                 PriceCreateParams.builder()
-                        .setUnitAmount(seatsAmount * 100)
+                        .setUnitAmount(seatsAmount)
                         .setCurrency("usd")
                         .setRecurring(
                                 PriceCreateParams.Recurring.builder()
@@ -104,7 +109,9 @@ public class BillingService {
 
 
 
-    public void cancelSubscription(Integer companyId) throws StripeException {
+    public void cancelSubscription(Integer companyId, Authentication authentication) throws StripeException {
+        User user = (User) authentication.getPrincipal();
+        validateCompanyAccess(user, companyId);
 
         var company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + companyId + " not found"));
@@ -126,8 +133,19 @@ public class BillingService {
     }
 
 
-    public void updateSeats(Integer companyId) throws StripeException {
+    public void updateSeats(Integer companyId, Authentication authentication) throws StripeException {
+        User user = (User) authentication.getPrincipal();
+        validateCompanyAccess(user, companyId);
+        updateSeatsInternal(companyId);
+    }
 
+
+    public void updateSeats(Integer companyId) throws StripeException {
+        updateSeatsInternal(companyId);
+    }
+
+
+    private void updateSeatsInternal(Integer companyId) throws StripeException{
         var company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + companyId + " not found"));
 
@@ -141,7 +159,7 @@ public class BillingService {
         // создаём новый price только для seats
         Price price = Price.create(
                 PriceCreateParams.builder()
-                        .setUnitAmount(newAmount * 100)
+                        .setUnitAmount(newAmount)
                         .setCurrency("usd")
                         .setRecurring(
                                 PriceCreateParams.Recurring.builder()
@@ -170,7 +188,30 @@ public class BillingService {
 
         company.setSubscriptionStatus(updated.getStatus());
         companyRepository.save(company);
+
     }
+
+
+
+
+
+
+
+    private void validateCompanyAccess(User user, Integer companyId) {
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ADMIN") ||
+                        role.getName().equals("AppOwner"));
+
+        if (!isAdmin) {
+            throw new AccessDeniedException("You don't have permission for this operation!");
+        }
+
+        // ✅ Проверяем принадлежность к компании
+        if (!user.getCompany().getId().equals(companyId)) {
+            throw new AccessDeniedException("You don't have access to this company!");
+        }
+    }
+
 
 
 
