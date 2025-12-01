@@ -13,3 +13,5 @@ ALTER TABLE _company
 ALTER TABLE _company
     ADD subscription_current_period_end TIMESTAMP;
 
+
+
