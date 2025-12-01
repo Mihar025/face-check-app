@@ -4,6 +4,7 @@ package com.zikpak.facecheck.services.stripe;
 import com.stripe.model.Event;
 import com.stripe.model.Subscription;
 import com.stripe.net.Webhook;
+import com.zikpak.facecheck.annotation.RateLimit;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ public class StripeWebhookController {
     private final CompanyRepository companyRepository;
 
     @PostMapping
+    @RateLimit(requests = 100, perSeconds = 60)
     public ResponseEntity<String> handle(@RequestBody String payload,
                                          @RequestHeader("Stripe-Signature") String sigHeader) {
 
@@ -56,6 +58,10 @@ public class StripeWebhookController {
                 .getObject()
                 .orElse(null);
 
+        if(subscription == null){
+            return;
+        }
+
         var company = companyRepository.findByStripeCustomerId(subscription.getCustomer());
         if (company == null) return;
 
@@ -76,6 +82,11 @@ public class StripeWebhookController {
         Subscription subscription = (Subscription) event.getDataObjectDeserializer()
                 .getObject()
                 .orElse(null);
+
+        if(subscription == null){
+            return;
+        }
+
 
         var company = companyRepository.findByStripeSubscriptionId(subscription.getId());
         if (company == null) return;
