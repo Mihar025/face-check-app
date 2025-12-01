@@ -1,0 +1,59 @@
+<div class="billing-container">
+
+  <h1 class="title">Billing & Subscription</h1>
+
+  <!-- Subscription Status -->
+  <div class="section status-section">
+    <h3>Status:</h3>
+    <p class="status" [ngClass]="subscriptionStatus">{{ subscriptionStatus | uppercase }}</p>
+  </div>
+
+  <!-- Plan Summary -->
+  <div class="section plan-section">
+    <h3>Your Plan</h3>
+
+    <div class="plan-row">
+      <span>Base Subscription Fee:</span>
+      <span>$15 / month</span>
+    </div>
+
+    <div class="plan-row">
+      <span>Employees:</span>
+      <span>{{ workers }} employees × $8</span>
+    </div>
+
+    <div class="plan-row total">
+      <span>Total Monthly Price:</span>
+      <span>${{ totalPrice }}</span>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="section action-section">
+
+    <button
+      class="btn activate"
+      *ngIf="subscriptionStatus !== 'active'"
+      (click)="activateBilling()">
+      Activate Subscription
+    </button>
+
+    <button
+      class="btn update"
+      *ngIf="subscriptionStatus === 'active'"
+      (click)="updateSeats()">
+      Update Seats
+    </button>
+
+    <button
+      class="btn cancel"
+      *ngIf="subscriptionStatus === 'active'"
+      (click)="cancelSubscription()">
+      Cancel Subscription
+    </button>
+
+  </div>
+
+  <p class="message" *ngIf="message">{{ message }}</p>
+
+</div>

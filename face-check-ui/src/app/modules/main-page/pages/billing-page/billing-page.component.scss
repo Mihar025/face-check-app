@@ -1,0 +1,80 @@
+.billing-container {
+  max-width: 650px;
+  margin: 40px auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.section {
+  margin-bottom: 30px;
+}
+
+.status-section .status {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.status.active {
+  background: #d1f8d6;
+  color: #117833;
+}
+
+.status.inactive {
+  background: #f8dada;
+  color: #a30000;
+}
+
+.plan-section .plan-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+.plan-section .total {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 15px;
+}
+
+.btn {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn.activate {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn.update {
+  background: #2196F3;
+  color: white;
+}
+
+.btn.cancel {
+  background: #E53935;
+  color: white;
+}
+
+.message {
+  margin-top: 20px;
+  font-size: 15px;
+  color: #333;
+}

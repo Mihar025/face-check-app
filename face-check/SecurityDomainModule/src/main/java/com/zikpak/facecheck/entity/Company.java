@@ -60,6 +60,22 @@ public class Company {
     private String specialTwoCharConditionCodeForMTA305 = "";
 
 
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
+
+    @Column(name = "stripe_subscription_id")
+    private String stripeSubscriptionId;
+
+    @Column(name = "stripe_subscription_item_id")
+    private String stripeSubscriptionItemId;
+
+    @Column(name = "subscription_status")
+    private String subscriptionStatus;
+
+    @Column(name = "subscription_current_period_end")
+    private LocalDateTime subscriptionCurrentPeriodEnd;
+
+
 
     @Column(name = "company_income_per_month")
     private BigDecimal companyIncomePerMonth = BigDecimal.ZERO;
@@ -110,11 +126,8 @@ public class Company {
     @Column(name = "first_biweekly_date")
     private LocalDate firstBiweeklyDate;
 
-
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private List<User> employees = new ArrayList<>();
-
-
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private Set<WorkSite> workSites = new HashSet<>();

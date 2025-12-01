@@ -56,6 +56,9 @@ import {StatForAttendenceComponent} from "./pages/admin-main-page/stat-for-atten
 import {
   NotificationAdminPageComponent
 } from "./pages/admin-main-page/notification-admin-page/notification-admin-page.component";
+import {BillingSuccessComponent} from "./pages/billing-success/billing-success.component";
+import {BillingCanceledComponent} from "./pages/billing-canceled/billing-canceled.component";
+import {BillingPageComponent} from "./pages/billing-page/billing-page.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -181,6 +184,20 @@ const routes: Routes = [
     canActivate: [TokenExpiryGuard]
   },
 
+  {
+    path: 'company/:companyId/billing',
+    component: BillingPageComponent
+  },
+  {
+    path: 'billing/success',
+    component: BillingSuccessComponent
+  },
+  {
+    path: 'billing/canceled',
+    component: BillingCanceledComponent
+  },
+
+
 
 
   /*
@@ -238,6 +255,9 @@ const routes: Routes = [
     component: AttendenceTrackEmployeeAppOwnerComponent,
     canActivate: [TokenExpiryGuard]
   },
+
+
+
 
 
 

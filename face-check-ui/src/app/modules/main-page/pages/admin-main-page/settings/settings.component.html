@@ -105,6 +105,27 @@
             <span class="action-icon">→</span>
           </div>
         </div>
+
+
+        <!-- Billing & Subscription -->
+        <div class="settings-card" (click)="goToBilling()">
+          <div class="card-icon">
+            <span class="icon">💳</span>
+          </div>
+          <div class="card-content">
+            <h3>Billing & Subscription</h3>
+            <p class="card-description">
+              Manage your subscription, seats and payments
+            </p>
+            <div class="card-details">
+              <span class="detail-item">Status: {{ subscriptionStatus | uppercase }}</span>
+            </div>
+          </div>
+          <div class="card-action">
+            <span class="action-icon">→</span>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

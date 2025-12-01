@@ -64,7 +64,9 @@ public interface CompanyRepository extends JpaRepository<Company, Integer> {
             @Param("companyId") Integer companyId,
             @Param("userId") Integer userId
     );
+    
+    
+    Company findByStripeCustomerId(String customer);
 
-
-
+    Company findByStripeSubscriptionId(String id);
 }

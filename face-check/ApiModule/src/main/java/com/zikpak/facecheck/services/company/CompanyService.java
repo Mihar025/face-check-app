@@ -52,7 +52,24 @@ public class CompanyService implements CompanyServiceImpl {
     private final UserRepository userRepository;
     private final WorkerPayrollRepository workerPayrollRepository;
     private final RoleRepository roleRepository;
-    private final W2OfficialPDFService w2OfficialPDFService;
+
+
+
+    public CompanyStripeResponse findCompanyStripe(Integer companyId, Authentication authentication) {
+
+        User admin = (User) authentication.getPrincipal();
+
+        var company = companyRepository.findById(companyId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Company with ID: " + companyId + " not found"));
+
+        return CompanyStripeResponse.builder()
+                .companyId(company.getId())
+                .workersQuantity(company.getEmployees().size())   // <<< ПРАВИЛЬНО
+                .subscriptionStatus(company.getSubscriptionStatus())
+                .build();
+    }
+
 
 
     @Cacheable(

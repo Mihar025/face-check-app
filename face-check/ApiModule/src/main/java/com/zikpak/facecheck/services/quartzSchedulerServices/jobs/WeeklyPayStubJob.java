@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 @Component
 @Slf4j
-
 public class WeeklyPayStubJob extends BaseSchedulerJob {
 
 

@@ -50,6 +50,10 @@ import {
   AttendenceTrackEmployeeAppOwnerComponent
 } from "./pages/appOwner/attendence-track-employee-app-owner/attendence-track-employee-app-owner.component";
 import { NotificationAdminPageComponent } from './pages/admin-main-page/notification-admin-page/notification-admin-page.component';
+import { BillingPageComponent } from './pages/billing-page/billing-page.component';
+import { BillingSuccessComponent } from './pages/billing-success/billing-success.component';
+import { BillingCanceledComponent } from './pages/billing-canceled/billing-canceled.component';
+import { BillingComponent } from './pages/billing/billing.component';
 
 @NgModule({
   declarations: [
@@ -87,7 +91,11 @@ import { NotificationAdminPageComponent } from './pages/admin-main-page/notifica
     AttendenceTrackEmployeeAppOwnerComponent,
     AttendenceTrackEmployeeAdminComponent,
     StatForAttendenceComponent,
-    NotificationAdminPageComponent
+    NotificationAdminPageComponent,
+    BillingPageComponent,
+    BillingSuccessComponent,
+    BillingCanceledComponent,
+    BillingComponent
   ],
   imports: [
     CommonModule,
