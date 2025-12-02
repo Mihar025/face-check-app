@@ -65,7 +65,7 @@ public class CompanyService implements CompanyServiceImpl {
 
         return CompanyStripeResponse.builder()
                 .companyId(company.getId())
-                .workersQuantity(company.getEmployees().size())   // <<< ПРАВИЛЬНО
+                .workersQuantity(company.getWorkersQuantity())
                 .subscriptionStatus(company.getSubscriptionStatus())
                 .build();
     }

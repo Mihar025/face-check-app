@@ -44,6 +44,7 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.findCompanyStripe(companyId, auth));
     }
 
+
     @GetMapping(value = "/{companyId}/employees/count", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> count(@PathVariable Integer companyId, Authentication auth) {
         return ResponseEntity.ok(String.valueOf(companyService.findWorkersQuantityInCertainCompany(companyId, auth)));
