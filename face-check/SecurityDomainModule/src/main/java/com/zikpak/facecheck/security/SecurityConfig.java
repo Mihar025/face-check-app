@@ -67,6 +67,8 @@ public class SecurityConfig {
                         // публичные auth/документация (и с /api/v1, и без — на случай прямых маппингов)
                         .requestMatchers("/api/v1/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/v1/billing/webhook", "/billing/webhook").permitAll()
+
 
                         // твои правила для aws-reports/sales
                         .requestMatchers(HttpMethod.GET, "/api/v1/aws-reports/download", "/aws-reports/download").permitAll()

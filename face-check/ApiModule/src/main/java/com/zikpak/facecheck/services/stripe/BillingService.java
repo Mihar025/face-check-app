@@ -30,6 +30,14 @@ public class BillingService {
     @Value( "${stripe.cancel-url}")
     private String cancelUrl;
 
+    @Value( "${stripe.base-price-id}")
+    private String stripeBasePriceId;
+
+    @Value( "${stripe.product-id}")
+    private String stripeBaseProductId;
+
+
+
 
 
 
@@ -58,9 +66,6 @@ public class BillingService {
             throw new RuntimeException("Cannot activate billing with 0 employees");
         }
 
-        // 1. Base subscription price ($15)
-        String basePriceId = "price_FACE_BASE_15"; // возьми из application.yml
-
         // 2. Seats price ($8 × employees)
         long seatsAmount = employees * 800L;
 
@@ -73,7 +78,7 @@ public class BillingService {
                                         .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
                                         .build()
                         )
-                        .setProduct("prod_FACE_CHECK")
+                        .setProduct(stripeBaseProductId)
                         .build()
         );
 
@@ -86,7 +91,7 @@ public class BillingService {
                         // BASE PRICE
                         .addLineItem(
                                 SessionCreateParams.LineItem.builder()
-                                        .setPrice(basePriceId)
+                                        .setPrice(stripeBasePriceId)
                                         .setQuantity(1L)
                                         .build()
                         )
@@ -166,7 +171,7 @@ public class BillingService {
                                         .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
                                         .build()
                         )
-                        .setProduct("prod_FACE_CHECK")
+                        .setProduct(stripeBaseProductId)
                         .build()
         );
 
