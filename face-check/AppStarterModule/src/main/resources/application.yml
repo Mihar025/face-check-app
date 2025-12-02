@@ -101,7 +101,8 @@ stripe:
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
   success-url: ${STRIPE_SUCCESS_URL}
   cancel-url: ${STRIPE_CANCEL_URL}
-  base-price-id: price_FACE_BASE_15
+  base-price-id: ${STRIPE_BASE_PRICE_ID}
+  product-id: ${STRIPE_PRODUCT_ID}
 
 alerts:
   email:
