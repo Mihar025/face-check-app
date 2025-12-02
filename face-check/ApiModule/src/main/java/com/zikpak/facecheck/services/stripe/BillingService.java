@@ -1,5 +1,6 @@
 package com.zikpak.facecheck.services.stripe;
 
+import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Price;
@@ -11,6 +12,7 @@ import com.stripe.param.checkout.SessionCreateParams;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,9 +38,13 @@ public class BillingService {
     @Value( "${stripe.product-id}")
     private String stripeBaseProductId;
 
+    @Value("${stripe.secret-key}")
+    private String stripeSecretKey;
 
-
-
+    @PostConstruct
+    public void init() {
+        Stripe.apiKey = stripeSecretKey;
+    }
 
 
     public BillingResponse activateBilling(Integer companyId, Authentication authentication) throws StripeException {

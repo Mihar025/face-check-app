@@ -81,6 +81,8 @@ public class AuthenticationService {
             user.setRoles(List.of(role));
             user.setCompany(company);
             user.setEnabled(true);
+            int quant = company.getWorkersQuantity();
+            company.setWorkersQuantity(quant + 1);
 
             userRepository.save(user);
 
@@ -117,6 +119,9 @@ public class AuthenticationService {
         user.setRoles(List.of(role));
         user.setCompany(company);
         user.setEnabled(true);
+
+        int quant = company.getWorkersQuantity();
+        company.setWorkersQuantity(quant + 1);
 
         userRepository.save(user);
         try {
