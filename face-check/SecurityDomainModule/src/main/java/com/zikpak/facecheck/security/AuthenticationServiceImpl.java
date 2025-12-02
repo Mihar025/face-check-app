@@ -65,7 +65,7 @@ public class AuthenticationServiceImpl implements AuthenticationServiceRegAuth {
     public Company findCompanyByName(String companyName) {
         var company = companyRepository.findByCompanyName(companyName)
                 .orElseThrow(() -> new RuntimeException("Company Not Found"));
-        companyRepository.incrementWorkers(companyName);
+       // companyRepository.incrementWorkers(companyName);
         return company;
     }
 

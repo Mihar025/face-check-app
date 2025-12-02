@@ -14,6 +14,7 @@ import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
@@ -46,7 +47,7 @@ public class BillingService {
         Stripe.apiKey = stripeSecretKey;
     }
 
-
+    @Transactional
     public BillingResponse activateBilling(Integer companyId, Authentication authentication) throws StripeException {
         User user = (User) authentication.getPrincipal();
         validateCompanyAccess(user, companyId);
@@ -119,7 +120,7 @@ public class BillingService {
     }
 
 
-
+    @Transactional
     public void cancelSubscription(Integer companyId, Authentication authentication) throws StripeException {
         User user = (User) authentication.getPrincipal();
         validateCompanyAccess(user, companyId);
