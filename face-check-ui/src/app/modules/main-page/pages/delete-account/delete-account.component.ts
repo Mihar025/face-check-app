@@ -12,7 +12,6 @@ export class DeleteAccountComponent  implements OnInit {
 
 
   ngOnInit(): void {
-    // Scroll to top when component loads
     window.scrollTo(0, 0);
   }
 
