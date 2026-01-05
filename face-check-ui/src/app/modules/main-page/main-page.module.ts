@@ -53,6 +53,7 @@ import { NotificationAdminPageComponent } from './pages/admin-main-page/notifica
 import { BillingPageComponent } from './pages/billing-page/billing-page.component';
 import { BillingSuccessComponent } from './pages/billing-success/billing-success.component';
 import { BillingCanceledComponent } from './pages/billing-canceled/billing-canceled.component';
+import { DeleteAccountComponent } from './pages/delete-account/delete-account.component';
 
 @NgModule({
   declarations: [
@@ -94,6 +95,7 @@ import { BillingCanceledComponent } from './pages/billing-canceled/billing-cance
     BillingPageComponent,
     BillingSuccessComponent,
     BillingCanceledComponent,
+    DeleteAccountComponent,
   ],
   imports: [
     CommonModule,
