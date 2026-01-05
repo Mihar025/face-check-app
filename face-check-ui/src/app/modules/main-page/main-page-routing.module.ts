@@ -59,6 +59,7 @@ import {
 import {BillingSuccessComponent} from "./pages/billing-success/billing-success.component";
 import {BillingCanceledComponent} from "./pages/billing-canceled/billing-canceled.component";
 import {BillingPageComponent} from "./pages/billing-page/billing-page.component";
+import {DeleteAccountComponent} from "./pages/delete-account/delete-account.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -124,6 +125,13 @@ const routes: Routes = [
     path: 'refund-policy',
     component: RefundPolicyComponent
   },
+
+
+  {
+    path: 'delete-account',
+    component: DeleteAccountComponent
+  },
+
 
   {
     path: 'main-page/admin',
