@@ -52,7 +52,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
     super.initState();
     const bool enableIOSBackgroundTracking = false;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // 1) таймзоны
+      // 1) таймзон=-
       await Future(() => tz.initializeTimeZones());
 
       // 2) prefs
