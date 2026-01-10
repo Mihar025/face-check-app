@@ -1,5 +1,13 @@
 # Файл: android/app/proguard-rules.pro
 
+-keep class com.face_check.app.MainActivity { *; }
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep class io.flutter.embedding.** { *; }
+
+
+
+
 # Правила для flutter_local_notifications
 -keep class com.dexterous.** { *; }
 -keep class y3.** { *; }

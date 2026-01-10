@@ -1,4 +1,4 @@
-package com.example.face_check;
+package com.face_check.app;
 
 import io.flutter.embedding.android.FlutterActivity;
 

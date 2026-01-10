@@ -373,7 +373,7 @@ export class FinancePageComponent implements OnInit, OnDestroy {
     this.generatingReport = true;
     const reportTypeName = this.selectedReportGenType === 'hours' ? 'Hours Report' : 'Payroll Summary Report';
 
-    const baseUrl = 'http://localhost:8088/api/v1';
+    const baseUrl = 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1';
     let url = '';
 
     if (this.selectedReportGenType === 'hours') {
@@ -449,12 +449,12 @@ export class FinancePageComponent implements OnInit, OnDestroy {
   }
 
   downloadReport(report: ReportFileDto): void {
-    const baseUrl = 'http://localhost:8088/api/v1';
+    const baseUrl = 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1';
     window.open(`${baseUrl}/aws-reports/download?key=${encodeURIComponent(report.key || '')}`, '_blank');
   }
 
   viewReport(report: ReportFileDto): void {
-    const baseUrl = 'http://localhost:8088/api/v1';
+    const baseUrl = 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1';
     window.open(`${baseUrl}/aws-reports/view?key=${encodeURIComponent(report.key || '')}`, '_blank');
   }
 
