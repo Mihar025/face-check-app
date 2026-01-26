@@ -82,7 +82,7 @@ public class AuthenticationService {
             user.setCompany(company);
             user.setEnabled(true);
             int quant = company.getWorkersQuantity();
-            company.setWorkersQuantity(quant + 1);
+          //  company.setWorkersQuantity(quant + 1);
 
             userRepository.save(user);
 
