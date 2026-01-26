@@ -1,15 +1,14 @@
 package com.zikpak.facecheck.controllers;
 
 import com.stripe.exception.StripeException;
+import com.zikpak.facecheck.requestsResponses.stripeDTOs.CreateSubscriptionRequest;
 import com.zikpak.facecheck.services.stripe.BillingResponse;
 import com.zikpak.facecheck.services.stripe.BillingService;
+import org.springframework.web.bind.annotation.RequestBody;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("billing")
@@ -34,6 +33,16 @@ public class BillingController {
         billingService.updateSeats(companyId, authentication);
         return ResponseEntity.ok("Subscription seats updated successfully");
     }
+
+    @PostMapping("/activate/subscription")
+    public BillingResponse createSubscriptionV2(Authentication authentication, @RequestBody CreateSubscriptionRequest request) throws StripeException {
+        System.out.println("AUTH name=" + authentication.getName());
+        System.out.println("AUTH authorities=" + authentication.getAuthorities());
+        return billingService.activateBillingV2(authentication, request);
+    }
+
+
+
 
 
 }
