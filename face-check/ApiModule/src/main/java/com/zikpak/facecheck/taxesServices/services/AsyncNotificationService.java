@@ -34,6 +34,7 @@ public class AsyncNotificationService {
                             today + " in " +
                             worksiteName + " " +
                             workSiteAddress)
+                    .adminOnly(true)
                     .build();
             notificationService.createNotification(companyId, request);
         }
@@ -47,6 +48,7 @@ public class AsyncNotificationService {
                             today + " in " +
                             worksiteName + " " +
                             workSiteAddress)
+                    .adminOnly(true)
                     .build();
             notificationService.createNotification(companyId, request);
         }
