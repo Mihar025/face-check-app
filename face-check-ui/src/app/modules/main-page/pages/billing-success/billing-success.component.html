@@ -1,8 +1,48 @@
-<div class="success-container">
-  <h1>Payment Successful 🎉</h1>
-  <p>Your subscription is now active.</p>
+<div class="billing-result-page">
+  <div class="top-logo-container">
+    <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+  </div>
 
-  <button routerLink="/main-page/admin/settings" class="btn">
-    Go back to Settings
-  </button>
+  <div class="result-card success">
+    <!-- Animated Icon -->
+    <div class="icon-wrapper">
+      <div class="icon-circle">
+        <span class="icon">✓</span>
+      </div>
+      <div class="confetti">
+        <span>🎉</span>
+        <span>✨</span>
+        <span>🎊</span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <h1>Payment Successful!</h1>
+    <p class="subtitle">Your subscription is now active</p>
+
+    <div class="details-box">
+      <div class="detail-row">
+        <span class="label">Status</span>
+        <span class="value success">Active</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Billing Cycle</span>
+        <span class="value">Monthly</span>
+      </div>
+    </div>
+
+    <p class="info-text">
+      Thank you for subscribing! Your team can now use all FaceCheck features.
+    </p>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" routerLink="/main-page/admin/settings">
+        Go to Settings
+      </button>
+      <button class="btn btn-secondary" routerLink="/main-page/admin/employees">
+        Manage Employees
+      </button>
+    </div>
+  </div>
 </div>
