@@ -1,16 +1,38 @@
-<div class="billing-canceled-container">
-  <div class="card">
-    <div class="icon error">✖</div>
+<div class="billing-result-page">
+  <div class="top-logo-container">
+    <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+  </div>
+
+  <div class="result-card canceled">
+    <!-- Icon -->
+    <div class="icon-wrapper">
+      <div class="icon-circle">
+        <span class="icon">✕</span>
+      </div>
+    </div>
+
+    <!-- Content -->
     <h1>Payment Canceled</h1>
-    <p>Your subscription has not been activated.</p>
+    <p class="subtitle">Your subscription has not been activated</p>
 
-    <button routerLink="/company/{{companyId}}/billing" class="btn btn-secondary">
-      Try Again
-    </button>
+    <div class="info-box">
+      <p>Don't worry! No charges were made to your account.</p>
+      <p>You can try again anytime or contact support if you need help.</p>
+    </div>
 
-    <button routerLink="/main-page/admin/settings" class="btn btn-light">
-      Return to Settings
-    </button>
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" [routerLink]="['/company', companyId, 'billing']">
+        Try Again
+      </button>
+      <button class="btn btn-secondary" routerLink="/main-page/admin/settings">
+        Return to Settings
+      </button>
+    </div>
 
+    <!-- Help -->
+    <div class="help-section">
+      <p>Need help? <a href="mailto:support@facecheck.com">Contact Support</a></p>
+    </div>
   </div>
 </div>
