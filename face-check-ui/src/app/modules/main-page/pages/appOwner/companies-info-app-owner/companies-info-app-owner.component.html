@@ -31,24 +31,23 @@
             <span class="label">Email:</span>
             <span class="value">{{ company.companyEmail || 'Not provided' }}</span>
           </div>
-
           <div class="info-row">
             <span class="label">Phone:</span>
             <span class="value">{{ company.companyPhone || 'Not provided' }}</span>
           </div>
-
           <div class="info-row">
             <span class="label">Address:</span>
             <span class="value">{{ company.companyAddress || 'Not provided' }}</span>
           </div>
-
           <div class="info-row">
             <span class="label">Workers:</span>
             <span class="value">{{ company.workersQuantity || 0 }}</span>
           </div>
         </div>
 
+        <!-- КНОПКИ ТОЛЬКО ЗДЕСЬ -->
         <div class="company-actions">
+          <button class="btn btn-offer" (click)="openOfferModal(company)">Create Offer</button>
           <button class="btn btn-edit" (click)="startEdit(company)">Edit</button>
           <button class="btn btn-delete" (click)="deleteCompany(company)">Delete</button>
         </div>
@@ -61,35 +60,11 @@
         </div>
 
         <div class="edit-form">
-          <input
-            type="text"
-            [(ngModel)]="editForm.companyName"
-            placeholder="Company Name"
-            class="form-input">
-
-          <input
-            type="email"
-            [(ngModel)]="editForm.companyEmail"
-            placeholder="Email"
-            class="form-input">
-
-          <input
-            type="tel"
-            [(ngModel)]="editForm.companyPhone"
-            placeholder="Phone"
-            class="form-input">
-
-          <input
-            type="text"
-            [(ngModel)]="editForm.companyAddress"
-            placeholder="Address"
-            class="form-input">
-
-          <input
-            type="number"
-            [(ngModel)]="editForm.workersQuantity"
-            placeholder="Workers"
-            class="form-input">
+          <input type="text" [(ngModel)]="editForm.companyName" placeholder="Company Name" class="form-input">
+          <input type="email" [(ngModel)]="editForm.companyEmail" placeholder="Email" class="form-input">
+          <input type="tel" [(ngModel)]="editForm.companyPhone" placeholder="Phone" class="form-input">
+          <input type="text" [(ngModel)]="editForm.companyAddress" placeholder="Address" class="form-input">
+          <input type="number" [(ngModel)]="editForm.workersQuantity" placeholder="Workers" class="form-input">
         </div>
 
         <div class="company-actions">
@@ -110,260 +85,79 @@
 
   <!-- Pagination -->
   <div class="pagination" *ngIf="companies && companies.length > 0">
-    <button
-      class="pagination-btn"
-      (click)="previousPage()"
-      [disabled]="currentPage === 0">
-      Previous
-    </button>
-
-    <div class="pagination-info">
-      Page {{ currentPage + 1 }} of {{ totalPages }}
-    </div>
-
-    <button
-      class="pagination-btn"
-      (click)="nextPage()"
-      [disabled]="currentPage >= totalPages - 1">
-      Next
-    </button>
+    <button class="pagination-btn" (click)="previousPage()" [disabled]="currentPage === 0">Previous</button>
+    <div class="pagination-info">Page {{ currentPage + 1 }} of {{ totalPages }}</div>
+    <button class="pagination-btn" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1">Next</button>
   </div>
 </div>
 
 <!-- Registration Modal -->
 <div class="modal-overlay" *ngIf="isRegisterModalOpen" (click)="closeRegisterModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
+    <!-- ... весь контент Registration Modal ... -->
+  </div>
+</div>
+
+<!-- Offer Modal - ОТДЕЛЬНО, НЕ ВНУТРИ Registration Modal -->
+<div class="modal-overlay" *ngIf="isOfferModalOpen" (click)="closeOfferModal()">
+  <div class="modal-content offer-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Register New Company</h2>
-      <button class="close-btn" (click)="closeRegisterModal()">×</button>
+      <h2>Create Billing Offer</h2>
+      <button class="close-btn" (click)="closeOfferModal()">×</button>
     </div>
 
     <div class="modal-body">
-      <div *ngIf="registerErrorMessage" class="error-notification">{{ registerErrorMessage }}</div>
-      <div *ngIf="registerSuccessMessage" class="success-notification">{{ registerSuccessMessage }}</div>
+      <div *ngIf="offerErrorMessage" class="error-notification">{{ offerErrorMessage }}</div>
 
-      <form [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()">
+      <div class="offer-company-info">
+        <h3>{{ selectedCompanyForOffer?.companyName }}</h3>
+        <p>Workers: <strong>{{ selectedCompanyForOffer?.workersQuantity || 0 }}</strong></p>
+      </div>
 
-        <!-- ОСНОВНАЯ ИНФОРМАЦИЯ О КОМПАНИИ -->
-        <div class="section-title">Company Information</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" formControlName="adminCompanyId" placeholder="Admin Company ID *">
-            <div *ngIf="registerForm.get('adminCompanyId')?.invalid && registerForm.get('adminCompanyId')?.touched" class="error-message">
-              Admin Company ID is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="companyName" placeholder="Company Name *">
-            <div *ngIf="registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched" class="error-message">
-              Company name is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="email" formControlName="companyEmail" placeholder="Company Email *">
-            <div *ngIf="registerForm.get('companyEmail')?.invalid && registerForm.get('companyEmail')?.touched" class="error-message">
-              <span *ngIf="registerForm.get('companyEmail')?.hasError('required')">Company email is required</span>
-              <span *ngIf="registerForm.get('companyEmail')?.hasError('email')">Please enter a valid email</span>
-            </div>
-          </div>
+      <div class="offer-form" *ngIf="!checkoutUrl">
+        <div class="form-group">
+          <label>Monthly Subscription ($)</label>
+          <input type="number" [(ngModel)]="offerForm.monthlySubscription" min="0" step="0.01">
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <input type="tel" formControlName="companyPhone" placeholder="Company Phone *">
-            <div *ngIf="registerForm.get('companyPhone')?.invalid && registerForm.get('companyPhone')?.touched" class="error-message">
-              Company phone is required
-            </div>
-          </div>
+        <div class="form-group">
+          <label>Price Per Employee ($)</label>
+          <input type="number" [(ngModel)]="offerForm.pricePerEmployee" min="0" step="0.01">
         </div>
 
-        <!-- АДРЕС КОМПАНИИ -->
-        <div class="section-title">Company Address</div>
-
-        <div class="form-row">
-          <div class="form-group full-width">
-            <input type="text" formControlName="companyAddress" placeholder="Company Address *">
-            <div *ngIf="registerForm.get('companyAddress')?.invalid && registerForm.get('companyAddress')?.touched" class="error-message">
-              Company address is required
-            </div>
+        <div class="price-summary">
+          <div class="summary-row">
+            <span>Base Price:</span>
+            <span>${{ offerForm.monthlySubscription }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Employees ({{ selectedCompanyForOffer?.workersQuantity || 0 }} × ${{ offerForm.pricePerEmployee }}):</span>
+            <span>${{ (selectedCompanyForOffer?.workersQuantity || 0) * offerForm.pricePerEmployee }}</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total Monthly:</span>
+            <span>${{ getTotalPrice() }}</span>
           </div>
         </div>
+      </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" formControlName="companyCity" placeholder="City *">
-            <div *ngIf="registerForm.get('companyCity')?.invalid && registerForm.get('companyCity')?.touched" class="error-message">
-              City is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <select formControlName="companyState" class="form-select">
-              <option value="">Select State *</option>
-              <option value="NY">New York</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="companyZipCode" placeholder="Zip Code *" maxlength="5">
-            <div *ngIf="registerForm.get('companyZipCode')?.invalid && registerForm.get('companyZipCode')?.touched" class="error-message">
-              <span *ngIf="registerForm.get('companyZipCode')?.hasError('required')">Zip code is required</span>
-              <span *ngIf="registerForm.get('companyZipCode')?.hasError('pattern')">Zip code must be 5 digits</span>
-            </div>
-          </div>
+      <div class="checkout-result" *ngIf="checkoutUrl">
+        <div class="success-notification">Offer created successfully!</div>
+        <label>Checkout Link:</label>
+        <div class="url-container">
+          <input type="text" [value]="checkoutUrl" readonly>
+          <button class="btn btn-copy" (click)="copyCheckoutUrl()">Copy</button>
         </div>
+        <p class="url-hint">Send this link to the company owner to complete payment.</p>
+      </div>
+    </div>
 
-        <div class="form-row">
-          <div class="form-group full-width">
-            <input type="text" formControlName="returnMailingAddress" placeholder="Return Mailing Address *">
-            <div *ngIf="registerForm.get('returnMailingAddress')?.invalid && registerForm.get('returnMailingAddress')?.touched" class="error-message">
-              Return mailing address is required
-            </div>
-          </div>
-        </div>
-
-        <!-- НАЛОГОВАЯ ИНФОРМАЦИЯ -->
-        <div class="section-title">Tax Information</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" formControlName="employerEIN" placeholder="Employer EIN *">
-            <div *ngIf="registerForm.get('employerEIN')?.invalid && registerForm.get('employerEIN')?.touched" class="error-message">
-              Employer EIN is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="companyStateIdNumber" placeholder="State ID Number *">
-            <div *ngIf="registerForm.get('companyStateIdNumber')?.invalid && registerForm.get('companyStateIdNumber')?.touched" class="error-message">
-              State ID number is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="number" formControlName="socialSecurityTaxForCompany"
-                   placeholder="Social Security Tax Rate *" step="0.01" min="0">
-            <div *ngIf="registerForm.get('socialSecurityTaxForCompany')?.invalid && registerForm.get('socialSecurityTaxForCompany')?.touched" class="error-message">
-              Social security tax rate is required
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" formControlName="specialTwoCharConditionCodeForMTA305"
-                   placeholder="MTA-305 Condition Code *" maxlength="2">
-            <div *ngIf="registerForm.get('specialTwoCharConditionCodeForMTA305')?.invalid && registerForm.get('specialTwoCharConditionCodeForMTA305')?.touched" class="error-message">
-              MTA-305 condition code is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Payment Frequency *</label>
-            <select formControlName="companyPaymentPosition" class="form-select">
-              <option value="">Select Frequency *</option>
-              <option value="WEEKLY">Weekly</option>
-              <option value="BIWEEKLY">Bi-Weekly</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="defaultMemo" placeholder="Default Memo *">
-            <div *ngIf="registerForm.get('defaultMemo')?.invalid && registerForm.get('defaultMemo')?.touched" class="error-message">
-              Default memo is required
-            </div>
-          </div>
-        </div>
-
-        <!-- БАНКОВСКАЯ ИНФОРМАЦИЯ -->
-        <div class="section-title">Banking Information</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" formControlName="fundingBankName" placeholder="Bank Name *">
-            <div *ngIf="registerForm.get('fundingBankName')?.invalid && registerForm.get('fundingBankName')?.touched" class="error-message">
-              Bank name is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="fundingAccountNumber" placeholder="Account Number *">
-            <div *ngIf="registerForm.get('fundingAccountNumber')?.invalid && registerForm.get('fundingAccountNumber')?.touched" class="error-message">
-              Account number is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="fundingRoutingNumber"
-                   placeholder="Routing Number *" maxlength="9">
-            <div *ngIf="registerForm.get('fundingRoutingNumber')?.invalid && registerForm.get('fundingRoutingNumber')?.touched" class="error-message">
-              <span *ngIf="registerForm.get('fundingRoutingNumber')?.hasError('required')">Routing number is required</span>
-              <span *ngIf="registerForm.get('fundingRoutingNumber')?.hasError('pattern')">Routing number must be 9 digits</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- СТРАХОВАНИЕ WORKERS' COMPENSATION -->
-        <div class="section-title">Workers' Compensation Insurance</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" formControlName="wcInsuranceCarrier"
-                   placeholder="Insurance Carrier *">
-            <div *ngIf="registerForm.get('wcInsuranceCarrier')?.invalid && registerForm.get('wcInsuranceCarrier')?.touched" class="error-message">
-              Insurance carrier is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="wcPolicyNumber"
-                   placeholder="Policy Number *">
-            <div *ngIf="registerForm.get('wcPolicyNumber')?.invalid && registerForm.get('wcPolicyNumber')?.touched" class="error-message">
-              Policy number is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="number" formControlName="experienceModRate"
-                   placeholder="Experience Mod Rate *" step="0.01" min="0">
-            <div *ngIf="registerForm.get('experienceModRate')?.invalid && registerForm.get('experienceModRate')?.touched" class="error-message">
-              Experience mod rate is required
-            </div>
-          </div>
-        </div>
-
-        <!-- ПОДПИСЬ -->
-        <div class="section-title">Authorized Signature</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <input type="text" formControlName="signatureName"
-                   placeholder="Authorized Signatory Name *">
-            <div *ngIf="registerForm.get('signatureName')?.invalid && registerForm.get('signatureName')?.touched" class="error-message">
-              Signatory name is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <input type="text" formControlName="signatureTitle"
-                   placeholder="Signatory Title *">
-            <div *ngIf="registerForm.get('signatureTitle')?.invalid && registerForm.get('signatureTitle')?.touched" class="error-message">
-              Signatory title is required
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeRegisterModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="isRegisterLoading || registerForm.invalid">
-            <span *ngIf="!isRegisterLoading">Register Company</span>
-            <span *ngIf="isRegisterLoading"><i class="fas fa-spinner fa-spin"></i> Processing...</span>
-          </button>
-        </div>
-      </form>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeOfferModal()">Close</button>
+      <button type="button" class="btn btn-primary" (click)="createOffer()" [disabled]="isCreatingOffer || checkoutUrl" *ngIf="!checkoutUrl">
+        <span *ngIf="!isCreatingOffer">Create Offer</span>
+        <span *ngIf="isCreatingOffer">Creating...</span>
+      </button>
     </div>
   </div>
 </div>
