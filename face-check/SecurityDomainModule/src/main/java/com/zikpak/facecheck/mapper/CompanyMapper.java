@@ -104,15 +104,36 @@ public class CompanyMapper {
 
 
     public CompanyResponse toCompany(Company company) {
+
+        int quantEmp = userRepository.countActiveWorkersByCompanyId(company.getId());
+
+        String subscriptionStatus = company.getSubscriptionStatus() != null
+                ? company.getSubscriptionStatus()
+                : "none";
+
+        BigDecimal monthlySubscription = company.getMonthlySubscription() != null
+                ? company.getMonthlySubscription()
+                : BigDecimal.ZERO;
+
+        BigDecimal perEmployee = company.getPricePerEmployee() != null
+                ? company.getPricePerEmployee()
+                : BigDecimal.ZERO;
+
+
         return CompanyResponse.builder()
                 .companyId(company.getId())
                 .companyName(company.getCompanyName())
-                .workersQuantity(company.getWorkersQuantity())
+                .workersQuantity(quantEmp)
                 .companyAddress(company.getCompanyAddress())
                 .companyEmail(company.getCompanyEmail())
                 .companyPhone(company.getCompanyPhone())
+                .subscriptionStatus(subscriptionStatus)
+                .monthlySubscription(monthlySubscription)
+                .pricePerEmployee(perEmployee)
                 .build();
     }
+
+
 
     public Company createNewAppOwnerCompany(CompanyRegistrationAppOwnerRequest companyRegistrationRequest) {
 

@@ -63,10 +63,17 @@ public class CompanyService implements CompanyServiceImpl {
                 .orElseThrow(() ->
                         new EntityNotFoundException("Company with ID: " + companyId + " not found"));
 
+        int quantityOfEmployees = userRepository.countActiveWorkersByCompanyId(companyId);
+
         return CompanyStripeResponse.builder()
                 .companyId(company.getId())
-                .workersQuantity(company.getWorkersQuantity())
+                .workersQuantity(quantityOfEmployees)
                 .subscriptionStatus(company.getSubscriptionStatus())
+                .monthlySubscription(company.getMonthlySubscription())
+                .pricePerEmployee(company.getPricePerEmployee())
+                .stripeBasePriceId(company.getStripeBasePriceId())
+                .stripeSeatsPriceId(company.getStripeSeatsPriceId())
+                .subscriptionCurrentPeriodEnd(company.getSubscriptionCurrentPeriodEnd())
                 .build();
     }
 
@@ -925,9 +932,9 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("Something went wrong");
         }
 
-        var company = foundedEmployee.getCompany();
-        company.setWorkersQuantity(company.getWorkersQuantity() - 1);
-        companyRepository.save(company);
+     //   var company = foundedEmployee.getCompany();
+       // company.setWorkersQuantity(company.getWorkersQuantity() - 1);
+       // companyRepository.save(company);
 
         userRepository.deleteById(foundedEmployee.getId());
     }
