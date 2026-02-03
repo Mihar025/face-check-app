@@ -4,6 +4,8 @@ package com.zikpak.facecheck.requestsResponses.company;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 public class CompanyResponse {
@@ -20,6 +22,11 @@ public class CompanyResponse {
 
     private Integer workersQuantity;
 
+    private String subscriptionStatus;
+
+    private BigDecimal monthlySubscription;
+
+    private BigDecimal pricePerEmployee;
 
 
 }
