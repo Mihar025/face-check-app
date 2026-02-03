@@ -6,6 +6,7 @@ import {CompanyControllerService} from "../../../../../services/services/company
 import {CompanyResponse} from "../../../../../services/models/company-response";
 import {CompanyUpdatingResponse} from "../../../../../services/models/company-updating-response";
 import {CompanyUpdatingRequest} from "../../../../../services/models/company-updating-request";
+import { BillingControllerService } from "../../../../../services/services/billing-controller.service";
 import {finalize} from 'rxjs/operators';
 
 @Component({
@@ -43,10 +44,24 @@ export class CompaniesInfoAppOwnerComponent implements OnInit {
   registerErrorMessage = '';
   registerSuccessMessage = '';
 
+
+
+  isOfferModalOpen: boolean = false;
+  selectedCompanyForOffer: CompanyResponse | null = null;
+  offerForm = {
+    monthlySubscription: 15,
+    pricePerEmployee: 8
+  };
+  checkoutUrl: string = '';
+  isCreatingOffer: boolean = false;
+  offerErrorMessage: string = '';
+
+
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-
+    private billingService: BillingControllerService,
     private userService: UserServiceControllerService,
     private companyService: CompanyControllerService
   ) {
@@ -112,6 +127,62 @@ export class CompaniesInfoAppOwnerComponent implements OnInit {
       }
     });
   }
+
+
+
+  openOfferModal(company: CompanyResponse): void {
+    this.selectedCompanyForOffer = company;
+    this.isOfferModalOpen = true;
+    this.checkoutUrl = '';
+    this.offerErrorMessage = '';
+    this.offerForm = {
+      monthlySubscription: 15,
+      pricePerEmployee: 8
+    };
+  }
+
+  closeOfferModal(): void {
+    this.isOfferModalOpen = false;
+    this.selectedCompanyForOffer = null;
+    this.checkoutUrl = '';
+    this.offerErrorMessage = '';
+  }
+
+  createOffer(): void {
+    if (!this.selectedCompanyForOffer?.companyId) return;
+
+    this.isCreatingOffer = true;
+    this.offerErrorMessage = '';
+
+    this.billingService.createSubscriptionV2({
+      body: {
+        companyId: this.selectedCompanyForOffer.companyId,
+        monthlySubscription: this.offerForm.monthlySubscription,
+        pricePerEmployee: this.offerForm.pricePerEmployee
+      }
+    }).subscribe({
+      next: (response) => {
+        this.checkoutUrl = response.checkoutUrl || '';
+        this.isCreatingOffer = false;
+      },
+      error: (error) => {
+        console.error('Error creating offer:', error);
+        this.offerErrorMessage = error.error?.message || 'Failed to create offer';
+        this.isCreatingOffer = false;
+      }
+    });
+  }
+
+  copyCheckoutUrl(): void {
+    navigator.clipboard.writeText(this.checkoutUrl);
+    alert('Link copied to clipboard!');
+  }
+
+  getTotalPrice(): number {
+    const workers = this.selectedCompanyForOffer?.workersQuantity || 0;
+    return this.offerForm.monthlySubscription + (this.offerForm.pricePerEmployee * workers);
+  }
+
 
   // Registration modal methods
   openRegisterModal(): void {
