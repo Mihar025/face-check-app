@@ -14,6 +14,7 @@ import { StrictHttpResponse } from '../strict-http-response';
 import { calculateTaxes } from '../fn/company-controller/calculate-taxes';
 import { CalculateTaxes$Params } from '../fn/company-controller/calculate-taxes';
 import { CompanyIncomePerMonthResponse } from '../models/company-income-per-month-response';
+import { CompanyStripeResponse } from '../models/company-stripe-response';
 import { CompanyTaxCalculationResponse } from '../models/company-tax-calculation-response';
 import { CompanyUpdatingResponse } from '../models/company-updating-response';
 import { count } from '../fn/company-controller/count';
@@ -41,6 +42,8 @@ import { getAllEmployeeRates } from '../fn/company-controller/get-all-employee-r
 import { GetAllEmployeeRates$Params } from '../fn/company-controller/get-all-employee-rates';
 import { getAllEmployees } from '../fn/company-controller/get-all-employees';
 import { GetAllEmployees$Params } from '../fn/company-controller/get-all-employees';
+import { getBillingInfo } from '../fn/company-controller/get-billing-info';
+import { GetBillingInfo$Params } from '../fn/company-controller/get-billing-info';
 import { getCompanyAddress } from '../fn/company-controller/get-company-address';
 import { GetCompanyAddress$Params } from '../fn/company-controller/get-company-address';
 import { getCompanyEmail } from '../fn/company-controller/get-company-email';
@@ -588,6 +591,31 @@ export class CompanyControllerService extends BaseService {
   getAdminEmployees(params: GetAdminEmployees$Params, context?: HttpContext): Observable<PageResponseRelatedUserInCompanyResponse> {
     return this.getAdminEmployees$Response(params, context).pipe(
       map((r: StrictHttpResponse<PageResponseRelatedUserInCompanyResponse>): PageResponseRelatedUserInCompanyResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getBillingInfo()` */
+  static readonly GetBillingInfoPath = '/company/{companyId}/billing-info';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getBillingInfo()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getBillingInfo$Response(params: GetBillingInfo$Params, context?: HttpContext): Observable<StrictHttpResponse<CompanyStripeResponse>> {
+    return getBillingInfo(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getBillingInfo$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getBillingInfo(params: GetBillingInfo$Params, context?: HttpContext): Observable<CompanyStripeResponse> {
+    return this.getBillingInfo$Response(params, context).pipe(
+      map((r: StrictHttpResponse<CompanyStripeResponse>): CompanyStripeResponse => r.body)
     );
   }
 

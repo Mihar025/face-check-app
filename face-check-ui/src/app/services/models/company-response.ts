@@ -8,5 +8,8 @@ export interface CompanyResponse {
   companyId?: number;
   companyName?: string;
   companyPhone?: string;
+  monthlySubscription?: number;
+  pricePerEmployee?: number;
+  subscriptionStatus?: string;
   workersQuantity?: number;
 }
