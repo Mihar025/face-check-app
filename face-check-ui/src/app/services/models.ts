@@ -5,6 +5,7 @@
 export { AddOvertimeRequest } from './models/add-overtime-request';
 export { AttendanceResponse } from './models/attendance-response';
 export { AuthenticationRequest } from './models/authentication-request';
+export { BillingResponse } from './models/billing-response';
 export { CanPunchOutRequestWorkSite } from './models/can-punch-out-request-work-site';
 export { ChangePunchInForWorkerResponse } from './models/change-punch-in-for-worker-response';
 export { ChangePunchInRequest } from './models/change-punch-in-request';
@@ -15,12 +16,14 @@ export { CompanyIncomePerMonthResponse } from './models/company-income-per-month
 export { CompanyRegistrationAppOwnerRequest } from './models/company-registration-app-owner-request';
 export { CompanyRegistrationRequest } from './models/company-registration-request';
 export { CompanyResponse } from './models/company-response';
+export { CompanyStripeResponse } from './models/company-stripe-response';
 export { CompanyTaxCalculationRequest } from './models/company-tax-calculation-request';
 export { CompanyTaxCalculationResponse } from './models/company-tax-calculation-response';
 export { CompanyUpdatingRequest } from './models/company-updating-request';
 export { CompanyUpdatingResponse } from './models/company-updating-response';
 export { ContactSalesFormRequest } from './models/contact-sales-form-request';
 export { ContactSalesFormResponse } from './models/contact-sales-form-response';
+export { CreateSubscriptionRequest } from './models/create-subscription-request';
 export { DailyEarningResponse } from './models/daily-earning-response';
 export { DailyFinanceInfo } from './models/daily-finance-info';
 export { DailyScheduleResponse } from './models/daily-schedule-response';

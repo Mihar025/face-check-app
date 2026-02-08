@@ -2,6 +2,7 @@ package com.zikpak.facecheck.entity;
 
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -74,6 +75,20 @@ public class Company {
 
     @Column(name = "subscription_current_period_end")
     private LocalDateTime subscriptionCurrentPeriodEnd;
+
+
+    @Column(name = "price_per_employee")
+    private BigDecimal pricePerEmployee;
+
+    @Column(name = "monthly_subscription")
+    private BigDecimal monthlySubscription;
+
+
+    @Column(name = "stripe_base_price_id")
+    private String stripeBasePriceId;
+
+    @Column(name = "stripe_seats_price_id")
+    private String stripeSeatsPriceId;
 
 
 

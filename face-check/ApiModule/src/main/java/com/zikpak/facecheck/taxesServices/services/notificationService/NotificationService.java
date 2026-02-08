@@ -52,6 +52,9 @@ public class NotificationService {
                     .company(company)
                     .title(notificationRequest.getMessage())
                     .createdAt(LocalDateTime.now())
+                    .adminOnly(notificationRequest.getAdminOnly() != null
+                    ? notificationRequest.getAdminOnly()
+                    : false)
                     .build();
 
             notificationRepository.save(notification);
@@ -63,17 +66,37 @@ public class NotificationService {
         }
     }
 
-    public PageResponse<NotificationResponse> findAllNotificationsForToday(Integer companyId, int page, int size){
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        // Вычисляем начало и конец сегодняшнего дня
+
+
+
+
+
+    public PageResponse<NotificationResponse> findAllNotificationsForToday(Authentication authentication, Integer companyId, int page, int size){
+        User user = (User) authentication.getPrincipal();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
         // Используем метод с диапазоном дат
-        Page<Notification> notifications = notificationRepository.findByCompanyIdAndCreatedAtBetweenOrderByCreatedAtDesc(
-                companyId, startOfDay, endOfDay, pageable
-        );
+        Page<Notification> notifications;
+
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ADMIN") ||
+                        role.getName().equals("AppOwner"));
+
+        if (isAdmin) {
+            // Админ видит ВСЁ
+            notifications = notificationRepository
+                    .findByCompanyIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+                            companyId, startOfDay, endOfDay, pageable);
+        } else {
+            // Worker видит только где adminOnly = false
+            notifications = notificationRepository
+                    .findByCompanyIdAndAdminOnlyFalseAndCreatedAtBetweenOrderByCreatedAtDesc(
+                            companyId, startOfDay, endOfDay, pageable);
+        }
 
         List<NotificationResponse> notificationResponses = notifications.getContent().stream()
                 .map(notificationMapper::toNotification)
@@ -89,6 +112,8 @@ public class NotificationService {
                 notifications.isLast()
         );
     }
+
+
 
     @Transactional
     public void deleteNotificationById(Integer id){

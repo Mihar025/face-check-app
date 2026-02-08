@@ -12,4 +12,6 @@ public class NotificationRequest {
 
     private String message;
 
+    private Boolean adminOnly;
+
 }

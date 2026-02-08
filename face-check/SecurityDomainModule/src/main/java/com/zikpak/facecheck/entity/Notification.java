@@ -28,6 +28,8 @@ public class Notification {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
+    @Column(name = "admin_only")
+    private Boolean adminOnly = false;
 
 
 }
