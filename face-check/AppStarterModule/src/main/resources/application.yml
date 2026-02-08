@@ -14,7 +14,7 @@ spring:
     resources:
       add-mappings: false
   profiles:
-    active: dev
+    active: prod
   servlet:
     multipart:
       max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:1MB}

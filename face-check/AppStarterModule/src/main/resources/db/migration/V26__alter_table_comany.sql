@@ -1,0 +1,1 @@
+ALTER TABLE _company ADD COLUMN monthly_subscription NUMERIC;
