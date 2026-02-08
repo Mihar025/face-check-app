@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
 import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,7 @@ import java.util.Map;
  * Global Exception Handler - обрабатывает все исключения в приложении
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
@@ -165,7 +167,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleGlobalException(
             Exception ex, HttpServletRequest request) {
 
-        // Последняя проверка на размер
+        // <-- ВОТ ЭТО ДОБАВЬ
+        log.error("Unhandled exception: {} {}",
+                request != null ? request.getMethod() : "N/A",
+                request != null ? request.getRequestURI() : "N/A",
+                ex
+        );
+
         if (ex.getMessage() != null &&
                 (ex.getMessage().contains("Request body too large") ||
                         ex.getMessage().contains("maximum") ||

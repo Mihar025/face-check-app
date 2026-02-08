@@ -59,243 +59,160 @@ public class BillingService {
     }
 
     @Transactional
-    public BillingResponse activateBilling(Authentication authentication) throws StripeException {
+    public BillingResponse activateBilling(Integer companyId, Authentication authentication) throws StripeException {
         User user = (User) authentication.getPrincipal();
-        Integer companyId = user.getCompany().getId();
         validateCompanyAccess(user, companyId);
 
-        var company = companyRepository.findById(companyId) //replace on id from request
-                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + companyId + " not found"));
+        var company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
 
-        if(company.getStripeCustomerId() == null){
+        // Проверяем что цены установлены
+        if (company.getStripeBasePriceId() == null || company.getStripeSeatsPriceId() == null) {
+            throw new IllegalStateException("Pricing not configured. Contact support.");
+        }
+
+        if (company.getStripeCustomerId() == null) {
             Customer customer = Customer.create(
                     CustomerCreateParams.builder()
                             .setEmail(company.getCompanyOwner().getEmail())
                             .setName(company.getCompanyName())
                             .build()
             );
-
             company.setStripeCustomerId(customer.getId());
             companyRepository.save(company);
         }
 
-        int employees =  userRepository.countActiveWorkersByCompanyId(companyId);
-
+        int employees = userRepository.countActiveWorkersByCompanyId(companyId);
         if (employees == 0) {
-            throw new RuntimeException("Cannot activate billing with 0 employees");
+            throw new RuntimeException("Cannot activate with 0 employees");
         }
 
-        long basePriceAmount = company.getMonthlySubscription()
-                .multiply(new BigDecimal("100"))
-                .longValueExact();
-
-        long seatsAmount = company.getPricePerEmployee()
-                .multiply(new BigDecimal("100"))
-                .longValueExact();
-
-
-        Price basePrice = Price.create(
-                PriceCreateParams.builder()
-                        .setUnitAmount(basePriceAmount)
-                        .setCurrency("usd")
-                        .setRecurring(
-                                PriceCreateParams.Recurring.builder()
-                                        .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
+        Session session = Session.create(
+                SessionCreateParams.builder()
+                        .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                        .setCustomer(company.getStripeCustomerId())
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setPrice(company.getStripeBasePriceId())
+                                        .setQuantity(1L)
                                         .build()
                         )
-                        .setProduct(stripeBaseProductId)
-                        .setNickname("Base price for company: " + company.getCompanyName())
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setPrice(company.getStripeSeatsPriceId())
+                                        .setQuantity((long) employees)
+                                        .build()
+                        )
+                        .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                        .setCancelUrl(cancelUrl)
                         .build()
         );
 
-        log.debug("stripeSecretKey present? {}", stripeSecretKey != null && !stripeSecretKey.isBlank());
-        log.debug("stripeBaseProductId={}", stripeBaseProductId);
-        log.debug("successUrl={}, cancelUrl={}", successUrl, cancelUrl);
-
-
-        Price seatsPrice = Price.create(
-                PriceCreateParams.builder()
-                        .setUnitAmount(seatsAmount)
-                        .setCurrency("usd")
-                        .setRecurring(
-                                PriceCreateParams.Recurring.builder()
-                                        .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
-                                        .build()
-                        )
-                        .setProduct(stripeBaseProductId)
-                        .setNickname("Price for employee for company: " + company.getCompanyName())
-                        .build()
-        );
-
-        // 3. Checkout Session с 2 товарами
-        try {
-            Session session = Session.create(
-                    SessionCreateParams.builder()
-                            .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                            .setCustomer(company.getStripeCustomerId())
-
-                            // BASE PRICE
-                            .addLineItem(
-                                    SessionCreateParams.LineItem.builder()
-                                            .setPrice(basePrice.getId())
-                                            .setQuantity(1L)
-                                            .build()
-                            )
-
-                            // SEATS PRICE
-                            .addLineItem(
-                                    SessionCreateParams.LineItem.builder()
-                                            .setPrice(seatsPrice.getId())
-                                            .setQuantity((long) employees)  // ✅ тут employees
-                                            .build()
-                            )
-
-                            .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
-                            .setCancelUrl(cancelUrl)
-                            .build()
-            );
-
-            return new BillingResponse(session.getUrl());
-
-        } catch (com.stripe.exception.InvalidRequestException e) {
-            var err = e.getStripeError();
-            log.error("Stripe InvalidRequestException: message={}, param={}, code={}, requestId={}",
-                    e.getMessage(),
-                    err != null ? err.getParam() : null,
-                    err != null ? err.getCode() : null,
-                    e.getRequestId()
-            );
-            throw e;
-        }
-
+        return new BillingResponse(session.getUrl());
     }
 
 
     @Transactional
-    public BillingResponse activateBillingV2(Authentication authentication, CreateSubscriptionRequest createSubscriptionRequest) throws StripeException {
-
-        log.info("PER MONTH: {}", createSubscriptionRequest.getMonthlySubscription());
-        log.info("PRICE PER EMPLOYEE: {}", createSubscriptionRequest.getPricePerEmployee());
+    public BillingResponse activateBillingV2(Authentication authentication, CreateSubscriptionRequest request) throws StripeException {
 
         User user = (User) authentication.getPrincipal();
-
-        Integer companyId = user.getCompany().getId();
+        Integer companyId = request.getCompanyId();
         validateCompanyAccess(user, companyId);
 
-        var company = companyRepository.findById(companyId) //replace on id from request
-                .orElseThrow(() -> new EntityNotFoundException("Company with ID: " + companyId + " not found"));
+        var company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
 
         if (company.getCompanyOwner() == null) {
-            throw new IllegalStateException("Company owner is null for companyId=" + companyId);
+            throw new IllegalStateException("Company owner is null");
         }
 
-        if(company.getStripeCustomerId() == null){
+        // Stripe Customer
+        if (company.getStripeCustomerId() == null) {
             Customer customer = Customer.create(
                     CustomerCreateParams.builder()
                             .setEmail(company.getCompanyOwner().getEmail())
                             .setName(company.getCompanyName())
                             .build()
             );
-
             company.setStripeCustomerId(customer.getId());
-            companyRepository.save(company);
         }
 
-        int employees =  userRepository.countActiveWorkersByCompanyId(companyId);
+        int employees = userRepository.countActiveWorkersByCompanyId(companyId);
         if (employees == 0) {
-            throw new RuntimeException("Cannot activate billing with 0 employees");
+            throw new RuntimeException("Cannot activate with 0 employees");
         }
 
-        // 2. Seats price taking number from Request, and need to transform from BigDecimal to long L taking this from request
-        long basePriceAmount = createSubscriptionRequest.getMonthlySubscription()
-                .multiply(new BigDecimal("100"))
-                .longValueExact();
+        BigDecimal newMonthly = request.getMonthlySubscription();
+        BigDecimal newPerEmployee = request.getPricePerEmployee();
 
-        long seatsAmount = createSubscriptionRequest.getPricePerEmployee()
-                .multiply(new BigDecimal("100"))
-                .longValueExact();
+        // ✅ ОПТИМИЗАЦИЯ: создаём Price только если нужно
+        boolean priceChanged = company.getStripeBasePriceId() == null
+                || company.getStripeSeatsPriceId() == null
+                || !newMonthly.equals(company.getMonthlySubscription())
+                || !newPerEmployee.equals(company.getPricePerEmployee());
 
+        if (priceChanged) {
+            log.info("Creating new Stripe Prices for company {}", companyId);
 
-        Price basePrice = Price.create(
-                PriceCreateParams.builder()
-                        .setUnitAmount(basePriceAmount)
-                        .setCurrency("usd")
-                        .setRecurring(
-                                PriceCreateParams.Recurring.builder()
-                                        .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
-                                        .build()
-                        )
-                        .setProduct(stripeBaseProductId)
-                        .setNickname("Base price for company: " + company.getCompanyName())
-                        .build()
-        );
+            long basePriceAmount = newMonthly.multiply(new BigDecimal("100")).longValueExact();
+            long seatsAmount = newPerEmployee.multiply(new BigDecimal("100")).longValueExact();
 
-        log.debug("stripeSecretKey present? {}", stripeSecretKey != null && !stripeSecretKey.isBlank());
-        log.debug("stripeBaseProductId={}", stripeBaseProductId);
-        log.debug("successUrl={}, cancelUrl={}", successUrl, cancelUrl);
-
-
-        Price seatsPrice = Price.create(
-                PriceCreateParams.builder()
-                        .setUnitAmount(seatsAmount)
-                        .setCurrency("usd")
-                        .setRecurring(
-                                PriceCreateParams.Recurring.builder()
-                                        .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
-                                        .build()
-                        )
-                        .setProduct(stripeBaseProductId)
-                        .setNickname("Price for employee for company: " + company.getCompanyName())
-                        .build()
-        );
-
-        // 3. Checkout Session с 2 товарами
-        try {
-            Session session = Session.create(
-                    SessionCreateParams.builder()
-                            .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                            .setCustomer(company.getStripeCustomerId())
-
-                            // BASE PRICE
-                            .addLineItem(
-                                    SessionCreateParams.LineItem.builder()
-                                            .setPrice(basePrice.getId())
-                                            .setQuantity(1L)
-                                            .build()
-                            )
-
-                            // SEATS PRICE
-                            .addLineItem(
-                                    SessionCreateParams.LineItem.builder()
-                                            .setPrice(seatsPrice.getId())
-                                            .setQuantity((long) employees)  // ✅ тут employees
-                                            .build()
-                            )
-
-                            .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
-                            .setCancelUrl(cancelUrl)
+            Price basePrice = Price.create(
+                    PriceCreateParams.builder()
+                            .setUnitAmount(basePriceAmount)
+                            .setCurrency("usd")
+                            .setRecurring(PriceCreateParams.Recurring.builder()
+                                    .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
+                                    .build())
+                            .setProduct(stripeBaseProductId)
+                            .setNickname("Base: " + company.getCompanyName())
                             .build()
             );
 
-            company.setMonthlySubscription(createSubscriptionRequest.getMonthlySubscription());
-            company.setPricePerEmployee(createSubscriptionRequest.getPricePerEmployee());
-            companyRepository.save(company);
-
-            return new BillingResponse(session.getUrl());
-
-        } catch (com.stripe.exception.InvalidRequestException e) {
-            var err = e.getStripeError();
-            log.error("Stripe InvalidRequestException: message={}, param={}, code={}, requestId={}",
-                    e.getMessage(),
-                    err != null ? err.getParam() : null,
-                    err != null ? err.getCode() : null,
-                    e.getRequestId()
+            Price seatsPrice = Price.create(
+                    PriceCreateParams.builder()
+                            .setUnitAmount(seatsAmount)
+                            .setCurrency("usd")
+                            .setRecurring(PriceCreateParams.Recurring.builder()
+                                    .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
+                                    .build())
+                            .setProduct(stripeBaseProductId)
+                            .setNickname("Per employee: " + company.getCompanyName())
+                            .build()
             );
-            throw e;
+
+            company.setStripeBasePriceId(basePrice.getId());
+            company.setStripeSeatsPriceId(seatsPrice.getId());
+            company.setMonthlySubscription(newMonthly);
+            company.setPricePerEmployee(newPerEmployee);
+        } else {
+            log.info("Reusing existing Stripe Prices for company {}", companyId);
         }
 
+        // Checkout Session — всегда используем сохранённые ID
+        Session session = Session.create(
+                SessionCreateParams.builder()
+                        .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                        .setCustomer(company.getStripeCustomerId())
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setPrice(company.getStripeBasePriceId())
+                                        .setQuantity(1L)
+                                        .build()
+                        )
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setPrice(company.getStripeSeatsPriceId())
+                                        .setQuantity((long) employees)
+                                        .build()
+                        )
+                        .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                        .setCancelUrl(cancelUrl)
+                        .build()
+        );
 
-
+        companyRepository.save(company);
+        return new BillingResponse(session.getUrl());
     }
 
 

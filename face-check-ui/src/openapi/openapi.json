@@ -1964,22 +1964,22 @@
           "required": true
         },
         "responses": {
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
           "200": {
             "description": "Location saved successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
                 }
               }
             }
@@ -2020,8 +2020,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -2033,8 +2033,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -2174,6 +2174,169 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CompanyTaxCalculationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/webhook": {
+      "post": {
+        "tags": [
+          "stripe-webhook-controller"
+        ],
+        "operationId": "handle",
+        "parameters": [
+          {
+            "name": "Stripe-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/update-seats/{companyId}": {
+      "post": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "updateSeats",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/cancel/{companyId}": {
+      "post": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "cancelSubscription",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/activate/{companyId}": {
+      "post": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "createSubscription",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/activate/subscription": {
+      "post": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "createSubscriptionV2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingResponse"
                 }
               }
             }
@@ -4875,7 +5038,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 2025
+              "default": 2026
             }
           }
         ],
@@ -4920,7 +5083,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 2025
+              "default": 2026
             }
           }
         ],
@@ -5373,7 +5536,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 2025
+              "default": 2026
             }
           }
         ],
@@ -5427,7 +5590,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 2025
+              "default": 2026
             }
           }
         ],
@@ -6466,8 +6629,8 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -6476,8 +6639,8 @@
               }
             }
           },
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -6519,8 +6682,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -6532,8 +6695,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -7678,6 +7841,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PageResponseRelatedUserInCompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/{companyId}/billing-info": {
+      "get": {
+        "tags": [
+          "company-controller"
+        ],
+        "operationId": "getBillingInfo",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyStripeResponse"
                 }
               }
             }
@@ -9875,6 +10069,9 @@
         "properties": {
           "message": {
             "type": "string"
+          },
+          "adminOnly": {
+            "type": "boolean"
           }
         }
       },
@@ -10039,6 +10236,34 @@
           "calculationDate": {
             "type": "string",
             "format": "date"
+          }
+        }
+      },
+      "BillingResponse": {
+        "type": "object",
+        "properties": {
+          "checkoutUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateSubscriptionRequest": {
+        "required": [
+          "companyId",
+          "monthlySubscription",
+          "pricePerEmployee"
+        ],
+        "type": "object",
+        "properties": {
+          "pricePerEmployee": {
+            "type": "number"
+          },
+          "monthlySubscription": {
+            "type": "number"
+          },
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -12220,6 +12445,38 @@
           }
         }
       },
+      "CompanyStripeResponse": {
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workersQuantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "subscriptionStatus": {
+            "type": "string"
+          },
+          "monthlySubscription": {
+            "type": "number"
+          },
+          "pricePerEmployee": {
+            "type": "number"
+          },
+          "stripeBasePriceId": {
+            "type": "string"
+          },
+          "stripeSeatsPriceId": {
+            "type": "string"
+          },
+          "subscriptionCurrentPeriodEnd": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "CompanyResponse": {
         "type": "object",
         "properties": {
@@ -12242,6 +12499,15 @@
           "workersQuantity": {
             "type": "integer",
             "format": "int32"
+          },
+          "subscriptionStatus": {
+            "type": "string"
+          },
+          "monthlySubscription": {
+            "type": "number"
+          },
+          "pricePerEmployee": {
+            "type": "number"
           }
         }
       },

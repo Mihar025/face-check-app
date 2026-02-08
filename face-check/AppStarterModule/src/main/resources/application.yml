@@ -43,8 +43,8 @@ server:
     whitelabel:
       enabled: false
     include-message: always
-    include-binding-errors: never
-    include-stacktrace: never
+    include-binding-errors: always
+    include-stacktrace: always
     include-exception: false
     path: /error
   tomcat:

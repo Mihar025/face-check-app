@@ -29,11 +29,21 @@ public interface UserRepository extends JpaRepository<User, Integer> {
                           @Pattern(regexp = "^[^;'\"]*$", message = "Email contains invalid characters") String email);
 
 
+
     @Query("SELECT COUNT(u) FROM User u WHERE u.company.id = :companyId")
     long countEmployeesInCompany(@Param("companyId") Integer companyId);
 
+
+
+    @Query("""
+    SELECT COUNT(u) FROM User u WHERE u.company.id = :companyId
+""")
+    int countActiveWorkersByCompanyId(@Param("companyId") Integer companyId);
+
+
     @Query("SELECT u.company.id FROM User u WHERE u.id = :userId")
     Integer findCompanyIdByUserId(@Param("userId") Integer userId);
+
 
 
     @Query("""

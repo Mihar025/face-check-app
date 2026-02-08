@@ -68,6 +68,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/v1/billing/webhook", "/billing/webhook").permitAll()
+                        .requestMatchers("/api/v1/billing/**", "/billing/**").authenticated()
+
 
 
                         // твои правила для aws-reports/sales

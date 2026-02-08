@@ -7,6 +7,7 @@ import com.zikpak.facecheck.taxesServices.services.notificationService.Notificat
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,10 +27,11 @@ public class NotificationController {
 
     @GetMapping("/company/{companyId}/today")
     public ResponseEntity<PageResponse<NotificationResponse>> getTodaysNotifications(
+            Authentication authentication,
             @PathVariable Integer companyId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(notificationService.findAllNotificationsForToday(companyId, page, size));
+        return ResponseEntity.ok(notificationService.findAllNotificationsForToday(authentication, companyId, page, size));
     }
 
     @DeleteMapping("/{id}")

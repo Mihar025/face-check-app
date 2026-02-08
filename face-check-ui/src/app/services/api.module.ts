@@ -22,6 +22,8 @@ import { PaymentHistoryIrsControllerService } from './services/payment-history-i
 import { NotificationControllerService } from './services/notification-controller.service';
 import { TrackLocationControllerService } from './services/track-location-controller.service';
 import { FileControllerService } from './services/file-controller.service';
+import { StripeWebhookControllerService } from './services/stripe-webhook-controller.service';
+import { BillingControllerService } from './services/billing-controller.service';
 import { WorkerAttendanceControllerService } from './services/worker-attendance-controller.service';
 import { YearToDateCustomReportControllerService } from './services/year-to-date-custom-report-controller.service';
 import { W2ControllerService } from './services/w-2-controller.service';
@@ -54,6 +56,8 @@ import { CustomErrorControllerService } from './services/custom-error-controller
     NotificationControllerService,
     TrackLocationControllerService,
     FileControllerService,
+    StripeWebhookControllerService,
+    BillingControllerService,
     WorkerAttendanceControllerService,
     YearToDateCustomReportControllerService,
     W2ControllerService,

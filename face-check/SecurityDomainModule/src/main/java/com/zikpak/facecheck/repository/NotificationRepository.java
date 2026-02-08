@@ -20,4 +20,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
     );
 
 
+    Page<Notification> findByCompanyIdAndAdminOnlyFalseAndCreatedAtBetweenOrderByCreatedAtDesc(
+            Integer companyId,
+            LocalDateTime start,
+            LocalDateTime end,
+            Pageable pageable
+    );
+
 }

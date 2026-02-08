@@ -18,6 +18,8 @@ export { PaymentHistoryIrsControllerService } from './services/payment-history-i
 export { NotificationControllerService } from './services/notification-controller.service';
 export { TrackLocationControllerService } from './services/track-location-controller.service';
 export { FileControllerService } from './services/file-controller.service';
+export { StripeWebhookControllerService } from './services/stripe-webhook-controller.service';
+export { BillingControllerService } from './services/billing-controller.service';
 export { WorkerAttendanceControllerService } from './services/worker-attendance-controller.service';
 export { YearToDateCustomReportControllerService } from './services/year-to-date-custom-report-controller.service';
 export { W2ControllerService } from './services/w-2-controller.service';
