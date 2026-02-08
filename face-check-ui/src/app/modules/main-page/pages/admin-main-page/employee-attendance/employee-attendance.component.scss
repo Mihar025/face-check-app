@@ -1,3 +1,7 @@
+// ============================================
+// FaceCheck - Client Attendance Photos (IDENTICAL UI)
+// ============================================
+
 // Simple Color Variables
 $primary-color: #5B47E0;
 $primary-hover: #4936C9;
@@ -21,7 +25,9 @@ $sidebar-width: 250px;
 $header-height: 70px;
 $border-radius: 8px;
 
+// ============================================
 // Base Layout
+// ============================================
 .admin-layout {
   display: flex;
   min-height: 100vh;
@@ -36,7 +42,9 @@ $border-radius: 8px;
   flex-direction: column;
 }
 
+// ============================================
 // Simple Header
+// ============================================
 .top-header {
   height: $header-height;
   background: $white;
@@ -85,13 +93,17 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Page Content
+// ============================================
 .page-content {
   flex: 1;
   padding: 30px;
 }
 
+// ============================================
 // Page Header
+// ============================================
 .page-header {
   margin-bottom: 30px;
 
@@ -109,7 +121,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Stats Row
+// ============================================
 .stats-row {
   display: flex;
   gap: 20px;
@@ -138,7 +152,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Loading
+// ============================================
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -166,7 +182,9 @@ $border-radius: 8px;
   100% { transform: rotate(360deg); }
 }
 
+// ============================================
 // Employees Section
+// ============================================
 .employees-section {
   background: $white;
   border-radius: $border-radius;
@@ -181,7 +199,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Employees List
+// ============================================
 .employees-list {
   display: flex;
   flex-direction: column;
@@ -243,17 +263,24 @@ $border-radius: 8px;
 
   .employee-info {
     flex: 1;
+    min-width: 0;
 
     .employee-name {
       font-size: 16px;
       font-weight: 600;
       color: $dark-text;
       margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .employee-details {
       font-size: 14px;
       color: $medium-text;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
 
       .separator {
         margin: 0 8px;
@@ -286,7 +313,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // No Employees
+// ============================================
 .no-employees {
   text-align: center;
   padding: 60px;
@@ -309,7 +338,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Modal
+// ============================================
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -371,7 +402,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Date Selector
+// ============================================
 .date-selector {
   display: flex;
   align-items: center;
@@ -391,6 +424,7 @@ $border-radius: 8px;
     border: 1px solid $border-color;
     border-radius: 4px;
     font-size: 14px;
+    background: $white;
 
     &:focus {
       outline: none;
@@ -420,7 +454,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Photos Grid
+// ============================================
 .photos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -430,6 +466,7 @@ $border-radius: 8px;
     border: 1px solid $border-color;
     border-radius: $border-radius;
     overflow: hidden;
+    background: $white;
 
     .photo-label {
       padding: 10px;
@@ -446,6 +483,10 @@ $border-radius: 8px;
         &.check-in {
           color: $success-color;
         }
+
+        &.check-out {
+          color: $warning-color;
+        }
       }
 
       .photo-time {
@@ -460,6 +501,7 @@ $border-radius: 8px;
       object-fit: cover;
       cursor: pointer;
       transition: opacity 0.2s;
+      background: $hover-bg;
 
       &:hover {
         opacity: 0.9;
@@ -468,7 +510,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // No Photos
+// ============================================
 .no-photos {
   text-align: center;
   padding: 60px;
@@ -490,7 +534,9 @@ $border-radius: 8px;
   }
 }
 
+// ============================================
 // Fullscreen Viewer
+// ============================================
 .fullscreen-viewer {
   position: fixed;
   top: 0;
@@ -532,7 +578,9 @@ $border-radius: 8px;
   }
 }
 
-// Пагинация
+// ============================================
+// Pagination
+// ============================================
 .pagination {
   display: flex;
   justify-content: center;
@@ -584,16 +632,13 @@ $border-radius: 8px;
 }
 
 // ============================================
-// MOBILE RESPONSIVE - FULL OPTIMIZATION
+// MOBILE RESPONSIVE - FULL OPTIMIZATION (IDENTICAL)
 // ============================================
-
 @media (max-width: 768px) {
-  // Main layout
   .main-content {
     margin-left: 0;
   }
 
-  // Header
   .top-header {
     height: 60px;
 
@@ -610,7 +655,7 @@ $border-radius: 8px;
 
       .company-title {
         font-size: 16px;
-        display: none; // hide on small screens
+        display: none;
       }
     }
 
@@ -625,12 +670,10 @@ $border-radius: 8px;
     }
   }
 
-  // Page content
   .page-content {
     padding: 16px;
   }
 
-  // Page header
   .page-header {
     margin-bottom: 20px;
 
@@ -643,7 +686,6 @@ $border-radius: 8px;
     }
   }
 
-  // Stats row - 1 column
   .stats-row {
     flex-direction: column;
     gap: 12px;
@@ -662,7 +704,6 @@ $border-radius: 8px;
     }
   }
 
-  // Loading
   .loading-container {
     padding: 40px 20px;
 
@@ -676,7 +717,6 @@ $border-radius: 8px;
     }
   }
 
-  // Employees section
   .employees-section {
     padding: 16px;
     border-radius: 6px;
@@ -687,7 +727,6 @@ $border-radius: 8px;
     }
   }
 
-  // Employees list
   .employees-list {
     border-radius: 6px;
   }
@@ -697,7 +736,7 @@ $border-radius: 8px;
     flex-wrap: wrap;
 
     &:hover {
-      background: $white; // disable hover on mobile
+      background: $white;
     }
 
     .employee-avatar {
@@ -740,7 +779,7 @@ $border-radius: 8px;
     }
 
     .photo-count {
-      display: none; // hide on mobile, show in details
+      display: none;
     }
 
     .view-arrow {
@@ -749,7 +788,6 @@ $border-radius: 8px;
     }
   }
 
-  // No employees
   .no-employees {
     padding: 40px 20px;
 
@@ -801,7 +839,6 @@ $border-radius: 8px;
     }
   }
 
-  // Date selector
   .date-selector {
     flex-direction: column;
     align-items: stretch;
@@ -834,7 +871,6 @@ $border-radius: 8px;
     }
   }
 
-  // Photos grid - 1 column
   .photos-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -855,12 +891,11 @@ $border-radius: 8px;
       }
 
       img {
-        height: 250px; // larger on mobile for better view
+        height: 250px;
       }
     }
   }
 
-  // No photos
   .no-photos {
     padding: 40px 20px;
 
@@ -877,7 +912,6 @@ $border-radius: 8px;
     }
   }
 
-  // Fullscreen viewer
   .fullscreen-viewer {
     img {
       max-width: 95%;
@@ -893,7 +927,6 @@ $border-radius: 8px;
     }
   }
 
-  // Pagination
   .pagination {
     flex-wrap: wrap;
     gap: 6px;
@@ -906,27 +939,13 @@ $border-radius: 8px;
     height: 32px;
     padding: 0 10px;
     font-size: 13px;
-
-    &.page-number {
-      display: none; // hide page numbers on mobile
-
-      &.active {
-        display: flex; // show only active page
-      }
-    }
-
-    &.prev-btn,
-    &.next-btn {
-      display: flex; // always show prev/next
-    }
   }
 
   .page-dots {
-    display: none; // hide dots on mobile
+    display: none;
   }
 }
 
-// Extra small devices
 @media (max-width: 480px) {
   .page-content {
     padding: 12px;

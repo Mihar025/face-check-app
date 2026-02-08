@@ -1,304 +1,250 @@
-// Professional Color System
-$primary-color: #5B47E0;
-$primary-light: #7B6AEF;
-$primary-dark: #4936C9;
-$primary-subtle: rgba(91, 71, 224, 0.08);
-$primary-glow: rgba(91, 71, 224, 0.3);
+/* manage-employees.component.scss — Clean corporate style (matching super-admin) */
 
-// Neutral Palette
-$neutral-900: #0F0F23;
-$neutral-800: #1A1A35;
-$neutral-700: #2D2D4B;
-$neutral-600: #424260;
-$neutral-500: #6C7293;
-$neutral-400: #9CA3AF;
-$neutral-300: #CBD5E1;
-$neutral-200: #E2E8F0;
-$neutral-100: #F1F5F9;
-$neutral-50: #F8FAFC;
-$white: #FFFFFF;
-
-// Semantic Colors
-$success-color: #00D97E;
-$success-light: rgba(0, 217, 126, 0.1);
-$warning-color: #FFC107;
-$warning-light: rgba(255, 193, 7, 0.1);
-$danger-color: #FF5757;
-$danger-light: rgba(255, 87, 87, 0.1);
+/* Variables */
+$primary-color: #5b47e0;
+$text-dark: #2c3e50;
+$text-medium: #6c7a89;
+$text-light: #7f8c8d;
+$text-lighter: #95a5a6;
+$border-color: #e0e6ed;
+$border-light: #eaeef3;
+$bg-light: #f5f6fa;
+$bg-lighter: #f8f9fb;
+$bg-hover: #fafbff;
+$bg-active: #f4f3ff;
+$error-bg: #ffe3e3;
+$error-color: #c0392b;
+$success-bg: #d4f4dd;
+$success-color: #27ae60;
+$warning-color: #e67e22;
+$warning-bg: #fef3e2;
 $info-color: #39AFEA;
-$info-light: rgba(57, 175, 234, 0.1);
+$info-bg: rgba(57, 175, 234, 0.08);
+$danger-color: #FF5757;
+$danger-bg: rgba(255, 87, 87, 0.08);
+$white: #ffffff;
 
-// Role Colors
+// Role colors
 $admin-color: #2196F3;
-$admin-light: rgba(33, 150, 243, 0.1);
 $foreman-color: #FF9800;
-$foreman-light: rgba(255, 152, 0, 0.1);
 $user-color: #4CAF50;
-$user-light: rgba(76, 175, 80, 0.1);
 
-// Layout
-$sidebar-width: 250px;
-$header-height: 72px;
-$border-radius: 16px;
-$border-radius-sm: 12px;
-$border-radius-xs: 8px;
-$border-radius-lg: 24px;
-$border-radius-xl: 32px;
-
-// Typography
-$font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-// Professional Shadows - OPTIMIZED (reduced complexity)
-@mixin shadow-xs {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+/* Mixins */
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@mixin shadow-sm {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+@mixin card-style {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-@mixin shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+@mixin button-base {
+  padding: 8px 12px;
+  border: 1px solid $border-color;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: $bg-lighter;
+    border-color: darken($border-color, 5%);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
-@mixin shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-@mixin shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-@mixin shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-// OPTIMIZED transition - using transform and opacity only for GPU acceleration
-@mixin smooth-transition {
-  transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-// GPU acceleration mixin
-@mixin gpu-accelerate {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
-// Base Reset
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: $font-family;
-  background: linear-gradient(135deg, $neutral-50 0%, $neutral-100 100%);
-  color: $neutral-900;
-  line-height: 1.6;
+@mixin input-base {
+  padding: 8px 12px;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  background: #fff;
   font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+  }
 }
 
-// Layout Structure
+/* Layout */
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  position: relative;
+  background: $bg-light;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .main-content {
   flex: 1;
-  margin-left: $sidebar-width;
+  min-width: 0;
+  margin-left: 250px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-// Professional Header
-.top-logo-container {
-  height: $header-height;
-  background: $white;
-  border-bottom: 1px solid $neutral-200;
+/* Top header */
+.top-header {
+  height: 76px;
+  background: #fff;
+  border-bottom: 1px solid $border-color;
   position: sticky;
   top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  padding: 0 40px;
-  @include shadow-sm;
-
-  .top-logo {
-    height: 45px;
-    object-fit: contain;
-  }
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-// Main Container
+.header-content {
+  height: 100%;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+}
+
+.top-logo {
+  height: 44px;
+  object-fit: contain;
+}
+
+/* Container */
 .admin-container {
-  padding: 36px;
+  padding: 24px;
   flex: 1;
   max-width: 1600px;
   width: 100%;
   margin: 0 auto;
 }
 
+/* Header */
 .header-with-action {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 40px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid $neutral-200;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
 
   h1 {
-    font-size: 36px;
-    font-weight: 800;
-    color: $neutral-900;
     margin: 0;
-    letter-spacing: -0.03em;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    &::before {
-      content: '';
-      width: 6px;
-      height: 40px;
-      background: linear-gradient(135deg, $primary-color, $primary-light);
-      border-radius: 4px;
-      box-shadow: 0 0 20px $primary-glow;
-    }
+    font-size: 24px;
+    font-weight: 600;
+    color: $text-dark;
   }
 }
 
 .add-button {
-  padding: 14px 28px;
-  border-radius: $border-radius-sm;
-  border: none;
-  font-size: 15px;
+  @include button-base;
+  padding: 10px 20px;
+  background: $primary-color;
+  color: $white;
+  border-color: $primary-color;
+  font-size: 14px;
   font-weight: 600;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  background: linear-gradient(135deg, $primary-color, $primary-light);
-  color: $white;
-  @include shadow-md;
-  @include smooth-transition;
-  @include gpu-accelerate;
+  gap: 8px;
 
-  &:hover {
-    background: linear-gradient(135deg, $primary-dark, $primary-color);
-    transform: translateY(-3px) translateZ(0);
-    @include shadow-xl;
+  &:hover:not(:disabled) {
+    background: darken($primary-color, 8%);
+    border-color: darken($primary-color, 8%);
   }
 
-  &:active {
-    transform: translateY(-1px) translateZ(0);
-    @include shadow-lg;
-  }
-
-  i {
-    font-size: 18px;
-  }
+  i { font-size: 14px; }
 }
 
-// Employees Section
+/* Alert Messages */
+.error-message,
+.success-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-message {
+  background: $error-bg;
+  color: $error-color;
+  border-left: 4px solid $error-color;
+}
+
+.success-message {
+  background: $success-bg;
+  color: $success-color;
+  border-left: 4px solid $success-color;
+}
+
+/* Employees Section */
 .employees-section {
-  background: $white;
-  border-radius: $border-radius;
-  padding: 0;
-  @include shadow-md;
-  margin-bottom: 36px;
-  border: 1px solid rgba($neutral-200, 0.5);
+  @include card-style;
+  border: 1px solid $border-light;
   overflow: hidden;
 
   h2 {
-    font-size: 20px;
-    font-weight: 700;
-    color: $neutral-900;
+    font-size: 18px;
+    font-weight: 600;
+    color: $text-dark;
     margin: 0;
-    padding: 28px 32px;
-    background: linear-gradient(135deg, $neutral-50, $white);
-    border-bottom: 2px solid $neutral-200;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    &::before {
-      content: '👥';
-      font-size: 24px;
-    }
-  }
-
-  .employee-list {
-    padding: 0;
+    padding: 20px 24px;
+    border-bottom: 1px solid $border-light;
   }
 }
 
-// Enhanced Table Design
+/* Table */
 .employees-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 15px;
+  border-collapse: collapse;
+  font-size: 14px;
 
   thead {
-    background: linear-gradient(180deg, $neutral-50, rgba($neutral-50, 0.7));
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    background: $bg-lighter;
   }
 
   th {
-    padding: 20px 24px;
+    padding: 14px 20px;
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    color: $neutral-700;
+    color: $text-medium;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border-bottom: 2px solid $neutral-200;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid $border-color;
 
-    &:first-child {
-      padding-left: 32px;
-    }
+    &:first-child { padding-left: 24px; }
   }
 
   td {
-    padding: 24px;
-    border-bottom: 1px solid rgba($neutral-200, 0.5);
-    color: $neutral-900;
+    padding: 16px 20px;
+    border-bottom: 1px solid $border-light;
+    color: $text-dark;
     font-weight: 500;
     vertical-align: middle;
 
-    &:first-child {
-      padding-left: 32px;
-    }
+    &:first-child { padding-left: 24px; }
   }
 
   tbody tr {
-    @include smooth-transition;
-    background: $white;
-    position: relative;
+    transition: background 0.15s ease;
 
     &:hover {
-      background: linear-gradient(135deg, rgba($primary-color, 0.03), rgba($primary-light, 0.03));
-
-      td {
-        &:first-child::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 4px;
-          background: linear-gradient(180deg, $primary-color, $primary-light);
-        }
-      }
+      background: $bg-hover;
     }
 
     &:last-child td {
@@ -307,30 +253,21 @@ body {
   }
 }
 
-// Enhanced Photo Cell & Avatar
+/* Photo Cell */
 .photo-cell {
-  padding: 16px 24px !important;
-  width: 120px;
+  width: 80px;
+  padding: 12px 20px !important;
 }
 
 .worker-avatar {
-  width: 65px;
-  height: 65px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, $neutral-100, $neutral-50);
-  border: 3px solid $white;
-  @include shadow-md;
-  @include smooth-transition;
-  @include gpu-accelerate;
-
-  &:hover {
-    transform: scale(1.15) translateZ(0);
-    @include shadow-lg;
-  }
+  @include flex-center;
+  background: #f1f2f6;
+  border: 2px solid $white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .worker-photo {
@@ -343,613 +280,401 @@ body {
 .worker-photo-placeholder {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, $primary-light, $primary-color);
-  color: $white;
+  @include flex-center;
+  background: $bg-lighter;
 
   i {
-    font-size: 28px;
+    color: #aab0b6;
+    font-size: 20px;
   }
 }
 
-// Enhanced Rate with Edit
+/* Rate */
 .rate-with-edit {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 16px;
+  gap: 10px;
   font-weight: 600;
   color: $success-color;
 }
 
 .edit-rate-button {
-  background: $primary-subtle;
-  border: 2px solid transparent;
+  @include button-base;
+  padding: 4px 8px;
+  font-size: 12px;
   color: $primary-color;
-  cursor: pointer;
-  padding: 6px;
-  font-size: 14px;
-  border-radius: $border-radius-xs;
-  @include smooth-transition;
-  @include gpu-accelerate;
 
-  &:hover {
-    background: $primary-color;
+  &:hover:not(:disabled) {
     color: $white;
-    transform: scale(1.2) rotate(15deg) translateZ(0);
-    @include shadow-sm;
+    background: $primary-color;
+    border-color: $primary-color;
   }
 }
 
-// Enhanced Action Buttons
+/* Action Buttons */
 .actions-cell {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .action-button {
-  padding: 10px 16px;
-  border-radius: $border-radius-xs;
-  border: 2px solid transparent;
+  @include button-base;
+  padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  @include smooth-transition;
-  @include gpu-accelerate;
+  gap: 6px;
 
-  i {
-    font-size: 15px;
-  }
+  i { font-size: 13px; }
 
   &.info-button {
-    background: linear-gradient(135deg, $info-light, rgba($info-color, 0.15));
     color: $info-color;
-    border-color: rgba($info-color, 0.2);
+    border-color: rgba($info-color, 0.3);
 
-    &:hover {
-      background: linear-gradient(135deg, $info-color, darken($info-color, 10%));
+    &:hover:not(:disabled) {
+      background: $info-color;
       color: $white;
-      @include shadow-md;
-      transform: translateY(-2px) translateZ(0);
-      border-color: transparent;
-    }
-  }
-
-  &.fire-button {
-    background: linear-gradient(135deg, $danger-light, rgba($danger-color, 0.15));
-    color: $danger-color;
-    border-color: rgba($danger-color, 0.2);
-
-    &:hover {
-      background: linear-gradient(135deg, $danger-color, darken($danger-color, 10%));
-      color: $white;
-      @include shadow-md;
-      transform: translateY(-2px) translateZ(0);
-      border-color: transparent;
+      border-color: $info-color;
     }
   }
 
   &.schedule-button {
-    background: linear-gradient(135deg, $primary-subtle, rgba($primary-color, 0.15));
     color: $primary-color;
-    border-color: rgba($primary-color, 0.2);
+    border-color: rgba($primary-color, 0.3);
 
-    &:hover {
-      background: linear-gradient(135deg, $primary-color, $primary-dark);
+    &:hover:not(:disabled) {
+      background: $primary-color;
       color: $white;
-      @include shadow-md;
-      transform: translateY(-2px) translateZ(0);
-      border-color: transparent;
+      border-color: $primary-color;
+    }
+  }
+
+  &.fire-button {
+    color: $danger-color;
+    border-color: rgba($danger-color, 0.3);
+
+    &:hover:not(:disabled) {
+      background: $danger-color;
+      color: $white;
+      border-color: $danger-color;
     }
   }
 
   &.time-button {
-    background: linear-gradient(135deg, $info-color, lighten($info-color, 10%));
+    background: $info-color;
     color: $white;
-    @include shadow-sm;
+    border-color: $info-color;
 
-    &:hover {
-      background: linear-gradient(135deg, darken($info-color, 10%), $info-color);
-      @include shadow-lg;
-      transform: translateY(-2px) translateZ(0);
+    &:hover:not(:disabled) {
+      background: darken($info-color, 10%);
     }
   }
 }
 
-// Role Management Buttons
+/* Role management buttons */
 .promote-button {
-  background: linear-gradient(135deg, $foreman-light, rgba($foreman-color, 0.15));
+  @extend .action-button;
   color: $foreman-color;
-  border-color: rgba($foreman-color, 0.2);
+  border-color: rgba($foreman-color, 0.3);
 
-  &:hover {
-    background: linear-gradient(135deg, $foreman-color, darken($foreman-color, 10%));
+  &:hover:not(:disabled) {
+    background: $foreman-color;
     color: $white;
-    @include shadow-md;
-    transform: translateY(-2px) translateZ(0);
-    border-color: transparent;
+    border-color: $foreman-color;
   }
 }
 
 .promote-admin-button {
-  background: linear-gradient(135deg, $admin-light, rgba($admin-color, 0.15));
+  @extend .action-button;
   color: $admin-color;
-  border-color: rgba($admin-color, 0.2);
+  border-color: rgba($admin-color, 0.3);
 
-  &:hover {
-    background: linear-gradient(135deg, $admin-color, darken($admin-color, 10%));
+  &:hover:not(:disabled) {
+    background: $admin-color;
     color: $white;
-    @include shadow-md;
-    transform: translateY(-2px) translateZ(0);
-    border-color: transparent;
+    border-color: $admin-color;
   }
 }
 
-.demote-button, .demote-foreman-button {
-  background: linear-gradient(135deg, $neutral-200, $neutral-300);
-  color: $neutral-700;
+.demote-button,
+.demote-foreman-button {
+  @extend .action-button;
+  color: $text-medium;
+  border-color: $border-color;
 
-  &:hover {
-    background: linear-gradient(135deg, $neutral-600, $neutral-700);
+  &:hover:not(:disabled) {
+    background: $text-medium;
     color: $white;
-    @include shadow-md;
-    transform: translateY(-2px) translateZ(0);
   }
 }
 
-// Enhanced Role Colors
+/* Role badges */
 .role-admin {
-  background: linear-gradient(135deg, $admin-light, rgba($admin-color, 0.15));
-  color: $admin-color !important;
-  padding: 6px 14px;
-  border-radius: $border-radius-xs;
+  background: rgba($admin-color, 0.1);
+  color: $admin-color;
+  padding: 4px 12px;
+  border-radius: 6px;
   font-weight: 700;
+  font-size: 13px;
   display: inline-block;
-  border: 1px solid rgba($admin-color, 0.3);
 }
 
 .role-foreman {
-  background: linear-gradient(135deg, $foreman-light, rgba($foreman-color, 0.15));
-  color: $foreman-color !important;
-  padding: 6px 14px;
-  border-radius: $border-radius-xs;
+  background: rgba($foreman-color, 0.1);
+  color: $foreman-color;
+  padding: 4px 12px;
+  border-radius: 6px;
   font-weight: 700;
+  font-size: 13px;
   display: inline-block;
-  border: 1px solid rgba($foreman-color, 0.3);
 }
 
 .role-user {
-  background: linear-gradient(135deg, $user-light, rgba($user-color, 0.15));
-  color: $user-color !important;
-  padding: 6px 14px;
-  border-radius: $border-radius-xs;
+  background: rgba($user-color, 0.1);
+  color: $user-color;
+  padding: 4px 12px;
+  border-radius: 6px;
   font-weight: 700;
+  font-size: 13px;
   display: inline-block;
-  border: 1px solid rgba($user-color, 0.3);
 }
 
-// Enhanced Pagination
+/* Pagination */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 32px;
-  gap: 20px;
-  background: linear-gradient(135deg, $neutral-50, rgba($neutral-50, 0.5));
-  border-top: 2px solid $neutral-200;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid $border-light;
 }
 
 .pagination-button {
-  padding: 12px 24px;
-  border-radius: $border-radius-sm;
-  border: 2px solid $neutral-300;
-  background: $white;
-  color: $neutral-700;
-  font-size: 15px;
+  @include button-base;
+  padding: 8px 16px;
   font-weight: 600;
-  cursor: pointer;
-  @include smooth-transition;
-  @include shadow-sm;
-  @include gpu-accelerate;
 
   &:hover:not([disabled]) {
-    background: linear-gradient(135deg, $primary-color, $primary-light);
+    background: $primary-color;
     color: $white;
     border-color: $primary-color;
-    @include shadow-lg;
-    transform: translateY(-2px) translateZ(0);
   }
 
   &[disabled] {
     opacity: 0.4;
     cursor: not-allowed;
-    background: $neutral-100;
+    background: $bg-lighter;
   }
 }
 
 .page-info {
-  font-size: 15px;
-  color: $neutral-700;
+  font-size: 14px;
+  color: $text-medium;
   font-weight: 600;
-  padding: 10px 20px;
-  background: $white;
-  border-radius: $border-radius-sm;
-  border: 2px solid $neutral-200;
-  @include shadow-xs;
 }
 
-// Professional Loading State
+/* Loading */
 .loading-indicator {
-  display: flex;
+  @include flex-center;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px;
+  padding: 60px 20px;
 
   .spinner {
-    width: 56px;
-    height: 56px;
-    border: 5px solid $neutral-200;
-    border-top: 5px solid $primary-color;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 24px;
-    @include shadow-md;
-    @include gpu-accelerate;
+    border: 3px solid #f0f3f7;
+    border-top-color: $primary-color;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 14px;
   }
 
   p {
-    color: $neutral-600;
-    font-size: 16px;
-    font-weight: 500;
+    color: $text-medium;
+    font-size: 14px;
+    margin: 0;
   }
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg) translateZ(0); }
-  100% { transform: rotate(360deg) translateZ(0); }
-}
-
-// Enhanced Alert Messages
-.success-message,
-.error-message {
-  padding: 20px 24px;
-  border-radius: $border-radius-sm;
-  margin-bottom: 24px;
-  font-size: 15px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  @include shadow-md;
-  position: relative;
-  overflow: hidden;
-  animation: slideInDown 0.3s ease-out;
-  @include gpu-accelerate;
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 5px;
-    height: 100%;
-  }
-
-  &::after {
-    font-size: 20px;
-  }
-}
-
-@keyframes slideInDown {
-  from {
-    transform: translateY(-20px) translateZ(0);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0) translateZ(0);
-    opacity: 1;
-  }
-}
-
-.success-message {
-  background: linear-gradient(135deg, $success-light, rgba($success-color, 0.05));
-  color: darken($success-color, 15%);
-  border: 1px solid rgba($success-color, 0.3);
-
-  &::before {
-    background: linear-gradient(180deg, $success-color, darken($success-color, 10%));
-  }
-
-  &::after {
-    content: '✓';
-    color: $success-color;
-  }
-}
-
-.error-message {
-  background: linear-gradient(135deg, $danger-light, rgba($danger-color, 0.05));
-  color: darken($danger-color, 15%);
-  border: 1px solid rgba($danger-color, 0.3);
-
-  &::before {
-    background: linear-gradient(180deg, $danger-color, darken($danger-color, 10%));
-  }
-
-  &::after {
-    content: '⚠';
-    color: $danger-color;
-  }
+  to { transform: rotate(360deg); }
 }
 
 .no-employees {
   text-align: center;
-  padding: 80px 24px;
-  color: $neutral-500;
+  padding: 60px 24px;
+  color: $text-lighter;
 
   p {
-    font-size: 17px;
+    font-size: 15px;
     margin: 0;
-    font-weight: 500;
-  }
-
-  &::before {
-    content: '🔍';
-    display: block;
-    font-size: 64px;
-    margin-bottom: 20px;
-    opacity: 0.5;
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MODAL STYLES - OPTIMIZED FOR PERFORMANCE (NO FLICKERING)
-// ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════
+   MODALS — Clean flat style
+   ═══════════════════════════════════ */
 
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 15, 35, 0.85);
-  // REMOVED backdrop-filter to prevent flickering
+  inset: 0;
+  background: rgba(15, 15, 35, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
   padding: 20px;
-  // GPU acceleration for smooth rendering
-  @include gpu-accelerate;
-  // Simple fade animation
-  animation: modalFadeIn 0.2s ease-out forwards;
-  will-change: opacity;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .modal-container {
   background: $white;
-  border-radius: $border-radius-lg;
+  border-radius: 16px;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow: hidden;
-  @include shadow-2xl;
-  border: 1px solid rgba($neutral-200, 0.5);
-  // GPU acceleration - CRITICAL for preventing flicker
-  @include gpu-accelerate;
-  will-change: transform, opacity;
-  // Simplified animation
-  animation: modalSlideUp 0.25s ease-out forwards;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid $border-light;
 
-  &.modal-large {
-    max-width: 900px;
-  }
-
-  &.modal-extra-large {
-    max-width: 1300px;
-  }
-}
-
-@keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px) translateZ(0);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) translateZ(0);
-  }
+  &.modal-large { max-width: 900px; }
+  &.modal-extra-large { max-width: 1300px; }
 }
 
 .modal-header {
-  padding: 28px 32px;
-  border-bottom: 2px solid $neutral-200;
+  padding: 20px 24px;
+  border-bottom: 1px solid $border-light;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, $neutral-50, $white);
+  background: #fff;
 
   h3 {
     margin: 0;
-    font-size: 22px;
-    font-weight: 800;
-    color: $neutral-900;
-    letter-spacing: -0.02em;
+    font-size: 18px;
+    font-weight: 700;
+    color: $text-dark;
   }
 
   .close-button {
-    background: $white;
-    border: 2px solid $neutral-200;
-    font-size: 22px;
-    cursor: pointer;
-    color: $neutral-500;
+    @include button-base;
+    width: 36px;
+    height: 36px;
     padding: 0;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: $border-radius-sm;
-    @include smooth-transition;
-    @include gpu-accelerate;
+    @include flex-center;
+    font-size: 20px;
+    color: $text-lighter;
+    border-radius: 10px;
 
-    &:hover {
-      background: linear-gradient(135deg, $danger-light, rgba($danger-color, 0.1));
+    &:hover:not(:disabled) {
       color: $danger-color;
-      border-color: $danger-color;
-      transform: rotate(90deg) scale(1.1) translateZ(0);
-      @include shadow-md;
+      border-color: rgba($danger-color, 0.3);
+      background: rgba($danger-color, 0.05);
     }
   }
 }
 
 .modal-body {
-  padding: 32px;
-  max-height: calc(90vh - 180px);
+  padding: 24px;
+  max-height: calc(90vh - 160px);
   overflow-y: auto;
-  // Smooth scrolling
-  -webkit-overflow-scrolling: touch;
-  // Prevent layout shift
-  contain: layout style;
 
   &.modal-scrollable {
     max-height: 70vh;
   }
 
-  &::-webkit-scrollbar {
-    width: 10px;
-  }
+  &::-webkit-scrollbar { width: 6px; }
 
   &::-webkit-scrollbar-track {
-    background: $neutral-50;
-    border-radius: 5px;
+    background: #f1f1f1;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, $neutral-400, $neutral-500);
-    border-radius: 5px;
-
-    &:hover {
-      background: linear-gradient(180deg, $neutral-500, $neutral-600);
-    }
+    background: #ccc;
+    border-radius: 3px;
+    &:hover { background: #999; }
   }
 }
 
 .modal-footer {
-  padding: 24px 32px;
-  border-top: 2px solid $neutral-200;
+  padding: 16px 24px;
+  border-top: 1px solid $border-light;
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
-  background: linear-gradient(135deg, $neutral-50, rgba($neutral-50, 0.5));
+  gap: 12px;
+  background: #fff;
 
   button {
-    padding: 14px 28px;
-    border-radius: $border-radius-sm;
-    font-size: 15px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     border: none;
-    @include smooth-transition;
-    @include shadow-sm;
-    @include gpu-accelerate;
+    transition: all 0.2s ease;
   }
 
   .cancel-button {
     background: $white;
-    color: $neutral-700;
-    border: 2px solid $neutral-300;
+    color: $text-medium;
+    border: 1px solid $border-color;
 
     &:hover {
-      background: $neutral-100;
-      color: $neutral-900;
-      @include shadow-md;
-      transform: translateY(-2px) translateZ(0);
+      background: $bg-lighter;
+      border-color: darken($border-color, 5%);
     }
   }
 
   .confirm-button {
-    background: linear-gradient(135deg, $primary-color, $primary-light);
+    background: $primary-color;
     color: $white;
 
-    &:hover {
-      background: linear-gradient(135deg, $primary-dark, $primary-color);
-      @include shadow-lg;
-      transform: translateY(-2px) translateZ(0);
+    &:hover:not(:disabled) {
+      background: darken($primary-color, 8%);
     }
 
     &.delete-button {
-      background: linear-gradient(135deg, $danger-color, lighten($danger-color, 10%));
-
-      &:hover {
-        background: linear-gradient(135deg, darken($danger-color, 10%), $danger-color);
-      }
+      background: $danger-color;
+      &:hover:not(:disabled) { background: darken($danger-color, 10%); }
     }
 
     &[disabled] {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none;
     }
   }
 }
 
-// Enhanced Form Styles
+/* ═══════════════════════════════════
+   FORM STYLES
+   ═══════════════════════════════════ */
+
 .section-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: $neutral-900;
-  margin: 32px 0 20px 0;
-  padding-bottom: 12px;
-  border-bottom: 3px solid $neutral-200;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-dark;
+  margin: 24px 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid $border-light;
 
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -3px;
-    left: 0;
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, $primary-color, $primary-light);
-  }
-
-  &:first-child {
-    margin-top: 0;
-  }
+  &:first-child { margin-top: 0; }
 }
 
 .form-row {
   display: flex;
-  gap: 24px;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .form-group {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 280px;
+  min-width: 240px;
 
   &.full-width {
     width: 100%;
@@ -957,355 +682,277 @@ body {
   }
 
   label {
-    margin-bottom: 10px;
-    font-size: 14px;
+    margin-bottom: 6px;
+    font-size: 13px;
     font-weight: 600;
-    color: $neutral-700;
-    letter-spacing: 0.02em;
+    color: $text-medium;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
 
   input[type="checkbox"] {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
   }
 
   input,
   select {
-    padding: 14px 18px;
-    border: 2px solid $neutral-200;
-    border-radius: $border-radius-sm;
-    font-size: 15px;
-    font-family: $font-family;
-    font-weight: 500;
-    background: $white;
-    color: $neutral-900;
-    @include smooth-transition;
-
-    &:hover {
-      border-color: $neutral-300;
-      background: $neutral-50;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: $primary-color;
-      box-shadow: 0 0 0 5px rgba($primary-color, 0.15);
-      background: $white;
-    }
+    @include input-base;
+    padding: 10px 14px;
+    font-size: 14px;
 
     &::placeholder {
-      color: $neutral-400;
-      font-weight: 400;
+      color: $text-lighter;
     }
   }
 }
 
-// Enhanced Employee Info Section
+.form-input {
+  @include input-base;
+  padding: 10px 14px;
+  width: 100%;
+}
+
+/* Employee info modal */
 .employee-info-container {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
 }
 
 .employee-info-section,
 .role-management-section {
   background: $white;
-  border-radius: $border-radius;
-  padding: 28px;
-  border: 2px solid $neutral-200;
-  @include shadow-sm;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid $border-light;
 
   h4, h5 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    color: $neutral-900;
-    margin: 0 0 20px 0;
-    padding-bottom: 12px;
-    border-bottom: 2px solid $neutral-200;
+    color: $text-dark;
+    margin: 0 0 16px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid $border-light;
   }
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  gap: 12px;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  background: linear-gradient(135deg, $neutral-50, $white);
-  border-radius: $border-radius-sm;
-  border: 1px solid $neutral-200;
-  @include smooth-transition;
-  @include gpu-accelerate;
-
-  &:hover {
-    @include shadow-sm;
-    transform: translateY(-2px) translateZ(0);
-    border-color: $primary-color;
-  }
+  padding: 12px;
+  background: $bg-lighter;
+  border-radius: 8px;
+  border: 1px solid $border-light;
 
   label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    color: $neutral-500;
+    color: $text-lighter;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 8px;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
   }
 
   span {
-    font-size: 16px;
-    color: $neutral-900;
+    font-size: 14px;
+    color: $text-dark;
     font-weight: 600;
   }
 }
 
-// Enhanced Time Tabs
+/* Time tabs */
 .time-tabs {
   display: flex;
-  background: linear-gradient(135deg, $neutral-100, $neutral-50);
-  border-radius: $border-radius-sm;
-  padding: 6px;
-  margin-bottom: 28px;
-  border: 2px solid $neutral-200;
-  @include shadow-sm;
+  background: $bg-lighter;
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid $border-light;
 }
 
 .tab-button {
   flex: 1;
-  padding: 14px 20px;
+  padding: 10px 16px;
   background: transparent;
   border: none;
-  border-radius: $border-radius-xs;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: $neutral-600;
-  @include smooth-transition;
-  @include gpu-accelerate;
-  position: relative;
+  color: $text-medium;
+  transition: all 0.15s ease;
 
-  &:hover {
-    color: $primary-color;
-    background: rgba($primary-color, 0.05);
-  }
+  &:hover { color: $primary-color; }
 
   &.active {
-    background: linear-gradient(135deg, $white, rgba($primary-light, 0.05));
+    background: $white;
     color: $primary-color;
-    @include shadow-md;
-    border: 1px solid rgba($primary-color, 0.2);
-    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+}
 
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 10%;
-      right: 10%;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, $primary-color, transparent);
-      border-radius: 2px;
-    }
+.time-form {
+  background: $bg-lighter;
+  border: 1px solid $border-light;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 16px;
+
+  h5 {
+    font-size: 15px;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0 0 16px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid $border-light;
   }
 }
 
 .time-input-row {
   display: flex;
-  gap: 24px;
-}
-
-.time-form {
-  background: linear-gradient(135deg, $white, rgba($neutral-50, 0.3));
-  border: 2px solid rgba($primary-color, 0.1);
-  border-radius: $border-radius;
-  padding: 28px;
-  margin-top: 24px;
-  @include shadow-md;
-  position: relative;
-  overflow: hidden;
-
-  // OPTIMIZED: Static gradient instead of animation
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, $primary-color, $primary-light, $primary-color);
-  }
-
-  h5 {
-    font-size: 16px;
-    font-weight: 700;
-    color: $neutral-900;
-    margin: 0 0 24px 0;
-    padding-bottom: 14px;
-    border-bottom: 2px solid $neutral-200;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    &::before {
-      content: '⏰';
-      font-size: 20px;
-    }
-  }
+  gap: 16px;
 }
 
 .role-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .form-actions {
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1px dashed $neutral-300;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid $border-light;
   display: flex;
   justify-content: center;
   gap: 12px;
 }
 
 .employee-info {
-  background: $neutral-50;
+  background: $bg-lighter;
   padding: 16px;
-  border-radius: $border-radius;
-  margin-top: 16px;
-  border: 1px solid $neutral-200;
+  border-radius: 10px;
+  margin-top: 12px;
+  border: 1px solid $border-light;
 
   p {
-    margin: 8px 0;
+    margin: 6px 0;
     font-size: 14px;
-    color: $neutral-800;
+    color: $text-dark;
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SCHEDULE MODAL STYLES
-// ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════
+   SCHEDULE MODAL
+   ═══════════════════════════════════ */
 
 .schedule-management {
   .schedule-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid $neutral-200;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid $border-light;
 
     h4 {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
-      color: $neutral-900;
+      color: $text-dark;
       margin: 0;
     }
   }
 
   .generated-schedule {
-    background: linear-gradient(135deg, $success-light, rgba($success-color, 0.05));
-    border: 2px solid $success-color;
-    border-radius: $border-radius;
-    padding: 28px;
-    margin-bottom: 32px;
-    @include shadow-md;
+    background: $success-bg;
+    border: 1px solid rgba($success-color, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
 
     h5 {
-      color: darken($success-color, 20%);
-      font-size: 18px;
+      color: darken($success-color, 15%);
+      font-size: 16px;
       font-weight: 700;
-      margin: 0 0 16px 0;
+      margin: 0 0 12px 0;
     }
 
     p {
-      margin: 0 0 20px 0;
+      margin: 0 0 16px 0;
       font-size: 14px;
-      color: $neutral-900;
-
-      strong {
-        font-weight: 700;
-      }
+      color: $text-dark;
     }
   }
 
   .schedule-days {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 
     .day-schedule {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 18px;
+      padding: 10px 14px;
       background: $white;
-      border-radius: $border-radius-sm;
-      border: 1px solid rgba($success-color, 0.3);
-      @include smooth-transition;
-      @include gpu-accelerate;
+      border-radius: 8px;
+      border: 1px solid rgba($success-color, 0.2);
+      transition: background 0.15s ease;
 
-      &:hover {
-        @include shadow-sm;
-        transform: translateX(4px) translateZ(0);
-      }
+      &:hover { background: $bg-hover; }
 
       .day-name {
         font-weight: 700;
-        color: $neutral-900;
-        min-width: 120px;
-        font-size: 14px;
+        color: $text-dark;
+        min-width: 100px;
+        font-size: 13px;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
 
-        &.day-off {
-          color: $neutral-400;
-        }
+        &.day-off { color: $text-lighter; }
       }
 
       .day-time {
-        color: $neutral-800;
-        font-size: 14px;
+        color: $text-dark;
+        font-size: 13px;
         font-family: 'Courier New', monospace;
         font-weight: 600;
-        background: rgba($success-color, 0.1);
-        padding: 6px 14px;
-        border-radius: $border-radius-xs;
 
         .lunch-info {
-          font-size: 13px;
-          color: $neutral-600;
+          font-size: 12px;
+          color: $text-medium;
           margin-left: 8px;
 
           .paid-badge {
             background: $success-color;
             color: $white;
-            padding: 2px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
-            margin-left: 6px;
+            margin-left: 4px;
           }
         }
       }
 
       .off-badge {
-        background: $neutral-200;
-        color: $neutral-600;
-        padding: 6px 14px;
-        border-radius: $border-radius-xs;
-        font-size: 12px;
+        background: $bg-lighter;
+        color: $text-lighter;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
       }
@@ -1314,156 +961,148 @@ body {
 
   .no-schedule-message {
     text-align: center;
-    padding: 40px 20px;
-    background: linear-gradient(135deg, $warning-light, rgba($warning-color, 0.05));
-    border: 2px dashed $warning-color;
-    border-radius: $border-radius;
-    margin-bottom: 32px;
+    padding: 32px 20px;
+    background: $warning-bg;
+    border: 1px dashed $warning-color;
+    border-radius: 10px;
+    margin-bottom: 24px;
 
     i {
-      font-size: 48px;
+      font-size: 36px;
       color: $warning-color;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     p {
       margin: 0;
-      font-size: 16px;
-      color: darken($warning-color, 20%);
+      font-size: 14px;
+      color: darken($warning-color, 15%);
       font-weight: 600;
     }
   }
 
   .schedule-form {
-    background: linear-gradient(135deg, $white, rgba($neutral-50, 0.5));
-    border: 2px solid $neutral-200;
-    border-radius: $border-radius;
-    padding: 28px;
-    @include shadow-sm;
+    background: $white;
+    border: 1px solid $border-light;
+    border-radius: 10px;
+    padding: 20px;
 
     h5 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
-      color: $neutral-900;
-      margin: 0 0 12px 0;
+      color: $text-dark;
+      margin: 0 0 8px 0;
     }
 
     .schedule-description {
-      font-size: 14px;
-      color: $neutral-600;
-      margin-bottom: 24px;
-      padding: 12px;
-      background: $info-light;
+      font-size: 13px;
+      color: $text-medium;
+      margin-bottom: 20px;
+      padding: 10px 12px;
+      background: $info-bg;
       border-left: 3px solid $info-color;
-      border-radius: $border-radius-xs;
+      border-radius: 6px;
     }
   }
 
   .flexible-schedule {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .day-config {
     background: $white;
-    border: 2px solid $neutral-200;
-    border-radius: $border-radius-sm;
+    border: 1px solid $border-light;
+    border-radius: 10px;
     overflow: hidden;
-    @include smooth-transition;
+    transition: border-color 0.15s ease;
 
-    &:hover {
-      border-color: $primary-color;
-      @include shadow-sm;
-    }
+    &:hover { border-color: darken($border-color, 8%); }
 
     .day-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 14px 18px;
-      background: linear-gradient(135deg, $neutral-50, $white);
-      border-bottom: 2px solid $neutral-200;
+      padding: 12px 16px;
+      background: $bg-lighter;
+      border-bottom: 1px solid $border-light;
 
       h6 {
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
-        color: $neutral-900;
+        color: $text-dark;
         margin: 0;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         display: flex;
         align-items: center;
         gap: 8px;
 
-        i {
-          color: $primary-color;
-        }
+        i { color: $primary-color; font-size: 13px; }
       }
 
       .day-off-toggle {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         cursor: pointer;
-        padding: 6px 12px;
+        padding: 4px 10px;
         background: $white;
-        border: 1px solid $neutral-300;
-        border-radius: $border-radius-xs;
-        @include smooth-transition;
+        border: 1px solid $border-color;
+        border-radius: 6px;
+        transition: all 0.15s ease;
 
         &:hover {
           border-color: $danger-color;
-          background: $danger-light;
+          background: rgba($danger-color, 0.03);
         }
 
         input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           cursor: pointer;
         }
 
         span {
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
-          color: $neutral-700;
+          color: $text-medium;
         }
       }
     }
 
     .day-times {
-      padding: 18px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
 
     .time-section {
-      background: $neutral-50;
-      border: 1px solid $neutral-200;
-      border-radius: $border-radius-xs;
-      padding: 16px;
+      background: $bg-lighter;
+      border: 1px solid $border-light;
+      border-radius: 8px;
+      padding: 14px;
 
       .time-section-title {
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
-        color: $neutral-700;
-        margin-bottom: 12px;
+        color: $text-medium;
+        margin-bottom: 10px;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
 
-        i {
-          color: $primary-color;
-        }
+        i { color: $primary-color; font-size: 12px; }
       }
 
       .time-input-row {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
 
         .form-group {
           flex: 1;
@@ -1472,215 +1111,143 @@ body {
           label {
             font-size: 11px;
             font-weight: 600;
-            color: $neutral-600;
+            color: $text-lighter;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 6px;
+            letter-spacing: 0.04em;
+            margin-bottom: 4px;
           }
 
           .time-inputs {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             background: $white;
-            border: 2px solid $neutral-200;
-            border-radius: $border-radius-xs;
-            padding: 8px 12px;
+            border: 1px solid $border-color;
+            border-radius: 6px;
+            padding: 6px 10px;
 
             input {
-              width: 45px;
+              width: 40px;
               border: none;
               background: transparent;
-              font-size: 16px;
+              font-size: 15px;
               font-weight: 700;
               text-align: center;
-              color: $neutral-900;
+              color: $text-dark;
               padding: 0;
 
-              &:focus {
-                outline: none;
-              }
-
-              &::placeholder {
-                color: $neutral-400;
-              }
+              &:focus { outline: none; }
+              &::placeholder { color: $text-lighter; }
             }
 
             .separator {
-              font-size: 18px;
+              font-size: 16px;
               font-weight: 700;
-              color: $neutral-500;
+              color: $text-lighter;
             }
           }
         }
 
         .arrow-separator {
-          font-size: 20px;
+          font-size: 18px;
           color: $primary-color;
           font-weight: 700;
-          margin: 20px 8px 0;
+          margin: 16px 4px 0;
         }
       }
 
       .checkbox-group {
-        margin-top: 12px;
+        margin-top: 10px;
 
         .checkbox-label {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           cursor: pointer;
-          padding: 10px 12px;
+          padding: 8px 10px;
           background: $white;
-          border: 2px solid $neutral-200;
-          border-radius: $border-radius-xs;
-          @include smooth-transition;
+          border: 1px solid $border-light;
+          border-radius: 6px;
+          transition: all 0.15s ease;
 
           &:hover {
             border-color: $success-color;
-            background: rgba($success-color, 0.05);
+            background: rgba($success-color, 0.03);
           }
 
           input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
           }
 
           span {
             font-size: 13px;
             font-weight: 600;
-            color: $neutral-700;
+            color: $text-medium;
           }
         }
       }
     }
 
     .day-off-message {
-      padding: 30px 18px;
+      padding: 24px 14px;
       text-align: center;
-      background: $neutral-50;
-      color: $neutral-500;
-      font-size: 14px;
+      background: $bg-lighter;
+      color: $text-lighter;
+      font-size: 13px;
       font-weight: 600;
 
       i {
-        font-size: 28px;
-        color: $neutral-400;
+        font-size: 24px;
+        color: $text-lighter;
         margin-right: 8px;
       }
     }
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// RESPONSIVE DESIGN
-// ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════ */
 
 @media (max-width: 1200px) {
-  .admin-container {
-    padding: 28px;
-  }
-
-  .photo-cell {
-    width: 100px;
-  }
-
-  .worker-avatar {
-    width: 55px;
-    height: 55px;
-  }
+  .admin-container { padding: 20px; }
 }
 
 @media (max-width: 992px) {
-  .main-content {
-    margin-left: 0;
-  }
+  .main-content { margin-left: 0; }
 
   .header-with-action {
     flex-direction: column;
-    gap: 24px;
-
-    h1 {
-      font-size: 32px;
-    }
+    align-items: flex-start;
+    gap: 12px;
   }
 
-  .add-button {
-    width: 100%;
-    justify-content: center;
-  }
+  .add-button { width: 100%; justify-content: center; }
 
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-container {
-    padding: 24px;
-  }
+  .info-grid { grid-template-columns: 1fr; }
 
   .time-tabs {
     flex-direction: column;
-    padding: 8px;
-    gap: 8px;
-
-    .tab-button {
-      width: 100%;
-      padding: 12px 16px;
-
-      &.active::after {
-        width: 80%;
-        left: 10%;
-        right: 10%;
-      }
-    }
+    padding: 4px;
+    gap: 4px;
   }
 
-  .time-input-row {
-    flex-direction: column;
-
-    .arrow-separator {
-      display: none;
-    }
-  }
+  .time-input-row { flex-direction: column; }
 }
 
 @media (max-width: 768px) {
-  .admin-container {
-    padding: 16px;
-  }
+  .admin-container { padding: 16px; }
 
-  .header-with-action h1 {
-    font-size: 28px;
-
-    &::before {
-      height: 32px;
-    }
-  }
-
-  .photo-cell {
-    width: 80px;
-    padding: 12px !important;
-  }
-
-  .worker-avatar {
-    width: 45px;
-    height: 45px;
-  }
-
-  .worker-photo-placeholder i {
-    font-size: 20px;
-  }
+  .header-with-action h1 { font-size: 20px; }
 
   .employees-table {
-    font-size: 14px;
+    font-size: 13px;
 
     th, td {
-      padding: 16px;
-
-      &:first-child {
-        padding-left: 16px;
-      }
+      padding: 12px;
+      &:first-child { padding-left: 12px; }
     }
   }
 
@@ -1694,47 +1261,6 @@ body {
     }
   }
 
-  .schedule-management {
-    .schedule-header {
-      flex-direction: column;
-      gap: 12px;
-      align-items: flex-start;
-
-      .action-button {
-        width: 100%;
-      }
-    }
-
-    .day-config {
-      .day-header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: flex-start;
-
-        .day-off-toggle {
-          width: 100%;
-        }
-      }
-
-      .time-section .time-input-row {
-        .form-group {
-          width: 100%;
-        }
-      }
-    }
-
-    .schedule-days .day-schedule {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-
-      .day-name {
-        min-width: auto;
-      }
-    }
-  }
-
-  // Mobile modal optimizations
   .modal-overlay {
     padding: 10px;
     align-items: flex-end;
@@ -1744,74 +1270,54 @@ body {
     width: 100%;
     max-width: 100%;
     max-height: 85vh;
-    border-radius: $border-radius $border-radius 0 0;
+    border-radius: 16px 16px 0 0;
   }
 
-  .modal-header {
-    padding: 20px;
-
-    h3 {
-      font-size: 18px;
-    }
-  }
-
-  .modal-body {
-    padding: 20px;
-  }
+  .modal-header { padding: 16px; }
+  .modal-body { padding: 16px; }
 
   .modal-footer {
-    padding: 16px 20px;
+    padding: 12px 16px;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 
-    button {
-      width: 100%;
+    button { width: 100%; }
+  }
+
+  .schedule-management {
+    .schedule-header {
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+
+      .action-button { width: 100%; }
+    }
+
+    .day-config .day-header {
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+
+      .day-off-toggle { width: 100%; }
+    }
+
+    .schedule-days .day-schedule {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+
+      .day-name { min-width: auto; }
     }
   }
 }
 
 @media (max-width: 480px) {
-  .admin-container {
-    padding: 12px;
-  }
+  .admin-container { padding: 12px; }
 
-  .header-with-action {
-    h1 {
-      font-size: 20px;
-
-      &::before {
-        width: 3px;
-        height: 22px;
-      }
-    }
-  }
-
-  .employees-section {
-    h2 {
-      font-size: 15px;
-      padding: 14px 16px;
-    }
-  }
-
-  .modal-header {
-    padding: 16px;
-
-    h3 {
-      font-size: 16px;
-    }
-
-    .close-button {
-      width: 32px;
-      height: 32px;
-      font-size: 18px;
-    }
-  }
-
-  .modal-body {
-    padding: 16px;
-  }
-
-  .modal-footer {
+  .employees-section h2 {
+    font-size: 15px;
     padding: 14px 16px;
   }
+
+  .form-group { min-width: 100%; }
 }

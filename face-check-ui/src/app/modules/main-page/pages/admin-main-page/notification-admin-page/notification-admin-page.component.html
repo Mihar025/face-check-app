@@ -1,135 +1,170 @@
-<div class="page">
-  <!-- Sidebar -->
-  <aside class="sidebar-left">
-    <app-admin-sidebar
-      [userName]="userName"
-      [companyName]="companyName"
-      [userPhotoUrl]="userPhotoUrl">
-    </app-admin-sidebar>
-  </aside>
+<!-- notifications.component.html -->
+<div class="admin-layout">
+  <app-admin-sidebar
+    [userName]="userName"
+    [companyName]="companyName"
+    [userPhotoUrl]="userPhotoUrl">
+  </app-admin-sidebar>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <div class="notifications-container">
+  <div class="main-content">
 
-      <!-- Header -->
-      <div class="header-section">
-        <div class="header-content">
-          <div>
-            <h1>Company Notifications</h1>
-            <p class="subtitle">Send announcements and updates to all employees</p>
+    <!-- Top header -->
+    <div class="top-header">
+      <div class="header-bar">
+        <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+      </div>
+    </div>
+
+    <div class="admin-container">
+
+      <!-- Page header -->
+      <header class="page-header">
+        <h1>Company Notifications</h1>
+        <p>Send announcements and updates to all employees</p>
+      </header>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--total">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ notificationsTotalElements }}</div>
+            <div class="stat-label">Total Sent</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--sent">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ notifications.length }}</div>
+            <div class="stat-label">Today</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--today">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">All</div>
+            <div class="stat-label">Recipients</div>
           </div>
         </div>
       </div>
 
-      <!-- Messages -->
-      <div class="messages-section">
-        <div *ngIf="successMessage" class="success-message">
-          <i class="fas fa-check-circle"></i>
-          {{ successMessage }}
-        </div>
-        <div *ngIf="errorMessage" class="error-message">
-          <i class="fas fa-exclamation-circle"></i>
-          {{ errorMessage }}
-        </div>
+      <!-- Feedback -->
+      <div *ngIf="successMessage" class="feedback-bar feedback-bar--success">
+        <i class="fas fa-check-circle"></i>
+        {{ successMessage }}
+      </div>
+      <div *ngIf="errorMessage" class="feedback-bar feedback-bar--error">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
       </div>
 
-      <!-- Create Notification Form -->
-      <div class="create-notification-section">
-        <div class="section-header">
-          <h2>
-            <i class="fas fa-bullhorn"></i>
-            Create New Notification
-          </h2>
-        </div>
+      <!-- Two-column layout -->
+      <div class="content-grid">
 
-        <div class="form-container">
-          <div class="form-group">
-            <label for="message">Message</label>
+        <!-- Left: Compose -->
+        <div class="card">
+          <div class="card-top">
+            <h2>New Notification</h2>
+            <p>Compose and send to all employees</p>
+          </div>
+
+          <div class="card-inner">
+            <label class="compose-label" for="message">Message</label>
             <textarea
               id="message"
+              class="compose-textarea"
               [(ngModel)]="message"
-              placeholder="Enter your notification message..."
-              rows="5"
-              [disabled]="loading"></textarea>
-            <div class="char-count">{{ message.length }}/500 characters</div>
-          </div>
+              placeholder="Write your notification message..."
+              rows="6"
+              [disabled]="loading">
+            </textarea>
 
-          <button
-            class="send-btn"
-            (click)="createNotification()"
-            [disabled]="loading || !message.trim()">
-            <i class="fas" [class.fa-spinner]="loading" [class.fa-spin]="loading" [class.fa-paper-plane]="!loading"></i>
-            <span *ngIf="!loading">Send Notification</span>
-            <span *ngIf="loading">Sending...</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Today's Notifications -->
-      <div class="notifications-list-section">
-        <div class="section-header">
-          <h2>
-            <i class="fas fa-bell"></i>
-            Today's Notifications
-          </h2>
-          <span class="notification-count">{{ notificationsTotalElements }} total</span>
-        </div>
-
-        <!-- Loading -->
-        <div *ngIf="notificationsLoading" class="loading-container">
-          <div class="spinner"></div>
-          <p>Loading notifications...</p>
-        </div>
-
-        <!-- Notifications List -->
-        <div *ngIf="!notificationsLoading && notifications.length > 0" class="notifications-list">
-          <div *ngFor="let notification of notifications" class="notification-card">
-            <div class="notification-icon">
-              <i class="fas fa-bell"></i>
-            </div>
-            <div class="notification-content">
-              <p class="notification-message">{{ notification.message }}</p>
-              <span class="notification-time">
-                <i class="fas fa-clock"></i>
-                {{ formatNotificationDate(notification.createdAt) }}
-              </span>
-            </div>
-            <div class="notification-id">
-              #{{ notification.notificationId }}
+            <div class="compose-footer">
+              <span class="char-counter">{{ message.length }} / 500</span>
+              <button
+                class="btn-send"
+                (click)="createNotification()"
+                [disabled]="loading || !message.trim()">
+                <i class="fas"
+                   [class.fa-spinner]="loading"
+                   [class.fa-spin]="loading"
+                   [class.fa-paper-plane]="!loading"></i>
+                <span *ngIf="!loading">Send</span>
+                <span *ngIf="loading">Sending...</span>
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- No Notifications -->
-        <div *ngIf="!notificationsLoading && notifications.length === 0" class="no-notifications">
-          <i class="fas fa-inbox"></i>
-          <h3>No Notifications Today</h3>
-          <p>Create your first notification using the form above</p>
+        <!-- Right: List -->
+        <div class="card">
+          <div class="list-header">
+            <h2>Today's Notifications</h2>
+            <span class="list-counter">{{ notificationsTotalElements }} total</span>
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="notificationsLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading notifications...</p>
+          </div>
+
+          <!-- List -->
+          <div *ngIf="!notificationsLoading && notifications.length > 0" class="list-body">
+            <div *ngFor="let notification of notifications" class="notif-row">
+              <div class="notif-accent"></div>
+              <div class="notif-content">
+                <p class="notif-text">{{ notification.message }}</p>
+                <div class="notif-bottom">
+                  <span class="notif-time">
+                    <i class="fas fa-clock"></i>
+                    {{ formatNotificationDate(notification.createdAt) }}
+                  </span>
+                  <span class="notif-divider"></span>
+                  <span class="notif-tag">#{{ notification.notificationId }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty -->
+          <div *ngIf="!notificationsLoading && notifications.length === 0" class="empty-state">
+            <div class="empty-graphic">
+              <i class="fas fa-inbox"></i>
+            </div>
+            <h3>No Notifications Today</h3>
+            <p>Compose your first notification to get started</p>
+          </div>
+
+          <!-- Pagination -->
+          <div *ngIf="!notificationsLoading && notificationsTotalPages > 1" class="pagination">
+            <button
+              class="pg-btn"
+              [disabled]="notificationsPage === 0"
+              (click)="changeNotificationsPage(notificationsPage - 1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="pg-info">
+              Page {{ notificationsPage + 1 }} of {{ notificationsTotalPages }}
+            </span>
+            <button
+              class="pg-btn"
+              [disabled]="notificationsPage >= notificationsTotalPages - 1"
+              (click)="changeNotificationsPage(notificationsPage + 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
 
-        <!-- Pagination -->
-        <div *ngIf="!notificationsLoading && notificationsTotalPages > 1" class="pagination">
-          <button
-            class="pagination-btn"
-            [disabled]="notificationsPage === 0"
-            (click)="changeNotificationsPage(notificationsPage - 1)">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-
-          <span class="page-info">
-            Page {{ notificationsPage + 1 }} of {{ notificationsTotalPages }}
-          </span>
-
-          <button
-            class="pagination-btn"
-            [disabled]="notificationsPage >= notificationsTotalPages - 1"
-            (click)="changeNotificationsPage(notificationsPage + 1)">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
       </div>
-
     </div>
-  </main>
+  </div>
 </div>

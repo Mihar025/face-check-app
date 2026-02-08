@@ -6,13 +6,14 @@
   </app-admin-sidebar>
 
   <div class="main-content">
-    <!-- Simple Header -->
+    <!-- Header -->
     <div class="top-header">
       <div class="header-content">
         <div class="logo-section">
           <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
           <span class="company-title">FaceCheck Attendance</span>
         </div>
+
         <div class="header-info">
           <span class="current-date">
             <i class="fas fa-calendar"></i>
@@ -26,10 +27,12 @@
       <!-- Page Title -->
       <div class="page-header">
         <h1 class="page-title">Employee Attendance Photos</h1>
-        <p class="page-description">Click on any employee to view their check-in and check-out photos</p>
+        <p class="page-description">
+          Click on any employee to view their check-in and check-out photos
+        </p>
       </div>
 
-      <!-- Simple Stats -->
+      <!-- Stats -->
       <div class="stats-row" *ngIf="!loading">
         <div class="stat-box">
           <span class="stat-value">{{ employees.length }}</span>
@@ -47,7 +50,7 @@
         <p>Loading employees and photos...</p>
       </div>
 
-      <!-- Employees List -->
+      <!-- Employees -->
       <div class="employees-section" *ngIf="!loading && employees.length > 0">
         <h2 class="section-title">Employees</h2>
 
@@ -58,17 +61,21 @@
                (click)="openPhotoModal(employee)">
 
             <div class="employee-avatar">
-              <img *ngIf="employee.photoUrl"
-                   [src]="employee.photoUrl"
-                   alt="{{ employee.firstName }} {{ employee.lastName }}"
-                   (error)="handleImageError($event)">
+              <img
+                *ngIf="employee.photoUrl"
+                [src]="employee.photoUrl"
+                [alt]="employee.firstName + ' ' + employee.lastName"
+                (error)="handleImageError($event)"
+              />
               <div *ngIf="!employee.photoUrl" class="avatar-placeholder">
                 <i class="fas fa-user"></i>
               </div>
             </div>
 
             <div class="employee-info">
-              <div class="employee-name">{{ employee.firstName }} {{ employee.lastName }}</div>
+              <div class="employee-name">
+                {{ employee.firstName }} {{ employee.lastName }}
+              </div>
               <div class="employee-details">
                 <span class="employee-id">ID: #{{ employee.workerId }}</span>
                 <span class="separator">•</span>
@@ -85,11 +92,10 @@
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
-        </div><!-- Конец employees-list -->
+        </div>
 
-        <!-- ДОБАВЬ ЭТО: -->
+        <!-- Pagination -->
         <div *ngIf="totalPages > 1" class="pagination">
-          <!-- Previous -->
           <button
             class="pagination-button"
             [disabled]="page === 0"
@@ -97,7 +103,6 @@
             ‹
           </button>
 
-          <!-- Первая страница -->
           <button
             class="pagination-button"
             [class.active]="page === 0"
@@ -105,20 +110,16 @@
             1
           </button>
 
-          <!-- Точки слева -->
           <span class="page-dots" *ngIf="page > 2">...</span>
 
-          <!-- Текущая страница -->
           <button
             *ngIf="page > 1 && page < totalPages - 2"
             class="pagination-button active">
             {{ page + 1 }}
           </button>
 
-          <!-- Точки справа -->
           <span class="page-dots" *ngIf="page < totalPages - 3">...</span>
 
-          <!-- Последняя страница -->
           <button
             *ngIf="totalPages > 1"
             class="pagination-button"
@@ -127,7 +128,6 @@
             {{ totalPages }}
           </button>
 
-          <!-- Next -->
           <button
             class="pagination-button"
             [disabled]="page >= totalPages - 1"
@@ -150,7 +150,9 @@
   <div class="modal-overlay" *ngIf="showPhotoModal" (click)="closeModal()">
     <div class="modal-container" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ selectedEmployee?.firstName }} {{ selectedEmployee?.lastName }} - Attendance Photos</h3>
+        <h3>
+          {{ selectedEmployee?.firstName }} {{ selectedEmployee?.lastName }} — Attendance Photos
+        </h3>
         <button class="close-button" (click)="closeModal()">
           <i class="fas fa-times"></i>
         </button>
@@ -159,27 +161,38 @@
       <div class="modal-body">
         <!-- Date Selector -->
         <div class="date-selector">
-          <label>Select Date:</label>
-          <input type="date"
-                 [(ngModel)]="selectedDate"
-                 (change)="loadPhotosForDate()"
-                 [max]="getCurrentDate()">
+          <label for="att-date">Select Date:</label>
+          <input
+            id="att-date"
+            type="date"
+            [(ngModel)]="selectedDate"
+            (change)="loadPhotosForDate()"
+            [max]="getCurrentDate()"
+          />
           <button class="today-btn" (click)="setToday()">Today</button>
           <span class="photo-count">Photos found: {{ photos.length }}</span>
         </div>
 
-        <!-- Photos Display -->
+        <!-- Photos -->
         <div class="photos-grid" *ngIf="photos.length > 0">
           <div *ngFor="let photo of photos; let i = index" class="photo-item">
             <div class="photo-label">
-              <span class="photo-type">
+              <span
+                class="photo-type"
+                [class.check-in]="photo.type === 'punch-in'"
+                [class.check-out]="photo.type === 'punch-out'"
+              >
+                {{ photo.type === 'punch-in' ? 'Check In' : (photo.type === 'punch-out' ? 'Check Out' : 'Unknown') }}
               </span>
               <span class="photo-time">{{ extractTime(photo.url) }}</span>
             </div>
-            <img [src]="photo.url"
-                 alt="Attendance photo"
-                 (click)="openFullscreen(photo.url)"
-                 (error)="onImageError($event)">
+
+            <img
+              [src]="photo.url"
+              alt="Attendance photo"
+              (click)="openFullscreen(photo.url)"
+              (error)="onImageError($event)"
+            />
           </div>
         </div>
 
