@@ -56,24 +56,34 @@ $border-radius-sm: 12px;
   min-height: 100vh;
 }
 
-.top-logo-container {
-  height: $header-height;
-  background: $white;
-  border-bottom: 1px solid $neutral-200;
+
+.top-header {
+  height: 76px;
+  background: #fff;
+  border-bottom: 1px solid #e6eaf2;
   position: sticky;
   top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  padding: 0 40px;
-  @include shadow-sm;
-
-  .top-logo {
-    height: 45px;
-    object-fit: contain;
-  }
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
+.header-content {
+  height: 100%;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+}
+
+.top-logo {
+  height: 44px;
+  object-fit: contain;
+}
 .admin-container {
   padding: 32px;
   flex: 1;

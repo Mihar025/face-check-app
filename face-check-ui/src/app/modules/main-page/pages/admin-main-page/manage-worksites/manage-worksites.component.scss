@@ -1,274 +1,253 @@
-// Professional Color System
-$primary-color: #5B47E0;
-$primary-light: #7B6AEF;
+/* manage-worksites.component.scss — Clean corporate style (matching super-admin) */
+
+/* Variables */
+$primary-color: #5b47e0;
 $primary-dark: #4936C9;
-$primary-subtle: rgba(91, 71, 224, 0.08);
-
-// Neutral Palette
-$neutral-900: #0F0F23;
-$neutral-800: #1A1A35;
-$neutral-700: #2D2D4B;
-$neutral-600: #424260;
-$neutral-500: #6C7293;
-$neutral-400: #9CA3AF;
-$neutral-300: #CBD5E1;
-$neutral-200: #E2E8F0;
-$neutral-100: #F1F5F9;
-$neutral-50: #F8FAFC;
-$white: #FFFFFF;
-
-// Semantic Colors
-$success-color: #00D97E;
-$success-light: rgba(0, 217, 126, 0.1);
-$warning-color: #FFC107;
-$warning-light: rgba(255, 193, 7, 0.1);
-$danger-color: #FF5757;
-$danger-light: rgba(255, 87, 87, 0.1);
+$text-dark: #2c3e50;
+$text-medium: #6c7a89;
+$text-light: #7f8c8d;
+$text-lighter: #95a5a6;
+$border-color: #e0e6ed;
+$border-light: #eaeef3;
+$bg-light: #f5f6fa;
+$bg-lighter: #f8f9fb;
+$bg-hover: #fafbff;
+$bg-active: #f4f3ff;
+$error-bg: #ffe3e3;
+$error-color: #c0392b;
+$success-bg: #d4f4dd;
+$success-color: #27ae60;
+$warning-color: #e67e22;
+$warning-bg: #fef3e2;
 $info-color: #39AFEA;
-$info-light: rgba(57, 175, 234, 0.1);
+$info-bg: rgba(57, 175, 234, 0.08);
+$danger-color: #FF5757;
+$danger-bg: rgba(255, 87, 87, 0.08);
+$white: #ffffff;
 
-// Layout
 $sidebar-width: 250px;
-$header-height: 72px;
-$border-radius: 14px;
-$border-radius-sm: 10px;
+$border-radius: 12px;
+$border-radius-sm: 8px;
 $border-radius-xs: 6px;
-$border-radius-lg: 20px;
 
-// Typography
-$font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-// Professional Shadows
-@mixin shadow-xs {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+/* Mixins */
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@mixin shadow-sm {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+@mixin card-style {
+  background: #fff;
+  border-radius: $border-radius;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-@mixin shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+@mixin button-base {
+  padding: 8px 14px;
+  border: 1px solid $border-color;
+  background: #fff;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: $bg-lighter;
+    border-color: darken($border-color, 5%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-@mixin shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-@mixin shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-@mixin smooth-transition {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-// Base Reset
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: $font-family;
-  background: linear-gradient(135deg, $neutral-50 0%, $neutral-100 100%);
-  color: $neutral-900;
-  line-height: 1.6;
+@mixin input-base {
+  padding: 10px 14px;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-sm;
+  background: #fff;
   font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+  }
+
+  &::placeholder {
+    color: $text-lighter;
+  }
 }
 
-// Layout Structure
+/* Layout */
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  position: relative;
+  background: $bg-light;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .main-content {
   flex: 1;
+  min-width: 0;
   margin-left: $sidebar-width;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-// Professional Header
-.top-logo-container {
-  height: $header-height;
-  background: $white;
-  border-bottom: 1px solid $neutral-200;
+/* Top header */
+.top-header {
+  height: 76px;
+  background: #fff;
+  border-bottom: 1px solid $border-color;
   position: sticky;
   top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  padding: 0 32px;
-  @include shadow-sm;
-
-  .top-logo {
-    height: 42px;
-    object-fit: contain;
-  }
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-// Main Container
+.header-content {
+  height: 100%;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+}
+
+.top-logo {
+  height: 44px;
+  object-fit: contain;
+}
+
+/* Container */
 .admin-container {
-  padding: 28px;
+  padding: 24px;
   flex: 1;
   max-width: 1440px;
   width: 100%;
   margin: 0 auto;
 }
 
+/* Header */
 .header-with-action {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid $neutral-200;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
 
   h1 {
-    font-size: 32px;
-    font-weight: 700;
-    color: $neutral-900;
     margin: 0;
-    letter-spacing: -0.02em;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    &::before {
-      content: '';
-      width: 5px;
-      height: 32px;
-      background: $primary-color;
-      border-radius: 3px;
-    }
+    font-size: 24px;
+    font-weight: 600;
+    color: $text-dark;
   }
 }
-
 
 .add-button {
-  padding: 12px 24px;
-  border-radius: $border-radius-sm;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+  @include button-base;
+  padding: 10px 20px;
   background: $primary-color;
   color: $white;
-  @include shadow-sm;
-  @include smooth-transition;
-  position: relative;
-  overflow: hidden;
+  border-color: $primary-color;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
-  }
-
-  &:hover {
+  &:hover:not(:disabled) {
     background: $primary-dark;
-    transform: translateY(-2px);
-    @include shadow-lg;
-
-    &::before {
-      left: 100%;
-    }
+    border-color: $primary-dark;
   }
 
-  &:active {
-    transform: translateY(0);
-    @include shadow-sm;
-  }
-
-  i {
-    font-size: 16px;
-  }
+  i { font-size: 14px; }
 }
 
+/* Alert Messages */
+.error-message,
+.success-message {
+  padding: 12px 16px;
+  border-radius: $border-radius-sm;
+  margin-bottom: 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
+.error-message {
+  background: $error-bg;
+  color: $error-color;
+  border-left: 4px solid $error-color;
+}
+
+.success-message {
+  background: $success-bg;
+  color: $success-color;
+  border-left: 4px solid $success-color;
+}
+
+/* Worksites Section */
 .worksites-section {
-  background: $white;
-  border-radius: $border-radius;
-  padding: 0;
-  @include shadow-sm;
-  margin-bottom: 28px;
-  border: 1px solid $neutral-200;
+  @include card-style;
+  border: 1px solid $border-light;
   overflow: hidden;
+  margin-bottom: 24px;
 
   h2 {
     font-size: 18px;
     font-weight: 600;
-    color: $neutral-900;
+    color: $text-dark;
     margin: 0;
-    padding: 24px 28px;
-    background: $neutral-50;
-    border-bottom: 1px solid $neutral-200;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    &::before {
-      content: '📍';
-      font-size: 20px;
-    }
-  }
-
-  .worksite-list {
-    padding: 0;
+    padding: 20px 24px;
+    border-bottom: 1px solid $border-light;
   }
 }
 
+/* Table */
 .worksites-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 
   thead {
-    background: $neutral-50;
-    border-bottom: 2px solid $neutral-200;
+    background: $bg-lighter;
   }
 
   th {
-    padding: 16px 20px;
+    padding: 14px 20px;
     text-align: left;
     font-size: 12px;
-    font-weight: 600;
-    color: $neutral-600;
+    font-weight: 700;
+    color: $text-medium;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid $border-color;
   }
 
-
-
   td {
-    padding: 18px 20px;
-    border-bottom: 1px solid $neutral-100;
-    color: $neutral-900;
+    padding: 16px 20px;
+    border-bottom: 1px solid $border-light;
+    color: $text-dark;
     font-weight: 500;
+    vertical-align: middle;
   }
 
   tbody tr {
-    @include smooth-transition;
-    border-left: 3px solid transparent; // Вместо ::before
+    transition: background 0.15s ease;
 
     &:hover {
-      background: $primary-subtle;
-      border-left-color: $primary-color; // Вместо ::before background
+      background: $bg-hover;
     }
 
     &:last-child td {
@@ -276,142 +255,133 @@ body {
     }
   }
 }
-// Professional Action Buttons
+
+/* Action Buttons */
 .actions-cell {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .action-button {
-  padding: 8px 14px;
-  border-radius: $border-radius-xs;
-  border: none;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+  @include button-base;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  @include smooth-transition;
-  position: relative;
 
-  i {
-    font-size: 13px;
-  }
+  i { font-size: 13px; }
 
-  // Professional color scheme for action buttons
   &.info-button {
-    background: $info-light;
     color: $info-color;
-    border: 1px solid transparent;
+    border-color: rgba($info-color, 0.3);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $info-color;
       color: $white;
-      @include shadow-sm;
-      transform: translateY(-1px);
+      border-color: $info-color;
     }
   }
 
   &.edit-button {
-    background: $warning-light;
-    color: darken($warning-color, 10%);
-    border: 1px solid transparent;
+    color: $warning-color;
+    border-color: rgba($warning-color, 0.3);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $warning-color;
       color: $white;
-      @include shadow-sm;
-      transform: translateY(-1px);
+      border-color: $warning-color;
     }
   }
 
   &.delete-button {
-    background: $danger-light;
     color: $danger-color;
-    border: 1px solid transparent;
+    border-color: rgba($danger-color, 0.3);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $danger-color;
       color: $white;
-      @include shadow-sm;
-      transform: translateY(-1px);
+      border-color: $danger-color;
     }
   }
 
   &.schedule-button {
-    background: $primary-subtle;
     color: $primary-color;
+    border-color: rgba($primary-color, 0.3);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $primary-color;
       color: $white;
-      @include shadow-sm;
-      transform: translateY(-1px);
+      border-color: $primary-color;
     }
   }
 
   &.location-button {
-    background: $success-light;
     color: $success-color;
+    border-color: rgba($success-color, 0.3);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $success-color;
       color: $white;
-      @include shadow-sm;
-      transform: translateY(-1px);
+      border-color: $success-color;
     }
   }
 
   &.radius-button {
-    background: rgba($primary-dark, 0.1);
     color: $primary-dark;
+    border-color: rgba($primary-dark, 0.3);
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $primary-dark;
       color: $white;
-      @include shadow-sm;
-      transform: translateY(-1px);
+      border-color: $primary-dark;
     }
   }
 
   &.update-button {
-    background: linear-gradient(135deg, $primary-color, $primary-light);
+    background: $primary-color;
     color: $white;
-    @include shadow-sm;
+    border-color: $primary-color;
 
-    &:hover {
-      background: linear-gradient(135deg, $primary-dark, $primary-color);
-      @include shadow-md;
-      transform: translateY(-1px);
+    &:hover:not(:disabled) {
+      background: $primary-dark;
+      border-color: $primary-dark;
+    }
+  }
+
+  &.location-view-button {
+    color: $info-color;
+    border-color: rgba($info-color, 0.3);
+
+    &:hover:not(:disabled) {
+      background: $info-color;
+      color: $white;
+      border-color: $info-color;
+    }
+
+    &[disabled] {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
   }
 }
 
-// Professional Pagination
+/* Pagination */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
   gap: 8px;
-  background: $neutral-50;
-  border-top: 1px solid $neutral-200;
+  padding: 16px 24px;
+  border-top: 1px solid $border-light;
 }
 
 .pagination-button {
-  min-width: 40px;
-  height: 40px;
+  @include button-base;
+  min-width: 36px;
+  height: 36px;
   padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid $neutral-300;
-  background: $white;
-  color: $neutral-700;
-  font-size: 14px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
 
   &:hover:not([disabled]):not(.active) {
     background: $primary-color;
@@ -429,320 +399,209 @@ body {
   &[disabled] {
     opacity: 0.4;
     cursor: not-allowed;
-    background: $neutral-100;
+    background: $bg-lighter;
   }
 }
 
 .page-dots {
   padding: 0 8px;
-  color: $neutral-400;
+  color: $text-lighter;
   font-weight: 700;
   user-select: none;
 }
 
 .page-info {
   font-size: 14px;
-  color: $neutral-600;
+  color: $text-medium;
   font-weight: 600;
-  padding: 8px 16px;
-  background: $white;
-  border-radius: $border-radius-sm;
-  border: 1px solid $neutral-200;
 }
 
-// Professional Loading State
+/* Loading */
 .loading-indicator {
-  display: flex;
+  @include flex-center;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px;
+  padding: 60px 20px;
 
   .spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid $neutral-200;
-    border-top: 4px solid $primary-color;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-    margin-bottom: 20px;
+    border: 3px solid #f0f3f7;
+    border-top-color: $primary-color;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 14px;
   }
 
   p {
-    color: $neutral-600;
+    color: $text-medium;
     font-size: 14px;
-    font-weight: 500;
+    margin: 0;
   }
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-// Professional Alert Messages
-.success-message,
-.error-message {
-  padding: 16px 20px;
-  border-radius: $border-radius-sm;
-  margin-bottom: 20px;
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  @include shadow-sm;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 4px;
-    height: 100%;
-  }
-
-  &::after {
-    font-size: 18px;
-  }
-}
-
-.success-message {
-  background: $success-light;
-  color: darken($success-color, 10%);
-  border: 1px solid rgba($success-color, 0.2);
-
-  &::before {
-    background: $success-color;
-  }
-
-  &::after {
-    content: '✓';
-    color: $success-color;
-  }
-}
-
-.error-message {
-  background: $danger-light;
-  color: darken($danger-color, 10%);
-  border: 1px solid rgba($danger-color, 0.2);
-
-  &::before {
-    background: $danger-color;
-  }
-
-  &::after {
-    content: '⚠';
-    color: $danger-color;
-  }
+  to { transform: rotate(360deg); }
 }
 
 .no-worksites {
   text-align: center;
-  padding: 60px 20px;
-  color: $neutral-500;
+  padding: 60px 24px;
+  color: $text-lighter;
 
   p {
     font-size: 15px;
     margin: 0;
-    font-weight: 500;
-  }
-
-  &::before {
-    content: '📭';
-    display: block;
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.5;
   }
 }
 
-// Professional Modal Design
+/* ═══════════════════════════════════
+   MODALS
+   ═══════════════════════════════════ */
+
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 15, 35, 0.7);
-  backdrop-filter: blur(8px);
+  inset: 0;
+  background: rgba(15, 15, 35, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  padding: 20px;
 }
 
 .modal-container {
   background: $white;
-  border-radius: $border-radius-lg;
+  border-radius: 16px;
   width: 90%;
   max-width: 560px;
   max-height: 90vh;
   overflow: hidden;
-  @include shadow-xl;
-  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 1px solid $neutral-200;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid $border-light;
 
-  &.modal-large {
-    max-width: 840px;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(40px) scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
+  &.modal-large { max-width: 840px; }
 }
 
 .modal-header {
-  padding: 24px 28px;
-  border-bottom: 1px solid $neutral-200;
+  padding: 20px 24px;
+  border-bottom: 1px solid $border-light;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: $neutral-50;
+  background: #fff;
 
   h3 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
-    color: $neutral-900;
-    letter-spacing: -0.01em;
+    color: $text-dark;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i { color: $primary-color; font-size: 16px; }
   }
 
   .close-button {
-    background: $white;
-    border: 1px solid $neutral-200;
-    font-size: 20px;
-    cursor: pointer;
-    color: $neutral-500;
-    padding: 0;
+    @include button-base;
     width: 36px;
     height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: $border-radius-sm;
-    @include smooth-transition;
+    padding: 0;
+    @include flex-center;
+    font-size: 20px;
+    color: $text-lighter;
+    border-radius: 10px;
 
-    &:hover {
-      background: $danger-light;
+    &:hover:not(:disabled) {
       color: $danger-color;
-      border-color: $danger-color;
-      transform: rotate(90deg);
+      border-color: rgba($danger-color, 0.3);
+      background: rgba($danger-color, 0.05);
     }
   }
 }
 
 .modal-body {
-  padding: 28px;
+  padding: 24px;
   max-height: calc(90vh - 160px);
   overflow-y: auto;
 
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
+  &::-webkit-scrollbar { width: 6px; }
 
   &::-webkit-scrollbar-track {
-    background: $neutral-100;
-    border-radius: 4px;
+    background: #f1f1f1;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: $neutral-400;
-    border-radius: 4px;
-
-    &:hover {
-      background: $neutral-500;
-    }
+    background: #ccc;
+    border-radius: 3px;
+    &:hover { background: #999; }
   }
 }
 
 .modal-footer {
-  padding: 20px 28px;
-  border-top: 1px solid $neutral-200;
+  padding: 16px 24px;
+  border-top: 1px solid $border-light;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  background: $neutral-50;
+  background: #fff;
 
   button {
-    padding: 12px 24px;
+    padding: 10px 20px;
     border-radius: $border-radius-sm;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     border: none;
-    @include smooth-transition;
-    @include shadow-xs;
+    transition: all 0.2s ease;
   }
 
   .cancel-button {
     background: $white;
-    color: $neutral-600;
-    border: 1px solid $neutral-300;
+    color: $text-medium;
+    border: 1px solid $border-color;
 
     &:hover {
-      background: $neutral-100;
-      color: $neutral-900;
-      @include shadow-sm;
+      background: $bg-lighter;
+      border-color: darken($border-color, 5%);
     }
   }
 
   .confirm-button {
-    background: linear-gradient(135deg, $primary-color, $primary-light);
+    background: $primary-color;
     color: $white;
 
-    &:hover {
-      background: linear-gradient(135deg, $primary-dark, $primary-color);
-      @include shadow-md;
-      transform: translateY(-1px);
+    &:hover:not(:disabled) {
+      background: $primary-dark;
     }
 
     &.delete-button {
-      background: linear-gradient(135deg, $danger-color, lighten($danger-color, 10%));
-
-      &:hover {
-        background: linear-gradient(135deg, darken($danger-color, 10%), $danger-color);
-      }
+      background: $danger-color;
+      &:hover:not(:disabled) { background: darken($danger-color, 10%); }
     }
 
     &[disabled] {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none;
     }
   }
 }
 
-// Professional Form Styles
+/* ═══════════════════════════════════
+   FORMS
+   ═══════════════════════════════════ */
+
 .new-worksite-form,
 .update-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .form-row {
   display: flex;
-  gap: 20px;
+  gap: 16px;
 }
 
 .form-group {
@@ -752,89 +611,60 @@ body {
 
   &.full-width {
     width: 100%;
+    flex: 1 0 100%;
   }
 
   label {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-size: 13px;
     font-weight: 600;
-    color: $neutral-700;
-    letter-spacing: 0.01em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    color: $text-medium;
   }
 
   input,
   select {
-    padding: 12px 16px;
-    border: 2px solid $neutral-200;
-    border-radius: $border-radius-sm;
-    font-size: 14px;
-    font-family: $font-family;
-    font-weight: 500;
-    background: $white;
-    color: $neutral-900;
-    @include smooth-transition;
-
-    &:hover {
-      border-color: $neutral-300;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: $primary-color;
-      box-shadow: 0 0 0 4px rgba($primary-color, 0.1);
-    }
-
-    &::placeholder {
-      color: $neutral-400;
-      font-weight: 400;
-    }
+    @include input-base;
   }
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid $neutral-200;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid $border-light;
 }
 
-// Professional Info Sections
+/* Info sections */
 .worksite-info-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .worksite-info-section,
 .worksite-actions-section {
-  background: $neutral-50;
+  background: $bg-lighter;
   border-radius: $border-radius;
-  padding: 24px;
-  border: 1px solid $neutral-200;
+  padding: 20px;
+  border: 1px solid $border-light;
 }
 
 .worksite-info-section h4,
 .worksite-actions-section h4,
 .update-form h4 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  color: $neutral-900;
-  margin: 0 0 20px 0;
-  padding-bottom: 12px;
-  border-bottom: 2px solid $neutral-200;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: $text-dark;
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid $border-light;
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 12px;
 }
 
 .info-item {
@@ -843,68 +673,66 @@ body {
   padding: 12px;
   background: $white;
   border-radius: $border-radius-sm;
-  border: 1px solid $neutral-200;
+  border: 1px solid $border-light;
 
   label {
     font-size: 11px;
-    font-weight: 600;
-    color: $neutral-500;
+    font-weight: 700;
+    color: $text-lighter;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
   }
 
   span {
-    font-size: 15px;
-    color: $neutral-900;
+    font-size: 14px;
+    color: $text-dark;
     font-weight: 600;
   }
 }
 
 .action-buttons-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
 }
 
 .update-form {
   background: $white;
-  border: 2px solid $neutral-200;
+  border: 1px solid $border-light;
   border-radius: $border-radius;
-  padding: 24px;
-  margin-top: 20px;
-  @include shadow-sm;
+  padding: 20px;
+  margin-top: 16px;
 }
 
-// Professional Tabs
+/* Tabs */
 .edit-tabs {
   display: flex;
-  background: $neutral-100;
+  background: $bg-lighter;
   border-radius: $border-radius-sm;
   padding: 4px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  border: 1px solid $border-light;
 }
 
 .tab-button {
   flex: 1;
-  padding: 12px 20px;
+  padding: 10px 16px;
   background: transparent;
   border: none;
   border-radius: $border-radius-xs;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: $neutral-600;
-  @include smooth-transition;
+  color: $text-medium;
+  transition: all 0.15s ease;
 
-  &:hover {
-    color: $primary-color;
-  }
+  &:hover { color: $primary-color; }
 
   &.active {
     background: $white;
     color: $primary-color;
-    @include shadow-sm;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -913,193 +741,73 @@ body {
 }
 
 .worksite-info {
-  background: linear-gradient(135deg, $neutral-50, $white);
+  background: $bg-lighter;
   border-radius: $border-radius-sm;
-  padding: 20px;
-  margin-top: 20px;
-  border: 1px solid $neutral-200;
+  padding: 16px;
+  margin-top: 12px;
+  border: 1px solid $border-light;
 
   p {
-    margin: 10px 0;
+    margin: 6px 0;
     font-size: 14px;
-    color: $neutral-700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    color: $text-dark;
 
     strong {
-      color: $neutral-900;
+      color: $text-dark;
       font-weight: 600;
       min-width: 80px;
+      display: inline-block;
     }
   }
 }
 
-// Responsive Design
-@media (max-width: 992px) {
-  .main-content {
-    margin-left: 0;
-  }
+/* ═══════════════════════════════════
+   MAP MODAL
+   ═══════════════════════════════════ */
 
-  .header-with-action {
-    flex-direction: column;
-    gap: 20px;
-
-    h1 {
-      font-size: 28px;
-    }
-  }
-
-  .add-button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .actions-cell {
-    flex-wrap: wrap;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .action-buttons-row {
-    grid-template-columns: 1fr;
-  }
-
-  .form-row {
-    flex-direction: column;
-  }
-
-  .admin-container {
-    padding: 20px;
-  }
-}
-
-@media (max-width: 768px) {
-  .admin-container {
-    padding: 16px;
-  }
-
-  .header-with-action h1 {
-    font-size: 24px;
-
-    &::before {
-      height: 24px;
-    }
-  }
-
-  .worksites-table {
-    font-size: 13px;
-
-    th, td {
-      padding: 12px;
-    }
-  }
-
-  .modal-container {
-    width: 95%;
-    margin: 20px;
-
-    &.modal-large {
-      width: 95%;
-    }
-  }
-
-  .modal-body {
-    padding: 20px;
-  }
-
-  .top-logo-container {
-    padding: 0 20px;
-  }
-
-  .edit-tabs {
-    flex-direction: column;
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .tab-button {
-    width: 100%;
-  }
-}
-// ========================================
-// MAP MODAL STYLES
-// ========================================
-// ========================================
-// MAP MODAL STYLES
-// ========================================
-
-// View Location Button в таблице
-.location-view-button {
-  background: #39AFEA;
-
-  &:hover:not([disabled]) {
-    background: #2a9ed8;
-  }
-
-  &[disabled] {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: #F3F4F6;
-  }
-}
-
-// Map Modal Container
 .map-modal-container {
   max-width: 1200px;
   width: 90%;
   height: 85vh;
   max-height: 85vh;
-
-  .modal-header {
-    h3 {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-
-      i {
-        color: #5B47E0;
-      }
-    }
-  }
 }
 
-// Map Modal Body
 .map-modal-body {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 20px 25px;
+  gap: 16px;
+  padding: 20px 24px;
   overflow: hidden;
   height: calc(85vh - 140px);
 }
 
-// Worksite Info Card
 .worksite-info-card {
-  background: #F3F4F6;
-  border-radius: 8px;
-  padding: 20px;
+  background: $bg-lighter;
+  border-radius: $border-radius-sm;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   flex-shrink: 0;
+  border: 1px solid $border-light;
 
   .info-row {
     display: flex;
-    gap: 20px;
+    gap: 16px;
 
     .info-item {
       flex: 1;
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: flex-start;
+      padding: 0;
+      background: none;
+      border: none;
 
       i {
-        font-size: 20px;
-        color: #5B47E0;
-        margin-top: 4px;
+        font-size: 16px;
+        color: $primary-color;
+        margin-top: 2px;
         flex-shrink: 0;
       }
 
@@ -1110,17 +818,17 @@ body {
         label {
           display: block;
           font-size: 11px;
-          color: #9CA3AF;
+          color: $text-lighter;
           text-transform: uppercase;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          margin-bottom: 4px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          margin-bottom: 2px;
         }
 
         span {
           display: block;
           font-size: 14px;
-          color: #1E1E2E;
+          color: $text-dark;
           font-weight: 500;
           word-wrap: break-word;
         }
@@ -1129,15 +837,14 @@ body {
   }
 }
 
-// Map Container
 .map-container {
   flex: 1;
   min-height: 400px;
-  border-radius: 8px;
+  border-radius: $border-radius-sm;
   overflow: hidden;
-  border: 2px solid #E5E7EB;
+  border: 1px solid $border-color;
   position: relative;
-  background: #F3F4F6;
+  background: $bg-lighter;
 }
 
 .worksite-map {
@@ -1148,25 +855,25 @@ body {
   z-index: 1;
 }
 
-// Map Legend
 .map-legend {
   display: flex;
-  gap: 30px;
-  padding: 15px 20px;
-  background: #F3F4F6;
-  border-radius: 8px;
+  gap: 24px;
+  padding: 12px 16px;
+  background: $bg-lighter;
+  border-radius: $border-radius-sm;
   flex-shrink: 0;
+  border: 1px solid $border-light;
 
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    color: #6C7293;
+    gap: 8px;
+    font-size: 13px;
+    color: $text-medium;
 
     .legend-icon {
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       flex-shrink: 0;
 
@@ -1177,293 +884,96 @@ body {
         &::after {
           content: '';
           position: absolute;
-          bottom: -5px;
+          bottom: -4px;
           left: 50%;
           transform: translateX(-50%);
           width: 0;
           height: 0;
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 8px solid #EA4335;
+          border-left: 4px solid transparent;
+          border-right: 4px solid transparent;
+          border-top: 6px solid #EA4335;
         }
       }
 
       &.circle {
-        background: rgba(91, 71, 224, 0.15);
-        border: 2px solid #5B47E0;
+        background: rgba($primary-color, 0.15);
+        border: 2px solid $primary-color;
       }
     }
   }
 }
 
-// Leaflet Popup Override
+/* Leaflet popup */
 .leaflet-popup-content-wrapper {
-  border-radius: 8px;
+  border-radius: $border-radius-sm;
 }
 
 .leaflet-popup-content {
   margin: 0;
 
   h3 {
-    margin: 0 0 10px 0;
-    color: #1E1E2E;
-    font-size: 16px;
+    margin: 0 0 8px 0;
+    color: $text-dark;
+    font-size: 15px;
   }
 
   p {
-    margin: 5px 0;
-    color: #6C7293;
+    margin: 4px 0;
+    color: $text-medium;
     font-size: 13px;
   }
 
   strong {
-    color: #5B47E0;
+    color: $primary-color;
   }
 }
 
-// Responsive
-@media (max-width: 768px) {
-  .map-modal-container {
-    width: 95%;
-    height: 90vh;
-    max-height: 90vh;
-  }
+/* ═══════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════ */
 
-  .map-modal-body {
-    height: calc(90vh - 140px);
-    padding: 15px;
-  }
+@media (max-width: 992px) {
+  .main-content { margin-left: 0; }
 
-  .worksite-info-card {
-    padding: 15px;
-
-    .info-row {
-      flex-direction: column;
-      gap: 15px;
-    }
-  }
-
-  .map-container {
-    min-height: 300px;
-  }
-
-  .worksite-map {
-    min-height: 300px;
-  }
-
-  .map-legend {
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .location-view-button {
-    i {
-      margin-right: 0;
-    }
-  }
-
-  .map-modal-body {
-    gap: 15px;
-  }
-
-  .worksite-info-card {
-    .info-item {
-      i {
-        font-size: 18px;
-      }
-
-      div {
-        label {
-          font-size: 10px;
-        }
-
-        span {
-          font-size: 13px;
-        }
-      }
-    }
-  }
-}
-
-// ============================================
-// MOBILE RESPONSIVE - FULL OPTIMIZATION
-// ============================================
-
-@media (max-width: 768px) {
-  // Main layout
-  .main-content {
-    margin-left: 0;
-  }
-
-  // Header
-  .top-logo-container {
-    padding: 0 16px;
-    height: 60px;
-
-    .top-logo {
-      height: 35px;
-    }
-  }
-
-  // Container
-  .admin-container {
-    padding: 16px;
-  }
-
-  // Header with action
   .header-with-action {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-
-    h1 {
-      font-size: 24px;
-
-      &::before {
-        width: 4px;
-        height: 26px;
-      }
-    }
-
-    .add-button {
-      width: 100%;
-      justify-content: center;
-      padding: 12px 20px;
-    }
+    gap: 12px;
   }
 
-  // Worksites section
-  .worksites-section {
-    margin-bottom: 20px;
-    border-radius: $border-radius-sm;
+  .add-button { width: 100%; justify-content: center; }
 
-    h2 {
-      font-size: 16px;
-      padding: 16px 20px;
+  .info-grid { grid-template-columns: 1fr; }
 
-      &::before {
-        font-size: 18px;
-      }
-    }
-  }
+  .action-buttons-row { grid-template-columns: 1fr; }
 
-  // TABLE TO CARDS
+  .form-row { flex-direction: column; }
+
+  .admin-container { padding: 20px; }
+}
+
+@media (max-width: 768px) {
+  .admin-container { padding: 16px; }
+
+  .header-with-action h1 { font-size: 20px; }
+
   .worksites-table {
-    display: block;
+    font-size: 13px;
 
-    thead {
-      display: none;
-    }
-
-    tbody {
-      display: block;
-    }
-
-    tr {
-      display: block;
-      margin-bottom: 16px;
-      border: 1px solid $neutral-200;
-      border-radius: $border-radius-sm;
-      padding: 16px;
-      background: $white;
-      @include shadow-sm;
-      border-left: 3px solid $primary-color !important;
-
-      &:hover {
-        background: $white;
-        @include shadow-md;
-      }
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-
-    td {
-      display: block;
-      padding: 8px 0 !important;
-      border: none !important;
-      text-align: left;
-
-      &:before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: $neutral-600;
-        display: block;
-        margin-bottom: 4px;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      &:not(:last-child) {
-        border-bottom: 1px solid $neutral-100 !important;
-        padding-bottom: 12px !important;
-      }
-
-      &:first-child:before { content: "Worksite Name"; }
-      &:nth-child(2):before { content: "Address"; }
-      &:nth-child(3):before { content: "Workers"; }
-      &:nth-child(4):before { content: "Actions"; }
-    }
+    th, td { padding: 12px; }
   }
 
-  // Action buttons
   .actions-cell {
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 6px;
   }
 
   .action-button {
     flex: 1;
-    min-width: calc(50% - 4px);
+    min-width: calc(50% - 3px);
     justify-content: center;
-    padding: 10px 12px;
-    font-size: 13px;
-
-    i {
-      font-size: 14px;
-    }
   }
 
-  // Workers badge
-  .workers-badge {
-    font-size: 13px;
-    padding: 6px 12px;
-  }
-
-  // Empty state
-  .empty-state {
-    padding: 40px 20px;
-
-    i {
-      font-size: 60px;
-      margin-bottom: 16px;
-    }
-
-    h3 {
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
-
-    p {
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-
-    .add-button {
-      padding: 12px 24px;
-      font-size: 14px;
-    }
-  }
-
-  // Modal adjustments
   .modal-overlay {
     padding: 10px;
     align-items: flex-end;
@@ -1473,155 +983,120 @@ body {
     width: 100%;
     max-width: 100%;
     max-height: 85vh;
-    border-radius: $border-radius $border-radius 0 0;
+    border-radius: 16px 16px 0 0;
+
+    &.modal-large { width: 100%; }
   }
 
-  .modal-header {
-    padding: 20px;
-
-    h2 {
-      font-size: 18px;
-    }
-
-    .modal-close {
-      width: 32px;
-      height: 32px;
-      font-size: 18px;
-    }
-  }
-
-  .modal-body {
-    padding: 20px;
-
-    .form-group {
-      margin-bottom: 16px;
-
-      label {
-        font-size: 12px;
-        margin-bottom: 8px;
-      }
-
-      input,
-      textarea,
-      select {
-        padding: 12px 14px;
-        font-size: 14px;
-      }
-
-      textarea {
-        min-height: 100px;
-      }
-    }
-
-    .error-message {
-      padding: 10px 14px;
-      font-size: 13px;
-      margin: 16px 0;
-    }
-  }
+  .modal-header { padding: 16px; }
+  .modal-body { padding: 16px; }
 
   .modal-footer {
-    padding: 16px 20px;
+    padding: 12px 16px;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 
-    button {
-      width: 100%;
-      padding: 12px 20px;
-    }
+    button { width: 100%; }
   }
 
-  // Stats cards (if any)
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .stat-card {
-    padding: 16px;
-
-    .stat-value {
-      font-size: 24px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-    }
-  }
-
-  // Search/Filter section (if any)
-  .filters-section {
+  .edit-tabs {
     flex-direction: column;
-    gap: 12px;
-
-    input,
-    select {
-      width: 100%;
-    }
+    padding: 4px;
+    gap: 4px;
   }
 
-  // Tabs (if any)
-  .tabs-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  .tab-button { width: 100%; }
 
-    .tabs {
-      display: flex;
-      min-width: max-content;
-    }
-
-    .tab {
-      white-space: nowrap;
-      padding: 10px 16px;
-      font-size: 13px;
-    }
+  /* Map modal mobile */
+  .map-modal-container {
+    width: 100%;
+    height: 90vh;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
   }
-}
 
-// Extra small devices
-@media (max-width: 480px) {
-  .admin-container {
+  .map-modal-body {
+    height: calc(90vh - 140px);
     padding: 12px;
   }
 
-  .header-with-action {
-    h1 {
-      font-size: 20px;
+  .worksite-info-card {
+    padding: 12px;
 
-      &::before {
-        width: 3px;
-        height: 22px;
-      }
+    .info-row {
+      flex-direction: column;
+      gap: 10px;
     }
   }
 
-  .worksites-section {
-    h2 {
-      font-size: 15px;
-      padding: 14px 16px;
-    }
+  .map-container { min-height: 300px; }
+  .worksite-map { min-height: 300px; }
+
+  .map-legend {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-container { padding: 12px; }
+
+  .worksites-section h2 {
+    font-size: 15px;
+    padding: 14px 16px;
   }
 
   .worksites-table {
+    display: block;
+
+    thead { display: none; }
+    tbody { display: block; }
+
     tr {
+      display: block;
+      margin-bottom: 12px;
+      border: 1px solid $border-light;
+      border-radius: $border-radius-sm;
       padding: 14px;
+      background: $white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+      &:last-child { margin-bottom: 0; }
     }
 
     td {
-      font-size: 13px;
+      display: block;
+      padding: 6px 0 !important;
+      border: none !important;
+      text-align: left;
 
       &:before {
-        font-size: 10px;
+        content: attr(data-label);
+        font-weight: 700;
+        color: $text-lighter;
+        display: block;
+        margin-bottom: 2px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
+
+      &:not(:last-child) {
+        border-bottom: 1px solid $border-light !important;
+        padding-bottom: 10px !important;
+      }
+
+      &:first-child:before { content: "ID"; }
+      &:nth-child(2):before { content: "Name"; }
+      &:nth-child(3):before { content: "Address"; }
+      &:nth-child(4):before { content: "Working Hours"; }
+      &:nth-child(5):before { content: "Radius"; }
+      &:nth-child(6):before { content: "Actions"; }
     }
   }
 
   .action-button {
-    padding: 8px 10px;
-    font-size: 12px;
-
-    i {
-      font-size: 13px;
-    }
+    min-width: 100%;
   }
 }

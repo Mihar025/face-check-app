@@ -1,1 +1,1 @@
-ALTER TABLE _company ADD COLUMN monthly_subscription NUMERIC;
+ALTER TABLE _company ADD COLUMN IF NOT EXISTS monthly_subscription NUMERIC;
