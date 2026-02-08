@@ -7,226 +7,267 @@
   </app-admin-sidebar>
 
   <div class="main-content">
-    <div class="top-logo-container">
-      <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+
+    <div class="top-header">
+      <div class="header-content">
+        <div class="logo-section">
+          <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+        </div>
+      </div>
     </div>
 
     <div class="admin-container">
-      <div class="page-header">
-        <h1>Settings</h1>
-        <p class="page-description">Manage your profile, company and account settings</p>
-      </div>
+      <header class="page-header">
+        <div class="page-title">
+          <h1>Settings</h1>
+          <p class="page-description">Manage your profile, company, account and billing settings</p>
+        </div>
+      </header>
 
-      <!-- Profile Section -->
-      <div class="settings-grid">
-        <div class="settings-card profile-card">
-          <div class="card-icon">
-            <div class="profile-photo-wrapper">
-              <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'" alt="Profile Photo" class="profile-photo">
-              <button class="photo-edit-btn" (click)="pickAndUploadImage()" [disabled]="isUploadingPhoto">
-                <i class="edit-icon">📷</i>
+      <div class="settings-shell" aria-label="Settings sections">
+        <!-- tabs via radio -->
+        <input id="sec-profile" class="sec-input" type="radio" name="settingsSection" checked />
+        <input id="sec-company" class="sec-input" type="radio" name="settingsSection" />
+        <input id="sec-account" class="sec-input" type="radio" name="settingsSection" />
+        <input id="sec-billing" class="sec-input" type="radio" name="settingsSection" />
+        <input id="sec-danger" class="sec-input" type="radio" name="settingsSection" />
+
+        <aside class="settings-nav" aria-label="Settings navigation">
+          <div class="settings-nav-title">Settings</div>
+          <label class="nav-item" for="sec-profile">Profile</label>
+          <label class="nav-item" for="sec-company">Company</label>
+          <label class="nav-item" for="sec-account">Account</label>
+          <label class="nav-item" for="sec-billing">Billing</label>
+          <label class="nav-item nav-item--danger" for="sec-danger">Danger</label>
+        </aside>
+
+        <main class="settings-content" aria-label="Settings content">
+          <!-- PROFILE -->
+          <section id="panel-profile" class="panel">
+            <div class="panel-header">
+              <h2>Profile</h2>
+              <p>Personal information and photo</p>
+            </div>
+
+            <div class="panel-body">
+              <div class="row">
+                <div class="row-main">
+                  <div class="row-title">Profile photo</div>
+                  <div class="row-subtitle">Update your profile picture</div>
+
+                  <div class="inline">
+                    <img [src]="userPhotoUrl || 'assets/default-avatar.jpg'" alt="Profile Photo" class="avatar" />
+                    <div class="inline-actions">
+                      <button class="btn-secondary" type="button"
+                              (click)="pickAndUploadImage()"
+                              [disabled]="isUploadingPhoto">
+                        Change photo
+                      </button>
+                      <div class="hint" *ngIf="isUploadingPhoto">Uploading...</div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="photoUploadSuccess" class="inline-success">Photo updated successfully.</div>
+                  <div *ngIf="photoUploadError" class="inline-error">{{ photoUploadError }}</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- COMPANY -->
+          <section id="panel-company" class="panel">
+            <div class="panel-header">
+              <h2>Company</h2>
+              <p>Company name, email, phone and address</p>
+            </div>
+
+            <div class="panel-body">
+              <button class="row row-button" type="button" (click)="openCompanyModal()">
+                <div class="row-main">
+                  <div class="row-title">Company information</div>
+                  <div class="row-subtitle">{{ companyNameInput || companyName || 'Company Name' }}</div>
+
+                  <div class="meta">
+                    <span class="meta-pill">{{ companyEmailInput || 'company@email.com' }}</span>
+                    <span class="meta-pill">{{ companyPhoneInput || 'Phone Number' }}</span>
+                    <span class="meta-pill">{{ companyAddressInput || 'Address' }}</span>
+                  </div>
+                </div>
+                <span class="chevron" aria-hidden="true"></span>
               </button>
             </div>
-          </div>
-          <div class="card-content">
-            <h3>Profile Photo</h3>
-            <p class="card-description">Update your profile picture</p>
-            <div *ngIf="photoUploadSuccess" class="inline-success">✓ Photo updated</div>
-            <div *ngIf="photoUploadError" class="inline-error">{{ photoUploadError }}</div>
-          </div>
-        </div>
+          </section>
 
-        <!-- Company Info Card -->
-        <div class="settings-card" (click)="openCompanyModal()">
-          <div class="card-icon">
-            <span class="icon">🏢</span>
-          </div>
-          <div class="card-content">
-            <h3>Company Information</h3>
-            <p class="card-description">{{ companyNameInput || 'Company Name' }}</p>
-            <div class="card-details">
-              <span class="detail-item">{{ companyEmailInput || 'company@email.com' }}</span>
-              <span class="detail-item">{{ companyPhoneInput || 'Phone Number' }}</span>
+          <!-- ACCOUNT -->
+          <section id="panel-account" class="panel">
+            <div class="panel-header">
+              <h2>Account</h2>
+              <p>Admin account and security</p>
             </div>
-          </div>
-          <div class="card-action">
-            <span class="action-icon">→</span>
-          </div>
-        </div>
 
-        <!-- Admin Account Card -->
-        <div class="settings-card" (click)="openAdminModal()">
-          <div class="card-icon">
-            <span class="icon">👤</span>
-          </div>
-          <div class="card-content">
-            <h3>Admin Account</h3>
-            <p class="card-description">{{ adminEmailInput || 'admin@email.com' }}</p>
-            <div class="card-details">
-              <span class="detail-item">{{ adminPhoneInput || 'Phone Number' }}</span>
-              <span class="detail-item">••••••••</span>
+            <div class="panel-body">
+              <button class="row row-button" type="button" (click)="openAdminModal()">
+                <div class="row-main">
+                  <div class="row-title">Admin account</div>
+                  <div class="row-subtitle">{{ adminEmailInput || 'admin@email.com' }}</div>
+                  <div class="meta">
+                    <span class="meta-pill">{{ adminPhoneInput || 'Phone Number' }}</span>
+                    <span class="meta-pill">Password hidden</span>
+                  </div>
+                </div>
+                <span class="chevron" aria-hidden="true"></span>
+              </button>
+
+              <button class="row row-button" type="button" (click)="openSecurityModal()">
+                <div class="row-main">
+                  <div class="row-title">Security</div>
+                  <div class="row-subtitle">Password and authentication</div>
+                </div>
+                <span class="chevron" aria-hidden="true"></span>
+              </button>
             </div>
-          </div>
-          <div class="card-action">
-            <span class="action-icon">→</span>
-          </div>
-        </div>
+          </section>
 
-        <!-- Security Card -->
-        <div class="settings-card" (click)="openSecurityModal()">
-          <div class="card-icon">
-            <span class="icon">🔐</span>
-          </div>
-          <div class="card-content">
-            <h3>Security</h3>
-            <p class="card-description">Password and authentication</p>
-            <div class="card-details">
-              <span class="detail-item">Last changed: Never</span>
+          <!-- BILLING -->
+          <section id="panel-billing" class="panel">
+            <div class="panel-header">
+              <h2>Billing</h2>
+              <p>Subscription, seats and payments</p>
             </div>
-          </div>
-          <div class="card-action">
-            <span class="action-icon">→</span>
-          </div>
-        </div>
 
-        <!-- Danger Zone Card -->
-        <div class="settings-card danger-card" (click)="showDeleteConfirmation()">
-          <div class="card-icon">
-            <span class="icon">⚠️</span>
-          </div>
-          <div class="card-content">
-            <h3>Danger Zone</h3>
-            <p class="card-description">Delete company account</p>
-            <div class="card-details">
-              <span class="detail-item text-danger">This action cannot be undone</span>
+            <div class="panel-body">
+              <button class="row row-button" type="button" (click)="goToBilling()">
+                <div class="row-main">
+                  <div class="row-title">Billing & subscription</div>
+                  <div class="row-subtitle">Manage your subscription, seats and payments</div>
+                  <div class="meta">
+                    <span class="meta-pill">Status: {{ subscriptionStatus | uppercase }}</span>
+                  </div>
+                </div>
+                <span class="chevron" aria-hidden="true"></span>
+              </button>
             </div>
-          </div>
-          <div class="card-action">
-            <span class="action-icon">→</span>
-          </div>
-        </div>
+          </section>
 
-
-        <!-- Billing & Subscription -->
-        <div class="settings-card" (click)="goToBilling()">
-          <div class="card-icon">
-            <span class="icon">💳</span>
-          </div>
-          <div class="card-content">
-            <h3>Billing & Subscription</h3>
-            <p class="card-description">
-              Manage your subscription, seats and payments
-            </p>
-            <div class="card-details">
-              <span class="detail-item">Status: {{ subscriptionStatus | uppercase }}</span>
+          <!-- DANGER -->
+          <section id="panel-danger" class="panel panel-danger">
+            <div class="panel-header panel-header-danger">
+              <h2>Danger zone</h2>
+              <p>Irreversible and destructive actions</p>
             </div>
-          </div>
-          <div class="card-action">
-            <span class="action-icon">→</span>
-          </div>
-        </div>
 
+            <div class="panel-body">
+              <button class="row row-button row-danger" type="button" (click)="showDeleteConfirmation()">
+                <div class="row-main">
+                  <div class="row-title">Delete company account</div>
+                  <div class="row-subtitle">This action cannot be undone.</div>
+                </div>
+                <span class="chevron" aria-hidden="true"></span>
+              </button>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Company Modal -->
+<!-- COMPANY MODAL -->
 <div class="modal-overlay" *ngIf="showCompanyModal" (click)="closeCompanyModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Company Information</h2>
-      <button class="modal-close" (click)="closeCompanyModal()">✕</button>
+      <h3>Company information</h3>
+      <button class="modal-close" type="button" (click)="closeCompanyModal()" aria-label="Close">×</button>
     </div>
 
     <div class="modal-body">
       <div class="form-group">
-        <label>Company Name</label>
-        <input type="text" [(ngModel)]="companyNameInput" placeholder="Enter company name">
+        <label>Company name</label>
+        <input type="text" [(ngModel)]="companyNameInput" placeholder="Enter company name" />
       </div>
 
       <div class="form-group">
-        <label>Company Email</label>
-        <input type="email" [(ngModel)]="companyEmailInput" placeholder="Enter company email">
+        <label>Company email</label>
+        <input type="email" [(ngModel)]="companyEmailInput" placeholder="Enter company email" />
       </div>
 
       <div class="form-group">
-        <label>Company Phone</label>
-        <input type="tel" [(ngModel)]="companyPhoneInput" placeholder="Enter company phone">
+        <label>Company phone</label>
+        <input type="tel" [(ngModel)]="companyPhoneInput" placeholder="Enter company phone" />
       </div>
 
       <div class="form-group">
-        <label>Company Address</label>
-        <input type="text" [(ngModel)]="companyAddressInput" placeholder="Enter company address">
+        <label>Company address</label>
+        <input type="text" [(ngModel)]="companyAddressInput" placeholder="Enter company address" />
       </div>
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="closeCompanyModal()">Cancel</button>
-      <button class="btn-primary" (click)="saveCompanyInfo()">Save Changes</button>
+      <button class="btn-secondary" type="button" (click)="closeCompanyModal()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="saveCompanyInfo()">Save changes</button>
     </div>
 
-    <div *ngIf="companyUpdateSuccess" class="modal-success">✓ Company information updated successfully!</div>
+    <div *ngIf="companyUpdateSuccess" class="modal-success">Company information updated successfully.</div>
     <div *ngIf="companyUpdateError" class="modal-error">{{ companyUpdateError }}</div>
   </div>
 </div>
 
-<!-- Admin Modal -->
+<!-- ADMIN MODAL -->
 <div class="modal-overlay" *ngIf="showAdminModal" (click)="closeAdminModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Admin Account</h2>
-      <button class="modal-close" (click)="closeAdminModal()">✕</button>
+      <h3>Admin account</h3>
+      <button class="modal-close" type="button" (click)="closeAdminModal()" aria-label="Close">×</button>
     </div>
 
     <div class="modal-body">
       <div class="form-group">
-        <label>Email Address</label>
-        <input type="email" [(ngModel)]="adminEmailInput" placeholder="Enter email address">
+        <label>Email address</label>
+        <input type="email" [(ngModel)]="adminEmailInput" placeholder="Enter email address" />
       </div>
 
       <div class="form-group">
-        <label>Phone Number</label>
-        <input type="tel" [(ngModel)]="adminPhoneInput" placeholder="Enter phone number">
+        <label>Phone number</label>
+        <input type="tel" [(ngModel)]="adminPhoneInput" placeholder="Enter phone number" />
       </div>
 
       <div class="form-group">
-        <label>Home Address</label>
-        <input type="text" [(ngModel)]="adminAddressInput" placeholder="Enter home address">
+        <label>Home address</label>
+        <input type="text" [(ngModel)]="adminAddressInput" placeholder="Enter home address" />
       </div>
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="closeAdminModal()">Cancel</button>
-      <button class="btn-primary" (click)="saveAdminInfo()">Save Changes</button>
+      <button class="btn-secondary" type="button" (click)="closeAdminModal()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="saveAdminInfo()">Save changes</button>
     </div>
 
-    <div *ngIf="adminUpdateSuccess" class="modal-success">✓ Admin information updated successfully!</div>
+    <div *ngIf="adminUpdateSuccess" class="modal-success">Admin information updated successfully.</div>
     <div *ngIf="adminUpdateError" class="modal-error">{{ adminUpdateError }}</div>
   </div>
 </div>
 
-<!-- Security Modal - Fixed version -->
+<!-- SECURITY MODAL -->
 <div class="modal-overlay" *ngIf="showSecurityModal" (click)="closeSecurityModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Security Settings</h2>
-      <button class="modal-close" (click)="closeSecurityModal()">✕</button>
+      <h3>Security settings</h3>
+      <button class="modal-close" type="button" (click)="closeSecurityModal()" aria-label="Close">×</button>
     </div>
 
     <div class="modal-body">
       <div class="form-group">
-        <label>New Password</label>
-        <input type="password" [(ngModel)]="newPassword" placeholder="Enter new password">
+        <label>New password</label>
+        <input type="password" [(ngModel)]="newPassword" placeholder="Enter new password" />
       </div>
 
       <div class="form-group">
-        <label>Confirm New Password</label>
-        <input type="password" [(ngModel)]="confirmPassword" placeholder="Confirm new password">
+        <label>Confirm new password</label>
+        <input type="password" [(ngModel)]="confirmPassword" placeholder="Confirm new password" />
       </div>
 
       <div class="password-requirements">
-        <p>Password requirements:</p>
+        <div class="req-title">Password requirements</div>
         <ul>
           <li [class.met]="newPassword.length >= 6">At least 6 characters</li>
           <li [class.met]="hasUpperCase">One uppercase letter</li>
@@ -236,26 +277,29 @@
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="closeSecurityModal()">Cancel</button>
-      <button class="btn-primary" (click)="updatePassword()" [disabled]="!isPasswordValid()">Update Password</button>
+      <button class="btn-secondary" type="button" (click)="closeSecurityModal()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="updatePassword()" [disabled]="!isPasswordValid()">
+        Update password
+      </button>
     </div>
 
-    <div *ngIf="passwordUpdateSuccess" class="modal-success">✓ Password updated successfully!</div>
+    <div *ngIf="passwordUpdateSuccess" class="modal-success">Password updated successfully.</div>
     <div *ngIf="passwordUpdateError" class="modal-error">{{ passwordUpdateError }}</div>
   </div>
 </div>
-<!-- Delete Confirmation Modal -->
+
+<!-- DELETE MODAL -->
 <div class="modal-overlay danger" *ngIf="showDeleteModal" (click)="cancelDelete()">
   <div class="modal-content danger-modal" (click)="$event.stopPropagation()">
     <div class="modal-header danger">
-      <h2>⚠️ Delete Company Account</h2>
-      <button class="modal-close" (click)="cancelDelete()">✕</button>
+      <h3>Delete company account</h3>
+      <button class="modal-close" type="button" (click)="cancelDelete()" aria-label="Close">×</button>
     </div>
 
     <div class="modal-body">
       <div class="warning-message">
-        <p><strong>This action cannot be undone!</strong></p>
-        <p>This will permanently delete:</p>
+        <div class="warning-title">This action cannot be undone.</div>
+        <div class="warning-text">This will permanently delete:</div>
         <ul>
           <li>Your company account</li>
           <li>All worksites</li>
@@ -265,15 +309,17 @@
       </div>
 
       <div class="form-group">
-        <label>Type <strong>{{ companyName }}</strong> to confirm:</label>
-        <input type="text" [(ngModel)]="deleteConfirmInput" placeholder="Type company name to confirm">
+        <label>Type <strong>{{ companyName }}</strong> to confirm</label>
+        <input type="text" [(ngModel)]="deleteConfirmInput" placeholder="Type company name to confirm" />
       </div>
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="cancelDelete()">Cancel</button>
-      <button class="btn-danger" [disabled]="deleteConfirmInput !== companyName" (click)="deleteCompany()">
-        Delete Forever
+      <button class="btn-secondary" type="button" (click)="cancelDelete()">Cancel</button>
+      <button class="btn-danger" type="button"
+              [disabled]="deleteConfirmInput !== companyName"
+              (click)="deleteCompany()">
+        Delete forever
       </button>
     </div>
 
