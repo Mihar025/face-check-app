@@ -73,6 +73,9 @@ export class SettingsComponent implements OnInit {
   showSecurityModal: boolean = false;
   showDeleteModal: boolean = false;
 
+  activeTab: string = 'general';
+  showSecurityForm: boolean = false;
+
 // For the password fields in security modal:
   currentPassword: string = '';
   adminPasswordInput: string = '';
