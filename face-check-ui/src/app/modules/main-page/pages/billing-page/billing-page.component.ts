@@ -135,8 +135,8 @@ export class BillingPageComponent implements OnInit, OnDestroy {
     localStorage.setItem('billing_company_id', String(this.companyId));
 
     this.http.post<{ checkoutUrl: string }>(
-      //`${environment.apiUrl}/billing/activate/${this.companyId}`,
-      `http://localhost:8088/api/v1/billing/activate/${this.companyId}`,
+      `${environment.apiUrl}/billing/activate/${this.companyId}`,
+     // `http://localhost:8088/api/v1/billing/activate/${this.companyId}`,
       {}
     )
 
