@@ -121,7 +121,16 @@ public class WorkerAttendanceController {
 
         WorkerPhotosResponse response = workAttendanceService
                 .getPhotosForWorkerByDate(workerId, date);
+        return ResponseEntity.ok(response);
+    }
 
+    @GetMapping("/photos/list/{workerId}")
+    public ResponseEntity<List<WorkerPhotosResponse>> getWorkerPhotosByDateList(
+            @PathVariable Integer workerId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        List<WorkerPhotosResponse> response = workAttendanceService
+                .getPhotosForWorkerByDateList(workerId, date);
         return ResponseEntity.ok(response);
     }
 

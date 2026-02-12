@@ -7,6 +7,7 @@ import {FileControllerService} from "../../../../../services/services/file-contr
 import {forkJoin, of, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {WorkerAttendanceControllerService} from "../../../../../services/services/worker-attendance-controller.service";
 
 @Component({
   selector: 'app-employee-attendance',
@@ -20,7 +21,7 @@ export class EmployeeAttendanceComponent implements OnInit,OnDestroy {
   userPhotoUrl: string = '';
 
   photo: string = '';
-  photos: Array<{url: string, type: string}> = [];
+  photos: Array<{url: string, type: string, time: string}> = [];
   companyId: number = 0;
 
 
@@ -47,7 +48,8 @@ export class EmployeeAttendanceComponent implements OnInit,OnDestroy {
     private userService: UserServiceControllerService,
     private awsService: FileControllerService,
     private companyService: CompanyControllerService,
-    public userDataService: UserDataService
+    public userDataService: UserDataService,
+    public attendanceService: WorkerAttendanceControllerService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -199,16 +201,54 @@ export class EmployeeAttendanceComponent implements OnInit,OnDestroy {
     this.showPhotoModal = true;
     this.loadPhotosForDate();
   }
-
+/*
   loadPhotosForDate() {
     if (!this.selectedEmployee) return;
 
     // Get photos from loaded cache
-    const employeePhotos = this.allEmployeesPhotos.get(this.selectedEmployee.workerId) || [];
+    const employeePhotos =
+        this.allEmployeesPhotos.get(this.selectedEmployee.workerId) || [];
 
     // Filter by selected date - Fixed to match exact date
     this.photos = employeePhotos.filter(photo => this.matchesDate(photo.url));
   }
+*/
+
+  loadPhotosForDate(): void {
+    if (!this.selectedEmployee) return;
+
+    this.photos = [];
+
+    this.attendanceService.getWorkerPhotosByDateList({
+      workerId: this.selectedEmployee.workerId,
+      date: this.selectedDate
+    }).pipe(
+      catchError(error => {
+        console.error('Error loading photos:', error);
+        return of([]);
+      })
+    ).subscribe(responses => {
+      if (responses) {
+        for (const r of responses) {
+          if (r.checkInPhotoUrl) {
+            this.photos.push({
+              url: r.checkInPhotoUrl,
+              type: 'Check In',
+              time: r.checkInTime || ''
+            });
+          }
+          if (r.checkOutPhotoUrl) {
+            this.photos.push({
+              url: r.checkOutPhotoUrl,
+              type: 'Check Out',
+              time: r.checkOutTime || ''
+            });
+          }
+        }
+      }
+    });
+  }
+
 
   matchesDate(url: string): boolean {
     const dateMatch = url.match(/(\d{8})/);
