@@ -1,4 +1,3 @@
-<!-- companies-info-app-owner.component.html -->
 <app-app-owner-sidebar
   [userName]="userName"
   [companyName]="companyName"
@@ -45,7 +44,6 @@
           </div>
         </div>
 
-        <!-- КНОПКИ ТОЛЬКО ЗДЕСЬ -->
         <div class="company-actions">
           <button class="btn btn-offer" (click)="openOfferModal(company)">Create Offer</button>
           <button class="btn btn-edit" (click)="startEdit(company)">Edit</button>
@@ -91,14 +89,177 @@
   </div>
 </div>
 
-<!-- Registration Modal -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- REGISTRATION MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="isRegisterModalOpen" (click)="closeRegisterModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
-    <!-- ... весь контент Registration Modal ... -->
+    <div class="modal-header">
+      <h2>Register New Company</h2>
+      <button class="close-btn" (click)="closeRegisterModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="registerErrorMessage" class="error-notification">{{ registerErrorMessage }}</div>
+      <div *ngIf="registerSuccessMessage" class="success-notification">{{ registerSuccessMessage }}</div>
+
+      <form [formGroup]="registerForm">
+        <!-- Admin Link -->
+        <h3 class="section-title">Admin Link</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Admin Company ID *</label>
+            <input type="number" formControlName="adminCompanyId" placeholder="Admin's company ID">
+            <span class="error-message" *ngIf="registerForm.get('adminCompanyId')?.invalid && registerForm.get('adminCompanyId')?.touched">Required</span>
+          </div>
+        </div>
+
+        <!-- Company Information -->
+        <h3 class="section-title">Company Information</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Company Name *</label>
+            <input type="text" formControlName="companyName" placeholder="Company name">
+            <span class="error-message" *ngIf="registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched">Required</span>
+          </div>
+          <div class="form-group">
+            <label>Company Email *</label>
+            <input type="email" formControlName="companyEmail" placeholder="company@email.com">
+            <span class="error-message" *ngIf="registerForm.get('companyEmail')?.invalid && registerForm.get('companyEmail')?.touched">Valid email required</span>
+          </div>
+          <div class="form-group">
+            <label>Company Phone *</label>
+            <input type="tel" formControlName="companyPhone" placeholder="(555) 123-4567">
+            <span class="error-message" *ngIf="registerForm.get('companyPhone')?.invalid && registerForm.get('companyPhone')?.touched">Required</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Address *</label>
+            <input type="text" formControlName="companyAddress" placeholder="Street address">
+          </div>
+          <div class="form-group">
+            <label>City *</label>
+            <input type="text" formControlName="companyCity" placeholder="City">
+          </div>
+          <div class="form-group">
+            <label>State *</label>
+            <input type="text" formControlName="companyState" placeholder="NY">
+          </div>
+          <div class="form-group">
+            <label>Zip Code *</label>
+            <input type="text" formControlName="companyZipCode" placeholder="12345">
+            <span class="error-message" *ngIf="registerForm.get('companyZipCode')?.invalid && registerForm.get('companyZipCode')?.touched">5-digit zip required</span>
+          </div>
+        </div>
+
+        <!-- Tax & Legal -->
+        <h3 class="section-title">Tax & Legal Information</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Employer EIN *</label>
+            <input type="text" formControlName="employerEIN" placeholder="XX-XXXXXXX">
+          </div>
+          <div class="form-group">
+            <label>State ID Number *</label>
+            <input type="text" formControlName="companyStateIdNumber" placeholder="State ID">
+          </div>
+          <div class="form-group">
+            <label>Social Security Tax *</label>
+            <input type="number" formControlName="socialSecurityTaxForCompany" placeholder="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>MTA 305 Code *</label>
+            <input type="text" formControlName="specialTwoCharConditionCodeForMTA305" placeholder="2-char code" maxlength="2">
+          </div>
+        </div>
+
+        <!-- Payroll Settings -->
+        <h3 class="section-title">Payroll Settings</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pay Frequency *</label>
+            <select formControlName="companyPaymentPosition" class="form-select">
+              <option value="WEEKLY">Weekly</option>
+              <option value="BIWEEKLY">Biweekly</option>
+              <option value="MONTHLY">Monthly</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Default Memo *</label>
+            <input type="text" formControlName="defaultMemo" placeholder="Default check memo">
+          </div>
+        </div>
+
+        <!-- Banking Information -->
+        <h3 class="section-title">Banking Information</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Bank Name *</label>
+            <input type="text" formControlName="fundingBankName" placeholder="Bank name">
+          </div>
+          <div class="form-group">
+            <label>Account Number *</label>
+            <input type="text" formControlName="fundingAccountNumber" placeholder="Account number">
+          </div>
+          <div class="form-group">
+            <label>Routing Number *</label>
+            <input type="text" formControlName="fundingRoutingNumber" placeholder="9-digit routing">
+            <span class="error-message" *ngIf="registerForm.get('fundingRoutingNumber')?.invalid && registerForm.get('fundingRoutingNumber')?.touched">9-digit routing required</span>
+          </div>
+        </div>
+
+        <!-- Workers Comp -->
+        <h3 class="section-title">Workers Compensation</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Insurance Carrier *</label>
+            <input type="text" formControlName="wcInsuranceCarrier" placeholder="Carrier name">
+          </div>
+          <div class="form-group">
+            <label>Policy Number *</label>
+            <input type="text" formControlName="wcPolicyNumber" placeholder="Policy number">
+          </div>
+          <div class="form-group">
+            <label>Experience Mod Rate *</label>
+            <input type="number" formControlName="experienceModRate" placeholder="1.0" step="0.01">
+          </div>
+        </div>
+
+        <!-- Mailing & Signature -->
+        <h3 class="section-title">Mailing & Signature</h3>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>Return Mailing Address *</label>
+            <input type="text" formControlName="returnMailingAddress" placeholder="Return mailing address">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Signature Name *</label>
+            <input type="text" formControlName="signatureName" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label>Signature Title *</label>
+            <input type="text" formControlName="signatureTitle" placeholder="Job title">
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeRegisterModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="onRegisterSubmit()" [disabled]="isRegisterLoading">
+        {{ isRegisterLoading ? 'Registering...' : 'Register Company' }}
+      </button>
+    </div>
   </div>
 </div>
 
-<!-- Offer Modal - ОТДЕЛЬНО, НЕ ВНУТРИ Registration Modal -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- OFFER MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="isOfferModalOpen" (click)="closeOfferModal()">
   <div class="modal-content offer-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -155,8 +316,7 @@
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" (click)="closeOfferModal()">Close</button>
       <button type="button" class="btn btn-primary" (click)="createOffer()" [disabled]="isCreatingOffer || checkoutUrl" *ngIf="!checkoutUrl">
-        <span *ngIf="!isCreatingOffer">Create Offer</span>
-        <span *ngIf="isCreatingOffer">Creating...</span>
+        {{ isCreatingOffer ? 'Creating...' : 'Create Offer' }}
       </button>
     </div>
   </div>

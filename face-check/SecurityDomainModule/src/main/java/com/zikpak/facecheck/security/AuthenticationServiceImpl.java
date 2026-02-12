@@ -63,11 +63,11 @@ public class AuthenticationServiceImpl implements AuthenticationServiceRegAuth {
     @Override
     @Transactional(rollbackOn = Exception.class)
     public Company findCompanyByName(String companyName) {
-        var company = companyRepository.findByCompanyName(companyName)
-                .orElseThrow(() -> new RuntimeException("Company Not Found"));
-       // companyRepository.incrementWorkers(companyName);
+        var company = companyRepository.findByCompanyNameIgnoreCase(companyName.trim())
+                .orElseThrow(() -> new RuntimeException("Company Not Found: " + companyName));
         return company;
     }
+
 
     @Override
     public void checkIfUserAlreadyExists(String email) throws MessagingException {

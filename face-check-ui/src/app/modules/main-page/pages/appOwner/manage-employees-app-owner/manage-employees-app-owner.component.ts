@@ -13,6 +13,9 @@ import { PunchInUpdateRequest } from '../../../../../services/models/punch-in-up
 import { RegistrationRequest } from '../../../../../services/models/registration-request';
 import { DependentsRequest } from '../../../../../services/models/dependents-request';
 import { I9DocumentRequest } from '../../../../../services/models/i-9-document-request';
+import {
+  RegistrationRequestEmployeeAppOwner
+} from "../../../../../services/models/registration-request-employee-app-owner";
 
 @Component({
   selector: 'app-manage-employees-app-owner',
@@ -26,6 +29,9 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
   userName = '';
   companyName = '';
   userPhotoUrl = '';
+  companyId = 0;
+
+
 
   // ────────────────────────────────────────────────────────────────────────────────
   // Employees data
@@ -172,7 +178,7 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
     gender: '',
     ssn_WORKER: '',
     companyAddress: '',
-    companyName: '',
+    companyId: 0,
     employmentType: 'W2',
     payFrequency: 'BIWEEKLY',
     wcRiskClassCode: '',
@@ -1103,7 +1109,7 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
       gender: '',
       ssn_WORKER: '',
       companyAddress: '',
-      companyName: this.companyName,
+      companyId: this.companyId,
       employmentType: 'W2',
       payFrequency: 'BIWEEKLY',
       wcRiskClassCode: '',
@@ -1153,7 +1159,7 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
       return;
     }
 
-    const data: RegistrationRequest = {
+    const data: RegistrationRequestEmployeeAppOwner = {
       firstName: this.employeeForm.firstName,
       lastName: this.employeeForm.lastName,
       email: this.employeeForm.email,
@@ -1167,7 +1173,7 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
       dateOfBirth: this.employeeForm.dateOfBirth || '',
       gender: this.employeeForm.gender,
       companyAddress: this.employeeForm.companyAddress,
-      companyName: this.employeeForm.companyName,
+      companyId: Number(this.employeeForm.companyId),
       employmentType: this.employeeForm.employmentType,
       payFrequency: this.employeeForm.payFrequency,
       wcRiskClassCode: this.employeeForm.wcRiskClassCode,
@@ -1224,9 +1230,9 @@ export class ManageEmployeesAppOwnerComponent implements OnInit {
       ...(Array.isArray(this.employeeForm.i9Documents) && this.employeeForm.i9Documents.length > 0 && {
         i9Documents: this.employeeForm.i9Documents
       })
-    } as RegistrationRequest;
+    } as RegistrationRequestEmployeeAppOwner;
 
-    this.authenticationService.register({ body: data }).subscribe({
+    this.authenticationService.registerEmployeeFromAppOwnerPage({ body: data }).subscribe({
       next: () => {
         this.successMessage = 'Employee registered successfully!';
         this.loading = false;

@@ -2020,8 +2020,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -2033,8 +2033,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -2385,6 +2385,36 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/employee/app-owner": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "registerEmployeeFromAppOwnerPage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationRequestEmployeeAppOwner"
               }
             }
           },
@@ -6682,8 +6712,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -6695,8 +6725,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -10405,6 +10435,246 @@
           },
           "companyName": {
             "type": "string"
+          },
+          "companyAddress": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "OTHER"
+            ]
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "email": {
+            "pattern": "^[^;'\"]*$",
+            "type": "string"
+          },
+          "coverageStartDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "enrolledInHealthPlan": {
+            "type": "boolean"
+          },
+          "monthlyHealthPremium": {
+            "type": "number"
+          },
+          "password": {
+            "maxLength": 2147483647,
+            "minLength": 6,
+            "type": "string"
+          },
+          "filingStatus": {
+            "type": "string",
+            "enum": [
+              "SINGLE",
+              "HEAD_OF_HOUSEHOLD",
+              "MARRIED_FILLING_SEPARATELY",
+              "MARRIED_FILLING_JOINTLY"
+            ]
+          },
+          "dependents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dependentsList": {
+            "maxItems": 10,
+            "minItems": 0,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DependentsRequest"
+            }
+          },
+          "extraWithHoldings": {
+            "type": "number"
+          },
+          "livesInNYC": {
+            "type": "boolean"
+          },
+          "payFrequency": {
+            "type": "string",
+            "enum": [
+              "WEEKLY",
+              "BIWEEKLY",
+              "MONTHLY"
+            ]
+          },
+          "employmentType": {
+            "type": "string",
+            "enum": [
+              "W2",
+              "CONTRACTOR_1099"
+            ]
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "zipcode": {
+            "type": "string"
+          },
+          "multipleJobsOrSpouseWorks": {
+            "type": "boolean"
+          },
+          "twoJobsCheckBox": {
+            "type": "boolean"
+          },
+          "multipleJobsAdditionalWithholding": {
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "dependentsUnder17": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "otherDependents": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalDependentsCredit": {
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "otherIncome": {
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "deductions": {
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "exemptFromWithholding": {
+            "type": "boolean"
+          },
+          "multipleJobsWorksheetLine2a": {
+            "type": "number"
+          },
+          "multipleJobsWorksheetLine2b": {
+            "type": "number"
+          },
+          "estimatedItemizedDeductions": {
+            "type": "number"
+          },
+          "adjustmentsSchedule1": {
+            "type": "number"
+          },
+          "wcRiskClassCode": {
+            "type": "string"
+          },
+          "isCitizen": {
+            "type": "boolean"
+          },
+          "isNonCitizenNationalOfTheUS": {
+            "type": "boolean"
+          },
+          "isPermanentResident": {
+            "type": "boolean"
+          },
+          "isANonCitizen": {
+            "type": "boolean"
+          },
+          "isRehired": {
+            "type": "boolean"
+          },
+          "dateWhenRehired": {
+            "type": "string",
+            "format": "date"
+          },
+          "workAuthorizationExpiryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "uscisNumber": {
+            "type": "string"
+          },
+          "formI94AdmissionNumber": {
+            "type": "string"
+          },
+          "passportNumber": {
+            "type": "string"
+          },
+          "passportCountryOfIssuance": {
+            "type": "string"
+          },
+          "i9Documents": {
+            "maxItems": 3,
+            "minItems": 0,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/I9DocumentRequest"
+            }
+          },
+          "ssn_WORKER": {
+            "type": "string"
+          }
+        }
+      },
+      "RegistrationRequestEmployeeAppOwner": {
+        "required": [
+          "apt",
+          "city",
+          "companyAddress",
+          "companyId",
+          "dateOfBirth",
+          "email",
+          "employmentType",
+          "exemptFromWithholding",
+          "filingStatus",
+          "firstName",
+          "gender",
+          "homeAddress",
+          "isANonCitizen",
+          "isCitizen",
+          "isNonCitizenNationalOfTheUS",
+          "isPermanentResident",
+          "lastName",
+          "livesInNYC",
+          "multipleJobsOrSpouseWorks",
+          "password",
+          "payFrequency",
+          "phoneNumber",
+          "state",
+          "twoJobsCheckBox",
+          "wcRiskClassCode",
+          "zipcode"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "middleInitial": {
+            "type": "string"
+          },
+          "homeAddress": {
+            "type": "string"
+          },
+          "apt": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date"
+          },
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
           },
           "companyAddress": {
             "type": "string"
