@@ -2297,6 +2297,49 @@ public class WorkAttendanceService {
                 }
         }
 
+
+    public List<WorkerPhotosResponse> getPhotosForWorkerByDateList(Integer workerId, LocalDate date) {
+        Timer.Sample timer = metricsService.startTimer();
+
+        try {
+            User worker = userRepository.findById(workerId)
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Worker not found with id: " + workerId));
+
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+            List<WorkerAttendance> attendances = workerAttendanceRepository
+                    .findAllByWorkerIdAndDateRange(workerId, startOfDay, endOfDay);
+
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+            List<WorkerPhotosResponse> results = new ArrayList<>();
+
+            for (WorkerAttendance att : attendances) {
+                results.add(WorkerPhotosResponse.builder()
+                        .workerId(workerId)
+                        .workerName(worker.getFirstName() + " " + worker.getLastName())
+                        .date(date.toString())
+                        .checkInPhotoUrl(att.getCheckInPhotoUrl())
+                        .checkOutPhotoUrl(att.getCheckOutPhotoUrl())
+                        .checkInTime(att.getCheckInTime() != null ?
+                                att.getCheckInTime().format(timeFormatter) : null)
+                        .checkOutTime(att.getCheckOutTime() != null ?
+                                att.getCheckOutTime().format(timeFormatter) : null)
+                        .build());
+            }
+
+            metricsService.recordOperationTime(timer, "get_photos_by_date");
+            return results;
+
+        } catch (Exception e) {
+            metricsService.recordError("get_photos_by_date", e.getMessage(), e);
+            metricsService.recordOperationTime(timer, "get_photos_by_date_failed");
+            throw e;
+        }
+    }
+
         // ✅ НОВЫЙ метод для получения фото ПО ATTENDANCE ID
         public WorkerPhotosResponse getPhotosByAttendanceId(Integer attendanceId) {
                 Timer.Sample timer = metricsService.startTimer();

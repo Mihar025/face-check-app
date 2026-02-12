@@ -31,6 +31,8 @@ import { getWeeklyEarnings } from '../fn/worker-attendance-controller/get-weekly
 import { GetWeeklyEarnings$Params } from '../fn/worker-attendance-controller/get-weekly-earnings';
 import { getWorkerPhotosByDate } from '../fn/worker-attendance-controller/get-worker-photos-by-date';
 import { GetWorkerPhotosByDate$Params } from '../fn/worker-attendance-controller/get-worker-photos-by-date';
+import { getWorkerPhotosByDateList } from '../fn/worker-attendance-controller/get-worker-photos-by-date-list';
+import { GetWorkerPhotosByDateList$Params } from '../fn/worker-attendance-controller/get-worker-photos-by-date-list';
 import { hasPunchIn } from '../fn/worker-attendance-controller/has-punch-in';
 import { HasPunchIn$Params } from '../fn/worker-attendance-controller/has-punch-in';
 import { LastPunchTimeDto } from '../models/last-punch-time-dto';
@@ -172,6 +174,31 @@ export class WorkerAttendanceControllerService extends BaseService {
   getWorkerPhotosByDate(params: GetWorkerPhotosByDate$Params, context?: HttpContext): Observable<WorkerPhotosResponse> {
     return this.getWorkerPhotosByDate$Response(params, context).pipe(
       map((r: StrictHttpResponse<WorkerPhotosResponse>): WorkerPhotosResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `getWorkerPhotosByDateList()` */
+  static readonly GetWorkerPhotosByDateListPath = '/attendance/photos/list/{workerId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getWorkerPhotosByDateList()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkerPhotosByDateList$Response(params: GetWorkerPhotosByDateList$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<WorkerPhotosResponse>>> {
+    return getWorkerPhotosByDateList(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getWorkerPhotosByDateList$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getWorkerPhotosByDateList(params: GetWorkerPhotosByDateList$Params, context?: HttpContext): Observable<Array<WorkerPhotosResponse>> {
+    return this.getWorkerPhotosByDateList$Response(params, context).pipe(
+      map((r: StrictHttpResponse<Array<WorkerPhotosResponse>>): Array<WorkerPhotosResponse> => r.body)
     );
   }
 
