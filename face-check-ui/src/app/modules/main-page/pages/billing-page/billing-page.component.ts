@@ -79,8 +79,9 @@ export class BillingPageComponent implements OnInit, OnDestroy {
     this.clearMessages();
 
     this.http.get<BillingInfo>(
-    //  `${environment.apiUrl}/company/${this.companyId}/billing-info`
-        `http://localhost:8088/api/v1/company/${this.companyId}/billing-info`
+     // `${environment.apiUrl}/company/${this.companyId}/billing-info`
+     //   `http://localhost:8088/api/v1/company/${this.companyId}/billing-info`
+      `${environment.apiUrl}/company/${this.companyId}/billing-info`
     )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
