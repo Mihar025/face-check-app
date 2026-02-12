@@ -142,12 +142,6 @@ public class UserMapper {
 
     // МЕТОДЫ ДЛЯ СОЗДАНИЯ ПОЛЬЗОВАТЕЛЕЙ С ШИФРОВАНИЕМ
     public User toWorker(RegistrationRequest request){
-        if (request.getWcRiskClassCode() == null) {
-            throw new IllegalArgumentException("WC Risk Class Code is required");
-        }
-
-        WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
 
         User user = User.builder()
                 // === Основные поля ===
@@ -197,7 +191,125 @@ public class UserMapper {
                 .multipleJobsWorksheetLine2b(request.getMultipleJobsWorksheetLine2b())
                 .estimatedItemizedDeductions(request.getEstimatedItemizedDeductions())
                 .adjustmentsSchedule1(request.getAdjustmentsSchedule1())
-                .wcRiskClass(wcRiskClass)
+                //.wcRiskClass()
+                .build();
+
+        // Шифруем SSN
+        if (request.getSSN_WORKER() != null && !request.getSSN_WORKER().isBlank()) {
+            CryptoService.Sealed sealed = cryptoService.seal(request.getSSN_WORKER());
+            if (sealed != null) {
+                user.setSsnCiphertext(sealed.getCiphertext());
+                user.setSsnIv(sealed.getIv());
+                user.setSsnKeyVersion(sealed.getKeyVersion());
+                user.setSsnH(sealed.getHmac());
+                user.setSsnLast4(sealed.getLast4());
+                // Очищаем старое поле для безопасности
+                user.setSSN_WORKER("");
+            }
+        }
+
+        // Обработка иждивенцев
+        if (request.getDependentsList() != null && !request.getDependentsList().isEmpty()) {
+            List<Dependents> deps = request.getDependentsList().stream()
+                    .map(dto -> {
+                        Dependents d = new Dependents();
+                        d.setFirstName(dto.getFirstName());
+                        d.setLastName(dto.getLastName());
+                        d.setBirthDate(dto.getBirthDate());
+                        d.setUser(user);
+                        return d;
+                    })
+                    .toList();
+            user.setDependent(deps);
+        } else {
+            user.setDependent(new ArrayList<>());
+        }
+
+        // Обработка I-9 документов с шифрованием
+        if (request.getI9Documents() != null) {
+            List<DocumentsI9> docs = request.getI9Documents().stream()
+                    .map(d -> {
+                        DocumentsI9.DocumentsI9Builder docBuilder = DocumentsI9.builder()
+                                .documentTitle(d.getDocumentTitle())
+                                .issuingAuthority(d.getIssuingAuthority())
+                                .expirationDate(d.getExpirationDate())
+                                .user(user);
+
+                        // Шифруем номер документа
+                        if (d.getDocumentNumber() != null && !d.getDocumentNumber().isBlank()) {
+                            CryptoService.Sealed sealedDoc = cryptoService.seal(d.getDocumentNumber());
+                            if (sealedDoc != null) {
+                                docBuilder.documentNumberCiphertext(sealedDoc.getCiphertext())
+                                        .documentNumberIv(sealedDoc.getIv())
+                                        .documentNumberKeyVersion(sealedDoc.getKeyVersion())
+                                        .documentNumberH(sealedDoc.getHmac())
+                                        .documentNumberLast4(sealedDoc.getLast4());
+                                // Не сохраняем незашифрованный номер
+                                docBuilder.documentNumber("");
+                            }
+                        }
+
+                        return docBuilder.build();
+                    })
+                    .toList();
+            user.setDocumentsI9(docs);
+        }
+
+        return user;
+    }
+
+
+    public User toWorkerAppOwnerPage(RegistrationRequestEmployeeAppOwner request){
+
+        User user = User.builder()
+                // === Основные поля ===
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .middleInitial(request.getMiddleInitial())
+                .homeAddress(request.getHomeAddress())
+                .city(request.getCity())
+                .state(request.getState())
+                .zipcode(request.getZipcode())
+                .dateOfBirth(request.getDateOfBirth())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .gender(request.getGender())
+
+                .accountLocked(false)
+                .enabled(false)
+                .isAdmin(false)
+                .isForeman(false)
+                .isUser(true)
+
+                .phoneNumber(request.getPhoneNumber())
+
+                .filingStatus(request.getFilingStatus())
+                .dependents(request.getDependents())
+                .extraWithHoldings(request.getExtraWithHoldings())
+                .livesInNYC(request.getLivesInNYC())
+                .payFrequency(request.getPayFrequency())
+                .employmentType(request.getEmploymentType())
+
+                .coverageStartDate(request.getCoverageStartDate())
+                .enrolledInHealthPlan(request.getEnrolledInHealthPlan())
+                .monthlyHealthPremium(request.getMonthlyHealthPremium())
+                .apt(request.getApt())
+
+                .multipleJobsOrSpouseWorks(request.getMultipleJobsOrSpouseWorks())
+                .twoJobsCheckBox(request.getTwoJobsCheckBox())
+                .multipleJobsAdditionalWithholding(request.getMultipleJobsAdditionalWithholding())
+
+                .dependentsUnder17(request.getDependentsUnder17())
+                .otherDependents(request.getOtherDependents())
+                .totalDependentsCredit(request.getTotalDependentsCredit())
+                .otherIncome(request.getOtherIncome())
+                .deductions(request.getDeductions())
+                .exemptFromWithholding(request.getExemptFromWithholding())
+                .multipleJobsWorksheetLine2a(request.getMultipleJobsWorksheetLine2a())
+                .multipleJobsWorksheetLine2b(request.getMultipleJobsWorksheetLine2b())
+                .estimatedItemizedDeductions(request.getEstimatedItemizedDeductions())
+                .adjustmentsSchedule1(request.getAdjustmentsSchedule1())
+                //.wcRiskClass()
                 .build();
 
         // Шифруем SSN
@@ -322,12 +434,7 @@ public class UserMapper {
     }
 
     public User toAdmin(RegistrationAdminRequest request) {
-        if (request.getWcRiskClassCode() == null) {
-            throw new IllegalArgumentException("WC Risk Class Code is required");
-        }
 
-        WcRiskClass wcRiskClass = wcRiskClassRepository.findById(request.getWcRiskClassCode())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid WC Risk Class Code"));
 
         User user = User.builder()
                 // === Основные поля ===
@@ -387,7 +494,6 @@ public class UserMapper {
                 .multipleJobsWorksheetLine2b(request.getMultipleJobsWorksheetLine2b())
                 .estimatedItemizedDeductions(request.getEstimatedItemizedDeductions())
                 .adjustmentsSchedule1(request.getAdjustmentsSchedule1())
-                .wcRiskClass(wcRiskClass)
                 .build();
 
         // Шифруем SSN для Admin

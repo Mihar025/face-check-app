@@ -70,6 +70,7 @@ export { PunchOutResponse } from './models/punch-out-response';
 export { QuarterlySutaDto } from './models/quarterly-suta-dto';
 export { RegistrationAdminRequest } from './models/registration-admin-request';
 export { RegistrationRequest } from './models/registration-request';
+export { RegistrationRequestEmployeeAppOwner } from './models/registration-request-employee-app-owner';
 export { RelatedUserInCompanyResponse } from './models/related-user-in-company-response';
 export { ReportFileDto } from './models/report-file-dto';
 export { ScheduleDto } from './models/schedule-dto';

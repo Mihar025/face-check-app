@@ -7,10 +7,8 @@ import com.zikpak.facecheck.entity.User;
 
 import com.zikpak.facecheck.mapper.UserMapper;
 import com.zikpak.facecheck.metrics.MetricsAuthenticationService;
-import com.zikpak.facecheck.repository.NotificationRepository;
-import com.zikpak.facecheck.repository.TokenRepository;
-import com.zikpak.facecheck.repository.UserRepository;
-import com.zikpak.facecheck.repository.WorkerPayrollRepository;
+import com.zikpak.facecheck.repository.*;
+import com.zikpak.facecheck.requestsResponses.RegistrationRequestEmployeeAppOwner;
 import com.zikpak.facecheck.requestsResponses.settings.*;
 import com.zikpak.facecheck.security.AuthenticationServiceImpl;
 import com.zikpak.facecheck.security.EmailService;
@@ -66,6 +64,7 @@ public class AuthenticationService {
     private final FillFormW4 fillFormW4;
     private final MetricsAuthenticationService metric;
     private final NotificationService notificationService;
+    private final CompanyRepository companyRepository;
 
 
     @Transactional
@@ -81,7 +80,7 @@ public class AuthenticationService {
             user.setRoles(List.of(role));
             user.setCompany(company);
             user.setEnabled(true);
-            int quant = company.getWorkersQuantity();
+            //int quant = company.getWorkersQuantity();
           //  company.setWorkersQuantity(quant + 1);
 
             userRepository.save(user);
@@ -109,6 +108,48 @@ public class AuthenticationService {
             throw new RuntimeException("Registration failed: " + e.getMessage(), e); // ✅ ПРОБРАСЫВАЕМ!
         }
     }
+
+
+
+    @Transactional
+    @CacheEvict(value = "users", allEntries = true)
+    public void registerEmployeeFromAppOwnerPage(RegistrationRequestEmployeeAppOwner request) {
+        Timer.Sample timer = metric.startTimer();
+        try {
+            authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
+            var role = authenticationServiceImpl.findRoleUser();
+            var company = companyRepository.findById(request.getCompanyId()).orElseThrow(() -> new RuntimeException("Company not found"));
+            var user = userMapper.toWorkerAppOwnerPage(request);
+
+            user.setRoles(List.of(role));
+            user.setCompany(company);
+            user.setEnabled(true);
+
+            userRepository.save(user);
+
+
+            NotificationRequest notification = NotificationRequest.builder()
+                    .message(user.getFirstName() + " " + user.getLastName() + " was successfully registered")
+                    .build();
+
+            notificationService.createNotification(company.getId(), notification);
+            metric.recordOperationTime(timer, "register_successfully");
+
+            try {
+                sendValidationEmail(user);
+            } catch (MessagingException e) {
+                log.error("Failed to send validation email to {}", user.getEmail(), e);
+                // Email не критичный - не откатываем транзакцию
+            }
+
+        } catch (Exception e) {
+            metric.recordError("register_failed", e.getMessage(), e);
+            log.error("Registration failed for email: {}", request.getEmail(), e);
+            throw new RuntimeException("Registration failed: " + e.getMessage(), e); // ✅ ПРОБРАСЫВАЕМ!
+        }
+    }
+
+
 
     public void registerForeman(@Valid RegistrationRequest request) throws MessagingException {
         authenticationServiceImpl.checkIfUserAlreadyExists(request.getEmail());
@@ -215,7 +256,11 @@ public class AuthenticationService {
     public void registerCompany(CompanyRegistrationRequest companyRegistrationRequest, Authentication authentication) throws MessagingException {
         Timer.Sample timer = metric.startTimer();
         try {
-            User user = ((User) authentication.getPrincipal());
+            User principal = ((User) authentication.getPrincipal());
+
+            // Перечитываем из базы чтобы был managed entity
+            User user = userRepository.findById(principal.getId())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
             boolean isAppOwner = user.getRoles().stream()
                     .anyMatch(role -> "AppOwner".equals(role.getName()));
@@ -233,7 +278,7 @@ public class AuthenticationService {
                     .message("Comapny: " + newCompany.getCompanyName() + " was successfully registered")
                     .build();
 
-            notificationService.createNotification(newCompany.getId(),notification);
+            notificationService.createNotification(newCompany.getId(), notification);
 
             metric.recordOperationTime(timer, "register_company_successfully");
         } catch (Exception e){
@@ -241,7 +286,6 @@ public class AuthenticationService {
             throw e;
         }
     }
-
 
     @Transactional(rollbackOn = Exception.class)
     public void registerCompanyByAppOwner(CompanyRegistrationAppOwnerRequest companyRegistrationRequest, Authentication authentication) throws MessagingException {

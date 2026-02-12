@@ -2,6 +2,7 @@ package com.zikpak.facecheck.authController;
 
 import com.zikpak.facecheck.annotation.RateLimit;
 import com.zikpak.facecheck.authRequests.*;
+import com.zikpak.facecheck.requestsResponses.RegistrationRequestEmployeeAppOwner;
 import com.zikpak.facecheck.requestsResponses.settings.*;
 import com.zikpak.facecheck.taxesServices.services.authenticationService.AuthenticationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,13 @@ public class AuthenticationController {
             authenticationService.register(request);
             return ResponseEntity.accepted().build();
         }
+
+    @PostMapping("/register/employee/app-owner")
+    @RateLimit(requests = 5, perSeconds = 60)
+    public ResponseEntity<?> registerEmployeeFromAppOwnerPage(@RequestBody @Valid RegistrationRequestEmployeeAppOwner request) throws MessagingException {
+        authenticationService.registerEmployeeFromAppOwnerPage(request);
+        return ResponseEntity.accepted().build();
+    }
 
 
     @PostMapping("/register/admin")

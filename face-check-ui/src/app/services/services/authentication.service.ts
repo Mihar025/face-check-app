@@ -25,6 +25,8 @@ import { registerCompany } from '../fn/authentication/register-company';
 import { RegisterCompany$Params } from '../fn/authentication/register-company';
 import { registerCompanyAppOwner } from '../fn/authentication/register-company-app-owner';
 import { RegisterCompanyAppOwner$Params } from '../fn/authentication/register-company-app-owner';
+import { registerEmployeeFromAppOwnerPage } from '../fn/authentication/register-employee-from-app-owner-page';
+import { RegisterEmployeeFromAppOwnerPage$Params } from '../fn/authentication/register-employee-from-app-owner-page';
 import { registerForeman } from '../fn/authentication/register-foreman';
 import { RegisterForeman$Params } from '../fn/authentication/register-foreman';
 import { resetPassword } from '../fn/authentication/reset-password';
@@ -177,6 +179,35 @@ export class AuthenticationService extends BaseService {
   registerForeman(params: RegisterForeman$Params, context?: HttpContext): Observable<{
 }> {
     return this.registerForeman$Response(params, context).pipe(
+      map((r: StrictHttpResponse<{
+}>): {
+} => r.body)
+    );
+  }
+
+  /** Path part for operation `registerEmployeeFromAppOwnerPage()` */
+  static readonly RegisterEmployeeFromAppOwnerPagePath = '/auth/register/employee/app-owner';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `registerEmployeeFromAppOwnerPage()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  registerEmployeeFromAppOwnerPage$Response(params: RegisterEmployeeFromAppOwnerPage$Params, context?: HttpContext): Observable<StrictHttpResponse<{
+}>> {
+    return registerEmployeeFromAppOwnerPage(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `registerEmployeeFromAppOwnerPage$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  registerEmployeeFromAppOwnerPage(params: RegisterEmployeeFromAppOwnerPage$Params, context?: HttpContext): Observable<{
+}> {
+    return this.registerEmployeeFromAppOwnerPage$Response(params, context).pipe(
       map((r: StrictHttpResponse<{
 }>): {
 } => r.body)

@@ -66,17 +66,18 @@ public class CompanyMapper {
     }
 
     public RelatedUserInCompanyResponse toCompanyWorkerResponse(User foundedEmployee) {
+        Company company = foundedEmployee.getCompany();
 
         return RelatedUserInCompanyResponse.builder()
                 .workerId(foundedEmployee.getId())
-                .companyId(foundedEmployee.getCompany().getId())
+                .companyId(company.getId() != null? company.getId() : null)
                 .firstName(foundedEmployee.getFirstName())
                 .lastName(foundedEmployee.getLastName())
                 .email(foundedEmployee.getEmail())
                 .baseHourlyRate(foundedEmployee.getBaseHourlyRate())
                 .enabled(foundedEmployee.isEnabled())
                 .photoUrl(foundedEmployee.getPhotoUrl())
-                .companyName(foundedEmployee.getCompany().getCompanyName())
+                .companyName(company.getCompanyName() != null ? company.getCompanyName() : null)
                 .role(foundedEmployee.isAdmin() ? "ADMIN" :
                         foundedEmployee.isForeman() ? "FOREMAN" : "USER")
                 .build();
