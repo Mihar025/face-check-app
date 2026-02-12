@@ -43,8 +43,7 @@ public class EmployerTaxScheduler {
      */
 
 
-    @Scheduled(cron = "0 0 17 * * SUN")
-    @Transactional
+    @Scheduled(cron = "0 0 1 * * THU")    @Transactional
     public void updateCostOfSalaries(){
         List<Company> companies = companyRepository.findAll();
 
