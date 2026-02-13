@@ -201,6 +201,7 @@ public class WorkSiteServiceImpl implements WorkSiteService {
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message("Worksite: " + newWorkSite.getSiteName()+ " " + newWorkSite.getAddress() +  " was successfully registered")
+                    .adminOnly(true)
                     .build();
 
             notificationService.createNotification(company.getId(), notification);

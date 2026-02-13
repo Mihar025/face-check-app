@@ -90,6 +90,7 @@ public class AuthenticationService {
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message(user.getFirstName() + " " + user.getLastName() + " was successfully registered")
+                    .adminOnly(true)
                     .build();
 
             notificationService.createNotification(company.getId(), notification);
@@ -130,6 +131,7 @@ public class AuthenticationService {
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message(user.getFirstName() + " " + user.getLastName() + " was successfully registered")
+                    .adminOnly(true)
                     .build();
 
             notificationService.createNotification(company.getId(), notification);
@@ -276,6 +278,7 @@ public class AuthenticationService {
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message("Comapny: " + newCompany.getCompanyName() + " was successfully registered")
+                    .adminOnly(true)
                     .build();
 
             notificationService.createNotification(newCompany.getId(), notification);
@@ -313,6 +316,7 @@ public class AuthenticationService {
 
             NotificationRequest notification = NotificationRequest.builder()
                     .message("Comapny: " + newCompany.getCompanyName() + " was successfully registered")
+                    .adminOnly(true)
                     .build();
 
             notificationService.createNotification(newCompany.getId(),notification);
