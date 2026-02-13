@@ -326,6 +326,7 @@ public class PayStubPdfGeneratorService {
             NotificationRequest notification = NotificationRequest.builder()
                     .message("Paystub for worker: " +stub.getEmployeeName() + " "+
                             " was successfully generated")
+                    .adminOnly(true)
                     .build();
 
             notificationService.createNotification(stub.getCompanyId(), notification);
