@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'ApiService.dart';
@@ -5,6 +6,10 @@ import 'ApiService.dart';
 class FcmService {
   static FcmService? _instance;
   static FcmService get instance => _instance!;
+
+  // ✅ Stream для мгновенного обновления бейджа
+  static final StreamController<void> onNotificationReceived =
+  StreamController<void>.broadcast();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -18,26 +23,24 @@ class FcmService {
   }
 
   Future<void> _init() async {
-    // 1) permission
     final settings = await _fcm.requestPermission(alert: true, badge: true, sound: true);
     print('FCM permission: ${settings.authorizationStatus}');
 
-    // 2) listeners (без отправки на сервер тут!)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       _showLocalNotification(message);
+      onNotificationReceived.add(null); // ✅ Мгновенно обновить бейдж
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('Notification tap: ${message.data}');
+      onNotificationReceived.add(null); // ✅ И при тапе тоже
     });
 
-    // 3) token refresh listener — ВАЖНО: отправляем только если есть auth
     _fcm.onTokenRefresh.listen((newToken) async {
       print('FCM Token refreshed: $newToken');
-      await syncTokenToServer(); // внутри проверишь auth
+      await syncTokenToServer();
     });
 
-    // 4) create local channel
     const androidChannel = AndroidNotificationChannel(
       'facecheck_push',
       'FaceCheck Notifications',
@@ -56,7 +59,6 @@ class FcmService {
       ),
     );
   }
-
 
   Future<void> syncTokenToServer() async {
     final jwt = await ApiService.instance.getAuthToken();
