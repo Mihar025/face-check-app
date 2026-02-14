@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:face_check/services/fcm_service.dart';
 import 'package:face_check/services/safety_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,9 +25,24 @@ import 'package:face_check/providers/localization_provider.dart';
 import 'package:face_check/services/ApiService.dart';
 import 'package:face_check/screens/main_menu/notification/notification_service.dart';
 import 'package:face_check/services/location_tracking_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
-void main() {
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print('Background message: ${message.messageId}');
+}
+
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  await FcmService.initialize();
   runApp(const BootstrapApp());
 }
 

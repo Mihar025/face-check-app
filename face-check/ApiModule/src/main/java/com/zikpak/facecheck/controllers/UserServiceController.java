@@ -1,5 +1,6 @@
 package com.zikpak.facecheck.controllers;
 
+import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 import com.zikpak.facecheck.services.userService.UserService;
@@ -17,6 +18,19 @@ import java.time.YearMonth;
 public class UserServiceController {
 
     private final UserService userService;
+
+
+    @PostMapping("/fcm-token")
+    public ResponseEntity<Void> saveToken(Authentication auth, @RequestBody SaveFcmTokenRequest req){
+        User user = (User) auth.getPrincipal();
+        userService.saveFcmToken(user.getId(), req.token());
+        return ResponseEntity.ok().build();
+    }
+
+
+
+
+
 
     @PutMapping("/email/{email}")
     public ResponseEntity<Void> updateEmail(@Valid @PathVariable String email, Authentication authentication){

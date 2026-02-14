@@ -165,4 +165,10 @@ AND u.id IN (
     WHERE u.id = :employeeId
 """)
     Optional<User> findByIdPersonalInfo(@Param("employeeId") Integer employeeId);
+
+
+    List<User> findByCompanyId(Integer companyId);
+
 }
+
+

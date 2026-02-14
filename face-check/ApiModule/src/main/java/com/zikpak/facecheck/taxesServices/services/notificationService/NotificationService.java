@@ -1,13 +1,16 @@
 package com.zikpak.facecheck.taxesServices.services.notificationService;
 
 
+import com.zikpak.facecheck.entity.Company;
 import com.zikpak.facecheck.entity.Notification;
 import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.entity.employee.WorkSite;
 import com.zikpak.facecheck.repository.CompanyRepository;
 import com.zikpak.facecheck.repository.NotificationRepository;
+import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.requestsResponses.PageResponse;
 import com.zikpak.facecheck.requestsResponses.workSite.WorkSiteResponse;
+import com.zikpak.facecheck.services.fcmService.FcmPushService;
 import io.micrometer.core.instrument.Timer;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,30 +41,58 @@ public class NotificationService {
     private final CompanyRepository companyRepository;
     private final NotificationMapper notificationMapper;
 
+    private final UserRepository userRepository;
+    private final FcmPushService fcmPushService;
+
+
 
 
     @Async("notificationExecutor")
-    public CompletableFuture<Void> createNotification(Integer companyId, NotificationRequest notificationRequest){
-        try{
-            var company = companyRepository.findById(companyId)
+    public CompletableFuture<Void> createNotification(
+            Integer companyId,
+            NotificationRequest request
+    ) {
+        try {
+            Company company = companyRepository.findById(companyId)
                     .orElseThrow(() -> new RuntimeException("Company not found"));
+
+            boolean adminOnly = Boolean.TRUE.equals(request.getAdminOnly());
 
             Notification notification = Notification.builder()
                     .company(company)
-                    .title(notificationRequest.getMessage())
+                    .title(request.getMessage())
                     .createdAt(LocalDateTime.now())
-                    .adminOnly(notificationRequest.getAdminOnly() != null
-                    ? notificationRequest.getAdminOnly()
-                    : false)
+                    .adminOnly(adminOnly)
                     .build();
 
             notificationRepository.save(notification);
-            log.info("Notification created successfully");
-            return CompletableFuture.completedFuture(null);
+
+            // ===== PUSH ЛОГИКА (ЕДИНСТВЕННАЯ) =====
+            List<User> users = userRepository.findByCompanyId(companyId);
+
+            for (User user : users) {
+                if (user.getFcmToken() == null || user.getFcmToken().isBlank()) {
+                    continue;
+                }
+
+                // 🔒 если adminOnly — пуш ТОЛЬКО админам
+                if (adminOnly && !user.isAdmin()) {
+                    continue;
+                }
+
+                // ✅ иначе — пуш всем
+                fcmPushService.sendToToken(
+                        user.getFcmToken(),
+                        "FaceCheck",
+                        request.getMessage()
+                );
+            }
+
+        } catch (Exception e) {
+            log.error("Notification creation failed", e);
         }
-        catch(Exception e){
-            return CompletableFuture.completedFuture(null);
-        }
+
+        return CompletableFuture.completedFuture(null);
     }
 
 

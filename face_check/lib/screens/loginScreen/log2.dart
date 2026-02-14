@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../api_client/api/authentication_api.dart';
 import '../../api_client/model/authentication_request.dart';
 import '../../services/ApiService.dart';
+import '../../services/fcm_service.dart';
 import 'legal_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -139,6 +140,9 @@ class _LoginScreenState extends State<LoginScreen> {
         response.data!.token!,
         response.data!.refreshToken ?? '',
       );
+
+      await FcmService.instance.syncTokenToServer();
+
 
       if (!mounted) return;
 
