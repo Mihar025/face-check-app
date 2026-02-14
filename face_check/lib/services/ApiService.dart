@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -203,6 +204,34 @@ class ApiService {
   Future<String?> getAuthToken() async {
     return await _storage.read(key: 'auth_token');
   }
+
+
+
+  Future<int> getUnreadNotificationCount({required int companyId}) async {
+
+    try{
+      final response = await _dio.get(
+        '/notifications/company/$companyId/unread-count',
+      );
+      if(response.statusCode == 200 && response.data != null){
+        return response.data as int;
+      }
+      return 0;
+    } catch(e){
+      print('Error fetching unread count: $e');
+      return 0;
+    }
+  }
+
+  Future<void> markNotificationAsRead({required int companyId}) async {
+    try{
+      await _dio.put('/notifications/company/$companyId/mark-read');
+    } catch(e){
+      print('Error marking notifications as read $e');
+    }
+  }
+
+
 
   // ===================== DOMAIN CALLS =====================
 
