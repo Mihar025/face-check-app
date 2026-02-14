@@ -55,6 +55,7 @@ import { BillingSuccessComponent } from './pages/billing-success/billing-success
 import { BillingCanceledComponent } from './pages/billing-canceled/billing-canceled.component';
 import { DeleteAccountComponent } from './pages/delete-account/delete-account.component';
 import { NotesForPunchAdminComponent } from './pages/admin-main-page/notes-for-punch-admin/notes-for-punch-admin.component';
+import { NotesForPunchAppOwnerComponent } from './pages/appOwner/notes-for-punch-app-owner/notes-for-punch-app-owner.component';
 
 @NgModule({
   declarations: [
@@ -98,6 +99,7 @@ import { NotesForPunchAdminComponent } from './pages/admin-main-page/notes-for-p
     BillingCanceledComponent,
     DeleteAccountComponent,
     NotesForPunchAdminComponent,
+    NotesForPunchAppOwnerComponent,
   ],
   imports: [
     CommonModule,
