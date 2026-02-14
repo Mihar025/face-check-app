@@ -28,4 +28,6 @@ public class PunchInResponse {
     private Boolean isSuccessful;
     private String message;
 
+    private String notesForPunchIn;
+
 }
