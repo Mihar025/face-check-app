@@ -11,6 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../../api_client/api/authentication_api.dart';
 import '../../../providers/localization_provider.dart';
+import '../../../services/fcm_service.dart';
 import '../../../services/pivacy_policy_service.dart';
 import '../../../services/ApiService.dart';
 import '../../../services/time_service.dart';
@@ -446,6 +447,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     if (_canLoadData) {
       await _loadFreshData();
     }
+    _startNotificationPolling();
   }
 
   Future<void> _loadCachedData() async {

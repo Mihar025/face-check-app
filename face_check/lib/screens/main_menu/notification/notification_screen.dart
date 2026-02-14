@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/server_notification.dart';
@@ -16,15 +15,12 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen>
     with SingleTickerProviderStateMixin {
-  final List<PendingNotificationRequest> _notifications = [];
   List<ServerNotification> _serverNotifications = [];
   int? _companyId;
   bool _isLoading = false;
-  bool _isRefreshing = false;  // Добавим флаг для рефреша
+  bool _isRefreshing = false;
 
   late final AnimationController _animationController;
-  final FlutterLocalNotificationsPlugin _notificationsPlugin =
-  FlutterLocalNotificationsPlugin();
 
   late final _slideInTween = Tween<Offset>(
     begin: const Offset(0.05, 0),
@@ -44,19 +40,58 @@ class _NotificationScreenState extends State<NotificationScreen>
     });
   }
 
-  // Новый метод инициализации
+  // ==================== LOCAL REMINDERS ====================
+  // Генерируем reminders по текущему времени, а не через pendingNotificationRequests()
+  List<_LocalReminder> _getLocalReminders() {
+    final now = DateTime.now();
+    final reminders = <_LocalReminder>[];
+
+    // Только в будние дни (Mon-Fri)
+    if (now.weekday >= DateTime.monday && now.weekday <= DateTime.friday) {
+      // После 7:00 AM — показываем "Don't forget to punch in"
+      if (now.hour >= 7 && now.hour < 16) {
+        reminders.add(_LocalReminder(
+          title: 'dailyPunchIn.title',
+          body: 'dailyPunchIn.body',
+          icon: Icons.login_rounded,
+          color: Colors.green,
+          time: DateTime(now.year, now.month, now.day, 7, 0),
+        ));
+      }
+
+      // После 4:00 PM — показываем "Don't forget to punch out"
+      if (now.hour >= 16) {
+        reminders.add(_LocalReminder(
+          title: 'dailyPunchOut.title',
+          body: 'dailyPunchOut.body',
+          icon: Icons.logout_rounded,
+          color: Colors.orange,
+          time: DateTime(now.year, now.month, now.day, 16, 0),
+        ));
+      }
+    }
+
+    // Пятница после 3:00 PM — "Check your weekly hours"
+    if (now.weekday == DateTime.friday && now.hour >= 15) {
+      reminders.add(_LocalReminder(
+        title: 'weeklyHoursCheck.title',
+        body: 'weeklyHoursCheck.body',
+        icon: Icons.schedule,
+        color: Colors.blue,
+        time: DateTime(now.year, now.month, now.day, 15, 0),
+      ));
+    }
+
+    return reminders;
+  }
+
+  // ==================== SERVER NOTIFICATIONS ====================
+
   Future<void> _initializeNotifications() async {
-    // Сначала загружаем из кеша для быстрого отображения
     await _loadFromCache();
-
-    // Загружаем локальные уведомления
-    await _loadNotifications();
-
-    // Потом загружаем с сервера в фоне
     _loadServerNotifications(updateCache: true);
   }
 
-  // Загрузка из кеша
   Future<void> _loadFromCache() async {
     try {
       final cachedNotifications =
@@ -66,8 +101,6 @@ class _NotificationScreenState extends State<NotificationScreen>
         setState(() {
           _serverNotifications = cachedNotifications;
         });
-
-        // Запускаем анимацию
         _animationController.reset();
         _animationController.forward();
       }
@@ -76,13 +109,9 @@ class _NotificationScreenState extends State<NotificationScreen>
     }
   }
 
-  // Обновленный метод загрузки с сервера
   Future<void> _loadServerNotifications({bool updateCache = false}) async {
-    // Не показываем индикатор загрузки если есть кешированные данные
     if (_serverNotifications.isEmpty && mounted) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
     }
 
     try {
@@ -104,18 +133,14 @@ class _NotificationScreenState extends State<NotificationScreen>
           });
         }
 
-        // Сохраняем в кеш если нужно
         if (updateCache) {
           await NotificationCacheService.saveNotifications(
             notificationsResponse.content,
           );
         }
 
-        // Запускаем анимацию только если это первая загрузка
-        if (!updateCache) {
-          _animationController.reset();
-          _animationController.forward();
-        }
+        _animationController.reset();
+        _animationController.forward();
       }
     } catch (e) {
       print('Error loading server notifications: $e');
@@ -126,57 +151,23 @@ class _NotificationScreenState extends State<NotificationScreen>
         });
       }
 
-      // Если ошибка, пробуем загрузить из кеша
       if (_serverNotifications.isEmpty) {
         await _loadFromCache();
       }
     }
   }
 
-  Future<void> _loadNotifications() async {
-    try {
-      final notifications = await _notificationsPlugin
-          .pendingNotificationRequests();
-
-      if (mounted) {
-        setState(() {
-          _notifications.clear();
-          _notifications.addAll(notifications);
-        });
-      }
-    } catch (e) {
-      print('Error loading notifications: $e');
-    }
-  }
-
-  // Метод для pull-to-refresh
   Future<void> _onRefresh() async {
-    setState(() {
-      _isRefreshing = true;
-    });
-
-    await Future.wait([
-      _loadNotifications(),
-      _loadServerNotifications(updateCache: true),
-    ]);
+    setState(() => _isRefreshing = true);
+    await _loadServerNotifications(updateCache: true);
   }
 
   Future<void> _clearAllNotifications() async {
     try {
-      await _notificationsPlugin.cancelAll();
-      await NotificationCacheService.clearCache();  // Очищаем кеш тоже
-      await _loadNotifications();
-
+      await NotificationCacheService.clearCache();
       setState(() {
         _serverNotifications.clear();
       });
-    } catch (_) {}
-  }
-
-  Future<void> _cancelNotification(int id) async {
-    try {
-      await _notificationsPlugin.cancel(id);
-      await _loadNotifications();
     } catch (_) {}
   }
 
@@ -206,7 +197,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
 
-    // Размеры для адаптивности
     final iconSizeLarge = isSmallScreen ? 48.0 : 64.0;
     final iconSizeMedium = isSmallScreen ? 18.0 : 22.0;
     final iconSizeSmall = isSmallScreen ? 16.0 : 18.0;
@@ -214,6 +204,9 @@ class _NotificationScreenState extends State<NotificationScreen>
     final fontSizeSmall = isSmallScreen ? 12.0 : 14.0;
     final padding = isSmallScreen ? 8.0 : 12.0;
     final verticalPadding = isSmallScreen ? 6.0 : 8.0;
+
+    final localReminders = _getLocalReminders();
+    final totalItems = localReminders.length + _serverNotifications.length;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -234,7 +227,7 @@ class _NotificationScreenState extends State<NotificationScreen>
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          if (_notifications.isNotEmpty || _serverNotifications.isNotEmpty)
+          if (_serverNotifications.isNotEmpty)
             TextButton.icon(
               icon: Icon(
                 Icons.clear_all,
@@ -264,20 +257,17 @@ class _NotificationScreenState extends State<NotificationScreen>
             key: ValueKey('loading'),
             child: CircularProgressIndicator(color: Colors.blue),
           )
-              : (_notifications.isEmpty && _serverNotifications.isEmpty)
+              : totalItems == 0
               ? _buildEmptyState(
               theme, l10n, iconSizeLarge,
-              isSmallScreen, fontSize, fontSizeSmall
-          )
+              isSmallScreen, fontSize, fontSizeSmall)
               : _buildNotificationList(
-              theme, l10n, isSmallScreen, padding,
-              verticalPadding, iconSizeMedium,
-              fontSize, fontSizeSmall
-          ),
+              theme, l10n, localReminders, isSmallScreen,
+              padding, verticalPadding, iconSizeMedium,
+              fontSize, fontSizeSmall),
         ),
       ),
-      floatingActionButton:
-      (_notifications.isNotEmpty || _serverNotifications.isNotEmpty)
+      floatingActionButton: totalItems > 0
           ? FloatingActionButton(
         mini: true,
         onPressed: _onRefresh,
@@ -297,7 +287,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // Вынесем построение пустого состояния в отдельный метод
   Widget _buildEmptyState(
       ThemeData theme,
       dynamic l10n,
@@ -339,10 +328,10 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // Вынесем построение списка уведомлений
   Widget _buildNotificationList(
       ThemeData theme,
       dynamic l10n,
+      List<_LocalReminder> localReminders,
       bool isSmallScreen,
       double padding,
       double verticalPadding,
@@ -350,15 +339,20 @@ class _NotificationScreenState extends State<NotificationScreen>
       double fontSize,
       double fontSizeSmall,
       ) {
+    final totalItems = localReminders.length + _serverNotifications.length;
+
     return ListView.builder(
       key: const ValueKey('list'),
-      itemCount: _serverNotifications.length + _notifications.length,
+      itemCount: totalItems,
       padding: EdgeInsets.all(padding),
       cacheExtent: 800,
       itemBuilder: (context, index) {
-        if (index < _serverNotifications.length) {
-          return _buildServerNotificationTile(
+        // Сначала local reminders
+        if (index < localReminders.length) {
+          return _buildLocalReminderTile(
             index,
+            localReminders[index],
+            l10n,
             theme,
             isSmallScreen,
             verticalPadding,
@@ -368,12 +362,12 @@ class _NotificationScreenState extends State<NotificationScreen>
           );
         }
 
-        final localIndex = index - _serverNotifications.length;
-        return _buildLocalNotificationTile(
+        // Потом server notifications
+        final serverIndex = index - localReminders.length;
+        return _buildServerNotificationTile(
           index,
-          localIndex,
+          serverIndex,
           theme,
-          l10n,
           isSmallScreen,
           verticalPadding,
           iconSizeMedium,
@@ -384,9 +378,11 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // Метод для серверных уведомлений
-  Widget _buildServerNotificationTile(
-      int index,
+  // ==================== LOCAL REMINDER TILE ====================
+  Widget _buildLocalReminderTile(
+      int animIndex,
+      _LocalReminder reminder,
+      dynamic l10n,
       ThemeData theme,
       bool isSmallScreen,
       double verticalPadding,
@@ -394,17 +390,113 @@ class _NotificationScreenState extends State<NotificationScreen>
       double fontSize,
       double fontSizeSmall,
       ) {
-    final serverNotif = _serverNotifications[index];
-    final isNew = DateTime.now().difference(serverNotif.createdAt).inMinutes < 5;
-
     return SlideTransition(
-      position: _getSlideAnimation(index),
+      position: _getSlideAnimation(animIndex),
       child: FadeTransition(
         opacity: CurvedAnimation(
           parent: _animationController,
           curve: Interval(
-            index * 0.05,
-            0.6 + index * 0.05,
+            animIndex * 0.05,
+            0.6 + animIndex * 0.05,
+            curve: Curves.easeOut,
+          ),
+        ),
+        child: Card(
+          margin: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: reminder.color.withOpacity(0.3),
+              width: 1.0,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 12 : 16,
+              vertical: verticalPadding,
+            ),
+            leading: Container(
+              padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+              decoration: BoxDecoration(
+                color: reminder.color.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                reminder.icon,
+                color: reminder.color,
+                size: iconSizeMedium,
+              ),
+            ),
+            title: Text(
+              l10n.get(reminder.title),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize,
+              ),
+            ),
+            subtitle: Padding(
+              padding: EdgeInsets.only(top: verticalPadding),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: reminder.color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'REMINDER',
+                      style: TextStyle(
+                        color: reminder.color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.get(reminder.body),
+                      style: TextStyle(fontSize: fontSizeSmall),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==================== SERVER NOTIFICATION TILE ====================
+  Widget _buildServerNotificationTile(
+      int animIndex,
+      int serverIndex,
+      ThemeData theme,
+      bool isSmallScreen,
+      double verticalPadding,
+      double iconSizeMedium,
+      double fontSize,
+      double fontSizeSmall,
+      ) {
+    final serverNotif = _serverNotifications[serverIndex];
+    final isNew = DateTime.now().difference(serverNotif.createdAt).inMinutes < 5;
+
+    return SlideTransition(
+      position: _getSlideAnimation(animIndex),
+      child: FadeTransition(
+        opacity: CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(
+            animIndex * 0.05,
+            0.6 + animIndex * 0.05,
             curve: Curves.easeOut,
           ),
         ),
@@ -460,7 +552,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         color: Colors.blue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
+                      child: const Text(
                         'NEW',
                         style: TextStyle(
                           color: Colors.blue,
@@ -484,100 +576,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // Метод для локальных уведомлений
-  Widget _buildLocalNotificationTile(
-      int index,
-      int localIndex,
-      ThemeData theme,
-      dynamic l10n,
-      bool isSmallScreen,
-      double verticalPadding,
-      double iconSizeMedium,
-      double fontSize,
-      double fontSizeSmall,
-      ) {
-    final notification = _notifications[localIndex];
-
-    return SlideTransition(
-      position: _getSlideAnimation(index),
-      child: FadeTransition(
-        opacity: CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(
-            index * 0.05,
-            0.6 + index * 0.05,
-            curve: Curves.easeOut,
-          ),
-        ),
-        child: Dismissible(
-          key: Key('notification_${notification.id}'),
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: isSmallScreen ? 15 : 20),
-            color: Colors.redAccent.withOpacity(0.8),
-            child: Icon(
-              Icons.delete_outline,
-              color: Colors.white,
-              size: isSmallScreen ? 20 : 24,
-            ),
-          ),
-          direction: DismissDirection.endToStart,
-          onDismissed: (direction) => _cancelNotification(notification.id),
-          child: Card(
-            margin: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: theme.dividerColor,
-                width: 0.5,
-              ),
-            ),
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 12 : 16,
-                vertical: verticalPadding,
-              ),
-              leading: Container(
-                padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.notifications,
-                  color: Colors.blue,
-                  size: iconSizeMedium,
-                ),
-              ),
-              title: Text(
-                l10n.get(notification.title ?? ''),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: fontSize,
-                ),
-              ),
-              subtitle: Padding(
-                padding: EdgeInsets.only(top: verticalPadding),
-                child: Text(
-                  l10n.get(notification.body ?? ''),
-                  style: TextStyle(fontSize: fontSizeSmall),
-                ),
-              ),
-              trailing: IconButton(
-                icon: Icon(
-                  Icons.clear,
-                  size: isSmallScreen ? 18 : 20,
-                ),
-                onPressed: () => _cancelNotification(notification.id),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   String _formatTime(DateTime createdAt) {
     final now = DateTime.now();
     final diff = now.difference(createdAt);
@@ -592,9 +590,25 @@ class _NotificationScreenState extends State<NotificationScreen>
       final hour = createdAt.hour;
       final period = hour >= 12 ? 'PM' : 'AM';
       final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-
       return '${createdAt.month}/${createdAt.day} '
           '${displayHour}:${createdAt.minute.toString().padLeft(2, '0')} $period';
     }
   }
+}
+
+// ==================== LOCAL REMINDER MODEL ====================
+class _LocalReminder {
+  final String title;
+  final String body;
+  final IconData icon;
+  final Color color;
+  final DateTime time;
+
+  _LocalReminder({
+    required this.title,
+    required this.body,
+    required this.icon,
+    required this.color,
+    required this.time,
+  });
 }

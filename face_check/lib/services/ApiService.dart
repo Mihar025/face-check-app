@@ -231,6 +231,18 @@ class ApiService {
     }
   }
 
+  Future<void> saveFcmToken({required String token}) async {
+    try {
+      await _dio.post(
+        '/user/fcm-token',
+        data: {'token': token},
+      );
+    } catch (e) {
+      print('Error saving FCM token: $e');
+    }
+  }
+
+
 
 
   // ===================== DOMAIN CALLS =====================

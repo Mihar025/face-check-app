@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_client/api/authentication_api.dart';
 import '../../api_client/model/authentication_request.dart';
 import '../../services/ApiService.dart';
+import '../../services/fcm_service.dart';
 import '../../services/jwt_service.dart';
 import 'legal_screen.dart';
 
@@ -156,31 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _authenticateWithBiometrics() async {
-    try {
-      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
 
-      if (!canCheckBiometrics || !isDeviceSupported) {
-        _showError('Biometric authentication is not available');
-        return;
-      }
-
-      final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Please authenticate to login',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
-      );
-
-      if (didAuthenticate) {
-        await _handleLogin(useSavedPassword: true);
-      }
-    } catch (_) {
-      _showError('Biometric authentication failed');
-    }
-  }
 
   Future<void> _handleLogin({bool useSavedPassword = false}) async {
     if (!(_formKey.currentState?.validate() ?? false)) {
@@ -209,6 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final refreshToken = response.data?.refreshToken ?? '';
       await ApiService.instance.setAuthToken(response.data!.token!, refreshToken);
 
+      await FcmService.instance.syncTokenToServer();
+
       if (!mounted) return;
 
       _passwordController.clear();
@@ -216,8 +195,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await Future.delayed(const Duration(milliseconds: 300));
 
+
       if (!mounted) return;
+
       Navigator.of(context).pushReplacementNamed('/main');
+
+
 
     } on DioException catch (e) {
       String errorMessage = 'Authentication failed';

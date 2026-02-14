@@ -10,6 +10,7 @@ import com.zikpak.facecheck.repository.UserRepository;
 import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.worker.*;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -205,5 +206,12 @@ public class UserService implements UserFinance {
         return UserIdResponse.builder()
                 .userId(user.getId())
                 .build();
+    }
+
+    @Transactional
+    public void saveFcmToken(Integer id, String token) {
+        var user = userRepository.findById(id).orElseThrow();
+        user.setFcmToken(token);
+        userRepository.save(user);
     }
 }

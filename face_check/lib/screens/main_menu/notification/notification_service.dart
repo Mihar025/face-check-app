@@ -14,7 +14,6 @@ class NotificationService {
 
   NotificationService._(this.l10n);
 
-  /// Безопасная инициализация — можно вызвать из любого контекста под MaterialApp
   static Future<NotificationService> initialize({
     required BuildContext context,
     required String languageCode,
@@ -53,7 +52,6 @@ class NotificationService {
     print('✅ Notification plugin initialized');
   }
 
-  /// При смене языка
   Future<void> updateLanguage(String languageCode) async {
     print('🌍 Updating notification language to: $languageCode');
     l10n = AppLocalizations(languageCode);
@@ -61,18 +59,16 @@ class NotificationService {
     await scheduleWeeklyNotifications();
   }
 
-  /// Планируем три уведомления (2 ежедневных и 1 еженедельное)
   Future<void> scheduleWeeklyNotifications() async {
     try {
       print('🕐 Scheduling notifications for ${l10n.languageCode}');
-      print('→ PunchIn: ${l10n.get('dailyPunchIn.title')}');
 
-      // Punch In
+      // Punch In — 7:00 AM weekdays
       await _notifications.zonedSchedule(
         1,
         l10n.get('dailyPunchIn.title'),
         l10n.get('dailyPunchIn.body'),
-        _nextInstanceOfWeekday(7, 10),
+        _nextInstanceOfWeekday(7, 0),
         NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_notifications',
@@ -93,12 +89,12 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.time,
       );
 
-      // Punch Out
+      // Punch Out — 4:00 PM weekdays
       await _notifications.zonedSchedule(
         2,
         l10n.get('dailyPunchOut.title'),
         l10n.get('dailyPunchOut.body'),
-        _nextInstanceOfWeekday(12, 0),
+        _nextInstanceOfWeekday(16, 0),
         NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_notifications',
@@ -119,7 +115,7 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.time,
       );
 
-      // Weekly Hours Check
+      // Weekly Hours Check — Friday 3:00 PM
       await _notifications.zonedSchedule(
         3,
         l10n.get('weeklyHoursCheck.title'),
@@ -145,17 +141,17 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       );
 
-      print('✅ Notifications scheduled successfully');
+      print('✅ Notifications scheduled: PunchIn 7:00AM, PunchOut 4:00PM, Weekly Fri 3:00PM');
     } catch (e, st) {
       debugPrint('❌ Failed to schedule notifications: $e');
       debugPrint('$st');
     }
   }
 
-  /// Следующий будний день в нужное время
   tz.TZDateTime _nextInstanceOfWeekday(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var date = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var date =
+    tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
     if (date.weekday >= DateTime.saturday) {
       date = date.add(Duration(days: 8 - date.weekday));
@@ -166,10 +162,10 @@ class NotificationService {
     return date;
   }
 
-  /// Следующая пятница
   tz.TZDateTime _nextInstanceOfFriday(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var date = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var date =
+    tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
     while (date.weekday != DateTime.friday) {
       date = date.add(const Duration(days: 1));
