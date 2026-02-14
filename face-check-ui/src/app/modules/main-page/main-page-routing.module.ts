@@ -63,6 +63,9 @@ import {DeleteAccountComponent} from "./pages/delete-account/delete-account.comp
 import {
   NotesForPunchAdminComponent
 } from "./pages/admin-main-page/notes-for-punch-admin/notes-for-punch-admin.component";
+import {
+  NotesForPunchAppOwnerComponent
+} from "./pages/appOwner/notes-for-punch-app-owner/notes-for-punch-app-owner.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -239,6 +242,12 @@ const routes: Routes = [
   {
     path: 'app-owner/location-tracking',
     component: LocationTrackingAppOwnerComponent,
+    canActivate: [TokenExpiryGuard]
+  },
+
+  {
+    path: 'app-owner/notes',
+    component: NotesForPunchAppOwnerComponent,
     canActivate: [TokenExpiryGuard]
   },
 

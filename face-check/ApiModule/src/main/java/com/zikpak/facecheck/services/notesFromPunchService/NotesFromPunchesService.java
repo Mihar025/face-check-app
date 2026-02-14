@@ -10,6 +10,10 @@ import com.zikpak.facecheck.requestsResponses.worker.RelatedUserInCompanyRespons
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -23,7 +27,6 @@ public class NotesFromPunchesService {
 
 
     private final WorkerAttendanceRepository workerAttendanceRepository;
-    private final UserRepository userRepository;
     private final NotesForPunchMapper notesForPunchMapper;
 
 
@@ -34,7 +37,6 @@ public class NotesFromPunchesService {
     )
 
    */
-
     public PageResponse<NotesForPunchResponse> findAllNotesForPunch(
             int page,
             int size,
@@ -53,43 +55,30 @@ public class NotesFromPunchesService {
             throw new AccessDeniedException("You do not have permission to view notes");
         }
 
-        List<WorkerAttendance> allNotes;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "checkInTime"));
+
+        Page<WorkerAttendance> notesPage;
 
         if (isAppOwner) {
-            allNotes = workerAttendanceRepository.findAllNotesForAppowner();
+            notesPage = workerAttendanceRepository.findAllNotesForAppowner(pageable);
         } else {
-            allNotes = workerAttendanceRepository.findAllNotesForAdmin(user.getCompany().getId());
+            notesPage = workerAttendanceRepository.findAllNotesForAdmin(user.getCompany().getId(), pageable);
         }
 
-        int start = page * size;
-        int end = Math.min(start + size, allNotes.size());
-
-        if (start > allNotes.size()) {
-            start = 0;
-            end = 0;
-        }
-
-        List<WorkerAttendance> pagedNotes = start < end
-                ? allNotes.subList(start, end)
-                : List.of();
-
-        List<NotesForPunchResponse> responses = pagedNotes.stream()
+        List<NotesForPunchResponse> responses = notesPage.getContent().stream()
                 .map(notesForPunchMapper::toNotesForPunchResponse)
                 .toList();
 
-        int totalPages = (int) Math.ceil((double) allNotes.size() / size);
-
         return new PageResponse<>(
                 responses,
-                page,
-                size,
-                allNotes.size(),
-                totalPages,
-                page == 0,
-                end >= allNotes.size()
+                notesPage.getNumber(),
+                notesPage.getSize(),
+                notesPage.getTotalElements(),
+                notesPage.getTotalPages(),
+                notesPage.isFirst(),
+                notesPage.isLast()
         );
     }
-
 
 
 }

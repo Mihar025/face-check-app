@@ -238,9 +238,7 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
          OR a.notesForPunchOut IS NOT NULL AND a.notesForPunchOut <> '')
     ORDER BY a.checkInTime DESC
 """)
-    List<WorkerAttendance> findAllNotesForAdmin(@Param("companyId") Integer companyId);
-
-
+    Page<WorkerAttendance> findAllNotesForAdmin(@Param("companyId") Integer companyId, Pageable pageable);
 
     @Query("""
     SELECT a FROM WorkerAttendance a
@@ -250,8 +248,7 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
            OR a.notesForPunchOut IS NOT NULL AND a.notesForPunchOut <> '')
     ORDER BY a.checkInTime DESC
 """)
-    List<WorkerAttendance> findAllNotesForAppowner();
-
+    Page<WorkerAttendance> findAllNotesForAppowner(Pageable pageable);
 
 
 
