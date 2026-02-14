@@ -1,4 +1,4 @@
-/* notes-for-punch-admin.component.scss — Clean corporate style */
+/* notes-for-punch-admin.component.scss — Wide compact layout */
 
 /* Variables */
 $primary-color: #5b47e0;
@@ -104,18 +104,20 @@ $border-radius-xs: 6px;
   object-fit: contain;
 }
 
-/* Container */
+/* ═══════════════════════════════════
+   CONTAINER — FULL WIDTH
+   ═══════════════════════════════════ */
 .admin-container {
-  padding: 24px;
+  padding: 24px 32px;
   flex: 1;
-  max-width: 1200px;
+  max-width: 1440px;
   width: 100%;
   margin: 0 auto;
 }
 
 /* Page Header */
 .header-with-action {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 
   .header-left {
     h1 {
@@ -136,7 +138,7 @@ $border-radius-xs: 6px;
 }
 
 .header-subtitle {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   font-size: 14px;
   color: $text-medium;
   font-weight: 500;
@@ -204,20 +206,19 @@ $border-radius-xs: 6px;
   p {
     font-size: 14px;
     color: $text-lighter;
-    margin: 0;
     max-width: 400px;
     margin: 0 auto;
   }
 }
 
 /* ═══════════════════════════════════
-   NOTES CARDS
+   NOTES CARDS — COMPACT
    ═══════════════════════════════════ */
 
 .notes-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .note-card {
@@ -231,12 +232,12 @@ $border-radius-xs: 6px;
   }
 }
 
-/* Card Header */
+/* ── Card Header — single compact row ── */
 .note-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 10px 20px;
   background: $bg-lighter;
   border-bottom: 1px solid $border-light;
 }
@@ -244,12 +245,12 @@ $border-radius-xs: 6px;
 .worker-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .worker-avatar {
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -265,7 +266,7 @@ $border-radius-xs: 6px;
     @include flex-center;
     background: $primary-color;
     color: $white;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     border-color: rgba($primary-color, 0.3);
   }
@@ -273,11 +274,12 @@ $border-radius-xs: 6px;
 
 .worker-details {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .worker-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: $text-dark;
 }
@@ -286,98 +288,107 @@ $border-radius-xs: 6px;
   font-size: 12px;
   color: $text-lighter;
   font-weight: 500;
+
+  &::before {
+    content: '·';
+    margin-right: 8px;
+    color: $border-color;
+    font-weight: 700;
+  }
 }
 
 .note-date {
-  font-size: 13px;
+  font-size: 12px;
   color: $text-medium;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-shrink: 0;
 
   i {
     color: $text-lighter;
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 
-/* Time Row */
+/* ── Time Row — inline compact ── */
 .time-row {
   display: flex;
   align-items: center;
-  padding: 14px 20px;
+  padding: 8px 20px;
   border-bottom: 1px solid $border-light;
-  gap: 16px;
+  gap: 14px;
+  background: $white;
 }
 
 .time-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1;
+  gap: 8px;
 
   > i {
-    font-size: 16px;
+    font-size: 13px;
     flex-shrink: 0;
   }
 
-  &.punch-in > i {
-    color: $punch-in-color;
-  }
-
-  &.punch-out > i {
-    color: $punch-out-color;
-  }
+  &.punch-in > i { color: $punch-in-color; }
+  &.punch-out > i { color: $punch-out-color; }
 
   div {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
 }
 
 .time-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: $text-lighter;
 }
 
 .time-value {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: $text-dark;
 }
 
 .time-divider {
   @include flex-center;
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: $bg-light;
   flex-shrink: 0;
 
   i {
-    font-size: 12px;
+    font-size: 9px;
     color: $text-lighter;
   }
 }
 
-/* Notes Content */
+/* ── Notes Content — SIDE BY SIDE ── */
 .notes-content {
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 12px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* If only one note block, stretch full width */
+.notes-content > .note-block:only-child {
+  grid-column: 1 / -1;
 }
 
 .note-block {
   background: $bg-lighter;
   border-radius: $border-radius-sm;
-  padding: 14px 16px;
+  padding: 10px 14px;
   border: 1px solid $border-light;
+  min-width: 0;
 
   &.note-in {
     border-left: 3px solid $punch-in-color;
@@ -392,23 +403,23 @@ $border-radius-xs: 6px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .note-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 4px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 4px 10px;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
   border-radius: 20px;
 
-  i { font-size: 10px; }
+  i { font-size: 9px; }
 
   &.badge-in {
     background: rgba($punch-in-color, 0.1);
@@ -422,19 +433,23 @@ $border-radius-xs: 6px;
 }
 
 .note-location {
-  font-size: 12px;
+  font-size: 11px;
   color: $text-lighter;
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
-  i { font-size: 11px; }
+  i { font-size: 10px; flex-shrink: 0; }
 }
 
 .note-text {
-  font-size: 14px;
+  font-size: 13px;
   color: $text-dark;
-  line-height: 1.6;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
   font-weight: 400;
@@ -444,17 +459,17 @@ $border-radius-xs: 6px;
   background: none;
   border: none;
   color: $primary-color;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  padding: 4px 0;
-  margin-top: 6px;
+  padding: 2px 0;
+  margin-top: 4px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   transition: color 0.2s ease;
 
-  i { font-size: 11px; }
+  i { font-size: 10px; }
 
   &:hover {
     color: $primary-dark;
@@ -470,8 +485,8 @@ $border-radius-xs: 6px;
   justify-content: center;
   align-items: center;
   gap: 8px;
-  padding: 24px 0;
-  margin-top: 8px;
+  padding: 20px 0;
+  margin-top: 4px;
 }
 
 .pagination-button {
@@ -521,6 +536,10 @@ $border-radius-xs: 6px;
   .admin-container {
     padding: 20px;
   }
+
+  .notes-content {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -535,22 +554,43 @@ $border-radius-xs: 6px;
   .note-card-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 6px;
+  }
+
+  .worker-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+  }
+
+  .worker-company::before {
+    display: none;
   }
 
   .note-date {
-    padding-left: 54px;
+    padding-left: 44px;
   }
 
   .time-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
-    padding: 12px 20px;
+    gap: 6px;
+    padding: 8px 16px;
+  }
+
+  .time-item div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
   }
 
   .time-divider {
     display: none;
+  }
+
+  .notes-content {
+    grid-template-columns: 1fr;
+    padding: 10px 16px;
   }
 
   .note-block-header {
@@ -565,33 +605,33 @@ $border-radius-xs: 6px;
   }
 
   .note-card-header {
-    padding: 14px 16px;
+    padding: 8px 14px;
   }
 
   .time-row {
-    padding: 12px 16px;
+    padding: 6px 14px;
   }
 
   .notes-content {
-    padding: 14px 16px;
+    padding: 8px 14px;
   }
 
   .worker-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 12px;
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
   }
 
   .worker-name {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .note-date {
-    padding-left: 48px;
-    font-size: 12px;
+    padding-left: 40px;
+    font-size: 11px;
   }
 
   .note-text {
-    font-size: 13px;
+    font-size: 12px;
   }
 }
