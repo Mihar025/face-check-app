@@ -31,5 +31,8 @@ public class Notification {
     @Column(name = "admin_only")
     private Boolean adminOnly = false;
 
+    @Column(name = "is_read")
+    private Boolean isRead = false;
+
 
 }

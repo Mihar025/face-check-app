@@ -27,4 +27,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
             Pageable pageable
     );
 
+
+    long countByCompanyIdAndIsReadFalseAndCreatedAtBetween(Integer companyId,
+                                                           LocalDateTime start,
+                                                           LocalDateTime end);
+
+    long  countByCompanyIdAndAdminOnlyFalseAndIsReadFalseAndCreatedAtBetween(
+            Integer companyId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+
 }

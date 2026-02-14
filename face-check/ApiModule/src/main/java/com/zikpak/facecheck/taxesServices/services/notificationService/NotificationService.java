@@ -38,8 +38,6 @@ public class NotificationService {
     private final CompanyRepository companyRepository;
     private final NotificationMapper notificationMapper;
 
-    @Qualifier("notificationExecutor")
-    private final Executor notificationExecutor;
 
 
     @Async("notificationExecutor")
@@ -65,11 +63,6 @@ public class NotificationService {
             return CompletableFuture.completedFuture(null);
         }
     }
-
-
-
-
-
 
 
     public PageResponse<NotificationResponse> findAllNotificationsForToday(Authentication authentication, Integer companyId, int page, int size){
@@ -112,6 +105,58 @@ public class NotificationService {
                 notifications.isLast()
         );
     }
+
+    public long getUnreadCount(Authentication authentication, Integer companyId){
+
+        User user = (User) authentication.getPrincipal();
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfTheDay = startOfDay.plusDays(1);
+
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch( role -> role.getName().equals("ADMIN") ||
+                                role.getName().equals("AppOwner"));
+
+        if(isAdmin){
+            return notificationRepository
+                    .countByCompanyIdAndIsReadFalseAndCreatedAtBetween(
+                            companyId, startOfDay, endOfTheDay);
+        }
+        else {
+            return notificationRepository.countByCompanyIdAndAdminOnlyFalseAndIsReadFalseAndCreatedAtBetween(
+                            companyId, startOfDay, endOfTheDay);
+        }
+    }
+
+    @Transactional
+    public void makeAllAsRead(Authentication authentication, Integer companyId){
+        User user = (User) authentication.getPrincipal();
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch( role -> role.getName().equals("ADMIN") ||
+                        role.getName().equals("AppOwner"));
+
+        Page<Notification> notifications;
+        Pageable pageable = PageRequest.of(0, 100);
+
+        if(isAdmin){
+            notifications = notificationRepository.findByCompanyIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+                    companyId, startOfDay, endOfDay, pageable);
+        }
+        else {
+            notifications = notificationRepository.findByCompanyIdAndAdminOnlyFalseAndCreatedAtBetweenOrderByCreatedAtDesc(
+                    companyId, startOfDay, endOfDay, pageable);
+        }
+        notifications.getContent().forEach(n -> n.setIsRead(true));
+        notificationRepository.saveAll(notifications.getContent());
+    }
+
+
+
+
+
 
 
 

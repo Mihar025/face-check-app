@@ -39,4 +39,18 @@ public class NotificationController {
         notificationService.deleteNotificationById(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/company/{companyId}/unread-count")
+    public ResponseEntity<Long> getUnreadCount(Authentication authentication,
+                                               @PathVariable Integer companyId){
+        return ResponseEntity.ok(notificationService.getUnreadCount(authentication, companyId));
+    }
+
+    @PutMapping("/company/{companyId}/mark-read")
+    public ResponseEntity<Void> markAllAsRead(
+            Authentication authentication,
+            @PathVariable Integer companyId){
+        notificationService.makeAllAsRead(authentication, companyId);
+        return ResponseEntity.ok().build();
+    }
 }
