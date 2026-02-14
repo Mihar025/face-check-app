@@ -63,6 +63,7 @@ public class NotificationService {
                     .title(request.getMessage())
                     .createdAt(LocalDateTime.now())
                     .adminOnly(adminOnly)
+                    .isRead(false)
                     .build();
 
             notificationRepository.save(notification);

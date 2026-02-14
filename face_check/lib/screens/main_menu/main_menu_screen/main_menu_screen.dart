@@ -334,6 +334,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   // Services
   late final TimeService _timeService;
   StreamSubscription<tz.TZDateTime>? _timeSub;
+  StreamSubscription<void>? _fcmSub;
 
   // Dio instance
   late final Dio _dio;
@@ -405,6 +406,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _weekPeriod.dispose();
     _pollingTimer?.cancel();
     _unreadCount.dispose();
+    _fcmSub?.cancel();
+
     super.dispose();
   }
 
@@ -448,6 +451,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       await _loadFreshData();
     }
     _startNotificationPolling();
+    _fcmSub = FcmService.onNotificationReceived.stream.listen((_) {
+      _fetchUnreadCount();
+    });
   }
 
   Future<void> _loadCachedData() async {
