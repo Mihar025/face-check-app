@@ -14,6 +14,7 @@ export interface PunchOutResponse {
   hoursWorked?: number;
   isSuccessful?: boolean;
   message?: string;
+  notesForPunchOut?: string;
   overtimeHours?: number;
   workSiteAddress?: string;
   workSiteId?: number;

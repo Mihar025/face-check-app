@@ -53,6 +53,10 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   late final ValueNotifier<int?> _currentUserId;
   late final PunchManager _punchManager;
 
+  // ✅ NEW: Notes controller
+  final TextEditingController _notesController = TextEditingController();
+  static const int _maxNotesLength = 3000;
+
   // Map
   GoogleMapController? mapController;
 
@@ -65,6 +69,8 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   static const double _smallScreenThreshold = 360.0;
   static final tz.Location _ny = tz.getLocation('America/New_York');
   static const Duration _snackBarDuration = Duration(seconds: 3);
+  static const EdgeInsets _standardPadding = EdgeInsets.symmetric(horizontal: 20);
+  static const EdgeInsets _smallPadding = EdgeInsets.symmetric(horizontal: 16);
 
   @override
   void initState() {
@@ -104,6 +110,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     _workSites.dispose();
     _isTrackingActive.dispose();
     _currentUserId.dispose();
+    _notesController.dispose(); // ✅ NEW
     super.dispose();
   }
 
@@ -112,6 +119,17 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       timeService.sync().then((_) => _punchManager.forceRefresh());
     }
+  }
+
+  // ✅ NEW: Get notes text (trimmed, or null if empty)
+  String? _getNotesText() {
+    final text = _notesController.text.trim();
+    return text.isEmpty ? null : text;
+  }
+
+  // ✅ NEW: Clear notes after successful punch
+  void _clearNotes() {
+    _notesController.clear();
   }
 
   // ---------- Init ----------
@@ -419,7 +437,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
     final photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-      //_showErrorSnackBar('A photo is required to punch in.');
       return;
     }
 
@@ -430,6 +447,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         'photoBase64': photoBase64,
         'latitude': _currentPosition.value?.latitude,
         'longitude': _currentPosition.value?.longitude,
+        'notesForPunchIn': _getNotesText(), // ✅ NEW: Send notes
       };
 
       final response = await dio.post('attendance/punch-in', data: requestData);
@@ -461,6 +479,8 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         await _punchManager.onPunchInSuccess();
         _isTrackingActive.value = true;
 
+        _clearNotes(); // ✅ NEW: Clear notes only on success
+
         _showSuccessDialog(true, _getCurrentFormattedTime());
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -471,6 +491,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
           );
         }
       } else {
+        // ❌ Error — notes NOT cleared
         String errorMessage = 'Punch in failed';
         if (response.data is Map) {
           final raw = response.data['message'] ??
@@ -481,6 +502,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         _showErrorSnackBar(errorMessage);
       }
     } catch (e) {
+      // ❌ Error — notes NOT cleared
       _showErrorSnackBar('Failed to punch in: $e');
     } finally {
       _isLoading.value = false;
@@ -495,7 +517,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
     final photoBase64 = await _captureImage();
     if (photoBase64 == null) {
-     // _showErrorSnackBar('A photo is required to punch out.');
       return;
     }
 
@@ -506,6 +527,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         'photoBase64': photoBase64,
         'latitude': _currentPosition.value?.latitude,
         'longitude': _currentPosition.value?.longitude,
+        'notesForPunchOut': _getNotesText(), // ✅ NEW: Send notes
       };
 
       final response = await dio.post('attendance/punch-out', data: requestData);
@@ -523,6 +545,8 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         await _punchManager.onPunchOutSuccess();
         _isTrackingActive.value = false;
 
+        _clearNotes(); // ✅ NEW: Clear notes only on success
+
         _showSuccessDialog(false, _getCurrentFormattedTime());
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -534,6 +558,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
           );
         }
       } else {
+        // ❌ Error — notes NOT cleared
         String errorMessage = 'Punch out failed';
         if (response.data is Map) {
           final raw = response.data['message'] ??
@@ -544,10 +569,136 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         _showErrorSnackBar(errorMessage);
       }
     } catch (e) {
+      // ❌ Error — notes NOT cleared
       _showErrorSnackBar('Failed to punch out: $e');
     } finally {
       _isLoading.value = false;
     }
+  }
+
+  // ✅ NEW: Build the Notes section widget — dynamic based on punch state
+  Widget _buildNotesSection() {
+    final isDark = _theme.brightness == Brightness.dark;
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: _punchManager.hasPunchIn,
+      builder: (context, hasPunchIn, _) {
+        final bool isPunchOut = hasPunchIn;
+        final String label = isPunchOut ? 'Notes for Punch Out' : 'Notes for Punch In';
+        final String hintText = isPunchOut
+            ? 'What was done today...\n\nExample:\n- Installed wiring on 3rd floor\n- Fixed outlet in room 204'
+            : 'Notes before starting work...\n\nExample:\n- Starting electrical work\n- Materials received';
+        final Color accentColor = isPunchOut ? Colors.blue : Colors.green;
+
+        return Padding(
+          padding: _isSmallScreen ? _smallPadding : _standardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  Icon(
+                    isPunchOut ? Icons.edit_note_rounded : Icons.notes_rounded,
+                    size: _isSmallScreen ? 18 : 20,
+                    color: accentColor.withOpacity(0.7),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: _isSmallScreen ? 14 : 16,
+                      fontWeight: FontWeight.w600,
+                      color: _theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '(optional)',
+                    style: TextStyle(
+                      fontSize: _isSmallScreen ? 11 : 12,
+                      color: _theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // TextField container
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[900] : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: accentColor.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _notesController,
+                      maxLength: _maxNotesLength,
+                      maxLines: 6,
+                      minLines: 4,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      style: TextStyle(
+                        fontSize: _isSmallScreen ? 14 : 15,
+                        color: _theme.textTheme.bodyLarge?.color,
+                        height: 1.4,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        hintMaxLines: 5,
+                        hintStyle: TextStyle(
+                          fontSize: _isSmallScreen ? 13 : 14,
+                          color: _theme.textTheme.bodySmall?.color?.withOpacity(0.35),
+                          height: 1.4,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: _isSmallScreen ? 12 : 16,
+                          vertical: _isSmallScreen ? 12 : 14,
+                        ),
+                        border: InputBorder.none,
+                        counterText: '',
+                      ),
+                    ),
+
+                    // Custom character counter
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12, bottom: 8),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _notesController,
+                          builder: (context, value, _) {
+                            final length = value.text.length;
+                            final isNearLimit = length > (_maxNotesLength * 0.9);
+
+                            return Text(
+                              '$length / $_maxNotesLength',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isNearLimit
+                                    ? Colors.orange
+                                    : _theme.textTheme.bodySmall?.color?.withOpacity(0.4),
+                                fontWeight: isNearLimit ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // ---------- UI ----------
@@ -609,184 +760,191 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         ]
             : null,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Clock
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: _isSmallScreen ? 16 : 20,
-                    vertical: _isSmallScreen ? 12 : 16,
+      // ✅ NEW: GestureDetector to dismiss keyboard on tap outside
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Clock
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _isSmallScreen ? 16 : 20,
+                      vertical: _isSmallScreen ? 12 : 16,
+                    ),
+                    child: ClockDisplay(
+                      textColor: _theme.textTheme.bodyLarge?.color,
+                      isSmallScreen: _isSmallScreen,
+                      timeStream: timeService.nyTicker(),
+                    ),
                   ),
-                  child: ClockDisplay(
-                    textColor: _theme.textTheme.bodyLarge?.color,
-                    isSmallScreen: _isSmallScreen,
-                    timeStream: timeService.nyTicker(),
-                  ),
-                ),
 
-                // Map
-                ValueListenableBuilder<Position?>(
-                  valueListenable: _currentPosition,
-                  builder: (context, position, _) {
-                    return MapContainer(
-                      currentPosition: position,
-                      onMapCreated: (controller) => mapController = controller,
-                    );
-                  },
-                ),
-
-                SizedBox(height: _isSmallScreen ? 12 : 16),
-
-                // Work Site Selector
-                Container(
-                  margin: EdgeInsets.symmetric(
-                    horizontal: _isSmallScreen ? 16 : 20,
-                    vertical: _isSmallScreen ? 8 : 12,
-                  ),
-                  child: ValueListenableBuilder<WorkSiteResponse?>(
-                    valueListenable: _selectedWorkSite,
-                    builder: (context, workSite, _) {
-                      return WorkSiteSelectorButton(
-                        selectedWorkSite: workSite,
-                        onTap: _showWorkSiteDialog,
-                        backgroundColor: _theme.brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.05)
-                            : Colors.white,
-                        textColor: _theme.textTheme.bodyLarge?.color,
-                        isSmallScreen: _isSmallScreen,
+                  // Map
+                  ValueListenableBuilder<Position?>(
+                    valueListenable: _currentPosition,
+                    builder: (context, position, _) {
+                      return MapContainer(
+                        currentPosition: position,
+                        onMapCreated: (controller) => mapController = controller,
                       );
                     },
                   ),
-                ),
 
-                // Status Badge
-                ValueListenableBuilder<bool>(
-                  valueListenable: _punchManager.hasPunchIn,
-                  builder: (context, hasPunchIn, _) {
-                    if (!hasPunchIn) return const SizedBox.shrink();
-                    return Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: _isSmallScreen ? 16 : 20,
-                        vertical: _isSmallScreen ? 8 : 12,
-                      ),
-                      padding: EdgeInsets.all(_isSmallScreen ? 12 : 16),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.green.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: Colors.green,
-                            size: _isSmallScreen ? 20 : 24,
-                          ),
-                          SizedBox(width: _isSmallScreen ? 8 : 12),
-                          Text(
-                            'You are currently Punched In',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontSize: _isSmallScreen ? 14 : 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                  SizedBox(height: _isSmallScreen ? 12 : 16),
 
-                SizedBox(height: _isSmallScreen ? 88 : 104),
-              ],
-            ),
-          ),
-
-          // Loading overlay
-          // Loading overlay (transparent, blocks touches)
-          ValueListenableBuilder<bool>(
-            valueListenable: _isLoading,
-            builder: (context, isLoading, _) {
-              if (!isLoading) return const SizedBox.shrink();
-
-              return Positioned.fill(
-                child: Stack(
-                  children: const [
-                    // прозрачный барьер блокирует тапы, но НЕ затемняет фон
-                    ModalBarrier(dismissible: false, color: Colors.transparent),
-                    Center(child: CircularProgressIndicator()),
-                  ],
-                ),
-              );
-            },
-          ),
-
-        ],
-      ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: _theme.scaffoldBackgroundColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.fromLTRB(
-            16,
-            10,
-            16,
-            _isSmallScreen ? 16 : 20,
-          ),
-          child: ValueListenableBuilder<bool>(
-            valueListenable: _isLoading,
-            builder: (context, isLoading, _) {
-              return ValueListenableBuilder<bool>(
-                valueListenable: _punchManager.hasPunchIn,
-                builder: (context, hasPunchIn, __) {
-                  final inEnabled = !isLoading && !hasPunchIn;
-                  final outEnabled = !isLoading && hasPunchIn;
-
-                  return SafeArea(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly, // ✅ spaceEvenly замість center
-                      children: [
-                        // Punch In
-                        _ActionCircleButton(
-                          label: l10n.get('punchIn'),
-                          icon: Icons.login,
-                          color: Colors.green,
-                          enabled: inEnabled,
-                          onTap: inEnabled ? _handlePunchIn : null,
-                          small: _isSmallScreen,
-                        ),
-                        // Punch Out
-                        _ActionCircleButton(
-                          label: l10n.get('punchOut'),
-                          icon: Icons.logout,
-                          color: Colors.blue,
-                          enabled: outEnabled,
-                          onTap: outEnabled ? _handlePunchOut : null,
-                          small: _isSmallScreen,
-                        ),
-                      ],
+                  // Work Site Selector
+                  Container(
+                    margin: EdgeInsets.symmetric(
+                      horizontal: _isSmallScreen ? 16 : 20,
+                      vertical: _isSmallScreen ? 8 : 12,
                     ),
-                  );
-                  },
-              );
-            },
-          ),
+                    child: ValueListenableBuilder<WorkSiteResponse?>(
+                      valueListenable: _selectedWorkSite,
+                      builder: (context, workSite, _) {
+                        return WorkSiteSelectorButton(
+                          selectedWorkSite: workSite,
+                          onTap: _showWorkSiteDialog,
+                          backgroundColor: _theme.brightness == Brightness.dark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.white,
+                          textColor: _theme.textTheme.bodyLarge?.color,
+                          isSmallScreen: _isSmallScreen,
+                        );
+                      },
+                    ),
+                  ),
+
+                  // ✅ NEW: Notes section
+                  _buildNotesSection(),
+
+                  SizedBox(height: _isSmallScreen ? 8 : 12),
+
+                  // Status Badge
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _punchManager.hasPunchIn,
+                    builder: (context, hasPunchIn, _) {
+                      if (!hasPunchIn) return const SizedBox.shrink();
+                      return Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: _isSmallScreen ? 16 : 20,
+                          vertical: _isSmallScreen ? 8 : 12,
+                        ),
+                        padding: EdgeInsets.all(_isSmallScreen ? 12 : 16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.green.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: Colors.green,
+                              size: _isSmallScreen ? 20 : 24,
+                            ),
+                            SizedBox(width: _isSmallScreen ? 8 : 12),
+                            Text(
+                              'You are currently Punched In',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: _isSmallScreen ? 14 : 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
+                  SizedBox(height: _isSmallScreen ? 88 : 104),
+                ],
+              ),
+            ),
+
+            // Loading overlay
+            ValueListenableBuilder<bool>(
+              valueListenable: _isLoading,
+              builder: (context, isLoading, _) {
+                if (!isLoading) return const SizedBox.shrink();
+
+                return Positioned.fill(
+                  child: Stack(
+                    children: const [
+                      ModalBarrier(dismissible: false, color: Colors.transparent),
+                      Center(child: CircularProgressIndicator()),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+          ],
         ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: _theme.scaffoldBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          10,
+          16,
+          _isSmallScreen ? 16 : 20,
+        ),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _isLoading,
+          builder: (context, isLoading, _) {
+            return ValueListenableBuilder<bool>(
+              valueListenable: _punchManager.hasPunchIn,
+              builder: (context, hasPunchIn, __) {
+                final inEnabled = !isLoading && !hasPunchIn;
+                final outEnabled = !isLoading && hasPunchIn;
+
+                return SafeArea(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Punch In
+                      _ActionCircleButton(
+                        label: l10n.get('punchIn'),
+                        icon: Icons.login,
+                        color: Colors.green,
+                        enabled: inEnabled,
+                        onTap: inEnabled ? _handlePunchIn : null,
+                        small: _isSmallScreen,
+                      ),
+                      // Punch Out
+                      _ActionCircleButton(
+                        label: l10n.get('punchOut'),
+                        icon: Icons.logout,
+                        color: Colors.blue,
+                        enabled: outEnabled,
+                        onTap: outEnabled ? _handlePunchOut : null,
+                        small: _isSmallScreen,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -811,7 +969,7 @@ class _ActionCircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final double size = small ? 65 : 75;
     final double iconSize = small ? 20 : 24;
-    final double fontSize = small ? 9 : 11; // ✅ Зменшили ще більше
+    final double fontSize = small ? 9 : 11;
 
     return Material(
       color: Colors.transparent,
@@ -837,17 +995,17 @@ class _ActionCircleButton extends StatelessWidget {
                 Icon(icon, color: color, size: iconSize),
                 SizedBox(height: small ? 2 : 4),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4), // ✅ Додали padding
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     label,
-                    textAlign: TextAlign.center, // ✅ Центруємо текст
-                    maxLines: 1, // ✅ Тільки один рядок
-                    overflow: TextOverflow.clip, // ✅ Обрізаємо якщо не влізає
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
                     style: TextStyle(
                       color: color,
                       fontSize: fontSize,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5, // ✅ Зменшуємо відстань між літерами
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ),

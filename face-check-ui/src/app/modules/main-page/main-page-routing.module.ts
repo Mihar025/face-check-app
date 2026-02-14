@@ -60,6 +60,9 @@ import {BillingSuccessComponent} from "./pages/billing-success/billing-success.c
 import {BillingCanceledComponent} from "./pages/billing-canceled/billing-canceled.component";
 import {BillingPageComponent} from "./pages/billing-page/billing-page.component";
 import {DeleteAccountComponent} from "./pages/delete-account/delete-account.component";
+import {
+  NotesForPunchAdminComponent
+} from "./pages/admin-main-page/notes-for-punch-admin/notes-for-punch-admin.component";
 
 const routes: Routes = [
   //Registration all important endpoints
@@ -189,6 +192,11 @@ const routes: Routes = [
   {
     path: 'main-page/admin/notifications',
     component: NotificationAdminPageComponent,
+    canActivate: [TokenExpiryGuard]
+  },
+  {
+    path: 'main-page/admin/notes',
+    component: NotesForPunchAdminComponent,
     canActivate: [TokenExpiryGuard]
   },
 

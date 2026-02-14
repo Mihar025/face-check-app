@@ -226,4 +226,33 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
     LEFT JOIN FETCH wa.worker.company c
 """)
     List<WorkerAttendance> findAllWithDetails();
+
+
+
+
+    @Query("""
+    SELECT a FROM WorkerAttendance a
+    JOIN FETCH a.worker w
+    WHERE w.company.id = :companyId
+    AND (a.notesForPunchIn IS NOT NULL AND a.notesForPunchIn <> ''
+         OR a.notesForPunchOut IS NOT NULL AND a.notesForPunchOut <> '')
+    ORDER BY a.checkInTime DESC
+""")
+    List<WorkerAttendance> findAllNotesForAdmin(@Param("companyId") Integer companyId);
+
+
+
+    @Query("""
+    SELECT a FROM WorkerAttendance a
+    JOIN FETCH a.worker w
+    JOIN FETCH w.company c
+    WHERE (a.notesForPunchIn IS NOT NULL AND a.notesForPunchIn <> ''
+           OR a.notesForPunchOut IS NOT NULL AND a.notesForPunchOut <> '')
+    ORDER BY a.checkInTime DESC
+""")
+    List<WorkerAttendance> findAllNotesForAppowner();
+
+
+
+
 }

@@ -4,6 +4,7 @@
 
 export { WcRiskClassControllerService } from './services/wc-risk-class-controller.service';
 export { UserServiceControllerService } from './services/user-service-controller.service';
+export { NotificationControllerService } from './services/notification-controller.service';
 export { ControllerWithNewMethodsService } from './services/controller-with-new-methods.service';
 export { CompanyControllerService } from './services/company-controller.service';
 export { AuthenticationService } from './services/authentication.service';
@@ -15,7 +16,6 @@ export { WorkScheduleControllerService } from './services/work-schedule-controll
 export { ContactSalesControllerService } from './services/contact-sales-controller.service';
 export { PrivacyAndTermsControllerService } from './services/privacy-and-terms-controller.service';
 export { PaymentHistoryIrsControllerService } from './services/payment-history-irs-controller.service';
-export { NotificationControllerService } from './services/notification-controller.service';
 export { TrackLocationControllerService } from './services/track-location-controller.service';
 export { FileControllerService } from './services/file-controller.service';
 export { StripeWebhookControllerService } from './services/stripe-webhook-controller.service';
@@ -24,6 +24,7 @@ export { WorkerAttendanceControllerService } from './services/worker-attendance-
 export { YearToDateCustomReportControllerService } from './services/year-to-date-custom-report-controller.service';
 export { W2ControllerService } from './services/w-2-controller.service';
 export { TaxesControllerService } from './services/taxes-controller.service';
+export { NotesFromPunchesControllerService } from './services/notes-from-punches-controller.service';
 export { EFilesControllerService } from './services/e-files-controller.service';
 export { ReportAwsControllerService } from './services/report-aws-controller.service';
 export { CustomErrorControllerService } from './services/custom-error-controller.service';

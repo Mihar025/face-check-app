@@ -815,118 +815,128 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     return inDebugMode;
   }
 
-  // ✅ NEW: Build the Notes section widget
+  // ✅ NEW: Build the Notes section widget — dynamic based on punch state
   Widget _buildNotesSection() {
     final isDark = _theme.brightness == Brightness.dark;
 
-    return Padding(
-      padding: _isSmallScreen ? _smallPadding : _standardPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          Row(
+    return ValueListenableBuilder<bool>(
+      valueListenable: _punchManager.hasPunchIn,
+      builder: (context, hasPunchIn, _) {
+        final bool isPunchOut = hasPunchIn;
+        final String label = isPunchOut ? 'Notes for Punch Out' : 'Notes for Punch In';
+        final String hintText = isPunchOut
+            ? 'What was done today...\n\nExample:\n- Installed wiring on 3rd floor\n- Fixed outlet in room 204'
+            : 'Notes before starting work...\n\nExample:\n- Starting electrical work\n- Materials received';
+        final Color accentColor = isPunchOut ? Colors.blue : Colors.green;
+
+        return Padding(
+          padding: _isSmallScreen ? _smallPadding : _standardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.notes_rounded,
-                size: _isSmallScreen ? 18 : 20,
-                color: _theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+              // Header row
+              Row(
+                children: [
+                  Icon(
+                    isPunchOut ? Icons.edit_note_rounded : Icons.notes_rounded,
+                    size: _isSmallScreen ? 18 : 20,
+                    color: accentColor.withOpacity(0.7),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: _isSmallScreen ? 14 : 16,
+                      fontWeight: FontWeight.w600,
+                      color: _theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '(optional)',
+                    style: TextStyle(
+                      fontSize: _isSmallScreen ? 11 : 12,
+                      color: _theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Notes',
-                style: TextStyle(
-                  fontSize: _isSmallScreen ? 14 : 16,
-                  fontWeight: FontWeight.w600,
-                  color: _theme.textTheme.bodyLarge?.color,
+              const SizedBox(height: 8),
+
+              // TextField container
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[900] : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: accentColor.withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '(optional)',
-                style: TextStyle(
-                  fontSize: _isSmallScreen ? 11 : 12,
-                  color: _theme.textTheme.bodySmall?.color?.withOpacity(0.5),
-                  fontStyle: FontStyle.italic,
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _notesController,
+                      maxLength: _maxNotesLength,
+                      maxLines: 6,
+                      minLines: 4,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      style: TextStyle(
+                        fontSize: _isSmallScreen ? 14 : 15,
+                        color: _theme.textTheme.bodyLarge?.color,
+                        height: 1.4,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        hintMaxLines: 5,
+                        hintStyle: TextStyle(
+                          fontSize: _isSmallScreen ? 13 : 14,
+                          color: _theme.textTheme.bodySmall?.color?.withOpacity(0.35),
+                          height: 1.4,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: _isSmallScreen ? 12 : 16,
+                          vertical: _isSmallScreen ? 12 : 14,
+                        ),
+                        border: InputBorder.none,
+                        counterText: '', // Hide default counter, we use custom one below
+                      ),
+                    ),
+
+                    // Custom character counter
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12, bottom: 8),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _notesController,
+                          builder: (context, value, _) {
+                            final length = value.text.length;
+                            final isNearLimit = length > (_maxNotesLength * 0.9);
+
+                            return Text(
+                              '$length / $_maxNotesLength',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isNearLimit
+                                    ? Colors.orange
+                                    : _theme.textTheme.bodySmall?.color?.withOpacity(0.4),
+                                fontWeight: isNearLimit ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-
-          // TextField container
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark
-                    ? Colors.grey[700]!
-                    : Colors.grey[300]!,
-                width: 1,
-              ),
-            ),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _notesController,
-                  maxLength: _maxNotesLength,
-                  maxLines: 6,
-                  minLines: 4,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  style: TextStyle(
-                    fontSize: _isSmallScreen ? 14 : 15,
-                    color: _theme.textTheme.bodyLarge?.color,
-                    height: 1.4,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Add notes about your work...',
-                    hintMaxLines: 5,
-                    hintStyle: TextStyle(
-                      fontSize: _isSmallScreen ? 13 : 14,
-                      color: _theme.textTheme.bodySmall?.color?.withOpacity(0.35),
-                      height: 1.4,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: _isSmallScreen ? 12 : 16,
-                      vertical: _isSmallScreen ? 12 : 14,
-                    ),
-                    border: InputBorder.none,
-                    counterText: '', // Hide default counter, we use custom one below
-                  ),
-                ),
-
-                // Custom character counter
-                Padding(
-                  padding: const EdgeInsets.only(right: 12, bottom: 8),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: _notesController,
-                      builder: (context, value, _) {
-                        final length = value.text.length;
-                        final isNearLimit = length > (_maxNotesLength * 0.9);
-
-                        return Text(
-                          '$length / $_maxNotesLength',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isNearLimit
-                                ? Colors.orange
-                                : _theme.textTheme.bodySmall?.color?.withOpacity(0.4),
-                            fontWeight: isNearLimit ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

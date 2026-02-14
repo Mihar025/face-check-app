@@ -8,6 +8,7 @@ import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
 import { WcRiskClassControllerService } from './services/wc-risk-class-controller.service';
 import { UserServiceControllerService } from './services/user-service-controller.service';
+import { NotificationControllerService } from './services/notification-controller.service';
 import { ControllerWithNewMethodsService } from './services/controller-with-new-methods.service';
 import { CompanyControllerService } from './services/company-controller.service';
 import { AuthenticationService } from './services/authentication.service';
@@ -19,7 +20,6 @@ import { WorkScheduleControllerService } from './services/work-schedule-controll
 import { ContactSalesControllerService } from './services/contact-sales-controller.service';
 import { PrivacyAndTermsControllerService } from './services/privacy-and-terms-controller.service';
 import { PaymentHistoryIrsControllerService } from './services/payment-history-irs-controller.service';
-import { NotificationControllerService } from './services/notification-controller.service';
 import { TrackLocationControllerService } from './services/track-location-controller.service';
 import { FileControllerService } from './services/file-controller.service';
 import { StripeWebhookControllerService } from './services/stripe-webhook-controller.service';
@@ -28,6 +28,7 @@ import { WorkerAttendanceControllerService } from './services/worker-attendance-
 import { YearToDateCustomReportControllerService } from './services/year-to-date-custom-report-controller.service';
 import { W2ControllerService } from './services/w-2-controller.service';
 import { TaxesControllerService } from './services/taxes-controller.service';
+import { NotesFromPunchesControllerService } from './services/notes-from-punches-controller.service';
 import { EFilesControllerService } from './services/e-files-controller.service';
 import { ReportAwsControllerService } from './services/report-aws-controller.service';
 import { CustomErrorControllerService } from './services/custom-error-controller.service';
@@ -42,6 +43,7 @@ import { CustomErrorControllerService } from './services/custom-error-controller
   providers: [
     WcRiskClassControllerService,
     UserServiceControllerService,
+    NotificationControllerService,
     ControllerWithNewMethodsService,
     CompanyControllerService,
     AuthenticationService,
@@ -53,7 +55,6 @@ import { CustomErrorControllerService } from './services/custom-error-controller
     ContactSalesControllerService,
     PrivacyAndTermsControllerService,
     PaymentHistoryIrsControllerService,
-    NotificationControllerService,
     TrackLocationControllerService,
     FileControllerService,
     StripeWebhookControllerService,
@@ -62,6 +63,7 @@ import { CustomErrorControllerService } from './services/custom-error-controller
     YearToDateCustomReportControllerService,
     W2ControllerService,
     TaxesControllerService,
+    NotesFromPunchesControllerService,
     EFilesControllerService,
     ReportAwsControllerService,
     CustomErrorControllerService,
