@@ -326,6 +326,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   late final ValueNotifier<String> _lastPunchTime;
   late final ValueNotifier<bool> _isPunchedIn;
   late final ValueNotifier<String> _weekPeriod;
+  late final ValueNotifier<int> _unreadCount;
+  Timer? _pollingTimer;
+
 
   // Services
   late final TimeService _timeService;
@@ -368,6 +371,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _weekPeriod = ValueNotifier<String>(
         '${DateFormat('MMM d').format(startOfWeek)} - ${DateFormat('MMM d').format(endOfWeek)}'
     );
+    _unreadCount = ValueNotifier<int>(0);
 
     _dio = Dio(BaseOptions(
       baseUrl: 'https://face-check-prod-drgsy.ondigitalocean.app/api/v1/',
@@ -398,8 +402,40 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _lastPunchTime.dispose();
     _isPunchedIn.dispose();
     _weekPeriod.dispose();
+    _pollingTimer?.cancel();
+    _unreadCount.dispose();
     super.dispose();
   }
+
+
+  void _startNotificationPolling(){
+
+    _fetchUnreadCount();
+
+    _pollingTimer = Timer.periodic(
+      const Duration(seconds: 30),
+        (_) => _fetchUnreadCount(),
+    );
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    try{
+      final companyId = await ApiService.instance.getCompanyId();
+      if(companyId != null){
+        final count = await ApiService.instance.getUnreadNotificationCount(companyId: companyId);
+        _unreadCount.value = count;
+      }
+    } catch(e){
+      print('Error polling unread count $e');
+    }
+  }
+
+
+
+
+
+
+
 
   Future<void> _fastInitialize() async {
     await _loadCachedData();
@@ -642,9 +678,50 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                         fit: BoxFit.contain,
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.notifications_none_rounded, size: 28),
-                      onPressed: () => Navigator.pushNamed(context, '/notifications'),
+                    ValueListenableBuilder<int>(
+                      valueListenable: _unreadCount,
+                      builder: (_, count, __) => IconButton(
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Icon(Icons.notifications_none_rounded, size: 28),
+                            if (count > 0)
+                              Positioned(
+                                right: -6,
+                                top: -4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                    minHeight: 18,
+                                  ),
+                                  child: Text(
+                                    count > 99 ? '99+' : count.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        onPressed: () async {
+                          await Navigator.pushNamed(context, '/notifications');
+                          // Когда вернулся из экрана уведомлений — обнуляем
+                          final companyId = await ApiService.instance.getCompanyId();
+                          if (companyId != null) {
+                            await ApiService.instance.markNotificationAsRead(companyId: companyId);
+                            _unreadCount.value = 0;
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -926,4 +1003,5 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       ),
     );
   }
+
 }
