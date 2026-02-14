@@ -27,6 +27,7 @@ public class WorkerAttendance {
     @Column(name = "check_in_time")
     private LocalDateTime checkInTime;
 
+
     @Column(name = "check_in_photo_url")
     private String checkInPhotoUrl;
 
@@ -84,6 +85,15 @@ public class WorkerAttendance {
 
     @Column(name = "verification_time")
     private LocalDateTime verificationTime;
+
+    @Column(name = "notes_for_punch_in", length = 3000)
+    private String notesForPunchIn;
+
+    @Column(name = "notes_for_punch_out", length = 3000)
+    private String notesForPunchOut;
+
+
+
 
 
 

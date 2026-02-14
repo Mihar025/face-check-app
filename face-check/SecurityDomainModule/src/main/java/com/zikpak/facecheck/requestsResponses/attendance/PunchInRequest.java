@@ -10,6 +10,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Optional;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -29,5 +31,8 @@ public class PunchInRequest {
     @NotNull(message = "This field is required!")
    // @PositiveOrZero(message = "This field cannot be negative")
     private Double longitude;
+
+
+    private String notesForPunchIn;
 
 }

@@ -135,8 +135,13 @@ public class WorkAttendanceService {
                                         duration
                                 );
 
+
+                                String notesForPunchIn = validateNotesForPunch(punchInRequest.getNotesForPunchIn());
+
                                // String photoUrl = photoUrlFuture.join();
+
                                 WorkerAttendance attendance = createAttendance(user, punchInRequest, "uploading");
+                                attendance.setNotesForPunchIn(notesForPunchIn);
                                 WorkerAttendance savedAttendance = workerAttendanceRepository.save(attendance);
 
                         photoUrlFuture.thenAccept(url -> {
@@ -151,14 +156,18 @@ public class WorkAttendanceService {
                                 });
 
 
+
+
                         LocalTime currentTime = LocalTime.now();
                         LocalTime scheduledTime = schedule.getExpectedStartTime();
+
                         if(currentTime.isBefore(scheduledTime)) {
                                 long minutes = ChronoUnit.MINUTES.between(currentTime, scheduledTime);
                                 metricsService.recordEarlyPunchIn(
                                         user.getFirstName() + " " + user.getLastName(),
                                                         minutes);
                         }
+
                         workSite.setIsWorkerDidPunchIn(Boolean.TRUE);
                         user.setCurrentWorkSite(workSite);
 
@@ -184,6 +193,7 @@ public class WorkAttendanceService {
                         return createErrorResponseForPunchIn(e.getMessage());
                 }
         }
+
 
 
 
@@ -236,11 +246,14 @@ public class WorkAttendanceService {
                                 });
 
 
+                        String notesForPunchOut = validateNotesForPunch(punchOutRequest.getNotesForPunchOut());
 
                         existingAttendance.setCheckOutTime(LocalDateTime.now());
                         existingAttendance.setCheckOutLatitude(punchOutRequest.getLatitude());
                         existingAttendance.setCheckOutLongitude(punchOutRequest.getLongitude());
                         existingAttendance.setCheckOutLocation(workSite.getAddress());
+                        existingAttendance.setNotesForPunchOut(notesForPunchOut);
+
 
                         calculateWorkedHours(existingAttendance);
                         WorkerAttendance savedAttendance = workerAttendanceRepository.save(existingAttendance);
@@ -314,6 +327,15 @@ public class WorkAttendanceService {
                         return createErrorResponseForPunchOut(e.getMessage());
                 }
         }
+
+
+    private String validateNotesForPunch(String notes){
+        if(notes != null && !notes.trim().isEmpty()){
+            String trimmed = notes.trim();
+            return trimmed.length() > 3000 ? trimmed.substring(0, 3000) : trimmed;
+        }
+        return "";
+    }
 
 
 
@@ -1014,6 +1036,7 @@ public class WorkAttendanceService {
                         .workSiteAddress(workSite.getAddress())
                         .isSuccessful(true)
                         .message("Successfully checked in!")
+                        .notesForPunchIn(savedAttendance.getNotesForPunchIn())
                         .build();
         }
 
@@ -1041,6 +1064,7 @@ public class WorkAttendanceService {
                         .checkOutLocation(attendance.getCheckOutLocation())
                         .isSuccessful(true)
                         .message("Punch out successful")
+                        .notesForPunchOut(attendance.getNotesForPunchOut())
                         .build();
         }
 

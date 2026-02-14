@@ -74,7 +74,6 @@ public class User implements UserDetails, Principal {
     @Column(name = "fcm_token", length = 512)
     private String fcmToken;
 
-
     @Column(name = "actual_budget")
     private BigDecimal actualBudget = BigDecimal.ZERO;
 

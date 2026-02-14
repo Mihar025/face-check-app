@@ -60,6 +60,10 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
   late final ValueNotifier<int?> _currentUserId;
   late final PunchManager _punchManager;
 
+  // ✅ NEW: Notes controller
+  final TextEditingController _notesController = TextEditingController();
+  static const int _maxNotesLength = 3000;
+
   // Google Maps Controller
   GoogleMapController? mapController;
 
@@ -116,6 +120,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     _workSites.dispose();
     _isTrackingActive.dispose();
     _currentUserId.dispose();
+    _notesController.dispose(); // ✅ NEW: Dispose notes controller
     super.dispose();
   }
 
@@ -517,6 +522,17 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     );
   }
 
+  // ✅ NEW: Get notes text (trimmed, or null if empty)
+  String? _getNotesText() {
+    final text = _notesController.text.trim();
+    return text.isEmpty ? null : text;
+  }
+
+  // ✅ NEW: Clear notes after successful punch
+  void _clearNotes() {
+    _notesController.clear();
+  }
+
   Future<void> _handlePunchInOut() async {
     if (!_punchManager.hasPunchIn.value) {
       await _handlePunchInWithCamera();
@@ -556,7 +572,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         'workSiteId': _selectedWorkSite.value?.workSiteId,
         'photoBase64': photoBase64,
         'latitude': _currentPosition.value?.latitude,
-        'longitude': _currentPosition.value?.longitude
+        'longitude': _currentPosition.value?.longitude,
+        'notesForPunchIn': _getNotesText(), // ✅ NEW: Send notes
       };
 
       final response = await dio.post(
@@ -602,6 +619,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
         _isTrackingActive.value = true;
         _isLoading.value = false;
+
+        _clearNotes(); // ✅ NEW: Clear notes after success
 
         final currentTime = _getCurrentFormattedTime();
         _showSuccessDialog(true, currentTime);
@@ -681,7 +700,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         'workSiteId': _selectedWorkSite.value?.workSiteId,
         'photoBase64': photoBase64,
         'latitude': _currentPosition.value?.latitude,
-        'longitude': _currentPosition.value?.longitude
+        'longitude': _currentPosition.value?.longitude,
+        'notesForPunchOut': _getNotesText(), // ✅ NEW: Send notes
       };
 
       final response = await dio.post(
@@ -714,6 +734,8 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
 
         _isTrackingActive.value = false;
         _isLoading.value = false;
+
+        _clearNotes(); // ✅ NEW: Clear notes after success
 
         final currentTime = _getCurrentFormattedTime();
         _showSuccessDialog(false, currentTime);
@@ -793,6 +815,121 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
     return inDebugMode;
   }
 
+  // ✅ NEW: Build the Notes section widget
+  Widget _buildNotesSection() {
+    final isDark = _theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: _isSmallScreen ? _smallPadding : _standardPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Icon(
+                Icons.notes_rounded,
+                size: _isSmallScreen ? 18 : 20,
+                color: _theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Notes',
+                style: TextStyle(
+                  fontSize: _isSmallScreen ? 14 : 16,
+                  fontWeight: FontWeight.w600,
+                  color: _theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '(optional)',
+                style: TextStyle(
+                  fontSize: _isSmallScreen ? 11 : 12,
+                  color: _theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // TextField container
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[900] : Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark
+                    ? Colors.grey[700]!
+                    : Colors.grey[300]!,
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _notesController,
+                  maxLength: _maxNotesLength,
+                  maxLines: 6,
+                  minLines: 4,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  style: TextStyle(
+                    fontSize: _isSmallScreen ? 14 : 15,
+                    color: _theme.textTheme.bodyLarge?.color,
+                    height: 1.4,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Add notes about your work...',
+                    hintMaxLines: 5,
+                    hintStyle: TextStyle(
+                      fontSize: _isSmallScreen ? 13 : 14,
+                      color: _theme.textTheme.bodySmall?.color?.withOpacity(0.35),
+                      height: 1.4,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: _isSmallScreen ? 12 : 16,
+                      vertical: _isSmallScreen ? 12 : 14,
+                    ),
+                    border: InputBorder.none,
+                    counterText: '', // Hide default counter, we use custom one below
+                  ),
+                ),
+
+                // Custom character counter
+                Padding(
+                  padding: const EdgeInsets.only(right: 12, bottom: 8),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _notesController,
+                      builder: (context, value, _) {
+                        final length = value.text.length;
+                        final isNearLimit = length > (_maxNotesLength * 0.9);
+
+                        return Text(
+                          '$length / $_maxNotesLength',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isNearLimit
+                                ? Colors.orange
+                                : _theme.textTheme.bodySmall?.color?.withOpacity(0.4),
+                            fontWeight: isNearLimit ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     _updateCachedValues();
@@ -842,74 +979,85 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         ]
             : null,
       ),
-      body: Stack(
-        children: [
-          Container(
-            color: _theme.scaffoldBackgroundColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: _isSmallScreen ? 16 : 20),
-
-                ClockDisplay(
-                  textColor: _theme.textTheme.bodyLarge?.color ?? Colors.white,
-                  isSmallScreen: _isSmallScreen,
-                  timeStream: timeService.nyTicker(),
-                ),
-
-                SizedBox(height: _isSmallScreen ? 16 : 20),
-
-                ValueListenableBuilder<Position?>(
-                  valueListenable: _currentPosition,
-                  builder: (context, position, _) {
-                    return MapContainer(
-                      currentPosition: position,
-                      onMapCreated: (controller) => mapController = controller,
-                    );
-                  },
-                ),
-
-                SizedBox(height: _isSmallScreen ? 16 : 20),
-
-                Padding(
-                  padding: _isSmallScreen ? _smallPadding : _standardPadding,
-                  child: ValueListenableBuilder<WorkSiteResponse?>(
-                    valueListenable: _selectedWorkSite,
-                    builder: (context, workSite, _) {
-                      return WorkSiteSelectorButton(
-                        selectedWorkSite: workSite,
-                        onTap: _showWorkSiteDialog,
-                        backgroundColor: _theme.brightness == Brightness.dark
-                            ? Colors.grey[900]
-                            : Colors.grey[100],
-                        textColor: _theme.textTheme.bodyLarge?.color,
-                        isSmallScreen: _isSmallScreen,
-                      );
-                    },
-                  ),
-                ),
-
-                SizedBox(height: _isSmallScreen ? 16 : 20),
-              ],
-            ),
-          ),
-
-          ValueListenableBuilder<bool>(
-            valueListenable: _isLoading,
-            builder: (context, isLoading, _) {
-              if (!isLoading) return const SizedBox.shrink();
-
-              return const Positioned.fill(
-                child: Stack(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            // ✅ CHANGED: Wrapped in SingleChildScrollView so notes field doesn't overflow
+            SingleChildScrollView(
+              child: Container(
+                color: _theme.scaffoldBackgroundColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ModalBarrier(dismissible: false, color: Colors.transparent),
-                    Center(child: CircularProgressIndicator()),
+                    SizedBox(height: _isSmallScreen ? 16 : 20),
+
+                    ClockDisplay(
+                      textColor: _theme.textTheme.bodyLarge?.color ?? Colors.white,
+                      isSmallScreen: _isSmallScreen,
+                      timeStream: timeService.nyTicker(),
+                    ),
+
+                    SizedBox(height: _isSmallScreen ? 16 : 20),
+
+                    ValueListenableBuilder<Position?>(
+                      valueListenable: _currentPosition,
+                      builder: (context, position, _) {
+                        return MapContainer(
+                          currentPosition: position,
+                          onMapCreated: (controller) => mapController = controller,
+                        );
+                      },
+                    ),
+
+                    SizedBox(height: _isSmallScreen ? 16 : 20),
+
+                    Padding(
+                      padding: _isSmallScreen ? _smallPadding : _standardPadding,
+                      child: ValueListenableBuilder<WorkSiteResponse?>(
+                        valueListenable: _selectedWorkSite,
+                        builder: (context, workSite, _) {
+                          return WorkSiteSelectorButton(
+                            selectedWorkSite: workSite,
+                            onTap: _showWorkSiteDialog,
+                            backgroundColor: _theme.brightness == Brightness.dark
+                                ? Colors.grey[900]
+                                : Colors.grey[100],
+                            textColor: _theme.textTheme.bodyLarge?.color,
+                            isSmallScreen: _isSmallScreen,
+                          );
+                        },
+                      ),
+                    ),
+
+                    SizedBox(height: _isSmallScreen ? 12 : 16),
+
+                    // ✅ NEW: Notes section
+                    _buildNotesSection(),
+
+                    SizedBox(height: _isSmallScreen ? 16 : 20),
                   ],
                 ),
-              );
-            },
-          ),
-        ],
+              ),
+            ),
+
+            ValueListenableBuilder<bool>(
+              valueListenable: _isLoading,
+              builder: (context, isLoading, _) {
+                if (!isLoading) return const SizedBox.shrink();
+
+                return const Positioned.fill(
+                  child: Stack(
+                    children: [
+                      ModalBarrier(dismissible: false, color: Colors.transparent),
+                      Center(child: CircularProgressIndicator()),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: Container(
         color: _theme.scaffoldBackgroundColor,

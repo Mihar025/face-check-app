@@ -30,4 +30,7 @@ public class PunchOutRequest {
  //   @PositiveOrZero(message = "This field cannot be negative")
     private Double longitude;
 
+    private String notesForPunchOut;
+
+
 }

@@ -35,4 +35,8 @@ public class PunchOutResponse {
     private String workSiteAddress;
     private Boolean isSuccessful;
     private String message;
+
+    private String notesForPunchOut;
+
+
 }
