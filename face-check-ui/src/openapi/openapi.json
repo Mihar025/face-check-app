@@ -199,6 +199,30 @@
         }
       }
     },
+    "/notifications/company/{companyId}/mark-read": {
+      "put": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "markAllAsRead",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/newMethods/worker/{workerId}/punch": {
       "put": {
         "tags": [
@@ -1286,6 +1310,29 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/user/fcm-token": {
+      "post": {
+        "tags": [
+          "user-service-controller"
+        ],
+        "operationId": "saveToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveFcmTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -6588,6 +6635,38 @@
         }
       }
     },
+    "/notifications/company/{companyId}/unread-count": {
+      "get": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "getUnreadCount",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/notifications/company/{companyId}/today": {
       "get": {
         "tags": [
@@ -6632,6 +6711,48 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PageResponseNotificationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notes-for-punch": {
+      "get": {
+        "tags": [
+          "notes-from-punches-controller"
+        ],
+        "operationId": "getAllNotes",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseNotesForPunchResponse"
                 }
               }
             }
@@ -9837,6 +9958,14 @@
           }
         }
       },
+      "SaveFcmTokenRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "DaySchedule": {
         "required": [
           "endTime",
@@ -10627,7 +10756,6 @@
           "apt",
           "city",
           "companyAddress",
-          "companyId",
           "dateOfBirth",
           "email",
           "employmentType",
@@ -11403,6 +11531,9 @@
           "longitude": {
             "type": "number",
             "format": "double"
+          },
+          "notesForPunchOut": {
+            "type": "string"
           }
         }
       },
@@ -11467,6 +11598,9 @@
           },
           "message": {
             "type": "string"
+          },
+          "notesForPunchOut": {
+            "type": "string"
           }
         }
       },
@@ -11492,6 +11626,9 @@
           "longitude": {
             "type": "number",
             "format": "double"
+          },
+          "notesForPunchIn": {
+            "type": "string"
           }
         }
       },
@@ -11540,6 +11677,9 @@
             "type": "boolean"
           },
           "message": {
+            "type": "string"
+          },
+          "notesForPunchIn": {
             "type": "string"
           }
         }
@@ -12650,6 +12790,87 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/NotificationResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElement": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NotesForPunchResponse": {
+        "type": "object",
+        "properties": {
+          "attendanceId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workerFirstName": {
+            "type": "string"
+          },
+          "workerLastName": {
+            "type": "string"
+          },
+          "workerFullName": {
+            "type": "string"
+          },
+          "workerProfileImageUrl": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "notesForPunchIn": {
+            "type": "string"
+          },
+          "notesForPunchOut": {
+            "type": "string"
+          },
+          "checkInTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkOutTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkInLocation": {
+            "type": "string"
+          },
+          "checkOutLocation": {
+            "type": "string"
+          }
+        }
+      },
+      "PageResponseNotesForPunchResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotesForPunchResponse"
             }
           },
           "number": {

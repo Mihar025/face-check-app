@@ -1,0 +1,201 @@
+<div class="admin-layout">
+  <app-admin-sidebar
+    [userName]="userName"
+    [companyName]="companyName"
+    [userPhotoUrl]="userPhotoUrl">
+  </app-admin-sidebar>
+
+  <div class="main-content">
+
+    <!-- Top Header -->
+    <div class="top-header">
+      <div class="header-content">
+        <div class="logo-section">
+          <img src="logo.jpg" alt="Facecheck Logo" class="top-logo">
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="admin-container">
+
+      <!-- Page Header -->
+      <div class="header-with-action">
+        <div class="header-left">
+          <h1><i class="fas fa-sticky-note"></i> Worker Notes</h1>
+          <p class="header-subtitle" *ngIf="totalElements > 0">
+            {{ totalElements }} note{{ totalElements !== 1 ? 's' : '' }} from workers
+          </p>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="loading-indicator">
+        <div class="spinner"></div>
+        <p>Loading notes...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && notes.length === 0 && !errorMessage" class="empty-state">
+        <i class="fas fa-clipboard"></i>
+        <h3>No notes yet</h3>
+        <p>Notes from workers will appear here when they add them during punch in/out.</p>
+      </div>
+
+      <!-- Notes Cards -->
+      <div class="notes-list" *ngIf="!loading && notes.length > 0">
+
+        <div class="note-card" *ngFor="let note of notes">
+
+          <!-- Card Header: Worker Info + Date -->
+          <div class="note-card-header">
+            <div class="worker-info">
+              <!-- Avatar -->
+              <div class="worker-avatar" *ngIf="hasAvatar(note.workerProfileImageUrl)">
+                <img [src]="note.workerProfileImageUrl" [alt]="note.workerFullName || 'Worker'" />
+              </div>
+              <div class="worker-avatar avatar-fallback" *ngIf="!hasAvatar(note.workerProfileImageUrl)">
+                {{ getInitials(note.workerFullName) }}
+              </div>
+
+              <div class="worker-details">
+                <span class="worker-name">{{ note.workerFullName || 'Unknown Worker' }}</span>
+                <span class="worker-company" *ngIf="note.companyName">{{ note.companyName }}</span>
+              </div>
+            </div>
+
+            <div class="note-date">
+              <i class="fas fa-calendar-alt"></i>
+              {{ formatDate(note.checkInTime) }}
+            </div>
+          </div>
+
+          <!-- Time Row -->
+          <div class="time-row">
+            <div class="time-item punch-in">
+              <i class="fas fa-sign-in-alt"></i>
+              <div>
+                <span class="time-label">Punch In</span>
+                <span class="time-value">{{ formatTime(note.checkInTime) }}</span>
+              </div>
+            </div>
+
+            <div class="time-divider">
+              <i class="fas fa-arrow-right"></i>
+            </div>
+
+            <div class="time-item punch-out">
+              <i class="fas fa-sign-out-alt"></i>
+              <div>
+                <span class="time-label">Punch Out</span>
+                <span class="time-value">{{ formatTime(note.checkOutTime) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Content -->
+          <div class="notes-content">
+
+            <!-- Punch In Notes -->
+            <div class="note-block note-in" *ngIf="note.notesForPunchIn && note.notesForPunchIn.trim().length > 0">
+              <div class="note-block-header">
+                <span class="note-badge badge-in">
+                  <i class="fas fa-sign-in-alt"></i> Punch In Notes
+                </span>
+                <span class="note-location" *ngIf="note.checkInLocation">
+                  <i class="fas fa-map-marker-alt"></i> {{ note.checkInLocation }}
+                </span>
+              </div>
+              <div class="note-text">
+                {{ getNoteText(note.notesForPunchIn, note.attendanceId, 'in') }}
+              </div>
+              <button
+                class="expand-button"
+                *ngIf="isLongNote(note.notesForPunchIn)"
+                (click)="toggleExpand(note.attendanceId, 'in')">
+                {{ isExpanded(note.attendanceId, 'in') ? 'Show less' : 'Show more' }}
+                <i [class]="isExpanded(note.attendanceId, 'in') ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+              </button>
+            </div>
+
+            <!-- Punch Out Notes -->
+            <div class="note-block note-out" *ngIf="note.notesForPunchOut && note.notesForPunchOut.trim().length > 0">
+              <div class="note-block-header">
+                <span class="note-badge badge-out">
+                  <i class="fas fa-sign-out-alt"></i> Punch Out Notes
+                </span>
+                <span class="note-location" *ngIf="note.checkOutLocation">
+                  <i class="fas fa-map-marker-alt"></i> {{ note.checkOutLocation }}
+                </span>
+              </div>
+              <div class="note-text">
+                {{ getNoteText(note.notesForPunchOut, note.attendanceId, 'out') }}
+              </div>
+              <button
+                class="expand-button"
+                *ngIf="isLongNote(note.notesForPunchOut)"
+                (click)="toggleExpand(note.attendanceId, 'out')">
+                {{ isExpanded(note.attendanceId, 'out') ? 'Show less' : 'Show more' }}
+                <i [class]="isExpanded(note.attendanceId, 'out') ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="totalPages > 1" class="pagination">
+        <button
+          class="pagination-button"
+          [disabled]="page === 0"
+          (click)="changePage(page - 1)">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <button
+          class="pagination-button"
+          [class.active]="page === 0"
+          (click)="changePage(0)"
+          *ngIf="page > 2">
+          1
+        </button>
+
+        <span class="page-dots" *ngIf="page > 3">...</span>
+
+        <button
+          *ngFor="let p of getVisiblePages()"
+          class="pagination-button"
+          [class.active]="p === page"
+          (click)="changePage(p)">
+          {{ p + 1 }}
+        </button>
+
+        <span class="page-dots" *ngIf="page < totalPages - 4">...</span>
+
+        <button
+          class="pagination-button"
+          [class.active]="page === totalPages - 1"
+          (click)="changePage(totalPages - 1)"
+          *ngIf="page < totalPages - 3">
+          {{ totalPages }}
+        </button>
+
+        <button
+          class="pagination-button"
+          [disabled]="page >= totalPages - 1"
+          (click)="changePage(page + 1)">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

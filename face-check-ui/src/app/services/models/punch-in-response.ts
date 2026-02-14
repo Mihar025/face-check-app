@@ -11,6 +11,7 @@ export interface PunchInResponse {
   formattedCheckInTime?: string;
   isSuccessful?: boolean;
   message?: string;
+  notesForPunchIn?: string;
   workSiteAddress?: string;
   workSiteId?: number;
   workSiteName?: string;

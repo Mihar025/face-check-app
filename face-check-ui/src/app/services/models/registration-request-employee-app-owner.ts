@@ -9,7 +9,7 @@ export interface RegistrationRequestEmployeeAppOwner {
   apt: string;
   city: string;
   companyAddress: string;
-  companyId: number;
+  companyId?: number;
   coverageStartDate?: string;
   dateOfBirth: string;
   dateWhenRehired?: string;

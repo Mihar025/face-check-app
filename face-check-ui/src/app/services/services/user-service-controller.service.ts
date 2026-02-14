@@ -75,6 +75,8 @@ import { findWorkerTotalPayedTaxesAmountForYear } from '../fn/user-service-contr
 import { FindWorkerTotalPayedTaxesAmountForYear$Params } from '../fn/user-service-controller/find-worker-total-payed-taxes-amount-for-year';
 import { getWorkerPersonalInformation } from '../fn/user-service-controller/get-worker-personal-information';
 import { GetWorkerPersonalInformation$Params } from '../fn/user-service-controller/get-worker-personal-information';
+import { saveToken } from '../fn/user-service-controller/save-token';
+import { SaveToken$Params } from '../fn/user-service-controller/save-token';
 import { updateEmail } from '../fn/user-service-controller/update-email';
 import { UpdateEmail$Params } from '../fn/user-service-controller/update-email';
 import { updateHomeAddress } from '../fn/user-service-controller/update-home-address';
@@ -198,6 +200,31 @@ export class UserServiceControllerService extends BaseService {
    */
   updateHomeAddress(params: UpdateHomeAddress$Params, context?: HttpContext): Observable<void> {
     return this.updateHomeAddress$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `saveToken()` */
+  static readonly SaveTokenPath = '/user/fcm-token';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `saveToken()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  saveToken$Response(params: SaveToken$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return saveToken(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `saveToken$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  saveToken(params: SaveToken$Params, context?: HttpContext): Observable<void> {
+    return this.saveToken$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
   }

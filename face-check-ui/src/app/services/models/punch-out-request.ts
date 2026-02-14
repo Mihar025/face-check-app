@@ -5,6 +5,7 @@
 export interface PunchOutRequest {
   latitude: number;
   longitude: number;
+  notesForPunchOut?: string;
   photoBase64: string;
   workSiteId?: number;
 }

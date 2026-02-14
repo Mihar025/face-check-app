@@ -17,12 +17,41 @@ import { deleteNotification } from '../fn/notification-controller/delete-notific
 import { DeleteNotification$Params } from '../fn/notification-controller/delete-notification';
 import { getTodaysNotifications } from '../fn/notification-controller/get-todays-notifications';
 import { GetTodaysNotifications$Params } from '../fn/notification-controller/get-todays-notifications';
+import { getUnreadCount } from '../fn/notification-controller/get-unread-count';
+import { GetUnreadCount$Params } from '../fn/notification-controller/get-unread-count';
+import { markAllAsRead } from '../fn/notification-controller/mark-all-as-read';
+import { MarkAllAsRead$Params } from '../fn/notification-controller/mark-all-as-read';
 import { PageResponseNotificationResponse } from '../models/page-response-notification-response';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationControllerService extends BaseService {
   constructor(config: ApiConfiguration, http: HttpClient) {
     super(config, http);
+  }
+
+  /** Path part for operation `markAllAsRead()` */
+  static readonly MarkAllAsReadPath = '/notifications/company/{companyId}/mark-read';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `markAllAsRead()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  markAllAsRead$Response(params: MarkAllAsRead$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return markAllAsRead(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `markAllAsRead$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  markAllAsRead(params: MarkAllAsRead$Params, context?: HttpContext): Observable<void> {
+    return this.markAllAsRead$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
   }
 
   /** Path part for operation `createNotification()` */
@@ -47,6 +76,31 @@ export class NotificationControllerService extends BaseService {
   createNotification(params: CreateNotification$Params, context?: HttpContext): Observable<void> {
     return this.createNotification$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `getUnreadCount()` */
+  static readonly GetUnreadCountPath = '/notifications/company/{companyId}/unread-count';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `getUnreadCount()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getUnreadCount$Response(params: GetUnreadCount$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return getUnreadCount(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `getUnreadCount$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  getUnreadCount(params: GetUnreadCount$Params, context?: HttpContext): Observable<number> {
+    return this.getUnreadCount$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 
