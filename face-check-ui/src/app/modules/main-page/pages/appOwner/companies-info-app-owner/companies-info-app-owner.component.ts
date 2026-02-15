@@ -34,7 +34,6 @@ export class CompaniesInfoAppOwnerComponent implements OnInit {
     companyEmail: '',
     companyPhone: '',
     companyAddress: '',
-    workersQuantity: 0
   };
 
   // For registration modal
@@ -306,7 +305,6 @@ export class CompaniesInfoAppOwnerComponent implements OnInit {
       companyEmail: company.companyEmail || '',
       companyPhone: company.companyPhone || '',
       companyAddress: company.companyAddress || '',
-      workersQuantity: company.workersQuantity || 0
     };
   }
 
@@ -317,7 +315,6 @@ export class CompaniesInfoAppOwnerComponent implements OnInit {
       companyEmail: '',
       companyPhone: '',
       companyAddress: '',
-      workersQuantity: 0
     };
   }
 
