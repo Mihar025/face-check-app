@@ -52,6 +52,23 @@ public class AsyncNotificationService {
                     .build();
             notificationService.createNotification(companyId, request);
         }
+
+        else if(type.equals("TRANSFER")){
+
+            NotificationRequest request = NotificationRequest.builder()
+                    .message(firstName + " "
+                            + lastName +
+                            " made Transfer, at:" +
+                            today + " in " +
+                            worksiteName + " " +
+                            workSiteAddress)
+                    .adminOnly(true)
+                    .build();
+            notificationService.createNotification(companyId, request);
+
+
+
+        }
     }
 
 

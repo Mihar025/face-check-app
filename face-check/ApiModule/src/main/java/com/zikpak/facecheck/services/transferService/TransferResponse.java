@@ -1,4 +1,5 @@
-package com.zikpak.facecheck.requestsResponses.attendance;
+package com.zikpak.facecheck.services.transferService;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,23 +12,23 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PunchInResponse {
 
+public class TransferResponse {
 
     private Integer workerId;
     private Integer workSiteId;
     private String workSiteName;
     private String workerFullName;
-    private LocalDateTime checkInTime;
-    private String formattedCheckInTime;
-    private String checkInPhotoUrl;
-    private Double checkInLatitude;
-    private Double checkInLongitude;
-    private String checkInLocation;
+    private LocalDateTime transferTime;
+    private String formattedTransferTime;
+    private String transferPhotoUrl;
+    private Double transferLatitude;
+    private Double transferLongitude;
+    private String transferLocation;
     private String workSiteAddress;
     private Boolean isSuccessful;
     private String message;
-    private String notesForPunchIn;
+
 
 
 }

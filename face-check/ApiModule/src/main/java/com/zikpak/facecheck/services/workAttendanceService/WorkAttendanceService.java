@@ -19,24 +19,16 @@ import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinance
 import com.zikpak.facecheck.services.workSiteService.WorkSiteService;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import com.zikpak.facecheck.taxesServices.calculators.FinanceCalculator;
-import com.zikpak.facecheck.taxesServices.dto.PaymentHistoryResponse;
 import com.zikpak.facecheck.taxesServices.services.AsyncNotificationService;
-import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationRequest;
-import com.zikpak.facecheck.taxesServices.services.notificationService.NotificationService;
 import com.zikpak.facecheck.taxesServices.services.sickDayService.SickLeaveService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Async;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import io.micrometer.core.instrument.Timer;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -76,6 +68,7 @@ public class WorkAttendanceService {
 
         private static final String typePunchIn = "PUNCH-IN";
         private static final String typePunchOut = "PUNCH-OUT";
+
         private static final ExecutorService PHOTO_UPLOAD_EXECUTOR = Executors.newFixedThreadPool(10);
 
 

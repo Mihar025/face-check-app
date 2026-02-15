@@ -4,6 +4,9 @@ import com.zikpak.facecheck.entity.User;
 import com.zikpak.facecheck.requestsResponses.*;
 import com.zikpak.facecheck.requestsResponses.attendance.*;
 import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinanceScreenResponse;
+import com.zikpak.facecheck.services.transferService.TransferRequest;
+import com.zikpak.facecheck.services.transferService.TransferResponse;
+import com.zikpak.facecheck.services.transferService.TransferService;
 import com.zikpak.facecheck.services.workAttendanceService.WorkAttendanceService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -27,6 +30,7 @@ import java.util.Map;
 public class WorkerAttendanceController {
 
     private final WorkAttendanceService workAttendanceService;
+    private final TransferService transferService;
 
     @PostMapping("/punch-in")
     public ResponseEntity<PunchInResponse> punchIn(
@@ -52,6 +56,16 @@ public class WorkerAttendanceController {
         return response.getIsSuccessful()
                 ? ResponseEntity.ok(response)
                 : ResponseEntity.badRequest().body(response);
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<TransferResponse> makeTransfer(
+            Authentication authentication,
+            @RequestBody @Valid TransferRequest transferRequest
+    ) {
+        TransferResponse response =
+                transferService.makeTransfer(authentication, transferRequest);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/last-punch")
