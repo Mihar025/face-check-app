@@ -30,13 +30,14 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 
 
-    @Query("SELECT COUNT(u) FROM User u WHERE u.company.id = :companyId")
-    long countEmployeesInCompany(@Param("companyId") Integer companyId);
-
 
 
     @Query("""
-    SELECT COUNT(u) FROM User u WHERE u.company.id = :companyId
+    SELECT COUNT(DISTINCT u) FROM User u 
+    JOIN u.roles r 
+    WHERE u.company.id = :companyId 
+    AND u.enabled = true
+    AND r.name IN ('USER', 'FOREMAN', 'ADMIN')
 """)
     int countActiveWorkersByCompanyId(@Param("companyId") Integer companyId);
 

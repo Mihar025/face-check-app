@@ -2067,8 +2067,8 @@
           "required": true
         },
         "responses": {
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -2080,8 +2080,8 @@
               }
             }
           },
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -2713,6 +2713,36 @@
               "application/json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/transfer": {
+      "post": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "makeTransfer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponse"
                 }
               }
             }
@@ -6833,8 +6863,8 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -6846,8 +6876,8 @@
               }
             }
           },
-          "200": {
-            "description": "Success",
+          "400": {
+            "description": "Bad request",
             "content": {
               "application/json": {
                 "schema": {
@@ -8504,6 +8534,48 @@
         }
       }
     },
+    "/attendance/transfers": {
+      "get": {
+        "tags": [
+          "worker-attendance-controller"
+        ],
+        "operationId": "findAllTransfers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseTransferResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/attendance/photos/{workerId}": {
       "get": {
         "tags": [
@@ -9445,8 +9517,7 @@
           "companyAddress",
           "companyEmail",
           "companyName",
-          "companyPhone",
-          "workersQuantity"
+          "companyPhone"
         ],
         "type": "object",
         "properties": {
@@ -9461,10 +9532,6 @@
           },
           "companyEmail": {
             "type": "string"
-          },
-          "workersQuantity": {
-            "type": "integer",
-            "format": "int32"
           }
         }
       },
@@ -11509,6 +11576,80 @@
           }
         }
       },
+      "TransferRequest": {
+        "required": [
+          "latitude",
+          "longitude",
+          "photoBase64"
+        ],
+        "type": "object",
+        "properties": {
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "photoBase64": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "TransferResponse": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workSiteName": {
+            "type": "string"
+          },
+          "workerFullName": {
+            "type": "string"
+          },
+          "transferTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "formattedTransferTime": {
+            "type": "string"
+          },
+          "transferPhotoUrl": {
+            "type": "string"
+          },
+          "transferLatitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "transferLongitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "transferLocation": {
+            "type": "string"
+          },
+          "workSiteAddress": {
+            "type": "string"
+          },
+          "isSuccessful": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "PunchOutRequest": {
         "required": [
           "latitude",
@@ -13116,6 +13257,39 @@
           "netPay": {
             "type": "number",
             "format": "double"
+          }
+        }
+      },
+      "PageResponseTransferResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransferResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElement": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
           }
         }
       },

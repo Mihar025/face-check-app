@@ -626,12 +626,6 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         _showSuccessDialog(true, currentTime);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Location tracking started for user: $userId'),
-              backgroundColor: Colors.green,
-            ),
-          );
         }
       } else {
         _isLoading.value = false;
@@ -741,12 +735,7 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         _showSuccessDialog(false, currentTime);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Location tracking stopped for user: ${_currentUserId.value}'),
-              backgroundColor: Colors.blue,
-            ),
-          );
+
         }
       } else {
         _isLoading.value = false;

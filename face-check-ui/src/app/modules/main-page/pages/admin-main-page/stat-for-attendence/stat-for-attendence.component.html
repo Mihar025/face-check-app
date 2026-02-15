@@ -1,6 +1,5 @@
 <div class="page">
 
-
   <button class="mobile-menu-toggle" (click)="toggleMobileMenu()">
     <i class="fas fa-bars"></i>
   </button>
@@ -18,205 +17,384 @@
     </app-admin-sidebar>
   </aside>
 
-  <!-- Основной контент -->
+  <!-- Main Content -->
   <main class="main-content">
     <div class="attendance-container">
 
-      <!-- Заголовок -->
+      <!-- Header -->
       <div class="header-section">
         <h1>Employee Attendance Tracking</h1>
-        <p class="subtitle">Monitor all employee check-ins and check-outs across all companies</p>
+        <p class="subtitle">Monitor all employee check-ins, check-outs and transfers across all companies</p>
       </div>
 
-      <!-- Контроль размера страницы -->
-      <div class="controls-section">
-        <div class="page-size-control">
-          <label>Show:</label>
-          <select [(ngModel)]="size" (change)="changePageSize(size)" class="page-size-select">
-            <option [value]="10">10</option>
-            <option [value]="20">20</option>
-            <option [value]="50">50</option>
-            <option [value]="100">100</option>
-          </select>
-          <span>entries per page</span>
-        </div>
-        <div class="total-records">
-          Total Records: <strong>{{ totalElements }}</strong>
-        </div>
+      <!-- Tabs -->
+      <div class="tabs-section">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'attendance'"
+          (click)="switchTab('attendance')">
+          <i class="fas fa-clipboard-check"></i>
+          Attendance Records
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'transfers'"
+          (click)="switchTab('transfers')">
+          <i class="fas fa-exchange-alt"></i>
+          Transfers
+          <span class="tab-count" *ngIf="transferTotalElements > 0">{{ transferTotalElements }}</span>
+        </button>
       </div>
 
-      <!-- Сообщение об ошибке -->
+      <!-- Error Message (shared) -->
       <div *ngIf="errorMessage" class="error-message">
         <i class="fas fa-exclamation-circle"></i>
         {{ errorMessage }}
       </div>
 
-      <!-- Индикатор загрузки -->
-      <div *ngIf="isLoading" class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>Loading attendance data...</p>
-      </div>
+      <!-- ============================================================ -->
+      <!-- ATTENDANCE TAB -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeTab === 'attendance'">
 
-      <!-- Таблица посещаемости -->
-      <div *ngIf="!isLoading && !errorMessage" class="table-container">
-        <table class="attendance-table">
-          <thead>
-          <tr>
-            <th>Name</th>
-            <th>Company</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Check In</th>
-            <th>Check Out</th>
-            <th>Hours Worked</th>
-            <th>Overtime Hours</th>
-            <th>Gross Pay</th>
-            <th>Period</th>
-            <th>Actions</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr *ngFor="let attendance of attendanceList">
-            <td>
-              <div class="worker-name">
-                {{ attendance.firstName }} {{ attendance.lastName }}
-              </div>
-            </td>
-            <td>
-              <span class="company-badge">{{ attendance.companyName }}</span>
-            </td>
-            <td>{{ attendance.email }}</td>
-            <td>{{ attendance.phone }}</td>
-            <td>
-              <div class="time-info">
-                <i class="fas fa-clock"></i>
-                {{ formatDateTime(attendance.checkInTime) }}
-              </div>
-              <div class="location-info" *ngIf="attendance.checkInLocation">
-                <i class="fas fa-map-marker-alt"></i>
-                {{ attendance.checkInLocation }}
-              </div>
-            </td>
-            <td>
-              <div class="time-info" *ngIf="attendance.checkOutTime">
-                <i class="fas fa-clock"></i>
-                {{ formatDateTime(attendance.checkOutTime) }}
-              </div>
-              <div class="location-info" *ngIf="attendance.checkOutLocation">
-                <i class="fas fa-map-marker-alt"></i>
-                {{ attendance.checkOutLocation }}
-              </div>
-              <span *ngIf="!attendance.checkOutTime" class="status-badge active">Active</span>
-            </td>
-            <td>
-              <span class="hours-badge regular">{{ formatHours(attendance.hoursWorked) }}</span>
-            </td>
-            <td>
-              <span class="hours-badge overtime" *ngIf="attendance.overtimeHours && attendance.overtimeHours > 0">
-                {{ formatHours(attendance.overtimeHours) }}
-              </span>
-              <span *ngIf="!attendance.overtimeHours || attendance.overtimeHours === 0" class="no-overtime">
-                -
-              </span>
-            </td>
-            <td>{{ formatCurrency(attendance.grossPayPerDay) }}</td>
-            <td>
-              <div class="period-info">
-                {{ formatDate(attendance.periodStart) }} - {{ formatDate(attendance.periodEnd) }}
-              </div>
-            </td>
-            <td>
-              <div class="action-buttons">
-                <!-- Check In Location -->
-                <button
-                  class="btn-icon btn-success"
-                  *ngIf="hasCheckInLocation(attendance)"
-                  title="View Check-In Location"
-                  (click)="openCheckInLocation(attendance)">
+        <!-- Controls -->
+        <div class="controls-section">
+          <div class="page-size-control">
+            <label>Show:</label>
+            <select [(ngModel)]="size" (change)="changePageSize(size)" class="page-size-select">
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+            <span>entries per page</span>
+          </div>
+          <div class="total-records">
+            Total Records: <strong>{{ totalElements }}</strong>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="isLoading" class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading attendance data...</p>
+        </div>
+
+        <!-- Attendance Table -->
+        <div *ngIf="!isLoading && !errorMessage" class="table-container">
+          <table class="attendance-table">
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>Company</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Check In</th>
+              <th>Check Out</th>
+              <th>Hours Worked</th>
+              <th>Overtime Hours</th>
+              <th>Gross Pay</th>
+              <th>Period</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let attendance of attendanceList">
+              <td>
+                <div class="worker-name">
+                  {{ attendance.firstName }} {{ attendance.lastName }}
+                </div>
+              </td>
+              <td>
+                <span class="company-badge">{{ attendance.companyName }}</span>
+              </td>
+              <td>{{ attendance.email }}</td>
+              <td>{{ attendance.phone }}</td>
+              <td>
+                <div class="time-info">
+                  <i class="fas fa-clock"></i>
+                  {{ formatDateTime(attendance.checkInTime) }}
+                </div>
+                <div class="location-info" *ngIf="attendance.checkInLocation">
                   <i class="fas fa-map-marker-alt"></i>
-                  <span class="btn-label">In</span>
-                </button>
-
-                <!-- Check Out Location -->
-                <button
-                  class="btn-icon btn-danger"
-                  *ngIf="hasCheckOutLocation(attendance)"
-                  title="View Check-Out Location"
-                  (click)="openCheckOutLocation(attendance)">
+                  {{ attendance.checkInLocation }}
+                </div>
+              </td>
+              <td>
+                <div class="time-info" *ngIf="attendance.checkOutTime">
+                  <i class="fas fa-clock"></i>
+                  {{ formatDateTime(attendance.checkOutTime) }}
+                </div>
+                <div class="location-info" *ngIf="attendance.checkOutLocation">
                   <i class="fas fa-map-marker-alt"></i>
-                  <span class="btn-label">Out</span>
-                </button>
-                <button
-                  class="btn-icon"
-                  *ngIf="hasValidPhotos(attendance)"
-                  title="View Photos"
-                  (click)="openPhotoModal(attendance)">
-                  <i class="fas fa-camera"></i>
-                </button>
-                <!-- Индикатор ручной записи -->
-                <span
-                  class="manual-badge"
-                  *ngIf="!hasValidPhotos(attendance)"
-                  title="Manual entry">
-  <i class="fas fa-edit"></i>
-  Manual
-</span>
-                <button
-                  class="btn-icon btn-delete"
-                  title="Delete Attendance"
-                  (click)="openDeleteModal(attendance)">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+                  {{ attendance.checkOutLocation }}
+                </div>
+                <span *ngIf="!attendance.checkOutTime" class="status-badge active">Active</span>
+              </td>
+              <td>
+                <span class="hours-badge regular">{{ formatHours(attendance.hoursWorked) }}</span>
+              </td>
+              <td>
+                <span class="hours-badge overtime" *ngIf="attendance.overtimeHours && attendance.overtimeHours > 0">
+                  {{ formatHours(attendance.overtimeHours) }}
+                </span>
+                <span *ngIf="!attendance.overtimeHours || attendance.overtimeHours === 0" class="no-overtime">
+                  -
+                </span>
+              </td>
+              <td>{{ formatCurrency(attendance.grossPayPerDay) }}</td>
+              <td>
+                <div class="period-info">
+                  {{ formatDate(attendance.periodStart) }} - {{ formatDate(attendance.periodEnd) }}
+                </div>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <!-- Check In Location -->
+                  <button
+                    class="btn-icon btn-success"
+                    *ngIf="hasCheckInLocation(attendance)"
+                    title="View Check-In Location"
+                    (click)="openCheckInLocation(attendance)">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="btn-label">In</span>
+                  </button>
 
-        <!-- Сообщение когда нет данных -->
-        <div *ngIf="attendanceList.length === 0" class="no-data">
-          <i class="fas fa-inbox"></i>
-          <p>No attendance records found</p>
+                  <!-- Check Out Location -->
+                  <button
+                    class="btn-icon btn-danger"
+                    *ngIf="hasCheckOutLocation(attendance)"
+                    title="View Check-Out Location"
+                    (click)="openCheckOutLocation(attendance)">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="btn-label">Out</span>
+                  </button>
+
+                  <!-- Photos -->
+                  <button
+                    class="btn-icon"
+                    *ngIf="hasValidPhotos(attendance)"
+                    title="View Photos"
+                    (click)="openPhotoModal(attendance)">
+                    <i class="fas fa-camera"></i>
+                  </button>
+
+                  <!-- Manual Entry Badge -->
+                  <span
+                    class="manual-badge"
+                    *ngIf="!hasValidPhotos(attendance)"
+                    title="Manual entry">
+                    <i class="fas fa-edit"></i>
+                    Manual
+                  </span>
+
+                  <!-- Delete -->
+                  <button
+                    class="btn-icon btn-delete"
+                    title="Delete Attendance"
+                    (click)="openDeleteModal(attendance)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <!-- No Data -->
+          <div *ngIf="attendanceList.length === 0" class="no-data">
+            <i class="fas fa-inbox"></i>
+            <p>No attendance records found</p>
+          </div>
         </div>
+
+        <!-- Attendance Pagination -->
+        <div *ngIf="!isLoading && attendanceList.length > 0" class="pagination-section">
+          <div class="pagination-info">
+            Showing {{ page * size + 1 }} to {{ Math.min((page + 1) * size, totalElements) }} of {{ totalElements }} entries
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              class="pagination-btn"
+              [disabled]="isFirst"
+              (click)="previousPage()">
+              <i class="fas fa-chevron-left"></i>
+              Previous
+            </button>
+
+            <button
+              *ngFor="let pageNum of getPageNumbers()"
+              class="pagination-btn page-number"
+              [class.active]="pageNum === page"
+              (click)="goToPage(pageNum)">
+              {{ pageNum + 1 }}
+            </button>
+
+            <button
+              class="pagination-btn"
+              [disabled]="isLast"
+              (click)="nextPage()">
+              Next
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
       </div>
+      <!-- END ATTENDANCE TAB -->
 
-      <!-- Пагинация -->
-      <div *ngIf="!isLoading && attendanceList.length > 0" class="pagination-section">
-        <div class="pagination-info">
-          Showing {{ page * size + 1 }} to {{ Math.min((page + 1) * size, totalElements) }} of {{ totalElements }} entries
+
+      <!-- ============================================================ -->
+      <!-- TRANSFERS TAB -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeTab === 'transfers'">
+
+        <!-- Controls -->
+        <div class="controls-section">
+          <div class="page-size-control">
+            <label>Show:</label>
+            <select [(ngModel)]="transferSize" (change)="changeTransferPageSize(transferSize)" class="page-size-select">
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+            </select>
+            <span>entries per page</span>
+          </div>
+          <div class="total-records">
+            Total Transfers: <strong>{{ transferTotalElements }}</strong>
+          </div>
         </div>
 
-        <div class="pagination-controls">
-          <button
-            class="pagination-btn"
-            [disabled]="isFirst"
-            (click)="previousPage()">
-            <i class="fas fa-chevron-left"></i>
-            Previous
-          </button>
-
-          <button
-            *ngFor="let pageNum of getPageNumbers()"
-            class="pagination-btn page-number"
-            [class.active]="pageNum === page"
-            (click)="goToPage(pageNum)">
-            {{ pageNum + 1 }}
-          </button>
-
-          <button
-            class="pagination-btn"
-            [disabled]="isLast"
-            (click)="nextPage()">
-            Next
-            <i class="fas fa-chevron-right"></i>
-          </button>
+        <!-- Loading -->
+        <div *ngIf="transferLoading" class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading transfer data...</p>
         </div>
+
+        <!-- Transfer Table -->
+        <div *ngIf="!transferLoading" class="table-container">
+          <table class="attendance-table transfer-table">
+            <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Work Site</th>
+              <th>Transfer Time</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let transfer of transferList">
+              <td>
+                <div class="worker-name">{{ transfer.workerFullName }}</div>
+              </td>
+              <td>
+                <div class="worksite-info" *ngIf="transfer.workSiteName">
+                  <span class="company-badge">{{ transfer.workSiteName }}</span>
+                  <div class="location-info" *ngIf="transfer.workSiteAddress">
+                    <i class="fas fa-map-pin"></i>
+                    {{ transfer.workSiteAddress }}
+                  </div>
+                </div>
+                <span *ngIf="!transfer.workSiteName" class="no-overtime">-</span>
+              </td>
+              <td>
+                <div class="time-info">
+                  <i class="fas fa-clock"></i>
+                  {{ transfer.formattedTransferTime || formatDateTime(transfer.transferTime) }}
+                </div>
+              </td>
+              <td>
+                <div class="location-info" *ngIf="transfer.transferLocation">
+                  <i class="fas fa-map-marker-alt"></i>
+                  {{ transfer.transferLocation }}
+                </div>
+                <span *ngIf="!transfer.transferLocation" class="no-overtime">-</span>
+              </td>
+              <td>
+                <span class="transfer-status" [ngClass]="getTransferStatusClass(transfer)">
+                  <i class="fas" [ngClass]="transfer.isSuccessful ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                  {{ getTransferStatusText(transfer) }}
+                </span>
+              </td>
+              <td>
+                <span class="transfer-message" *ngIf="transfer.message">{{ transfer.message }}</span>
+                <span *ngIf="!transfer.message" class="no-overtime">-</span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button
+                    class="btn-icon btn-success"
+                    *ngIf="hasTransferLocation(transfer)"
+                    title="View Transfer Location"
+                    (click)="openTransferLocation(transfer)">
+                    <i class="fas fa-map-marker-alt"></i>
+                  </button>
+                  <button
+                    class="btn-icon"
+                    *ngIf="transfer.transferPhotoUrl"
+                    title="View Transfer Photo"
+                    (click)="openTransferPhoto(transfer)">
+                    <i class="fas fa-camera"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <!-- No Data -->
+          <div *ngIf="transferList.length === 0" class="no-data">
+            <i class="fas fa-exchange-alt"></i>
+            <p>No transfer records found</p>
+          </div>
+        </div>
+
+        <!-- Transfer Pagination -->
+        <div *ngIf="!transferLoading && transferList.length > 0" class="pagination-section">
+          <div class="pagination-info">
+            Showing {{ transferPage * transferSize + 1 }} to {{ Math.min((transferPage + 1) * transferSize, transferTotalElements) }} of {{ transferTotalElements }} entries
+          </div>
+          <div class="pagination-controls">
+            <button
+              class="pagination-btn"
+              [disabled]="transferIsFirst"
+              (click)="previousTransferPage()">
+              <i class="fas fa-chevron-left"></i>
+              Previous
+            </button>
+            <button
+              *ngFor="let pageNum of getTransferPageNumbers()"
+              class="pagination-btn page-number"
+              [class.active]="pageNum === transferPage"
+              (click)="goToTransferPage(pageNum)">
+              {{ pageNum + 1 }}
+            </button>
+            <button
+              class="pagination-btn"
+              [disabled]="transferIsLast"
+              (click)="nextTransferPage()">
+              Next
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
       </div>
+      <!-- END TRANSFERS TAB -->
 
     </div>
   </main>
 
-  <!-- Photo Modal -->
+
+  <!-- ============================================================ -->
+  <!-- MODALS -->
+  <!-- ============================================================ -->
+
+  <!-- Photo Modal (Attendance) -->
   <div class="modal-overlay" *ngIf="showPhotoModal" (click)="closeModal()">
     <div class="modal-container" (click)="preventClose($event)">
       <div class="modal-header">
@@ -227,7 +405,7 @@
       </div>
 
       <div class="modal-body">
-        <!-- Date Display (Read-only) -->
+        <!-- Date Display -->
         <div class="date-display">
           <div class="date-info">
             <i class="fas fa-calendar-day"></i>
@@ -269,6 +447,29 @@
     </div>
   </div>
 
+  <!-- Transfer Photo Modal -->
+  <div class="modal-overlay" *ngIf="showTransferPhotoModal" (click)="closeTransferPhotoModal()">
+    <div class="modal-container" (click)="preventClose($event)">
+      <div class="modal-header">
+        <h3>
+          <i class="fas fa-camera"></i>
+          Transfer Photo — {{ selectedTransfer?.workerFullName }}
+        </h3>
+        <button class="close-button" (click)="closeTransferPhotoModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="display: flex; justify-content: center; padding: 24px;">
+        <img
+          [src]="selectedTransferPhoto"
+          alt="Transfer photo"
+          style="max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; cursor: pointer;"
+          (click)="openFullscreen(selectedTransferPhoto)"
+          (error)="onImageError($event)">
+      </div>
+    </div>
+  </div>
+
   <!-- Fullscreen Viewer -->
   <div class="fullscreen-viewer" *ngIf="fullscreenImage" (click)="closeFullscreen()">
     <img [src]="fullscreenImage" alt="Enlarged photo">
@@ -277,7 +478,7 @@
     </button>
   </div>
 
-  <!-- Location Modal -->
+  <!-- Location Modal (shared for attendance + transfers) -->
   <div class="modal-overlay" *ngIf="showLocationModal" (click)="closeLocationModal()">
     <div class="modal-container location-modal-container" (click)="preventClose($event)">
       <div class="modal-header">
@@ -340,6 +541,7 @@
       </div>
     </div>
   </div>
+
 </div>
 
 

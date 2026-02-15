@@ -21,7 +21,9 @@ public enum EmailTemplateName {
     QUARTER_SUTA_FORM("quarter_suta_form"),
     QUARTER_FUTA_REPORT("quarter_futa_report"),
     W2_FORMS("w2_forms"),
-    WEEKLY_PAYROLL_REPORT("weeklyPayrollReport"),
+    WEEKLY_PAYROLL_REPORT("weekly_payroll_report"),
+    MONTHLY_PAYROLL_REPORT("monthly_payroll_report"),
+
     TAX_SUMMARY_REPORT("tax_summary_report"),
     XML_REPORT("xml-files"),
     ANNUAL_SUTA("annual-suta"),

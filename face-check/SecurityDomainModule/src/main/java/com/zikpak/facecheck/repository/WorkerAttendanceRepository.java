@@ -191,6 +191,17 @@ public interface WorkerAttendanceRepository extends JpaRepository<WorkerAttendan
 """)
     List<WorkerAttendance> findAllAttendanceByCompanyId(@Param("companyId") Integer companyId);
 
+
+    @Query("""
+    SELECT a FROM WorkerAttendance a 
+    WHERE a.worker.company.id = :companyId 
+    AND a.transferTime IS NOT NULL 
+    ORDER BY a.transferTime DESC
+""")
+    Page<WorkerAttendance> findAllTransfersByCompanyId(
+            @Param("companyId") Integer companyId, Pageable pageable);
+
+
     @Query("""
     SELECT wa FROM WorkerAttendance wa
     LEFT JOIN FETCH wa.worker w
