@@ -53,7 +53,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   late final ValueNotifier<int?> _currentUserId;
   late final PunchManager _punchManager;
 
-  // ✅ NEW: Notes controller
+  // Notes controller
   final TextEditingController _notesController = TextEditingController();
   static const int _maxNotesLength = 3000;
 
@@ -64,6 +64,9 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   late Size _screenSize;
   late bool _isSmallScreen;
   late ThemeData _theme;
+
+  // Localization — cached in build()
+  late dynamic l10n;
 
   // Const
   static const double _smallScreenThreshold = 360.0;
@@ -110,7 +113,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     _workSites.dispose();
     _isTrackingActive.dispose();
     _currentUserId.dispose();
-    _notesController.dispose(); // ✅ NEW
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -121,13 +124,13 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     }
   }
 
-  // ✅ NEW: Get notes text (trimmed, or null if empty)
+  // Get notes text (trimmed, or null if empty)
   String? _getNotesText() {
     final text = _notesController.text.trim();
     return text.isEmpty ? null : text;
   }
 
-  // ✅ NEW: Clear notes after successful punch
+  // Clear notes after successful punch
   void _clearNotes() {
     _notesController.clear();
   }
@@ -190,7 +193,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     ));
   }
 
-
   Future<bool> _ensureCameraPermission() async {
     final status = await Permission.camera.status;
 
@@ -198,14 +200,12 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
       return true;
     }
 
-    // Запрашиваем
     final newStatus = await Permission.camera.request();
 
     if (newStatus.isGranted) {
       return true;
     }
 
-    // Пользователь отказал
     await _showCameraPermissionDialog(newStatus);
     return false;
   }
@@ -235,7 +235,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         ),
       ];
     } else {
-      // обычный отказ "Don\'t Allow"
       message =
       'Camera access is required to take your photo for punch in/out. You can continue using the app, but photo-based punch will not work until you allow camera access.';
       actions = [
@@ -259,7 +258,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
       },
     );
   }
-
 
   // ---------- Helpers ----------
   Future<void> _fetchAndSaveUserId() async {
@@ -329,7 +327,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     }
   }
 
-
   Future<void> _showWorkSiteDialog() async {
     await showDialog(
       context: context,
@@ -357,14 +354,11 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
   Future<String?> _captureImage() async {
     try {
-      // 1) Проверяем и запрашиваем разрешение
       final hasPermission = await _ensureCameraPermission();
       if (!hasPermission) {
-        // тут уже показали диалог, просто выходим
         return null;
       }
 
-      // 2) Открываем камеру
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 70,
@@ -372,9 +366,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         maxHeight: 1024,
       );
 
-      // Пользователь мог нажать "Cancel" в камере
       if (image == null) {
-        // Никаких ошибок, просто отмена
         return null;
       }
 
@@ -382,7 +374,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
       return base64Encode(bytes);
     } catch (e) {
       debugPrint('Error capturing image: $e');
-      // Можно показать более дружелюбный текст
       _showErrorSnackBar('Could not open camera. Please try again.');
       return null;
     }
@@ -412,6 +403,17 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
+        duration: _snackBarDuration,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
         duration: _snackBarDuration,
       ),
     );
@@ -447,7 +449,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         'photoBase64': photoBase64,
         'latitude': _currentPosition.value?.latitude,
         'longitude': _currentPosition.value?.longitude,
-        'notesForPunchIn': _getNotesText(), // ✅ NEW: Send notes
+        'notesForPunchIn': _getNotesText(),
       };
 
       final response = await dio.post('attendance/punch-in', data: requestData);
@@ -464,7 +466,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         await prefs.setString('lastPunchInDate', nowUtcIso);
         await prefs.setBool('isPunchedInToday', true);
 
-        // сброс потенциально неконсистентного punchOut
         final outStr = prefs.getString('lastPunchOutDate');
         if (outStr != null && outStr.isNotEmpty) {
           final outUtc = DateTime.tryParse(outStr)?.toUtc();
@@ -479,7 +480,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         await _punchManager.onPunchInSuccess();
         _isTrackingActive.value = true;
 
-        _clearNotes(); // ✅ NEW: Clear notes only on success
+        _clearNotes();
 
         _showSuccessDialog(true, _getCurrentFormattedTime());
         if (mounted) {
@@ -491,7 +492,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
           );
         }
       } else {
-        // ❌ Error — notes NOT cleared
         String errorMessage = 'Punch in failed';
         if (response.data is Map) {
           final raw = response.data['message'] ??
@@ -502,7 +502,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         _showErrorSnackBar(errorMessage);
       }
     } catch (e) {
-      // ❌ Error — notes NOT cleared
       _showErrorSnackBar('Failed to punch in: $e');
     } finally {
       _isLoading.value = false;
@@ -527,7 +526,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         'photoBase64': photoBase64,
         'latitude': _currentPosition.value?.latitude,
         'longitude': _currentPosition.value?.longitude,
-        'notesForPunchOut': _getNotesText(), // ✅ NEW: Send notes
+        'notesForPunchOut': _getNotesText(),
       };
 
       final response = await dio.post('attendance/punch-out', data: requestData);
@@ -545,7 +544,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         await _punchManager.onPunchOutSuccess();
         _isTrackingActive.value = false;
 
-        _clearNotes(); // ✅ NEW: Clear notes only on success
+        _clearNotes();
 
         _showSuccessDialog(false, _getCurrentFormattedTime());
         if (mounted) {
@@ -558,7 +557,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
           );
         }
       } else {
-        // ❌ Error — notes NOT cleared
         String errorMessage = 'Punch out failed';
         if (response.data is Map) {
           final raw = response.data['message'] ??
@@ -569,14 +567,57 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         _showErrorSnackBar(errorMessage);
       }
     } catch (e) {
-      // ❌ Error — notes NOT cleared
       _showErrorSnackBar('Failed to punch out: $e');
     } finally {
       _isLoading.value = false;
     }
   }
 
-  // ✅ NEW: Build the Notes section widget — dynamic based on punch state
+  // ---------- Transfer handler ----------
+  Future<void> _handleTransfer() async {
+    if (_selectedWorkSite.value == null || _currentPosition.value == null) {
+      _showErrorSnackBar('Please select work site and enable location');
+      return;
+    }
+
+    final photoBase64 = await _captureImage();
+    if (photoBase64 == null) return;
+
+    _isLoading.value = true;
+    try {
+      final requestData = {
+        'workSiteId': _selectedWorkSite.value?.workSiteId,
+        'photoBase64': photoBase64,
+        'latitude': _currentPosition.value?.latitude,
+        'longitude': _currentPosition.value?.longitude,
+      };
+
+      final response = await dio.post('attendance/transfer', data: requestData);
+
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300) {
+        _showSuccessSnackBar(
+          'Transferred to ${_selectedWorkSite.value?.workSiteName ?? "new site"}',
+        );
+      } else {
+        String errorMessage = 'Transfer failed';
+        if (response.data is Map) {
+          final raw = response.data['message'] ??
+              response.data['error'] ??
+              'Server returned error: ${response.statusCode}';
+          errorMessage = _cleanErrorMessage(raw.toString());
+        }
+        _showErrorSnackBar(errorMessage);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to transfer: $e');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  // Build the Notes section widget — dynamic based on punch state
   Widget _buildNotesSection() {
     final isDark = _theme.brightness == Brightness.dark;
 
@@ -705,7 +746,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     _updateCachedValues();
-    final l10n = context.read<LocalizationProvider>().localizations;
+    l10n = context.read<LocalizationProvider>().localizations;
 
     return Scaffold(
       backgroundColor: _theme.scaffoldBackgroundColor,
@@ -760,7 +801,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
         ]
             : null,
       ),
-      // ✅ NEW: GestureDetector to dismiss keyboard on tap outside
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Stack(
@@ -818,7 +858,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
                     ),
                   ),
 
-                  // ✅ NEW: Notes section
+                  // Notes section
                   _buildNotesSection(),
 
                   SizedBox(height: _isSmallScreen ? 8 : 12),
@@ -875,9 +915,9 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
               builder: (context, isLoading, _) {
                 if (!isLoading) return const SizedBox.shrink();
 
-                return Positioned.fill(
+                return const Positioned.fill(
                   child: Stack(
-                    children: const [
+                    children: [
                       ModalBarrier(dismissible: false, color: Colors.transparent),
                       Center(child: CircularProgressIndicator()),
                     ],
@@ -885,7 +925,6 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
                 );
               },
             ),
-
           ],
         ),
       ),
@@ -913,6 +952,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
               valueListenable: _punchManager.hasPunchIn,
               builder: (context, hasPunchIn, __) {
                 final inEnabled = !isLoading && !hasPunchIn;
+                final transferEnabled = !isLoading && hasPunchIn;
                 final outEnabled = !isLoading && hasPunchIn;
 
                 return SafeArea(
@@ -926,6 +966,15 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
                         color: Colors.green,
                         enabled: inEnabled,
                         onTap: inEnabled ? _handlePunchIn : null,
+                        small: _isSmallScreen,
+                      ),
+                      // Transfer
+                      _ActionCircleButton(
+                        label: 'Transfer',
+                        icon: Icons.swap_horiz_rounded,
+                        color: Colors.grey,
+                        enabled: transferEnabled,
+                        onTap: transferEnabled ? _handleTransfer : null,
                         small: _isSmallScreen,
                       ),
                       // Punch Out
@@ -948,6 +997,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
     );
   }
 }
+
 class _ActionCircleButton extends StatelessWidget {
   final String label;
   final IconData icon;

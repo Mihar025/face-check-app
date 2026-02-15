@@ -94,6 +94,20 @@ public class WorkerAttendance {
 
 
 
+    @Column(name = "transfer_time")
+    private LocalDateTime transferTime;
+
+    @Column(name = "transfer_photo_url")
+    private String transferPhotoUrl;
+
+    @Column(name = "transfer_latitude")
+    private Double transferLatitude;
+
+    @Column(name = "transfer_longitude")
+    private Double transferLongitude;
+
+    @Column(name = "transfer_location")
+    private String transferLocation;
 
 
 
