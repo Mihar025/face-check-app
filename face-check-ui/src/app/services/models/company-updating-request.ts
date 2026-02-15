@@ -7,5 +7,4 @@ export interface CompanyUpdatingRequest {
   companyEmail: string;
   companyName: string;
   companyPhone: string;
-  workersQuantity: number;
 }
