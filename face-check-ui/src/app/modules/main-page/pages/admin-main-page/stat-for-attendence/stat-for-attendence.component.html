@@ -278,7 +278,6 @@
             <thead>
             <tr>
               <th>Employee</th>
-              <th>Work Site</th>
               <th>Transfer Time</th>
               <th>Location</th>
               <th>Status</th>
@@ -290,16 +289,6 @@
             <tr *ngFor="let transfer of transferList">
               <td>
                 <div class="worker-name">{{ transfer.workerFullName }}</div>
-              </td>
-              <td>
-                <div class="worksite-info" *ngIf="transfer.workSiteName">
-                  <span class="company-badge">{{ transfer.workSiteName }}</span>
-                  <div class="location-info" *ngIf="transfer.workSiteAddress">
-                    <i class="fas fa-map-pin"></i>
-                    {{ transfer.workSiteAddress }}
-                  </div>
-                </div>
-                <span *ngIf="!transfer.workSiteName" class="no-overtime">-</span>
               </td>
               <td>
                 <div class="time-info">
