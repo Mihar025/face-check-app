@@ -60,8 +60,7 @@ public class AuthenticationService {
     private final WorkerPayrollRepository workerPayrollRepository;
     private final JwtService jwtService;
     private final AuthenticationServiceImpl authenticationServiceImpl;
-    private final FillFormI9 fillFormI9;
-    private final FillFormW4 fillFormW4;
+
     private final MetricsAuthenticationService metric;
     private final NotificationService notificationService;
     private final CompanyRepository companyRepository;
@@ -162,9 +161,6 @@ public class AuthenticationService {
         user.setRoles(List.of(role));
         user.setCompany(company);
         user.setEnabled(true);
-
-        int quant = company.getWorkersQuantity();
-        company.setWorkersQuantity(quant + 1);
 
         userRepository.save(user);
         try {

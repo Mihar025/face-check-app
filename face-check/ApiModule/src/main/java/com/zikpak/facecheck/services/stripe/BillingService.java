@@ -263,7 +263,7 @@ public class BillingService {
             throw new RuntimeException("Company has no active subscription");
         }
 
-        int employees = company.getWorkersQuantity();
+        int employees = userRepository.countActiveWorkersByCompanyId(companyId);
         BigDecimal pricePerSeat = company.getPricePerEmployee();
 
         long newAmount = pricePerSeat.multiply(new BigDecimal("100"))

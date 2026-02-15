@@ -46,7 +46,7 @@ public class CalculateWeeklyEmployerTaxes extends BaseSchedulerJob {
                 Company company = payroll.getCompany();
 
                 if (!shouldCreateEmployerTaxRecord(payroll, company)) {
-                    log.info("⏩ Пропускаем payroll ID {} — период ещё не завершён", payroll.getId());
+                    log.info("⏩ Пропускаем payroll ID {} — невалидные данные", payroll.getId());
                     continue;
                 }
 
@@ -58,6 +58,8 @@ public class CalculateWeeklyEmployerTaxes extends BaseSchedulerJob {
                 log.info("✅ Расчёт выполнен для payroll ID: {}", payroll.getId());
             } catch (Exception e) {
                 totalFailure++;
+                errors.append("Payroll ID ").append(payroll.getId())
+                        .append(": ").append(e.getMessage()).append("\n");
                 log.error("❌ Ошибка при расчёте налогов для payroll ID: {}", payroll.getId(), e);
             }
         }
@@ -71,12 +73,17 @@ public class CalculateWeeklyEmployerTaxes extends BaseSchedulerJob {
     }
 
 
+    /**
+     * FIX: Раньше проверяли LocalDate.now().isEqual(payroll.getPeriodEnd())
+     * Джоба запускается в ВОСКРЕСЕНЬЕ, а periodEnd = СУББОТА → всегда false.
+     * Теперь проверяем что период уже завершился (today >= periodEnd).
+     */
     private boolean shouldCreateEmployerTaxRecord(WorkerPayroll payroll, Company company) {
         if (payroll == null || company == null || company.getCompanyPaymentPosition() == null) {
             return false;
         }
 
-        return LocalDate.now().isEqual(payroll.getPeriodEnd());
+        return !LocalDate.now().isBefore(payroll.getPeriodEnd());
     }
 
 }

@@ -34,7 +34,7 @@ public class CompanyMapper {
                 .companyAddress(updatedCompany.getCompanyAddress())
                 .companyPhone(updatedCompany.getCompanyPhone())
                 .companyEmail(updatedCompany.getCompanyEmail())
-                .workersQuantity(updatedCompany.getWorkersQuantity())
+               // .workersQuantity(updatedCompany.getWorkersQuantity())
                 .build();
     }
 

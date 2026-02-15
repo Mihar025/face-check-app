@@ -664,7 +664,7 @@ public class CompanyService implements CompanyServiceImpl {
             throw new AccessDeniedException("You do not have permission to view company employees");
         }
 
-        return userRepository.countEmployeesInCompany(companyId);
+        return userRepository.countActiveWorkersByCompanyId(companyId);
     }
 
 
@@ -966,7 +966,7 @@ public class CompanyService implements CompanyServiceImpl {
         private Company updateCompanyCredentials(CompanyUpdatingRequest request, Company company){
             company.setCompanyName(request.getCompanyName());
             company.setCompanyAddress(request.getCompanyAddress());
-            company.setWorkersQuantity(request.getWorkersQuantity());
+         //   company.setWorkersQuantity(request.getWorkersQuantity());
             company.setCompanyPhone(request.getCompanyPhone());
             company.setCompanyEmail(request.getCompanyEmail());
             return companyRepository.save(company);

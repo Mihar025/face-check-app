@@ -22,13 +22,6 @@ public interface CompanyRepository extends JpaRepository<Company, Integer> {
     Optional<Company> findByCompanyName(String companyName);
 
 
-    @Modifying
-    @Query("UPDATE Company c SET c.workersQuantity = c.workersQuantity + 1 WHERE c.companyName = :companyName")
-    void incrementWorkers(@Param("companyName") String companyName);
-
-
-
-
     @Query("""
     SELECT new com.zikpak.facecheck.requestsResponses.company.finance.EmployeeSalaryResponse(
         u.id,
