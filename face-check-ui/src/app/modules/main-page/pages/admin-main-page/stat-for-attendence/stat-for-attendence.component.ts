@@ -6,6 +6,9 @@ import {UserServiceControllerService} from "../../../../../services/services/use
 import {PageResponseAttendanceResponse} from "../../../../../services/models/page-response-attendance-response";
 import {catchError, of, Subscription} from "rxjs";
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
+import {TransferResponse} from "../../../../../services/models/transfer-response";
+import {PageResponseTransferResponse} from "../../../../../services/models/page-response-transfer-response";
+
 declare let L: any;
 
 @Component({
@@ -56,6 +59,25 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   private mapInitialized: boolean = false;
   isMobileMenuOpen = false;
 
+
+  activeTab: 'attendance' | 'transfers' = 'attendance';
+
+  transferList: TransferResponse[] = [];
+  transferLoading: boolean = false;
+  transferPage: number = 0;
+  transferSize: number = 10;
+  transferTotalPages: number = 0;
+  transferTotalElements: number = 0;
+  transferIsFirst: boolean = true;
+  transferIsLast: boolean = true;
+
+  showTransferLocationModal: boolean = false;
+  selectedTransfer: TransferResponse | null = null;
+
+// Transfer photo modal
+  showTransferPhotoModal: boolean = false;
+  selectedTransferPhoto: string = '';
+
   private subscriptions = new Subscription();
 
   constructor(
@@ -83,6 +105,9 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
          this.companyName = name;
       })
     );
+
+    this.loadTransfers();
+
 
     this.subscriptions.add(
       this.userDataService.userPhoto$.subscribe(photo => {
@@ -654,5 +679,136 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       (attendance.checkInPhotoUrl && attendance.checkInPhotoUrl.trim() !== '') ||
       (attendance.checkOutPhotoUrl && attendance.checkOutPhotoUrl.trim() !== '')
     );
+  }
+
+
+  // === TAB SWITCHING ===
+  switchTab(tab: 'attendance' | 'transfers'): void {
+    this.activeTab = tab;
+    if (tab === 'transfers' && this.transferList.length === 0) {
+      this.loadTransfers();
+    }
+  }
+
+// === TRANSFER METHODS ===
+  loadTransfers(): void {
+    this.transferLoading = true;
+
+    this.attendanceService.findAllTransfers({
+      page: this.transferPage,
+      size: this.transferSize
+    }).subscribe({
+      next: (response: PageResponseTransferResponse) => {
+        this.transferList = response.content || [];
+        this.transferTotalPages = response.totalPages || 0;
+        this.transferTotalElements = response.totalElement || 0;
+        this.transferIsFirst = response.first ?? true;
+        this.transferIsLast = response.last ?? true;
+        this.transferLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading transfers:', error);
+        this.errorMessage = 'Failed to load transfer data.';
+        this.transferLoading = false;
+      }
+    });
+  }
+
+// Transfer pagination
+  goToTransferPage(pageNumber: number): void {
+    if (pageNumber >= 0 && pageNumber < this.transferTotalPages) {
+      this.transferPage = pageNumber;
+      this.loadTransfers();
+    }
+  }
+
+  nextTransferPage(): void {
+    if (!this.transferIsLast) {
+      this.transferPage++;
+      this.loadTransfers();
+    }
+  }
+
+  previousTransferPage(): void {
+    if (!this.transferIsFirst) {
+      this.transferPage--;
+      this.loadTransfers();
+    }
+  }
+
+  changeTransferPageSize(newSize: number): void {
+    this.transferSize = newSize;
+    this.transferPage = 0;
+    this.loadTransfers();
+  }
+
+  getTransferPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(0, this.transferPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.transferTotalPages - 1, startPage + maxPagesToShow - 1);
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(0, endPage - maxPagesToShow + 1);
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+// Transfer location
+  openTransferLocation(transfer: TransferResponse): void {
+    if (!transfer.transferLatitude || !transfer.transferLongitude) {
+      this.errorMessage = 'Transfer location not available';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    this.selectedTransfer = transfer;
+    this.selectedLocationData = {
+      latitude: transfer.transferLatitude,
+      longitude: transfer.transferLongitude,
+      location: transfer.transferLocation || 'Location not available',
+      time: transfer.transferTime || '',
+      workerName: transfer.workerFullName || '',
+      type: 'Transfer'
+    };
+    this.locationType = 'checkin'; // green marker
+    this.showLocationModal = true;
+
+    setTimeout(() => {
+      this.initializeLocationMap();
+    }, 200);
+  }
+
+  hasTransferLocation(transfer: TransferResponse): boolean {
+    return typeof transfer.transferLatitude === 'number' &&
+      typeof transfer.transferLongitude === 'number';
+  }
+
+// Transfer photo
+  openTransferPhoto(transfer: TransferResponse): void {
+    if (!transfer.transferPhotoUrl) {
+      this.errorMessage = 'No transfer photo available';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+    this.selectedTransferPhoto = transfer.transferPhotoUrl;
+    this.selectedTransfer = transfer;
+    this.showTransferPhotoModal = true;
+  }
+
+  closeTransferPhotoModal(): void {
+    this.showTransferPhotoModal = false;
+    this.selectedTransferPhoto = '';
+    this.selectedTransfer = null;
+  }
+
+  getTransferStatusClass(transfer: TransferResponse): string {
+    return transfer.isSuccessful ? 'status-success' : 'status-failed';
+  }
+
+  getTransferStatusText(transfer: TransferResponse): string {
+    return transfer.isSuccessful ? 'Successful' : 'Failed';
   }
 }

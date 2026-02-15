@@ -128,6 +128,15 @@ public class WorkerAttendanceController {
         );
     }
 
+    @GetMapping("/transfers")
+    public ResponseEntity<PageResponse<TransferResponse>> findAllTransfers(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(workAttendanceService.findAllAttendanceTransferAdmin(authentication, page, size));
+    }
+
     @GetMapping("/photos/{workerId}")
     public ResponseEntity<WorkerPhotosResponse> getWorkerPhotosByDate(
             @PathVariable Integer workerId,

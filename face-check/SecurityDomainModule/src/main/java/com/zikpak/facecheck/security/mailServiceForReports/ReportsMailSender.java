@@ -133,6 +133,13 @@ public class ReportsMailSender {
         sendEmail(user, EmailTemplateName.WEEKLY_PAYROLL_REPORT, subject);
     }
 
+    public void sendMonthlyPayrollReport(String email) throws MessagingException {
+        var user = findUserByEmail(email);
+        log.info("User found: {}", user.fullName());
+        String subject = "Monthly Payroll Report was successfully generated!";
+        sendEmail(user, EmailTemplateName.MONTHLY_PAYROLL_REPORT, subject);
+    }
+
     public void sendEmailTaxSummaryReport(String email) throws MessagingException {
         var user = findUserByEmail(email);
         log.info("User found: {}", user.fullName());

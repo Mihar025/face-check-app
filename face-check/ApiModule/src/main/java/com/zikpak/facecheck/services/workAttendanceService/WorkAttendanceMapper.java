@@ -2,7 +2,10 @@ package com.zikpak.facecheck.services.workAttendanceService;
 
 import com.zikpak.facecheck.entity.employee.WorkerAttendance;
 import com.zikpak.facecheck.requestsResponses.AttendanceResponse;
+import com.zikpak.facecheck.services.transferService.TransferResponse;
 import org.springframework.stereotype.Service;
+
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class WorkAttendanceMapper {
@@ -36,6 +39,25 @@ public class WorkAttendanceMapper {
                 .periodEnd(workerAttendance.getPeriodEnd())
                 .attendanceId(workerAttendance.getId())
                 .overtimeHours(workerAttendance.getOvertimeHours())
+                .build();
+    }
+
+
+
+    public TransferResponse toCompanyWorkerTransferResponse(WorkerAttendance attendance) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return TransferResponse.builder()
+                .workerId(attendance.getWorker().getId())
+                .workerFullName(attendance.getWorker().getFirstName() + " " + attendance.getWorker().getLastName())
+                .transferTime(attendance.getTransferTime())
+                .formattedTransferTime(attendance.getTransferTime() != null ?
+                        attendance.getTransferTime().format(formatter) : null)
+                .transferPhotoUrl(attendance.getTransferPhotoUrl())
+                .transferLatitude(attendance.getTransferLatitude())
+                .transferLongitude(attendance.getTransferLongitude())
+                .transferLocation(attendance.getTransferLocation())
+                .isSuccessful(true)
+                .message("Transfered successful")
                 .build();
     }
 }

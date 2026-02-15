@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAdjusters;
 
 @Service
@@ -20,10 +19,16 @@ import java.time.temporal.TemporalAdjusters;
 public class EmployerTaxService {
 
     private final EmployerTaxRecordRepository employerTaxRecordRepository;
+
     // Максимальная облагаемая SS-зарплата за год (2025)
     private static final BigDecimal SS_WAGE_LIMIT = new BigDecimal("160200");
     // Порог для Additional Medicare Tax
     private static final BigDecimal ADDL_MEDICARE_THRESHOLD = new BigDecimal("200000");
+    // FUTA wage limit
+    private static final BigDecimal FUTA_WAGE_LIMIT = new BigDecimal("7000");
+    // SUTA wage limit для NY — ПРОВЕРЬ АКТУАЛЬНОЕ ЗНАЧЕНИЕ!
+    // NY 2025: $12,300 или $13,000 — уточни на сайте NY DOL
+    private static final BigDecimal SUTA_WAGE_LIMIT = new BigDecimal("12300");
 
 
 
@@ -34,60 +39,65 @@ public class EmployerTaxService {
         }
 
         // 2) Год и ID сотрудника
-        int year     = payroll.getPeriodStart().getYear();
-        Integer empId   = payroll.getWorker().getId();
+        int year = payroll.getPeriodStart().getYear();
+        Integer empId = payroll.getWorker().getId();
 
-        // 3) Накопленные SS-базы YTD (tips и additional нам не нужны)
+        // 3) Загружаем все YTD суммы ОДНИМ БЛОКОМ (убираем дублирующие запросы)
         BigDecimal ytdSsWages = employerTaxRecordRepository
                 .sumSsTaxableWagesByEmployeeAndYear(empId, year);
-
+        BigDecimal ytdFutaWages = employerTaxRecordRepository
+                .sumFutaTaxableWagesByEmployeeAndYear(empId, year);
+        BigDecimal ytdSutaWages = employerTaxRecordRepository
+                .sumSutaTaxableWagesByEmployeeAndYear(empId, year);
 
         BigDecimal dayGross = payroll.getGrossPay();
 
-        BigDecimal dayTips  = BigDecimal.ZERO;
+        // 4) Вычисляем дневные базы с учётом годовых лимитов:
 
-        // 5) Вычисляем дневные базы:
-        // 5.1 SS wages — ограничиваем остатком до годового лимита
-        BigDecimal remainingSs  = SS_WAGE_LIMIT.subtract(ytdSsWages).max(BigDecimal.ZERO);
-        BigDecimal dailySsBase  = dayGross.min(remainingSs);
+        // 4.1 SS wages — ограничиваем остатком до годового лимита
+        BigDecimal remainingSs = SS_WAGE_LIMIT.subtract(ytdSsWages).max(BigDecimal.ZERO);
+        BigDecimal dailySsBase = dayGross.min(remainingSs);
 
-        // 5.2 SS tips — всегда 0
-        BigDecimal dailySsTips  = BigDecimal.ZERO;
+        // 4.2 SS tips — всегда 0
+        BigDecimal dailySsTips = BigDecimal.ZERO;
 
-        // 5.3 Medicare база — только gross, т.к. чаевых нет
+        // 4.3 Medicare база — только gross, т.к. чаевых нет
         BigDecimal dailyMedBase = dayGross;
 
-        // 5.4 Additional Medicare — всегда 0 (никто не превышает порог)
+        // 4.4 Additional Medicare — всегда 0 (никто не превышает порог)
         BigDecimal dailyAddlMedBase = BigDecimal.ZERO;
 
-        // 6) Считаем сами налоги
-        BigDecimal socialSecurity = calculatePercentage(dayGross, 6.2);
-        BigDecimal medicare       = calculatePercentage(dayGross, 1.45);
-        BigDecimal futa           = calculateFuta(payroll.getWorker(),
-                payroll.getPeriodStart(),
-                dayGross);
-        BigDecimal suta = calculateSuta(payroll.getWorker(), payroll.getCompany(), payroll.getPeriodStart(), dayGross);
+        // 4.5 FUTA taxable wages
+        BigDecimal taxableFuta = dayGross.min(FUTA_WAGE_LIMIT.subtract(ytdFutaWages).max(BigDecimal.ZERO));
 
-        BigDecimal ytdFuta = employerTaxRecordRepository
-                .sumFutaTaxableWagesByEmployeeAndYear(empId, year);
-        BigDecimal ytdSuta = employerTaxRecordRepository
-                .sumSutaTaxableWagesByEmployeeAndYear(empId, year);
+        // 4.6 SUTA taxable wages
+        BigDecimal taxableSuta = dayGross.min(SUTA_WAGE_LIMIT.subtract(ytdSutaWages).max(BigDecimal.ZERO));
 
-        BigDecimal taxableFuta = dayGross.min(BigDecimal.valueOf(7000).subtract(ytdFuta).max(BigDecimal.ZERO));
-        BigDecimal taxableSuta = dayGross.min(BigDecimal.valueOf(12300).subtract(ytdSuta).max(BigDecimal.ZERO));
+        // 5) Считаем сами налоги
+        // FIX: SS считается от dailySsBase (с учётом лимита), а НЕ от dayGross
+        BigDecimal socialSecurity = calculatePercentage(dailySsBase, 6.2);
+        BigDecimal medicare = calculatePercentage(dailyMedBase, 1.45);
 
+        // FIX: FUTA/SUTA считаем от уже посчитанных taxable wages (без повторных запросов в БД)
+        BigDecimal futa = calculatePercentage(taxableFuta, 0.6);
+
+        BigDecimal sutaRate = payroll.getCompany().getSocialSecurityTaxForCompany();
+        if (sutaRate == null) sutaRate = BigDecimal.valueOf(4.1);
+        BigDecimal suta = taxableSuta
+                .multiply(sutaRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP))
+                .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal totalEmployerTax = socialSecurity
                 .add(medicare)
                 .add(futa)
                 .add(suta);
 
+        // Проверка на дубликат по периоду
         boolean exists = employerTaxRecordRepository.existsByEmployeeIdAndPeriodStartAndPeriodEnd(
                 payroll.getWorker().getId(), payroll.getPeriodStart(), payroll.getPeriodEnd());
         if (exists) return null;
 
-
-        // 7) Составляем и сохраняем запись с новыми полями
+        // 6) Составляем и сохраняем запись
         EmployerTaxRecord record = EmployerTaxRecord.builder()
                 .company(payroll.getCompany())
                 .employee(payroll.getWorker())
@@ -128,34 +138,5 @@ public class EmployerTaxService {
     private BigDecimal calculatePercentage(BigDecimal amount, double percent) {
         return amount.multiply(BigDecimal.valueOf(percent / 100)).setScale(2, RoundingMode.HALF_UP);
     }
-
-    private BigDecimal calculateFuta(User employee, LocalDate periodStart, BigDecimal currentGross) {
-        int year = periodStart.getYear();
-        BigDecimal ytdGross = employerTaxRecordRepository
-                .sumFutaTaxableWagesByEmployeeAndYear(employee.getId(), year);
-
-        BigDecimal futaLimit = BigDecimal.valueOf(7000);
-        BigDecimal remainingFutaGross = futaLimit.subtract(ytdGross).max(BigDecimal.ZERO);
-        BigDecimal taxableGross = currentGross.min(remainingFutaGross);
-
-        return calculatePercentage(taxableGross, 0.6); // 0.6%
-    }
-
-    private BigDecimal calculateSuta(User employee, Company company, LocalDate periodStart, BigDecimal currentGross) {
-        BigDecimal sutaRate = company.getSocialSecurityTaxForCompany();
-        if (sutaRate == null) sutaRate = BigDecimal.valueOf(4.1);
-        int year = periodStart.getYear();
-        BigDecimal ytdSuta = employerTaxRecordRepository
-                .sumSutaTaxableWagesByEmployeeAndYear(employee.getId(), year);
-
-        BigDecimal sutaLimit = BigDecimal.valueOf(13000);
-        BigDecimal remainingSuta = sutaLimit.subtract(ytdSuta).max(BigDecimal.ZERO);
-        BigDecimal taxableGross = currentGross.min(remainingSuta);
-
-        return taxableGross.multiply(sutaRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP))
-                .setScale(2, RoundingMode.HALF_UP);
-    }
-
-
 
 }

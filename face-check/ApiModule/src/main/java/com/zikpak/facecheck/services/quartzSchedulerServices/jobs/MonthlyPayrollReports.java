@@ -72,7 +72,7 @@ public class MonthlyPayrollReports extends BaseSchedulerJob {
 
                 payrollSummaryReportService.generatePayrollSummaryReport(reportData);
 
-                reportsMailSender.sendEmailWeeklyPayrollReport(company.getCompanyEmail());
+                reportsMailSender.sendMonthlyPayrollReport(company.getCompanyEmail());
 
                 log.info("✅ Monthly report сгенерен для компании: {} (ID: {}) за {}/{}",
                         company.getCompanyName(), company.getId(),

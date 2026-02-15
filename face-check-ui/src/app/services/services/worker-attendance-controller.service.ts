@@ -17,6 +17,8 @@ import { DailyEarningResponse } from '../models/daily-earning-response';
 import { deleteAttendanceRecord } from '../fn/worker-attendance-controller/delete-attendance-record';
 import { DeleteAttendanceRecord$Params } from '../fn/worker-attendance-controller/delete-attendance-record';
 import { FinanceInfoForWeekInFinanceScreenResponse } from '../models/finance-info-for-week-in-finance-screen-response';
+import { findAllTransfers } from '../fn/worker-attendance-controller/find-all-transfers';
+import { FindAllTransfers$Params } from '../fn/worker-attendance-controller/find-all-transfers';
 import { getAllAttendanceForAdmin } from '../fn/worker-attendance-controller/get-all-attendance-for-admin';
 import { GetAllAttendanceForAdmin$Params } from '../fn/worker-attendance-controller/get-all-attendance-for-admin';
 import { getAllAttendanceForAppOwner } from '../fn/worker-attendance-controller/get-all-attendance-for-app-owner';
@@ -36,20 +38,49 @@ import { GetWorkerPhotosByDateList$Params } from '../fn/worker-attendance-contro
 import { hasPunchIn } from '../fn/worker-attendance-controller/has-punch-in';
 import { HasPunchIn$Params } from '../fn/worker-attendance-controller/has-punch-in';
 import { LastPunchTimeDto } from '../models/last-punch-time-dto';
+import { makeTransfer } from '../fn/worker-attendance-controller/make-transfer';
+import { MakeTransfer$Params } from '../fn/worker-attendance-controller/make-transfer';
 import { OvertimeResponse } from '../models/overtime-response';
 import { PageResponseAttendanceResponse } from '../models/page-response-attendance-response';
+import { PageResponseTransferResponse } from '../models/page-response-transfer-response';
 import { punchIn } from '../fn/worker-attendance-controller/punch-in';
 import { PunchIn$Params } from '../fn/worker-attendance-controller/punch-in';
 import { PunchInResponse } from '../models/punch-in-response';
 import { punchOut } from '../fn/worker-attendance-controller/punch-out';
 import { PunchOut$Params } from '../fn/worker-attendance-controller/punch-out';
 import { PunchOutResponse } from '../models/punch-out-response';
+import { TransferResponse } from '../models/transfer-response';
 import { WorkerPhotosResponse } from '../models/worker-photos-response';
 
 @Injectable({ providedIn: 'root' })
 export class WorkerAttendanceControllerService extends BaseService {
   constructor(config: ApiConfiguration, http: HttpClient) {
     super(config, http);
+  }
+
+  /** Path part for operation `makeTransfer()` */
+  static readonly MakeTransferPath = '/attendance/transfer';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `makeTransfer()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  makeTransfer$Response(params: MakeTransfer$Params, context?: HttpContext): Observable<StrictHttpResponse<TransferResponse>> {
+    return makeTransfer(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `makeTransfer$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  makeTransfer(params: MakeTransfer$Params, context?: HttpContext): Observable<TransferResponse> {
+    return this.makeTransfer$Response(params, context).pipe(
+      map((r: StrictHttpResponse<TransferResponse>): TransferResponse => r.body)
+    );
   }
 
   /** Path part for operation `punchOut()` */
@@ -149,6 +180,31 @@ export class WorkerAttendanceControllerService extends BaseService {
   getWeeklyEarnings(params?: GetWeeklyEarnings$Params, context?: HttpContext): Observable<Array<DailyEarningResponse>> {
     return this.getWeeklyEarnings$Response(params, context).pipe(
       map((r: StrictHttpResponse<Array<DailyEarningResponse>>): Array<DailyEarningResponse> => r.body)
+    );
+  }
+
+  /** Path part for operation `findAllTransfers()` */
+  static readonly FindAllTransfersPath = '/attendance/transfers';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `findAllTransfers()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllTransfers$Response(params?: FindAllTransfers$Params, context?: HttpContext): Observable<StrictHttpResponse<PageResponseTransferResponse>> {
+    return findAllTransfers(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `findAllTransfers$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  findAllTransfers(params?: FindAllTransfers$Params, context?: HttpContext): Observable<PageResponseTransferResponse> {
+    return this.findAllTransfers$Response(params, context).pipe(
+      map((r: StrictHttpResponse<PageResponseTransferResponse>): PageResponseTransferResponse => r.body)
     );
   }
 

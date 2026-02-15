@@ -57,12 +57,29 @@ public class PayrollSummaryDataService {
                         .stream()
                         .collect(Collectors.groupingBy(a -> a.getWorker().getId()));
 
-        // 5. Вычисляем итоговые суммы
-        PayrollTotals totals = calculatePayrollTotals(payrolls);
-
-        // 6. Создаем разбивку по сотрудникам
+        // 5. Сначала создаем разбивку по сотрудникам (источник правды)
         List<EmployeeSummaryDTO> employeeBreakdown =
                 createEmployeeBreakdown(payrolls, workers, attendanceByWorker);
+
+// 6. Считаем итоги ИЗ breakdown (один источник данных)
+        BigDecimal totalGross = employeeBreakdown.stream()
+                .map(EmployeeSummaryDTO::getGrossPay)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalNet = employeeBreakdown.stream()
+                .map(EmployeeSummaryDTO::getNetPay)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalHours = employeeBreakdown.stream()
+                .map(EmployeeSummaryDTO::getHoursWorked)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int totalEmployees = employeeBreakdown.size();
+
+        BigDecimal averageRate = totalHours.compareTo(BigDecimal.ZERO) > 0
+                ? totalGross.divide(totalHours, 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
 
         // 7. Определяем тип отчета
         String reportType = determineReportType(startDate, endDate);
@@ -83,12 +100,12 @@ public class PayrollSummaryDataService {
                 .reportType(reportType)
 
                 // Summary Totals
-                .totalGrossPay(totals.getTotalGross())
-                .totalNetPay(totals.getTotalNet())
-                .totalTaxesWithheld(totals.getTotalTaxes())
-                .totalHoursWorked(totals.getTotalHours())
-                .totalEmployees(totals.getTotalEmployees())
-                .averageHourlyRate(totals.getAverageRate())
+                .totalGrossPay(totalGross)
+                .totalNetPay(totalNet)
+                .totalTaxesWithheld(BigDecimal.ZERO)
+                .totalHoursWorked(totalHours)
+                .totalEmployees(totalEmployees)
+                .averageHourlyRate(averageRate)
 
                 // Employee Breakdown
                 .employeeBreakdown(employeeBreakdown)

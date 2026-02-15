@@ -484,12 +484,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
         _showSuccessDialog(true, _getCurrentFormattedTime());
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Punched in! Tracking started for user: $userId'),
-              backgroundColor: Colors.green,
-            ),
-          );
+
         }
       } else {
         String errorMessage = 'Punch in failed';
@@ -548,13 +543,7 @@ class _PunchScreenState extends State<PunchScreen> with WidgetsBindingObserver {
 
         _showSuccessDialog(false, _getCurrentFormattedTime());
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  'Punched out! Location tracking stopped for user: ${_currentUserId.value}'),
-              backgroundColor: Colors.blue,
-            ),
-          );
+
         }
       } else {
         String errorMessage = 'Punch out failed';

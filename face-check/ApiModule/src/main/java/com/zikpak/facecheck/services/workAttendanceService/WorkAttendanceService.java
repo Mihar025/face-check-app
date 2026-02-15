@@ -16,6 +16,7 @@ import com.zikpak.facecheck.requestsResponses.attendance.*;
 import com.zikpak.facecheck.requestsResponses.finance.PayStubResponse;
 import com.zikpak.facecheck.requestsResponses.worker.DailyFinanceInfo;
 import com.zikpak.facecheck.requestsResponses.worker.FinanceInfoForWeekInFinanceScreenResponse;
+import com.zikpak.facecheck.services.transferService.TransferResponse;
 import com.zikpak.facecheck.services.workSiteService.WorkSiteService;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
 import com.zikpak.facecheck.taxesServices.calculators.FinanceCalculator;
@@ -26,6 +27,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import io.micrometer.core.instrument.Timer;
@@ -2255,7 +2259,45 @@ public class WorkAttendanceService {
                 end >= sorted.size()
         );
     }
-        // В WorkAttendanceService
+
+
+
+
+    public PageResponse<TransferResponse> findAllAttendanceTransferAdmin(Authentication authentication, int page, int size) {
+        User admin = checkIsUserHasAdminRoleAndBusinessOwner(authentication);
+
+        if (!admin.isAdmin()) {
+            throw new AccessDeniedException("You dont have permission!");
+        }
+
+        if (admin.getCompany() == null) {
+            log.error("Admin has no company assigned! Admin ID: {}", admin.getId());
+            return new PageResponse<>(List.of(), page, size, 0, 0, true, true);
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<WorkerAttendance> transfers = workerAttendanceRepository
+                .findAllTransfersByCompanyId(admin.getCompany().getId(), pageable);
+
+        List<TransferResponse> responses = transfers.getContent().stream()
+                .map(workAttendanceMapper::toCompanyWorkerTransferResponse)
+                .toList();
+
+        return new PageResponse<>(
+                responses,
+                transfers.getNumber(),
+                transfers.getSize(),
+                transfers.getTotalElements(),
+                transfers.getTotalPages(),
+                transfers.isFirst(),
+                transfers.isLast()
+        );
+    }
+
+
+
+    // В WorkAttendanceService
         public WorkerPhotosResponse getPhotosForWorkerByDate(
                 Integer workerId,
                 LocalDate date) {

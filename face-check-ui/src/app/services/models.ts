@@ -54,6 +54,7 @@ export { PageResponseNotificationResponse } from './models/page-response-notific
 export { PageResponsePaymentHistoryResponse } from './models/page-response-payment-history-response';
 export { PageResponseRelatedUserInCompanyResponse } from './models/page-response-related-user-in-company-response';
 export { PageResponseTermsOfUseRequestDataResponse } from './models/page-response-terms-of-use-request-data-response';
+export { PageResponseTransferResponse } from './models/page-response-transfer-response';
 export { PageResponseWcRiskResponse } from './models/page-response-wc-risk-response';
 export { PageResponseWorkerCurrentlyWorkingInWorkSite } from './models/page-response-worker-currently-working-in-work-site';
 export { PageResponseWorkSiteClosedDaysResponse } from './models/page-response-work-site-closed-days-response';
@@ -92,6 +93,8 @@ export { SickLeaveInfo } from './models/sick-leave-info';
 export { SutaReportDto } from './models/suta-report-dto';
 export { TermsOfUseRequestDataRequest } from './models/terms-of-use-request-data-request';
 export { TermsOfUseRequestDataResponse } from './models/terms-of-use-request-data-response';
+export { TransferRequest } from './models/transfer-request';
+export { TransferResponse } from './models/transfer-response';
 export { UpdateCompanyAddressRequest } from './models/update-company-address-request';
 export { UpdateCompanyAddressResponse } from './models/update-company-address-response';
 export { UpdateCompanyEmailRequest } from './models/update-company-email-request';
