@@ -13,6 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.rmi.MarshalledObject;
+import java.util.Map;
+
 @RestController
 @RequestMapping("remote-worker")
 @RequiredArgsConstructor
@@ -23,26 +26,24 @@ public class RemoteWorkerController {
 
 
     @PatchMapping("/set-worker-remote/{workerId}")
-    public ResponseEntity<String> setWorkerRemote(Authentication authentication,
+    public ResponseEntity<Map<String, String>> setWorkerRemote(Authentication authentication,
                                                 @PathVariable(name = "workerId") Integer workerId)
                                                 throws Exception {
 
          remoteWorkerService.setWorkerAsRemoteWorker(authentication, workerId);
 
-         String responseBody = "Successfully set worker as remote worker";
-         return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return ResponseEntity.ok(Map.of("message", "Successfully set worker as remote worker"));
     }
 
 
     @PatchMapping("/set-worker-on-person/{workerId}")
-    public ResponseEntity<String> setWorkerOnPerson(Authentication authentication,
-                                                  @PathVariable(name = "workerId") Integer workerId)
+    public ResponseEntity<Map<String, String>> setWorkerOnPerson(Authentication authentication,
+                                                              @PathVariable(name = "workerId") Integer workerId)
             throws Exception {
 
         remoteWorkerService.setWorkerAsNotRemoteWorker(authentication, workerId);
 
-        String responseBody = "Successfully set worker as not remote worker";
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return  ResponseEntity.ok(Map.of("message", "Successfully set worker as not remote worker"));
     }
 
     @PostMapping("/random-attendance-verification")
