@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:face_check/services/fcm_service.dart';
 import 'package:face_check/services/safety_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -90,6 +91,8 @@ class _BootstrapAppState extends State<BootstrapApp> {
       try {
         await SafetyService.init();
           await LocationTrackingService.initializeBackgroundService();
+        await _resumeTrackingIfNeeded();
+
       } catch (e) {
         debugPrint('Location background init error: $e');
       }
@@ -108,7 +111,29 @@ class _BootstrapAppState extends State<BootstrapApp> {
       child: const MyApp(),
     );
   }
-}
+
+  Future<void> _resumeTrackingIfNeeded() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isTracking = prefs.getBool('location_tracking_active') ?? false;
+      final lastPunchType = prefs.getString('last_punch_type');
+      final userId = prefs.getInt('tracking_user_id');
+
+      if (isTracking && lastPunchType == 'IN' && userId != null) {
+        debugPrint('🔄 Resuming location tracking for user: $userId');
+
+        final service = FlutterBackgroundService();
+        final isRunning = await service.isRunning();
+
+        if (!isRunning) {
+          await service.startService();
+          debugPrint('✅ Background service restarted after app relaunch');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Resume tracking error: $e');
+    }
+  }}
 
 /// Твой главный виджет приложения (MaterialApp)
 class MyApp extends StatelessWidget {
