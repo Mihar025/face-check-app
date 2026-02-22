@@ -114,7 +114,7 @@ public class LocationService {
 
 
 
-
+    @Transactional
     public List<LocationRecordDto> getLocationHistory(Integer userId, LocalDate date) {
         System.out.println("Searching for user: " + userId + ", date: " + date);
 
