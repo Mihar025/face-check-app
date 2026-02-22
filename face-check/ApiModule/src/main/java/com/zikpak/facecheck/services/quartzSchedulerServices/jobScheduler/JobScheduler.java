@@ -28,6 +28,7 @@ public class JobScheduler {
             scheduleMonthlyPayrollReport();
             scheduleWeeklyHoursReport();
             scheduleMonthlyHoursReport();
+            scheduleRandomAttendanceVerification();
         //    scheduleQuarterlyTaxSummaryReportReport();
         //    scheduleW3Job();
         //    scheduleMTA305Job();
@@ -43,6 +44,27 @@ public class JobScheduler {
         } catch (SchedulerException e) {
             log.error("❌ Failed to schedule jobs", e);
         }
+    }
+
+    private void scheduleRandomAttendanceVerification() throws SchedulerException {
+        JobDetail job = JobBuilder.newJob(RandomAttendanceVerificationJob.class)
+                .withIdentity("randomAttendanceVerification", "VERIFICATION_JOBS")
+                .storeDurably()
+                .build();
+
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity("randomAttendanceVerificationTrigger", "VERIFICATION_JOBS")
+                .withSchedule(CronScheduleBuilder
+                        .cronSchedule("0 0/30 7-20 * * ?")
+                        .inTimeZone(TimeZone.getTimeZone("America/New_York")))
+                .build();
+
+        if (scheduler.checkExists(job.getKey())) {
+            scheduler.deleteJob(job.getKey());
+        }
+
+        scheduler.scheduleJob(job, trigger);
+        log.info("✅ RandomAttendanceVerificationJob scheduled every 30 min (7AM-8PM ET)");
     }
 
     private void scheduleStripeRecountingPrice() throws SchedulerException {

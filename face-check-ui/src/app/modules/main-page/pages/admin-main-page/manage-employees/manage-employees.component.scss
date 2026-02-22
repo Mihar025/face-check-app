@@ -411,6 +411,33 @@ $user-color: #4CAF50;
   }
 }
 
+
+.remote-user-button {
+  @extend .action-button;
+  color: $admin-color;
+  border-color: rgba($admin-color, 0.3);
+
+  &:hover:not(:disabled) {
+    background: $admin-color;
+    color: $white;
+    border-color: $admin-color;
+  }
+}
+
+
+.on-person-user-button {
+  @extend .action-button;
+  color: $admin-color;
+  border-color: rgba($admin-color, 0.3);
+
+  &:hover:not(:disabled) {
+    background: $admin-color;
+    color: $white;
+    border-color: $admin-color;
+  }
+}
+
+
 /* Role badges */
 .role-admin {
   background: rgba($admin-color, 0.1);

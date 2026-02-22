@@ -56,6 +56,7 @@ import { BillingCanceledComponent } from './pages/billing-canceled/billing-cance
 import { DeleteAccountComponent } from './pages/delete-account/delete-account.component';
 import { NotesForPunchAdminComponent } from './pages/admin-main-page/notes-for-punch-admin/notes-for-punch-admin.component';
 import { NotesForPunchAppOwnerComponent } from './pages/appOwner/notes-for-punch-app-owner/notes-for-punch-app-owner.component';
+import { RemoteWorkersAdminComponentComponent } from './pages/admin-main-page/remote-workers-admin-component/remote-workers-admin-component.component';
 
 @NgModule({
   declarations: [
@@ -100,6 +101,7 @@ import { NotesForPunchAppOwnerComponent } from './pages/appOwner/notes-for-punch
     DeleteAccountComponent,
     NotesForPunchAdminComponent,
     NotesForPunchAppOwnerComponent,
+    RemoteWorkersAdminComponentComponent,
   ],
   imports: [
     CommonModule,

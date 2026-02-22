@@ -18,6 +18,7 @@ import { TestDataGeneratorControllerService } from './services/test-data-generat
 import { SickLeaveControllerService } from './services/sick-leave-controller.service';
 import { WorkScheduleControllerService } from './services/work-schedule-controller.service';
 import { ContactSalesControllerService } from './services/contact-sales-controller.service';
+import { RemoteWorkerControllerService } from './services/remote-worker-controller.service';
 import { PrivacyAndTermsControllerService } from './services/privacy-and-terms-controller.service';
 import { PaymentHistoryIrsControllerService } from './services/payment-history-irs-controller.service';
 import { TrackLocationControllerService } from './services/track-location-controller.service';
@@ -53,6 +54,7 @@ import { CustomErrorControllerService } from './services/custom-error-controller
     SickLeaveControllerService,
     WorkScheduleControllerService,
     ContactSalesControllerService,
+    RemoteWorkerControllerService,
     PrivacyAndTermsControllerService,
     PaymentHistoryIrsControllerService,
     TrackLocationControllerService,

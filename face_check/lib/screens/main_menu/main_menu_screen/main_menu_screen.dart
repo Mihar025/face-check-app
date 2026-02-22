@@ -15,9 +15,12 @@ import '../../../services/fcm_service.dart';
 import '../../../services/pivacy_policy_service.dart';
 import '../../../services/ApiService.dart';
 import '../../../services/time_service.dart';
+import '../../../widgets/location_permision_dialog.dart';
 import '../../loginScreen/privacy_policy_screen.dart';
 import '../components/custom_drawer.dart';
+import '../presence_verification_screen/presence_verification_screen.dart';
 import '../view-details/view_details_screen.dart';
+
 
 // Notification для перезагрузки данных (из drawer и из punch screen)
 class MainScreenReloadNotification extends Notification {}
@@ -330,6 +333,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   late final ValueNotifier<int> _unreadCount;
   Timer? _pollingTimer;
 
+  StreamSubscription<String>? _presenceCheckSub;
+
 
   // Services
   late final TimeService _timeService;
@@ -407,6 +412,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _pollingTimer?.cancel();
     _unreadCount.dispose();
     _fcmSub?.cancel();
+    _presenceCheckSub?.cancel();
 
     super.dispose();
   }
@@ -435,12 +441,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
 
-
-
-
-
-
-
   Future<void> _fastInitialize() async {
     await _loadCachedData();
     setState(() => _isInitialized = true);
@@ -450,12 +450,31 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     if (_canLoadData) {
       await _loadFreshData();
     }
+
+    // ← ДОБАВЬ ЭТО: Запрос location permissions после Privacy Policy
+    if (mounted) {
+      await LocationPermissionHelper.checkAndRequestIfNeeded(context);
+    }
+
     _startNotificationPolling();
     _fcmSub = FcmService.onNotificationReceived.stream.listen((_) {
       _fetchUnreadCount();
     });
-  }
 
+    _presenceCheckSub = FcmService.onPresenceCheckReceived.stream.listen((verificationId) {
+      if (mounted && verificationId.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PresenceVerificationScreen(
+              verificationId: int.parse(verificationId),
+            ),
+          ),
+        );
+      }
+    });
+
+  }
   Future<void> _loadCachedData() async {
     try {
       final cached = await CacheManager.getCachedData();
@@ -1013,3 +1032,4 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
 }
+

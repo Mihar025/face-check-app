@@ -8,6 +8,10 @@ import {catchError, of, Subscription} from "rxjs";
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 import {TransferResponse} from "../../../../../services/models/transfer-response";
 import {PageResponseTransferResponse} from "../../../../../services/models/page-response-transfer-response";
+import {RemoteWorkerControllerService} from "../../../../../services/services/remote-worker-controller.service";
+import {RemoteVerificationAdminResponse} from "../../../../../services/models/remote-verification-admin-response";
+import {RemoteVerificationStatsResponse} from "../../../../../services/models/remote-verification-stats-response";
+import {PageResponseRemoteVerificationAdminResponse} from "../../../../../services/models/page-response-remote-verification-admin-response";
 
 declare let L: any;
 
@@ -60,7 +64,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   isMobileMenuOpen = false;
 
 
-  activeTab: 'attendance' | 'transfers' = 'attendance';
+  activeTab: 'attendance' | 'transfers' | 'remote' = 'attendance';
 
   transferList: TransferResponse[] = [];
   transferLoading: boolean = false;
@@ -78,14 +82,38 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   showTransferPhotoModal: boolean = false;
   selectedTransferPhoto: string = '';
 
+  // ==================== REMOTE WORKERS ====================
+  remoteVerifications: RemoteVerificationAdminResponse[] = [];
+  remoteStats: RemoteVerificationStatsResponse = {
+    completedToday: 0,
+    missedToday: 0,
+    pendingToday: 0,
+    totalToday: 0,
+    complianceRate: 0
+  };
+  remoteLoading: boolean = false;
+  remotePage: number = 0;
+  remoteSize: number = 20;
+  remoteTotalPages: number = 0;
+  remoteTotalElements: number = 0;
+  remoteIsFirst: boolean = true;
+  remoteIsLast: boolean = true;
+  remoteStatusFilter: string = '';
+  remoteDateFrom: string = '';
+  remoteDateTo: string = '';
+
+  // Remote photo modal
+  showRemotePhotoModal: boolean = false;
+  selectedRemoteVerification: RemoteVerificationAdminResponse | null = null;
+
   private subscriptions = new Subscription();
 
   constructor(
     private authService: AuthService,
     private attendanceService: WorkerAttendanceControllerService,
     private userService: UserServiceControllerService,
-    public userDataService: UserDataService
-
+    public userDataService: UserDataService,
+    private remoteWorkerService: RemoteWorkerControllerService
   ) {}
 
   ngOnInit(): void {
@@ -102,7 +130,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
     this.subscriptions.add(
       this.userDataService.companyName$.subscribe(name => {
-         this.companyName = name;
+        this.companyName = name;
       })
     );
 
@@ -111,7 +139,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
     this.subscriptions.add(
       this.userDataService.userPhoto$.subscribe(photo => {
-         this.userPhotoUrl = photo;
+        this.userPhotoUrl = photo;
       })
     );
   }
@@ -130,8 +158,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       next: (response: PageResponseAttendanceResponse) => {
         this.attendanceList = response.content || [];
 
-        // 🔍 ДОБАВЬ ЭТО ДЛЯ ДЕБАГА
-        console.log('🔍 Checking manual entries:');
+        console.log('Checking manual entries:');
         this.attendanceList.forEach(att => {
           if (!att.checkInPhotoUrl || !att.checkOutPhotoUrl) {
             console.log(`ID: ${att.attendanceId}`, {
@@ -155,7 +182,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       }
     });
   }
-// Open location modal for Check In
+
   openCheckInLocation(attendance: AttendanceResponse): void {
     if (!attendance.checkInLatitude || !attendance.checkInLongitude) {
       this.errorMessage = 'Check-in location not available';
@@ -165,8 +192,8 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
     this.locationType = 'checkin';
     this.selectedLocationData = {
-      latitude: attendance.checkInLatitude || 0,  // ← ДОБАВЬ || 0
-      longitude: attendance.checkInLongitude || 0, // ← ДОБАВЬ || 0
+      latitude: attendance.checkInLatitude || 0,
+      longitude: attendance.checkInLongitude || 0,
       location: attendance.checkInLocation || 'Location not available',
       time: attendance.checkInTime || '',
       workerName: `${attendance.firstName || ''} ${attendance.lastName || ''}`,
@@ -187,7 +214,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     this.isMobileMenuOpen = false;
   }
 
-// Open location modal for Check Out
   openCheckOutLocation(attendance: AttendanceResponse): void {
     if (!attendance.checkOutLatitude || !attendance.checkOutLongitude) {
       this.errorMessage = 'Check-out location not available';
@@ -197,8 +223,8 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
     this.locationType = 'checkout';
     this.selectedLocationData = {
-      latitude: attendance.checkOutLatitude || 0,  // ← ДОБАВЬ || 0
-      longitude: attendance.checkOutLongitude || 0, // ← ДОБАВЬ || 0
+      latitude: attendance.checkOutLatitude || 0,
+      longitude: attendance.checkOutLongitude || 0,
       location: attendance.checkOutLocation || 'Location not available',
       time: attendance.checkOutTime || '',
       workerName: `${attendance.firstName || ''} ${attendance.lastName || ''}`,
@@ -210,7 +236,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       this.initializeLocationMap();
     }, 200);
   }
-// Close location modal
+
   closeLocationModal(): void {
     this.showLocationModal = false;
     this.selectedLocationData = null;
@@ -223,7 +249,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     }
   }
 
-// Initialize Leaflet map for location
   private initializeLocationMap(): void {
     if (!this.selectedLocationData) return;
 
@@ -254,7 +279,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       mapElement.style.height = '100%';
       mapElement.style.minHeight = '400px';
 
-      // Create map
       this.locationMap = L.map(mapElement, {
         center: [lat, lng],
         zoom: 16,
@@ -262,7 +286,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
         attributionControl: true
       });
 
-      // Add tiles
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap contributors © CARTO',
         subdomains: 'abcd',
@@ -270,7 +293,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
         minZoom: 2
       }).addTo(this.locationMap);
 
-      // Marker color based on type
       const markerColor = this.locationType === 'checkin' ? '#10b981' : '#ef4444';
       const iconHtml = `
       <div style="
@@ -302,11 +324,9 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
         iconAnchor: [15, 30]
       });
 
-      // Add marker
       this.locationMarker = L.marker([lat, lng], { icon: customIcon })
         .addTo(this.locationMap);
 
-      // Popup content
       const popupContent = `
       <div style="padding: 10px; min-width: 200px;">
         <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">
@@ -379,7 +399,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
         this.deleting = false;
         this.closeDeleteModal();
 
-        // Показываем успешное сообщение
         this.errorMessage = '';
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
@@ -390,7 +409,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
           successDiv.remove();
         }, 3000);
 
-        // Перезагружаем список
         this.loadAttendance();
       },
       error: (error) => {
@@ -409,7 +427,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   }
 
 
-// Load Leaflet from CDN if not available
   private loadLeafletFromCDN(): void {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -425,7 +442,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     document.head.appendChild(script);
   }
 
-// Check if location exists
   hasCheckInLocation(attendance: AttendanceResponse): boolean {
     return typeof attendance.checkInLatitude === 'number' &&
       typeof attendance.checkInLongitude === 'number';
@@ -436,12 +452,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       typeof attendance.checkOutLongitude === 'number';
   }
 
-
-
-
-
-
-  // Методы пагинации
   goToPage(pageNumber: number): void {
     if (pageNumber >= 0 && pageNumber < this.totalPages) {
       this.page = pageNumber;
@@ -470,7 +480,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
   }
 
   openPhotoModal(attendance: AttendanceResponse): void {
-    // Проверяем что URL не пустые строки и не null
     const hasCheckInPhoto = attendance.checkInPhotoUrl &&
       attendance.checkInPhotoUrl.trim() !== '' &&
       attendance.checkInPhotoUrl !== 'null' &&
@@ -498,6 +507,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
     this.loadPhotosForAttendance();
   }
+
   hasValidPhotos(attendance: AttendanceResponse): boolean {
     const invalidValues = [
       'Manual entry by admin',
@@ -525,7 +535,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
   loadPhotosForAttendance(): void {
     if (!this.selectedAttendance?.attendanceId) {
-      this.loadingPhotos = false; // Сразу ставим false
+      this.loadingPhotos = false;
       this.photos = [];
       return;
     }
@@ -538,7 +548,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     }).pipe(
       catchError(error => {
         console.error('Error loading photos:', error);
-        this.loadingPhotos = false; // Важно!
+        this.loadingPhotos = false;
         this.photos = [];
         return of(null);
       })
@@ -563,7 +573,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
             });
           }
 
-          this.photos = tempPhotos; // Присваиваем один раз
+          this.photos = tempPhotos;
         }
 
         this.loadingPhotos = false;
@@ -576,7 +586,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     });
   }
 
-  // ✅ Форматирование времени из строки "HH:mm:ss"
   formatTimeOnly(timeString: string | undefined): string {
     if (!timeString) return '';
 
@@ -614,7 +623,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     event.target.src = 'assets/images/no-photo-placeholder.png';
   }
 
-  // Вспомогательные методы
   formatDateTime(dateTime: string | undefined): string {
     if (!dateTime) return 'N/A';
     return new Date(dateTime).toLocaleString('en-US', {
@@ -625,11 +633,12 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       minute: '2-digit'
     });
   }
+
   formatDate(date: string | undefined): string {
     if (!date) return 'N/A';
 
     const [year, month, day] = date.split('T')[0].split('-');
-    const localDate = new Date(+year, +month - 1, +day, 12, 0, 0); // Полдень локального времени
+    const localDate = new Date(+year, +month - 1, +day, 12, 0, 0);
 
     return localDate.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -673,7 +682,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
   Math = Math;
 
-// Добавь этот метод в StatForAttendenceComponent
   hasPhotos(attendance: AttendanceResponse): boolean {
     return !!(
       (attendance.checkInPhotoUrl && attendance.checkInPhotoUrl.trim() !== '') ||
@@ -683,10 +691,14 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
 
   // === TAB SWITCHING ===
-  switchTab(tab: 'attendance' | 'transfers'): void {
+  switchTab(tab: 'attendance' | 'transfers' | 'remote'): void {
     this.activeTab = tab;
     if (tab === 'transfers' && this.transferList.length === 0) {
       this.loadTransfers();
+    }
+    if (tab === 'remote' && this.remoteVerifications.length === 0) {
+      this.loadRemoteVerifications();
+      this.loadRemoteStats();
     }
   }
 
@@ -714,7 +726,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     });
   }
 
-// Transfer pagination
   goToTransferPage(pageNumber: number): void {
     if (pageNumber >= 0 && pageNumber < this.transferTotalPages) {
       this.transferPage = pageNumber;
@@ -756,7 +767,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
     return pages;
   }
 
-// Transfer location
   openTransferLocation(transfer: TransferResponse): void {
     if (!transfer.transferLatitude || !transfer.transferLongitude) {
       this.errorMessage = 'Transfer location not available';
@@ -773,7 +783,7 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       workerName: transfer.workerFullName || '',
       type: 'Transfer'
     };
-    this.locationType = 'checkin'; // green marker
+    this.locationType = 'checkin';
     this.showLocationModal = true;
 
     setTimeout(() => {
@@ -786,7 +796,6 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
       typeof transfer.transferLongitude === 'number';
   }
 
-// Transfer photo
   openTransferPhoto(transfer: TransferResponse): void {
     if (!transfer.transferPhotoUrl) {
       this.errorMessage = 'No transfer photo available';
@@ -810,5 +819,211 @@ export class StatForAttendenceComponent implements OnInit, OnDestroy{
 
   getTransferStatusText(transfer: TransferResponse): string {
     return transfer.isSuccessful ? 'Successful' : 'Failed';
+  }
+
+
+  // ==================== REMOTE WORKERS ====================
+
+  loadRemoteVerifications(): void {
+    this.remoteLoading = true;
+
+    this.remoteWorkerService.getAllVerifications({
+      page: this.remotePage,
+      size: this.remoteSize,
+      status: this.remoteStatusFilter || undefined,
+      dateFrom: this.remoteDateFrom || undefined,
+      dateTo: this.remoteDateTo || undefined
+    }).subscribe({
+      next: (response: PageResponseRemoteVerificationAdminResponse) => {
+        this.remoteVerifications = response.content || [];
+        this.remoteTotalPages = response.totalPages || 0;
+        this.remoteTotalElements = response.totalElement || 0;
+        this.remoteIsFirst = response.first ?? true;
+        this.remoteIsLast = response.last ?? true;
+        this.remoteLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading remote verifications:', error);
+        this.errorMessage = 'Failed to load remote verification data.';
+        this.remoteLoading = false;
+      }
+    });
+  }
+
+  loadRemoteStats(): void {
+    this.remoteWorkerService.getVerificationStats({}).subscribe({
+      next: (stats: RemoteVerificationStatsResponse) => {
+        this.remoteStats = stats;
+      },
+      error: (error) => {
+        console.error('Error loading remote stats:', error);
+      }
+    });
+  }
+
+  applyRemoteFilters(): void {
+    this.remotePage = 0;
+    this.loadRemoteVerifications();
+    this.loadRemoteStats();
+  }
+
+  resetRemoteFilters(): void {
+    this.remoteStatusFilter = '';
+    const today = new Date().toISOString().split('T')[0];
+    this.remoteDateFrom = today;
+    this.remoteDateTo = today;
+    this.remotePage = 0;
+    this.loadRemoteVerifications();
+    this.loadRemoteStats();
+  }
+
+  setRemoteDateRange(range: string): void {
+    const today = new Date();
+    this.remoteDateTo = today.toISOString().split('T')[0];
+
+    switch (range) {
+      case 'today':
+        this.remoteDateFrom = this.remoteDateTo;
+        break;
+      case 'week':
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        this.remoteDateFrom = weekAgo.toISOString().split('T')[0];
+        break;
+      case 'month':
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        this.remoteDateFrom = monthAgo.toISOString().split('T')[0];
+        break;
+      case 'all':
+        this.remoteDateFrom = '';
+        this.remoteDateTo = '';
+        break;
+    }
+    this.applyRemoteFilters();
+  }
+
+  goToRemotePage(pageNumber: number): void {
+    if (pageNumber >= 0 && pageNumber < this.remoteTotalPages) {
+      this.remotePage = pageNumber;
+      this.loadRemoteVerifications();
+    }
+  }
+
+  nextRemotePage(): void {
+    if (!this.remoteIsLast) {
+      this.remotePage++;
+      this.loadRemoteVerifications();
+    }
+  }
+
+  previousRemotePage(): void {
+    if (!this.remoteIsFirst) {
+      this.remotePage--;
+      this.loadRemoteVerifications();
+    }
+  }
+
+  changeRemotePageSize(newSize: number): void {
+    this.remoteSize = newSize;
+    this.remotePage = 0;
+    this.loadRemoteVerifications();
+  }
+
+  getRemotePageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(0, this.remotePage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.remoteTotalPages - 1, startPage + maxPagesToShow - 1);
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(0, endPage - maxPagesToShow + 1);
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  getRemoteStatusClass(status: string | undefined): string {
+    switch (status) {
+      case 'COMPLETED': return 'status-success';
+      case 'MISSED': return 'status-failed';
+      case 'PENDING': return 'status-pending';
+      default: return '';
+    }
+  }
+
+  getRemoteStatusIcon(status: string | undefined): string {
+    switch (status) {
+      case 'COMPLETED': return 'fa-check-circle';
+      case 'MISSED': return 'fa-times-circle';
+      case 'PENDING': return 'fa-clock';
+      default: return 'fa-question-circle';
+    }
+  }
+
+  getRemoteStatusText(status: string | undefined): string {
+    switch (status) {
+      case 'COMPLETED': return 'Completed';
+      case 'MISSED': return 'Missed';
+      case 'PENDING': return 'Pending';
+      default: return 'Unknown';
+    }
+  }
+
+  getRemoteRowClass(status: string | undefined): string {
+    switch (status) {
+      case 'MISSED': return 'row-missed';
+      case 'PENDING': return 'row-pending';
+      default: return '';
+    }
+  }
+
+  formatCoords(lat: number | undefined, lng: number | undefined): string {
+    if (!lat || !lng) return 'N/A';
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+
+  openRemotePhotoModal(v: RemoteVerificationAdminResponse): void {
+    this.selectedRemoteVerification = v;
+    this.showRemotePhotoModal = true;
+  }
+
+  closeRemotePhotoModal(): void {
+    this.showRemotePhotoModal = false;
+    this.selectedRemoteVerification = null;
+  }
+
+  openRemoteLocation(v: RemoteVerificationAdminResponse): void {
+    if (!v.latitude || !v.longitude) {
+      this.errorMessage = 'Verification location not available';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    this.selectedLocationData = {
+      latitude: v.latitude,
+      longitude: v.longitude,
+      location: v.locationAddress || 'Location not available',
+      time: v.verificationTime || '',
+      workerName: `${v.workerFirstName || ''} ${v.workerLastName || ''}`,
+      type: 'Verification'
+    };
+    this.locationType = 'checkin';
+    this.showLocationModal = true;
+
+    setTimeout(() => {
+      this.initializeLocationMap();
+    }, 200);
+  }
+
+  openGoogleMaps(lat: number | undefined, lng: number | undefined): void {
+    if (lat && lng) {
+      window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+    }
+  }
+
+  getCurrentDate(): string {
+    return new Date().toISOString().split('T')[0];
   }
 }

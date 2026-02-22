@@ -24,7 +24,7 @@
       <!-- Header -->
       <div class="header-section">
         <h1>Employee Attendance Tracking</h1>
-        <p class="subtitle">Monitor all employee check-ins, check-outs and transfers across all companies</p>
+        <p class="subtitle">Monitor all employee check-ins, check-outs, transfers and remote verifications</p>
       </div>
 
       <!-- Tabs -->
@@ -43,6 +43,14 @@
           <i class="fas fa-exchange-alt"></i>
           Transfers
           <span class="tab-count" *ngIf="transferTotalElements > 0">{{ transferTotalElements }}</span>
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'remote'"
+          (click)="switchTab('remote')">
+          <i class="fas fa-satellite-dish"></i>
+          Remote Workers
+          <span class="tab-count" *ngIf="remoteTotalElements > 0">{{ remoteTotalElements }}</span>
         </button>
       </div>
 
@@ -150,7 +158,6 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <!-- Check In Location -->
                   <button
                     class="btn-icon btn-success"
                     *ngIf="hasCheckInLocation(attendance)"
@@ -159,8 +166,6 @@
                     <i class="fas fa-map-marker-alt"></i>
                     <span class="btn-label">In</span>
                   </button>
-
-                  <!-- Check Out Location -->
                   <button
                     class="btn-icon btn-danger"
                     *ngIf="hasCheckOutLocation(attendance)"
@@ -169,8 +174,6 @@
                     <i class="fas fa-map-marker-alt"></i>
                     <span class="btn-label">Out</span>
                   </button>
-
-                  <!-- Photos -->
                   <button
                     class="btn-icon"
                     *ngIf="hasValidPhotos(attendance)"
@@ -178,8 +181,6 @@
                     (click)="openPhotoModal(attendance)">
                     <i class="fas fa-camera"></i>
                   </button>
-
-                  <!-- Manual Entry Badge -->
                   <span
                     class="manual-badge"
                     *ngIf="!hasValidPhotos(attendance)"
@@ -187,8 +188,6 @@
                     <i class="fas fa-edit"></i>
                     Manual
                   </span>
-
-                  <!-- Delete -->
                   <button
                     class="btn-icon btn-delete"
                     title="Delete Attendance"
@@ -201,7 +200,6 @@
             </tbody>
           </table>
 
-          <!-- No Data -->
           <div *ngIf="attendanceList.length === 0" class="no-data">
             <i class="fas fa-inbox"></i>
             <p>No attendance records found</p>
@@ -213,16 +211,10 @@
           <div class="pagination-info">
             Showing {{ page * size + 1 }} to {{ Math.min((page + 1) * size, totalElements) }} of {{ totalElements }} entries
           </div>
-
           <div class="pagination-controls">
-            <button
-              class="pagination-btn"
-              [disabled]="isFirst"
-              (click)="previousPage()">
-              <i class="fas fa-chevron-left"></i>
-              Previous
+            <button class="pagination-btn" [disabled]="isFirst" (click)="previousPage()">
+              <i class="fas fa-chevron-left"></i> Previous
             </button>
-
             <button
               *ngFor="let pageNum of getPageNumbers()"
               class="pagination-btn page-number"
@@ -230,13 +222,8 @@
               (click)="goToPage(pageNum)">
               {{ pageNum + 1 }}
             </button>
-
-            <button
-              class="pagination-btn"
-              [disabled]="isLast"
-              (click)="nextPage()">
-              Next
-              <i class="fas fa-chevron-right"></i>
+            <button class="pagination-btn" [disabled]="isLast" (click)="nextPage()">
+              Next <i class="fas fa-chevron-right"></i>
             </button>
           </div>
         </div>
@@ -250,7 +237,6 @@
       <!-- ============================================================ -->
       <div *ngIf="activeTab === 'transfers'">
 
-        <!-- Controls -->
         <div class="controls-section">
           <div class="page-size-control">
             <label>Show:</label>
@@ -266,13 +252,11 @@
           </div>
         </div>
 
-        <!-- Loading -->
         <div *ngIf="transferLoading" class="loading-spinner">
           <i class="fas fa-spinner fa-spin"></i>
           <p>Loading transfer data...</p>
         </div>
 
-        <!-- Transfer Table -->
         <div *ngIf="!transferLoading" class="table-container">
           <table class="attendance-table transfer-table">
             <thead>
@@ -335,25 +319,19 @@
             </tbody>
           </table>
 
-          <!-- No Data -->
           <div *ngIf="transferList.length === 0" class="no-data">
             <i class="fas fa-exchange-alt"></i>
             <p>No transfer records found</p>
           </div>
         </div>
 
-        <!-- Transfer Pagination -->
         <div *ngIf="!transferLoading && transferList.length > 0" class="pagination-section">
           <div class="pagination-info">
             Showing {{ transferPage * transferSize + 1 }} to {{ Math.min((transferPage + 1) * transferSize, transferTotalElements) }} of {{ transferTotalElements }} entries
           </div>
           <div class="pagination-controls">
-            <button
-              class="pagination-btn"
-              [disabled]="transferIsFirst"
-              (click)="previousTransferPage()">
-              <i class="fas fa-chevron-left"></i>
-              Previous
+            <button class="pagination-btn" [disabled]="transferIsFirst" (click)="previousTransferPage()">
+              <i class="fas fa-chevron-left"></i> Previous
             </button>
             <button
               *ngFor="let pageNum of getTransferPageNumbers()"
@@ -362,18 +340,216 @@
               (click)="goToTransferPage(pageNum)">
               {{ pageNum + 1 }}
             </button>
-            <button
-              class="pagination-btn"
-              [disabled]="transferIsLast"
-              (click)="nextTransferPage()">
-              Next
-              <i class="fas fa-chevron-right"></i>
+            <button class="pagination-btn" [disabled]="transferIsLast" (click)="nextTransferPage()">
+              Next <i class="fas fa-chevron-right"></i>
             </button>
           </div>
         </div>
 
       </div>
       <!-- END TRANSFERS TAB -->
+
+
+      <!-- ============================================================ -->
+      <!-- REMOTE WORKERS TAB -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeTab === 'remote'">
+
+        <!-- Stats Cards -->
+        <div class="remote-stats-grid">
+          <div class="remote-stat-card stat-completed">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-content">
+              <span class="stat-value">{{ remoteStats.completedToday }}</span>
+              <span class="stat-label">Completed Today</span>
+            </div>
+          </div>
+          <div class="remote-stat-card stat-missed">
+            <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+            <div class="stat-content">
+              <span class="stat-value">{{ remoteStats.missedToday }}</span>
+              <span class="stat-label">Missed Today</span>
+            </div>
+          </div>
+          <div class="remote-stat-card stat-pending">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-content">
+              <span class="stat-value">{{ remoteStats.pendingToday }}</span>
+              <span class="stat-label">Pending Now</span>
+            </div>
+          </div>
+          <div class="remote-stat-card stat-compliance">
+            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-content">
+              <span class="stat-value">{{ remoteStats.complianceRate | number:'1.0-0' }}%</span>
+              <span class="stat-label">Compliance Rate</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="remote-filters-section">
+          <div class="remote-filters-row">
+            <div class="filter-group">
+              <label>Status</label>
+              <select [(ngModel)]="remoteStatusFilter" class="page-size-select">
+                <option value="">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="MISSED">Missed</option>
+                <option value="PENDING">Pending</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Date From</label>
+              <input type="date" [(ngModel)]="remoteDateFrom" [max]="getCurrentDate()" class="filter-date-input">
+            </div>
+            <div class="filter-group">
+              <label>Date To</label>
+              <input type="date" [(ngModel)]="remoteDateTo" [max]="getCurrentDate()" class="filter-date-input">
+            </div>
+            <div class="filter-buttons">
+              <button class="filter-btn filter-btn-primary" (click)="applyRemoteFilters()">
+                <i class="fas fa-search"></i> Apply
+              </button>
+              <button class="filter-btn filter-btn-secondary" (click)="resetRemoteFilters()">
+                <i class="fas fa-undo"></i> Reset
+              </button>
+            </div>
+          </div>
+          <div class="remote-quick-dates">
+            <button class="quick-date-btn" (click)="setRemoteDateRange('today')">Today</button>
+            <button class="quick-date-btn" (click)="setRemoteDateRange('week')">Week</button>
+            <button class="quick-date-btn" (click)="setRemoteDateRange('month')">Month</button>
+            <button class="quick-date-btn" (click)="setRemoteDateRange('all')">All</button>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-section">
+          <div class="page-size-control">
+            <label>Show:</label>
+            <select [(ngModel)]="remoteSize" (change)="changeRemotePageSize(remoteSize)" class="page-size-select">
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+            <span>entries per page</span>
+          </div>
+          <div class="total-records">
+            Total Records: <strong>{{ remoteTotalElements }}</strong>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="remoteLoading" class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading remote verification data...</p>
+        </div>
+
+        <!-- Remote Workers Table -->
+        <div *ngIf="!remoteLoading" class="table-container">
+          <table class="attendance-table remote-table">
+            <thead>
+            <tr>
+              <th>Worker</th>
+              <th>Company</th>
+              <th>Status</th>
+              <th>Verification Time</th>
+              <th>Location</th>
+              <th>Photo</th>
+              <th>Message</th>
+              <th>Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let v of remoteVerifications" [ngClass]="getRemoteRowClass(v.status)">
+              <td>
+                <div class="worker-name">{{ v.workerFirstName }} {{ v.workerLastName }}</div>
+                <div class="worker-sub-info">
+                  <span *ngIf="v.workerEmail" class="worker-email">{{ v.workerEmail }}</span>
+                  <span *ngIf="v.workerPhone" class="worker-phone">{{ v.workerPhone }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="company-badge" *ngIf="v.companyName">{{ v.companyName }}</span>
+                <span *ngIf="!v.companyName" class="no-overtime">-</span>
+              </td>
+              <td>
+                <span class="transfer-status" [ngClass]="getRemoteStatusClass(v.status)">
+                  <i class="fas" [ngClass]="getRemoteStatusIcon(v.status)"></i>
+                  {{ getRemoteStatusText(v.status) }}
+                </span>
+              </td>
+              <td>
+                <div class="time-info" *ngIf="v.formattedVerificationTime">
+                  <i class="fas fa-clock"></i>
+                  {{ v.formattedVerificationTime }}
+                </div>
+                <span *ngIf="!v.formattedVerificationTime" class="no-overtime">-</span>
+              </td>
+              <td>
+                <div *ngIf="v.latitude && v.longitude">
+                  <span class="coords-link" (click)="openGoogleMaps(v.latitude, v.longitude)">
+                    <i class="fas fa-map-marker-alt"></i>
+                    {{ formatCoords(v.latitude, v.longitude) }}
+                  </span>
+                  <div class="location-info" *ngIf="v.locationAddress">{{ v.locationAddress }}</div>
+                </div>
+                <span *ngIf="!v.latitude || !v.longitude" class="no-overtime">-</span>
+              </td>
+              <td>
+                <button
+                  class="btn-icon"
+                  *ngIf="v.photoUrl"
+                  title="View Photo"
+                  (click)="openRemotePhotoModal(v)">
+                  <i class="fas fa-camera"></i>
+                </button>
+                <span *ngIf="!v.photoUrl" class="no-overtime">-</span>
+              </td>
+              <td>
+                <span class="transfer-message" *ngIf="v.message || v.isMissedMessage">{{ v.isMissedMessage || v.message }}</span>
+                <span *ngIf="!v.message && !v.isMissedMessage" class="no-overtime">-</span>
+              </td>
+              <td>
+                <div class="period-info" *ngIf="v.createdAt">{{ formatDate(v.createdAt) }}</div>
+                <span *ngIf="!v.createdAt" class="no-overtime">-</span>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="remoteVerifications.length === 0" class="no-data">
+            <i class="fas fa-satellite-dish"></i>
+            <p>No remote verification records found</p>
+          </div>
+        </div>
+
+        <!-- Remote Pagination -->
+        <div *ngIf="!remoteLoading && remoteVerifications.length > 0" class="pagination-section">
+          <div class="pagination-info">
+            Showing {{ remotePage * remoteSize + 1 }} to {{ Math.min((remotePage + 1) * remoteSize, remoteTotalElements) }} of {{ remoteTotalElements }} entries
+          </div>
+          <div class="pagination-controls">
+            <button class="pagination-btn" [disabled]="remoteIsFirst" (click)="previousRemotePage()">
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <button
+              *ngFor="let pageNum of getRemotePageNumbers()"
+              class="pagination-btn page-number"
+              [class.active]="pageNum === remotePage"
+              (click)="goToRemotePage(pageNum)">
+              {{ pageNum + 1 }}
+            </button>
+            <button class="pagination-btn" [disabled]="remoteIsLast" (click)="nextRemotePage()">
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <!-- END REMOTE WORKERS TAB -->
 
     </div>
   </main>
@@ -394,7 +570,6 @@
       </div>
 
       <div class="modal-body">
-        <!-- Date Display -->
         <div class="date-display">
           <div class="date-info">
             <i class="fas fa-calendar-day"></i>
@@ -404,13 +579,11 @@
           <span class="photo-count">Photos found: {{ photos.length }}</span>
         </div>
 
-        <!-- Loading Photos -->
         <div *ngIf="loadingPhotos" class="loading-photos">
           <div class="spinner"></div>
           <p>Loading photos...</p>
         </div>
 
-        <!-- Photos Display -->
         <div class="photos-grid" *ngIf="!loadingPhotos && photos.length > 0">
           <div *ngFor="let photo of photos" class="photo-item">
             <div class="photo-label">
@@ -426,7 +599,6 @@
           </div>
         </div>
 
-        <!-- No Photos -->
         <div class="no-photos" *ngIf="!loadingPhotos && photos.length === 0">
           <i class="fas fa-camera-retro"></i>
           <p>No photos for {{ formatDate(selectedDate) }}</p>
@@ -459,6 +631,60 @@
     </div>
   </div>
 
+  <!-- Remote Verification Photo Modal -->
+  <div class="modal-overlay" *ngIf="showRemotePhotoModal" (click)="closeRemotePhotoModal()">
+    <div class="modal-container" (click)="preventClose($event)">
+      <div class="modal-header">
+        <h3>
+          <i class="fas fa-camera"></i>
+          Verification Photo — {{ selectedRemoteVerification?.workerFirstName }} {{ selectedRemoteVerification?.workerLastName }}
+        </h3>
+        <button class="close-button" (click)="closeRemotePhotoModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: center; padding: 16px;">
+          <img
+            [src]="selectedRemoteVerification?.photoUrl"
+            alt="Verification photo"
+            style="max-width: 100%; max-height: 50vh; object-fit: contain; border-radius: 8px; cursor: pointer;"
+            (click)="openFullscreen(selectedRemoteVerification?.photoUrl || '')"
+            (error)="onImageError($event)">
+        </div>
+        <!-- Details -->
+        <div class="remote-photo-details">
+          <div class="detail-row">
+            <span class="label">Status:</span>
+            <span class="transfer-status" [ngClass]="getRemoteStatusClass(selectedRemoteVerification?.status)">
+              <i class="fas" [ngClass]="getRemoteStatusIcon(selectedRemoteVerification?.status)"></i>
+              {{ getRemoteStatusText(selectedRemoteVerification?.status) }}
+            </span>
+          </div>
+          <div class="detail-row" *ngIf="selectedRemoteVerification?.formattedVerificationTime">
+            <span class="label">Time:</span>
+            <span class="value">{{ selectedRemoteVerification?.formattedVerificationTime }}</span>
+          </div>
+          <div class="detail-row" *ngIf="selectedRemoteVerification?.latitude && selectedRemoteVerification?.longitude">
+            <span class="label">Location:</span>
+            <span class="coords-link" (click)="openGoogleMaps(selectedRemoteVerification?.latitude, selectedRemoteVerification?.longitude)">
+              <i class="fas fa-map-marker-alt"></i>
+              {{ formatCoords(selectedRemoteVerification?.latitude, selectedRemoteVerification?.longitude) }}
+            </span>
+          </div>
+          <div class="detail-row" *ngIf="selectedRemoteVerification?.locationAddress">
+            <span class="label">Address:</span>
+            <span class="value">{{ selectedRemoteVerification?.locationAddress }}</span>
+          </div>
+          <div class="detail-row" *ngIf="selectedRemoteVerification?.isMissedMessage || selectedRemoteVerification?.message">
+            <span class="label">Message:</span>
+            <span class="value">{{ selectedRemoteVerification?.isMissedMessage || selectedRemoteVerification?.message }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Fullscreen Viewer -->
   <div class="fullscreen-viewer" *ngIf="fullscreenImage" (click)="closeFullscreen()">
     <img [src]="fullscreenImage" alt="Enlarged photo">
@@ -467,7 +693,7 @@
     </button>
   </div>
 
-  <!-- Location Modal (shared for attendance + transfers) -->
+  <!-- Location Modal (shared for attendance + transfers + remote) -->
   <div class="modal-overlay" *ngIf="showLocationModal" (click)="closeLocationModal()">
     <div class="modal-container location-modal-container" (click)="preventClose($event)">
       <div class="modal-header">
@@ -481,7 +707,6 @@
       </div>
 
       <div class="modal-body location-modal-body">
-        <!-- Location Info Card -->
         <div class="location-info-card" [class.checkin]="locationType === 'checkin'" [class.checkout]="locationType === 'checkout'">
           <div class="info-row">
             <div class="info-item">
@@ -519,7 +744,6 @@
           </div>
         </div>
 
-        <!-- Map Container -->
         <div class="map-container">
           <div id="attendanceLocationMap" class="attendance-location-map"></div>
         </div>

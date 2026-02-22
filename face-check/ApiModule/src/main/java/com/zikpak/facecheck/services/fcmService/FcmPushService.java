@@ -11,6 +11,8 @@ import com.google.firebase.messaging.Notification;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -38,5 +40,24 @@ public class FcmPushService {
         }
 
 
+    public void sendToTokenWithData(String token, String title, String body, Map<String, String> data) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+
+        Message message = Message.builder()
+                .setToken(token)
+                .setNotification(
+                        Notification.builder()
+                                .setTitle(title)
+                                .setBody(body)
+                                .build()
+                )
+                .putAllData(data)
+                .build();
+
+        FirebaseMessaging.getInstance().sendAsync(message)
+                .addListener(() -> log.info("FCM push with data sent (async)"), Runnable::run);
+    }
 
 }

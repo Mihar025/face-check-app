@@ -14,6 +14,9 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart'; // для kDebugMode
+
+
 
 import '../../../providers/localization_provider.dart';
 import '../../../services/ApiService.dart';
@@ -278,19 +281,20 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      validateStatus: (status) {
-        return status != null && status < 500;
-      },
+      validateStatus: (status) => status != null && status < 500,
     ));
 
-    dio.interceptors.add(LogInterceptor(
-      request: true,
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: true,
-      responseBody: true,
-      error: true,
-    ));
+    // Логи только в debug, без body (там фото base64)
+    if (kDebugMode) {
+      dio.interceptors.add(LogInterceptor(
+        request: true,
+        requestHeader: false,
+        requestBody: false,
+        responseHeader: false,
+        responseBody: false,
+        error: true,
+      ));
+    }
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
@@ -299,35 +303,13 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-
-          print('🔵 REQUEST: ${options.method} ${options.path}');
-          print('🔵 Headers: ${options.headers}');
-          print('🔵 Data: ${options.data}');
-
-          return handler.next(options);
-        } catch (e) {
-          print('❌ Error in request interceptor: $e');
-          return handler.next(options);
-        }
-      },
-      onResponse: (response, handler) {
-        print('✅ RESPONSE [${response.statusCode}]: ${response.requestOptions.path}');
-        print('✅ Response data: ${response.data}');
-        return handler.next(response);
+        } catch (_) {}
+        return handler.next(options);
       },
       onError: (DioException e, handler) {
-        print('❌ ERROR TYPE: ${e.type}');
-        print('❌ ERROR MESSAGE: ${e.message}');
-        print('❌ ERROR RESPONSE: ${e.response?.data}');
-        print('❌ ERROR STATUS CODE: ${e.response?.statusCode}');
-        print('❌ ERROR PATH: ${e.requestOptions.path}');
-        print('❌ ERROR HEADERS: ${e.requestOptions.headers}');
-
         String errorMessage = 'Network error occurred';
 
         if (e.response != null) {
-          print('❌ Server responded with error: ${e.response?.statusCode}');
-
           switch (e.response?.statusCode) {
             case 400:
               errorMessage = 'Bad request. Please check your input.';
@@ -354,14 +336,12 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
               errorMessage = 'Error: ${e.response?.statusCode}';
           }
 
-          if (e.response?.data != null) {
-            if (e.response?.data is Map) {
-              final serverMessage = e.response?.data['message'] ??
-                  e.response?.data['error'] ??
-                  e.response?.data['detail'];
-              if (serverMessage != null) {
-                errorMessage = serverMessage.toString();
-              }
+          if (e.response?.data is Map) {
+            final serverMessage = e.response?.data['message'] ??
+                e.response?.data['error'] ??
+                e.response?.data['detail'];
+            if (serverMessage != null) {
+              errorMessage = serverMessage.toString();
             }
           }
         } else if (e.type == DioExceptionType.connectionTimeout) {
@@ -376,15 +356,17 @@ class _FaceCheckScreenState extends State<Mainmenupunchscreen>
           errorMessage = 'Network error: ${e.message ?? "Unknown error"}';
         }
 
-        final newError = DioException(
+        if (kDebugMode) {
+          debugPrint('❌ Dio error [${e.response?.statusCode}]: $errorMessage');
+        }
+
+        return handler.next(DioException(
           requestOptions: e.requestOptions,
           response: e.response,
           type: e.type,
           error: errorMessage,
           message: errorMessage,
-        );
-
-        return handler.next(newError);
+        ));
       },
     ));
 
