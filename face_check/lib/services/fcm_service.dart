@@ -7,9 +7,12 @@ class FcmService {
   static FcmService? _instance;
   static FcmService get instance => _instance!;
 
-  // ✅ Stream для мгновенного обновления бейджа
   static final StreamController<void> onNotificationReceived =
   StreamController<void>.broadcast();
+
+  // ✅ НОВЫЙ: Stream для presence check
+  static final StreamController<String> onPresenceCheckReceived =
+  StreamController<String>.broadcast();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -27,14 +30,39 @@ class FcmService {
     print('FCM permission: ${settings.authorizationStatus}');
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _showLocalNotification(message);
-      onNotificationReceived.add(null); // ✅ Мгновенно обновить бейдж
+      // ✅ Проверяем тип
+      if (message.data['type'] == 'PRESENCE_CHECK') {
+        final verificationId = message.data['verificationId'] ?? '';
+        print('📲 Presence check received: $verificationId');
+        onPresenceCheckReceived.add(verificationId);
+        _showLocalNotification(message);
+      } else {
+        _showLocalNotification(message);
+      }
+      onNotificationReceived.add(null);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('Notification tap: ${message.data}');
-      onNotificationReceived.add(null); // ✅ И при тапе тоже
+      // ✅ Если тапнул на presence check notification
+      if (message.data['type'] == 'PRESENCE_CHECK') {
+        final verificationId = message.data['verificationId'] ?? '';
+        print('📲 Presence check tapped: $verificationId');
+        onPresenceCheckReceived.add(verificationId);
+      }
+      onNotificationReceived.add(null);
     });
+
+    // ✅ Проверяем initial message (app was killed)
+    final initialMessage = await _fcm.getInitialMessage();
+    if (initialMessage != null && initialMessage.data['type'] == 'PRESENCE_CHECK') {
+      final verificationId = initialMessage.data['verificationId'] ?? '';
+      print('📲 Presence check from killed state: $verificationId');
+      // Отложим чтобы UI успел построиться
+      Future.delayed(const Duration(seconds: 2), () {
+        onPresenceCheckReceived.add(verificationId);
+      });
+    }
 
     _fcm.onTokenRefresh.listen((newToken) async {
       print('FCM Token refreshed: $newToken');

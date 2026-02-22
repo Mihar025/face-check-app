@@ -14,6 +14,7 @@ export { TestDataGeneratorControllerService } from './services/test-data-generat
 export { SickLeaveControllerService } from './services/sick-leave-controller.service';
 export { WorkScheduleControllerService } from './services/work-schedule-controller.service';
 export { ContactSalesControllerService } from './services/contact-sales-controller.service';
+export { RemoteWorkerControllerService } from './services/remote-worker-controller.service';
 export { PrivacyAndTermsControllerService } from './services/privacy-and-terms-controller.service';
 export { PaymentHistoryIrsControllerService } from './services/payment-history-irs-controller.service';
 export { TrackLocationControllerService } from './services/track-location-controller.service';

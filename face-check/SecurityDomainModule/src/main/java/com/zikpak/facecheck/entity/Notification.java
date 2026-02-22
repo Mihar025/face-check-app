@@ -34,5 +34,9 @@ public class Notification {
     @Column(name = "is_read")
     private Boolean isRead = false;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_user_id")
+    private User targetUser;
+
 
 }

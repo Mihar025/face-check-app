@@ -173,6 +173,17 @@
               </button>
             </ng-container>
 
+            <button class="action-button remote-user-button" (click)="setUpAsRemoteWorker()">
+              <i class="fas fa-laptop-house"></i> Set as Remote Worker
+            </button>
+
+            <button class="action-button on-person-user-button" (click)="setUpAsOnPersonWorker()">
+              <i class="fas fa-building"></i> Set as In-Person Worker
+            </button>
+
+
+
+
             <ng-container *ngIf="employeePersonalInfo?.role === 'FOREMAN'">
               <button class="action-button demote-button" (click)="demoteToUser()">
                 <i class="fas fa-arrow-down"></i> Demote to User

@@ -104,6 +104,9 @@ public class User implements UserDetails, Principal {
 
 /////////////////////////////////////////
 
+    @Column(name = "is_remote_worker")
+    private Boolean isRemoteWorker = Boolean.FALSE;
+/// /////////////////////////////////////////////////////
     //All check box could be only one selected!
     //I-9 form Check box 1
     @Column(nullable = true, name = "is_citizen")
@@ -332,6 +335,9 @@ public class User implements UserDetails, Principal {
 
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
     private List<WorkerAttendance> attendances;
+
+    @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
+    private List<RandomAttendanceVerification> randomAttendanceVerifications;
 
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
     private List<WorkerPayroll> payrolls;

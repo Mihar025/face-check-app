@@ -1,0 +1,347 @@
+<div class="page">
+
+  <!-- Сайдбар слева -->
+  <aside class="sidebar-left">
+    <app-admin-sidebar
+      [userName]="userName"
+      [companyName]="companyName"
+      [userPhotoUrl]="userPhotoUrl">
+    </app-admin-sidebar>
+  </aside>
+
+  <!-- Основной контент -->
+  <main class="main-content">
+    <div class="remote-workers-container">
+
+      <!-- Заголовок -->
+      <div class="header-section">
+        <h1>Remote Workers Verification</h1>
+        <p class="subtitle">Monitor random attendance verification records for all remote workers</p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-section">
+        <div class="stats-grid">
+          <div class="stat-card stat-completed">
+            <div class="stat-icon-wrap">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-number">{{ stats.completedToday }}</span>
+              <span class="stat-label">Completed Today</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-missed">
+            <div class="stat-icon-wrap">
+              <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-number">{{ stats.missedToday }}</span>
+              <span class="stat-label">Missed Today</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-pending">
+            <div class="stat-icon-wrap">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-number">{{ stats.pendingToday }}</span>
+              <span class="stat-label">Pending Now</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-compliance">
+            <div class="stat-icon-wrap">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-number">{{ stats.complianceRate }}%</span>
+              <span class="stat-label">Compliance Rate</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters Section -->
+      <div class="filters-section">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label>Status:</label>
+            <select [(ngModel)]="statusFilter" class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="MISSED">Missed</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>From:</label>
+            <input type="date" [(ngModel)]="dateFrom" class="filter-input" [max]="getCurrentDate()">
+          </div>
+
+          <div class="filter-group">
+            <label>To:</label>
+            <input type="date" [(ngModel)]="dateTo" class="filter-input" [max]="getCurrentDate()">
+          </div>
+
+          <div class="filter-group quick-dates">
+            <button class="quick-btn" (click)="setDateRange('today')">Today</button>
+            <button class="quick-btn" (click)="setDateRange('week')">Week</button>
+            <button class="quick-btn" (click)="setDateRange('month')">Month</button>
+            <button class="quick-btn" (click)="setDateRange('all')">All</button>
+          </div>
+
+          <div class="filter-actions">
+            <button class="btn-apply" (click)="applyFilters()">
+              <i class="fas fa-search"></i> Apply
+            </button>
+            <button class="btn-reset" (click)="resetFilters()">
+              <i class="fas fa-undo"></i> Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Section -->
+      <div class="controls-section">
+        <div class="page-size-control">
+          <label>Show:</label>
+          <select [(ngModel)]="size" (change)="changePageSize(size)" class="page-size-select">
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+          </select>
+          <span>entries per page</span>
+        </div>
+        <div class="total-records">
+          Total Records: <strong>{{ totalElements }}</strong>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoading" class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading verification records...</p>
+      </div>
+
+      <!-- Table -->
+      <div *ngIf="!isLoading && !errorMessage" class="table-container">
+        <table class="verification-table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Worker</th>
+            <th>Company</th>
+            <th>Status</th>
+            <th>Verification Time</th>
+            <th>Location</th>
+            <th>Photo</th>
+            <th>Message</th>
+            <th>Date</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let v of verifications" [ngClass]="getStatusRowClass(v.status)">
+
+            <!-- ID -->
+            <td>
+              <span class="verification-id">#{{ v.verificationId }}</span>
+            </td>
+
+            <!-- Worker -->
+            <td>
+              <div class="worker-name">{{ v.workerFirstName }} {{ v.workerLastName }}</div>
+              <div class="worker-detail">{{ v.workerEmail }}</div>
+              <div class="worker-detail" *ngIf="v.workerPhone">{{ v.workerPhone }}</div>
+            </td>
+
+            <!-- Company -->
+            <td>
+              <span class="company-badge">{{ v.companyName }}</span>
+            </td>
+
+            <!-- Status -->
+            <td>
+                <span class="status-badge" [ngClass]="getStatusClass(v.status)">
+                  <i class="fas" [ngClass]="getStatusIcon(v.status)"></i>
+                  {{ v.status }}
+                </span>
+            </td>
+
+            <!-- Verification Time -->
+            <td>
+              <div class="time-info" *ngIf="v.verificationTime">
+                <i class="fas fa-clock"></i>
+                {{ formatDateTime(v.verificationTime) }}
+              </div>
+              <span *ngIf="!v.verificationTime" class="na-text">—</span>
+            </td>
+
+            <!-- Location -->
+            <td>
+              <div *ngIf="v.latitude && v.longitude" class="location-cell">
+                <div class="location-coords" (click)="openGoogleMaps(v.latitude, v.longitude)"
+                     title="Open in Google Maps">
+                  <i class="fas fa-map-marker-alt"></i>
+                  {{ formatCoords(v.latitude, v.longitude) }}
+                </div>
+                <div class="location-address" *ngIf="v.locationAddress">
+                  {{ v.locationAddress }}
+                </div>
+              </div>
+              <span *ngIf="!v.latitude || !v.longitude" class="na-text">—</span>
+            </td>
+
+            <!-- Photo -->
+            <td>
+              <div class="action-buttons">
+                <button
+                  class="btn-icon"
+                  *ngIf="v.photoUrl && v.photoUrl !== 'upload-failed'"
+                  title="View Photo"
+                  (click)="openPhotoModal(v)">
+                  <i class="fas fa-camera"></i>
+                </button>
+                <span *ngIf="v.photoUrl === 'upload-failed'" class="upload-failed-text">
+                    <i class="fas fa-exclamation-triangle"></i> Failed
+                  </span>
+                <span *ngIf="!v.photoUrl" class="na-text">—</span>
+              </div>
+            </td>
+
+            <!-- Message -->
+            <td>
+              <span class="message-text" *ngIf="v.isMissedMessage">{{ v.isMissedMessage }}</span>
+              <span *ngIf="!v.isMissedMessage" class="na-text">—</span>
+            </td>
+
+            <!-- Date -->
+            <td>
+              <div class="period-info">{{ formatDate(v.createdAt) }}</div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+
+        <!-- No Data -->
+        <div *ngIf="verifications.length === 0" class="no-data">
+          <i class="fas fa-satellite-dish"></i>
+          <p>No verification records found</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="!isLoading && verifications.length > 0" class="pagination-section">
+        <div class="pagination-info">
+          Showing {{ page * size + 1 }} to {{ Math.min((page + 1) * size, totalElements) }} of {{ totalElements }} entries
+        </div>
+
+        <div class="pagination-controls">
+          <button
+            class="pagination-btn"
+            [disabled]="isFirst"
+            (click)="previousPage()">
+            <i class="fas fa-chevron-left"></i>
+            Previous
+          </button>
+
+          <button
+            *ngFor="let pageNum of getPageNumbers()"
+            class="pagination-btn page-number"
+            [class.active]="pageNum === page"
+            (click)="goToPage(pageNum)">
+            {{ pageNum + 1 }}
+          </button>
+
+          <button
+            class="pagination-btn"
+            [disabled]="isLast"
+            (click)="nextPage()">
+            Next
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Photo Modal -->
+  <div class="modal-overlay" *ngIf="showPhotoModal" (click)="closePhotoModal()">
+    <div class="modal-container" (click)="preventClose($event)">
+      <div class="modal-header">
+        <h3>
+          {{ selectedVerification?.workerFirstName }} {{ selectedVerification?.workerLastName }}
+          — Verification Photo
+        </h3>
+        <button class="close-button" (click)="closePhotoModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Photo -->
+        <div class="photo-wrapper" *ngIf="selectedVerification?.photoUrl">
+          <img [src]="selectedVerification?.photoUrl"
+               alt="Verification photo"
+               (click)="openFullscreen(selectedVerification?.photoUrl || '')"
+               (error)="onImageError($event)">
+        </div>
+
+        <!-- Details Grid -->
+        <div class="details-grid" *ngIf="selectedVerification">
+          <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="status-badge" [ngClass]="getStatusClass(selectedVerification.status)">
+              <i class="fas" [ngClass]="getStatusIcon(selectedVerification.status)"></i>
+              {{ selectedVerification.status }}
+            </span>
+          </div>
+
+          <div class="detail-item" *ngIf="selectedVerification.formattedVerificationTime">
+            <span class="detail-label">Verification Time</span>
+            <span class="detail-value">{{ selectedVerification.formattedVerificationTime }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="selectedVerification.latitude && selectedVerification.longitude">
+            <span class="detail-label">Location</span>
+            <span class="location-coords clickable"
+                  (click)="openGoogleMaps(selectedVerification.latitude, selectedVerification.longitude)">
+              <i class="fas fa-map-marker-alt"></i>
+              {{ formatCoords(selectedVerification.latitude, selectedVerification.longitude) }}
+            </span>
+          </div>
+
+          <div class="detail-item" *ngIf="selectedVerification.locationAddress">
+            <span class="detail-label">Address</span>
+            <span class="detail-value">{{ selectedVerification.locationAddress }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="selectedVerification.isMissedMessage">
+            <span class="detail-label">Message</span>
+            <span class="detail-value">{{ selectedVerification.isMissedMessage }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Viewer -->
+  <div class="fullscreen-viewer" *ngIf="fullscreenImage" (click)="closeFullscreen()">
+    <img [src]="fullscreenImage" alt="Enlarged photo">
+    <button class="close-fullscreen" (click)="closeFullscreen()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+</div>

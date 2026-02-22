@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +30,14 @@ public interface UserRepository extends JpaRepository<User, Integer> {
                           @Pattern(regexp = "^[^;'\"]*$", message = "Email contains invalid characters") String email);
 
 
+
+    @Query("SELECT u FROM User u " +
+            "JOIN u.attendances a " +
+            "WHERE u.isRemoteWorker = true " +
+            "AND a.checkInTime IS NOT NULL " +
+            "AND a.checkOutTime IS NULL " +
+            "AND CAST(a.checkInTime AS localdate) = :today")
+    List<User> findActiveRemoteWorkers(@Param("today") LocalDate today);
 
 
 

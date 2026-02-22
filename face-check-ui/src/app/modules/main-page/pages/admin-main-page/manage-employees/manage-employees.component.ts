@@ -3,7 +3,7 @@ import {AuthService} from "../../../additionalServices/auth-service";
 import {
   AdminControllerService,
   AuthenticationService,
-  CompanyControllerService,
+  CompanyControllerService, RemoteWorkerControllerService,
   UserServiceControllerService,
   WorkScheduleControllerService
 } from "../../../../../services/services";
@@ -43,6 +43,8 @@ import {Subscription} from "rxjs";
 import {DatePipe} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
 import {ChangePunchOutRequest} from "../../../../../services/models/change-punch-out-request";
+import {SetWorkerRemote$Params} from "../../../../../services/fn/remote-worker-controller/set-worker-remote";
+import {SetWorkerOnPerson$Params} from "../../../../../services/fn/remote-worker-controller/set-worker-on-person";
 
 @Component({
   selector: 'app-manage-employees',
@@ -264,7 +266,8 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
     private scheduleService: WorkScheduleControllerService,
     private router: Router,
     public userDataService: UserDataService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private remoteWorkerService: RemoteWorkerControllerService
   ) {}
 
   ngOnInit(): void {
@@ -1194,6 +1197,50 @@ export class ManageEmployeesComponent implements OnInit, OnDestroy {
         this.loading = false;
       }
     );
+  }
+
+  setUpAsRemoteWorker(){
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const params: SetWorkerRemote$Params = {
+      workerId: this.selectedEmployeeId
+    }
+
+    this.remoteWorkerService.setWorkerRemote(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully set up as remote worker';
+        this.openEmployeeModal(this.selectedEmployee!);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot set up as remote worker: ' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    )
+  }
+
+  setUpAsOnPersonWorker(){
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const params: SetWorkerOnPerson$Params = {
+      workerId: this.selectedEmployeeId
+    }
+
+    this.remoteWorkerService.setWorkerOnPerson(params).subscribe(
+      () => {
+        this.successMessage = 'Successfully set up as on person worker';
+        this.openEmployeeModal(this.selectedEmployee!);
+        this.loading = false;
+      },
+      error => {
+        this.errorMessage = 'Cannot set up as on person worker: ' + (error.message || 'Unknown problem');
+        this.loading = false;
+      }
+    )
   }
 
   promoteToAdmin() {

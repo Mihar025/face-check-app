@@ -117,11 +117,10 @@ public class NotificationService {
                     .findByCompanyIdAndCreatedAtBetweenOrderByCreatedAtDesc(
                             companyId, startOfDay, endOfDay, pageable);
         } else {
-            // Worker видит только где adminOnly = false
             notifications = notificationRepository
-                    .findByCompanyIdAndAdminOnlyFalseAndCreatedAtBetweenOrderByCreatedAtDesc(
-                            companyId, startOfDay, endOfDay, pageable);
+                    .findWorkerNotifications(companyId, user.getId(), startOfDay, endOfDay, pageable);
         }
+
 
         List<NotificationResponse> notificationResponses = notifications.getContent().stream()
                 .map(notificationMapper::toNotification)

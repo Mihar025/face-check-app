@@ -2,10 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>com.transistorsoft.fetch</string>
-	</array>
+<key>BGTaskSchedulerPermittedIdentifiers</key>
+<array>
+   <string>com.facecheck.locationTracking</string>
+</array>
+
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -40,18 +42,32 @@
 	<string>This app needs camera access to take photos for attendance verification</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID for quick and secure sign-in.</string>
+
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location during punch-in/out to verify you are at the assigned worksite.</string>
+    <string>We use your location during punch-in/out to verify you are at the assigned worksite.</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>FaceCheck tracks your location during work shifts for attendance verification. Tracking only runs between punch-in and punch-out.</string>
+
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>FaceCheck tracks your location during active work shifts for employer verification.</string>
+
+
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Please allow access to save photos to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Please allow access to select photos from your library for your profile picture.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
+<key>UIBackgroundModes</key>
+<array>
+   <string>remote-notification</string>
+   <string>location</string>
+   <string>fetch</string>
+   <string>processing</string>
+</array>
+
+
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>1</integer>

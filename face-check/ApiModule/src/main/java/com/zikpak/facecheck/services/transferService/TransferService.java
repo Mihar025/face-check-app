@@ -10,6 +10,7 @@ import com.zikpak.facecheck.repository.WorkerAttendanceRepository;
 import com.zikpak.facecheck.repository.WorkerScheduleRepository;
 import com.zikpak.facecheck.repository.WorkerSiteRepository;
 import com.zikpak.facecheck.services.amazonS3Service.AmazonS3Service;
+import com.zikpak.facecheck.services.sharedServiceForValidation.SharedServiceForBusinessLogic;
 import com.zikpak.facecheck.services.workSiteService.WorkSiteService;
 import com.zikpak.facecheck.taxesServices.services.AsyncNotificationService;
     import jakarta.transaction.Transactional;
@@ -34,10 +35,9 @@ public class TransferService {
 
     private final WorkerAttendanceRepository workerAttendanceRepository;
     private final UserRepository userRepository;
-    private final WorkerSiteRepository workSiteRepository;
     private final WorkerScheduleRepository workerScheduleRepository;
     private final AmazonS3Service amazonS3Service;
-    private final WorkSiteService workSiteService;
+    private final SharedServiceForBusinessLogic sharedServiceForBusinessLogic;
     private final AsyncNotificationService notificationService;
 
 
@@ -47,13 +47,11 @@ public class TransferService {
 
 
 
-
-
     @Transactional()
     public TransferResponse makeTransfer(Authentication authentication, TransferRequest transferRequest){
-        User user = validateAndGetUserByEmail(authentication);
+        User user = sharedServiceForBusinessLogic.validateAndGetUserByEmail(authentication);
 
-        CompletableFuture<String> photoUrlAsyncTransfer = uploadPhotoAsync(
+        CompletableFuture<String> photoUrlAsyncTransfer = sharedServiceForBusinessLogic.uploadPhotoAsync(
                 transferRequest.getPhotoBase64(),
                 user.getEmail(),
                 "transfer"
@@ -67,12 +65,15 @@ public class TransferService {
                     .findTodayActivePunchIn(user, startOfDay, endOfDay)
                     .orElseThrow(() -> new IllegalStateException("No active punch in found for today!"));
 
-            WorkSite workSite = validateAndGetWorkSite(transferRequest.getWorkSiteId());
+            WorkSite workSite = sharedServiceForBusinessLogic.validateAndGetWorkSite(transferRequest.getWorkSiteId());
             LocalDate today = LocalDate.now();
 
-            getWorkerScheduleForDate(user, today);
+            sharedServiceForBusinessLogic.getWorkerScheduleForDate(user, today);
 
-            validateLocationForTransfer(transferRequest, workSite);
+            sharedServiceForBusinessLogic.validateLocationForOperation(
+                    transferRequest.getLatitude(),
+                    transferRequest.getLongitude(),
+                    workSite);
 
 
             photoUrlAsyncTransfer.thenAccept(url -> {
@@ -144,74 +145,10 @@ public class TransferService {
                 .workSiteAddress(workSite.getAddress())
                 .transferLocation(attendance.getTransferLocation())
                 .isSuccessful(true)
-                .message("Transfered successful")
+                .message("Transferred successful")
                 .build();
     }
 
-
-    private boolean validateLocationForTransfer(TransferRequest transferRequest, WorkSite workSite) {
-
-        if(transferRequest.getLatitude() == null || transferRequest.getLongitude() == null){
-            throw new IllegalArgumentException("Coordinates cannot be null");
-        }
-
-        if(transferRequest.getLatitude() < -90 || transferRequest.getLatitude() > 90){
-            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees");
-        }
-
-        if(transferRequest.getLongitude() < -180 || transferRequest.getLongitude() > 180){
-            throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees");
-        }
-
-        boolean isInRadius = workSiteService.isWithinRadiusForPunchInOut(
-                workSite.getId(),
-                transferRequest.getLatitude(),
-                transferRequest.getLongitude()
-        );
-
-        if(!isInRadius){
-            throw new IllegalStateException("Error! You are not in allowed radius of the work site!");
-        }
-        return isInRadius;
-    }
-
-
-    public CompletableFuture<String> uploadPhotoAsync(String base64, String email, String type){
-        return CompletableFuture.supplyAsync(() ->
-                amazonS3Service.uploadAttendancePhoto(base64, email, type), PHOTO_UPLOAD_EXECUTOR);
-    }
-
-    private User validateAndGetUserByEmail(Authentication authentication) {
-        User user = ((User) authentication.getPrincipal());
-
-
-        if(user == null || user.getId() == null){
-            throw new RuntimeException("User not found");
-        }
-
-        return userRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-    }
-
-
-    private WorkSite validateAndGetWorkSite(Integer workSiteId) {
-        var workSite = workSiteRepository.findById(workSiteId)
-                .orElseThrow(() -> new RuntimeException("Work site not found"));
-        if(!workSite.getIsActive()){
-            throw new IllegalStateException("Work site is not active");
-        }
-        return workSite;
-    }
-
-
-    private WorkerSchedule getWorkerScheduleForDate(User worker, LocalDate date) {
-        DayOfWeek dayOfWeek = date.getDayOfWeek();
-
-        return workerScheduleRepository.findByWorkerAndDayOfWeekAndIsTemplateTrue(worker, dayOfWeek)
-                .orElseThrow(() -> new IllegalStateException(
-                        String.format("No schedule template found for worker on %s", dayOfWeek)
-                ));
-    }
 
 
 
