@@ -25,9 +25,10 @@ import {UpdateLocation$Params} from "../../../../../services/fn/track-location-c
 import {UpdateLocation1$Params} from "../../../../../services/fn/work-site-controller/update-location-1";
 import {UserDataService} from "../../../../components/user-data-service/user-data-service";
 import {Subscription} from "rxjs";
-
+import {ViewChild, ElementRef, AfterViewInit, NgZone} from '@angular/core';
 
 declare let L: any;
+declare var google: any;
 
 @Component({
   selector: 'app-manage-worksites',
@@ -104,7 +105,9 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private userService: UserServiceControllerService,
     private workSiteService: WorkSiteControllerService,
-    public userDataService: UserDataService
+    public userDataService: UserDataService,
+    private ngZone: NgZone
+
   ) {
   }
 
@@ -182,7 +185,29 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
       }
     );
   }
-  // Load fresh worksite details
+
+
+  @ViewChild('addressAutocomplete') addressAutocomplete!: ElementRef;
+
+  initAddressAutocomplete(): void {
+    if (typeof google === 'undefined') return;
+
+    const autocomplete = new google.maps.places.Autocomplete(
+      this.addressAutocomplete.nativeElement,
+      { types: ['address'] }
+    );
+
+    autocomplete.addListener('place_changed', () => {
+      this.ngZone.run(() => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+          this.latitude = place.geometry.location.lat();
+          this.longitude = place.geometry.location.lng();
+          this.address = place.formatted_address || '';
+        }
+      });
+    });
+  }
 
 // Close map modal
   closeMapModal() {
@@ -673,6 +698,7 @@ export class ManageWorksitesComponent implements OnInit, OnDestroy {
   openAddWorksiteModal() {
     this.resetForm();
     this.showAddWorksiteModal = true;
+    setTimeout(() => this.initAddressAutocomplete(), 300);
   }
 
   closeAddWorksiteModal() {
