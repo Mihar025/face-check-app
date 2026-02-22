@@ -16,17 +16,17 @@ import java.util.Optional;
 public interface LocationRecordRepository extends JpaRepository<LocationRecord, Integer> {
 
 
-    @Query("""
-    SELECT lr FROM LocationRecord lr
-    LEFT JOIN FETCH lr.user u
-    WHERE lr.user.id = :userId
-    AND DATE(lr.timestamp) = :date
+    @Query(value = """
+    SELECT lr.* FROM location_record lr
+    WHERE lr.user_id = :userId
+    AND DATE(lr.timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') = :date
     ORDER BY lr.timestamp ASC
-    """)
+    """, nativeQuery = true)
     List<LocationRecord> findByUserAndDate(
             @Param("userId") Integer userId,
             @Param("date") LocalDate date
     );
+
 
     @Query("""
     SELECT lr FROM LocationRecord lr
