@@ -39,7 +39,6 @@
   "traceSpoonLogFileName": "spoon.log",
   "check-license": false,
   "logging": "OFF",
-  "project": "/Users/mishamaydanskiy/face-check-app",
   "type": "sources",
   "disableDiag": false
 }
