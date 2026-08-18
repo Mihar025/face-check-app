@@ -1,8 +1,6 @@
-# ---------- STAGE 1: build ----------
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 
-# Кешируем зависимости
 COPY pom.xml .
 COPY ApiModule/pom.xml ApiModule/
 COPY ConfigurationsModule/pom.xml ConfigurationsModule/
@@ -10,12 +8,9 @@ COPY SecurityDomainModule/pom.xml SecurityDomainModule/
 COPY AppStarterModule/pom.xml AppStarterModule/
 RUN mvn -q -DskipTests dependency:go-offline
 
-# Копируем исходники и собираем только рантабельный модуль
 COPY . .
-# ВАЖНО: пропускаем компиляцию тестов во всех модулях
 RUN mvn -q -Dmaven.test.skip=true -pl AppStarterModule -am package
 
-# ---------- STAGE 2: runtime ----------
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN apt-get update -y && apt-get install -y curl && rm -rf /var/lib/apt/lists/*

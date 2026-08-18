@@ -837,12 +837,14 @@ public class WorkSiteServiceImpl implements WorkSiteService {
                                                                                          int page,
                                                                                          int size,
                                                                                          Authentication authentication) {
+
         User user = ((User) authentication.getPrincipal());
 
         if (!user.getRoles().stream()
                 .anyMatch(role -> role.getName().equals("ADMIN"))) {
             throw new AccessDeniedException("Only admins have an access to this function");
         }
+
         var adminsCompany = user.getCompany().getId();
         var foundedWorksite = findWorkSiteById(workSiteId);
 
