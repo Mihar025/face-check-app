@@ -25,3 +25,19 @@ Thumbs.db
 # env
 .env
 .env.local
+
+
+cat >> .gitignore << 'EOF'
+
+# ===== Secrets =====
+.env
+.env.*
+*.env
+**/firebase/*.json
+*firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+**/environments/environment.prod.ts
+*.pem
+*.key
+EOF
